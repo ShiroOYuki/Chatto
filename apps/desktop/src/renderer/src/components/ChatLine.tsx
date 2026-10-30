@@ -1,5 +1,6 @@
 import type { ChatMessage, ChatNotice, MessageFragment, UserRole } from '@chatto/core';
 import { Gift, Megaphone, PartyPopper, Swords } from 'lucide-react';
+import { motion } from './motion';
 import { Badge } from './ui';
 
 const ROLE_LABEL: Partial<Record<UserRole, { label: string; tone: 'matcha' | 'sakura' | 'neutral' }>> = {
@@ -66,8 +67,11 @@ export function ChatLine({
 }) {
   const role = message.author.roles.map((item) => ROLE_LABEL[item]).find(Boolean);
   return (
-    <div
-      className={`group flex gap-3 rounded-xl px-3 py-1.5 text-sm transition hover:bg-tile-muted ${deleted ? 'opacity-55' : ''}`}
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: deleted ? 0.55 : 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      className="group flex gap-3 rounded-xl px-3 py-1.5 text-sm transition-colors hover:bg-tile-muted"
     >
       {showTime ? (
         <time className="mt-0.5 w-10 shrink-0 font-mono text-[11px] tabular-nums text-ink-faint">
@@ -93,7 +97,7 @@ export function ChatLine({
           </span>
         ) : null}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -106,7 +110,12 @@ const NOTICE_ICON = {
 export function NoticeLine({ notice }: { notice: ChatNotice }) {
   const Icon = NOTICE_ICON[notice.kind as keyof typeof NOTICE_ICON] ?? PartyPopper;
   return (
-    <div className="my-1 flex gap-3 rounded-xl border border-matcha/30 bg-matcha-soft/25 px-3 py-2 text-sm">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.94 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+      className="my-1 flex gap-3 rounded-xl border border-matcha/30 bg-matcha-soft/25 px-3 py-2 text-sm"
+    >
       <Icon className="mt-0.5 size-4 shrink-0 text-matcha" />
       <div className="min-w-0">
         <div className="font-medium">{notice.systemText}</div>
@@ -117,6 +126,6 @@ export function NoticeLine({ notice }: { notice: ChatNotice }) {
         ) : null}
       </div>
       <time className="ml-auto shrink-0 font-mono text-[11px] text-ink-faint">{formatClock(notice.timestamp)}</time>
-    </div>
+    </motion.div>
   );
 }

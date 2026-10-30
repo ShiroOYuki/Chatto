@@ -2,6 +2,7 @@ import type { ViewerTarget } from '@chatto/core';
 import { AppWindow, Info, Move, RotateCcw, Tv } from 'lucide-react';
 import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
+import { Stagger } from '../components/motion';
 import { LiveThemePreview } from '../components/ThemePreview';
 import { Badge, Button, CopyField, Field, PageHeader, Select, Tile, Toggle } from '../components/ui';
 
@@ -28,7 +29,7 @@ export function OutputsPage({ state }: { state: AppState }) {
     <div>
       <PageHeader title="輸出" description="同一份聊天內容，同時送到桌面 Overlay 和 OBS，兩邊可以用不同主題。" />
 
-      <div className="grid grid-cols-2 gap-3">
+      <Stagger className="grid grid-cols-2 gap-3">
         <Tile
           title="桌面 Overlay"
           icon={<AppWindow />}
@@ -101,7 +102,7 @@ export function OutputsPage({ state }: { state: AppState }) {
             ))}
           </ol>
         </Tile>
-      </div>
+      </Stagger>
     </div>
   );
 }

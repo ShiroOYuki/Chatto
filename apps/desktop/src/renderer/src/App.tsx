@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { AppState } from '../../shared/ipc';
 import { api } from './api';
 import { PAGES, Sidebar, type PageId } from './components/Sidebar';
+import { PageTransition, Stagger } from './components/motion';
 import { TeaCup } from './components/TeaCup';
 import { TitleBar } from './components/TitleBar';
 import { ChatPage } from './pages/Chat';
@@ -21,7 +22,7 @@ function CompactDashboard({ state, onOpenThemes }: { state: AppState; onOpenThem
   const { stats } = useChatLog();
   const [target, setTarget] = useState<ViewerTarget>('overlay');
   return (
-    <main className="mx-auto grid h-full min-h-[680px] w-full max-w-[1280px] auto-rows-[minmax(150px,auto)] grid-cols-4 gap-3 p-4">
+    <Stagger className="mx-auto grid h-full min-h-[680px] w-full max-w-[1280px] auto-rows-[minmax(150px,auto)] grid-cols-4 gap-3 p-4">
       <HeroTile state={state} rate={stats.rate} />
       <AccountTile state={state} />
       <ChannelTile state={state} />
@@ -29,7 +30,7 @@ function CompactDashboard({ state, onOpenThemes }: { state: AppState; onOpenThem
       <EmbedTile state={state} />
       <ThemeTile state={state} target={target} onTargetChange={setTarget} onOpenThemes={onOpenThemes} />
       <PreviewTile state={state} target={target} />
-    </main>
+    </Stagger>
   );
 }
 
@@ -92,12 +93,12 @@ function Shell() {
         <div className="flex min-h-0 flex-1">
           <Sidebar state={state} page={page} onNavigate={setPage} />
           <main className={`min-w-0 flex-1 ${fillsViewport ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-            <div
-              key={page}
-              className={`page-enter mx-auto max-w-[1360px] p-6 ${fillsViewport ? 'h-full overflow-y-auto' : ''}`}
+            <PageTransition
+              id={page}
+              className={`mx-auto max-w-[1360px] p-6 ${fillsViewport ? 'h-full overflow-y-auto' : ''}`}
             >
               <Page id={page} state={state} onNavigate={setPage} />
-            </div>
+            </PageTransition>
           </main>
         </div>
       )}

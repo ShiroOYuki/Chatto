@@ -4,6 +4,7 @@ import { Copy, Download, MonitorUp, Pencil, Plus, Trash2, Upload } from 'lucide-
 import { useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
+import { motion, riseIn, Stagger } from '../components/motion';
 import { StaticThemePreview } from '../components/ThemePreview';
 import { Badge, Button, PageHeader } from '../components/ui';
 import { ThemeEditor } from './ThemeEditor';
@@ -62,12 +63,15 @@ export function ThemesPage({ state }: { state: AppState }) {
       />
       {error ? <p className="mb-4 rounded-xl bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p> : null}
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
+      <Stagger className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
         {state.themes.map((theme) => {
           const targets = usedBy(theme);
           return (
-            <article
+            <motion.article
               key={theme.id}
+              layout
+              variants={riseIn}
+              whileHover={{ y: -3 }}
               className={`group flex flex-col overflow-hidden rounded-tile border bg-tile transition ${
                 targets.length ? 'border-matcha' : 'border-line hover:border-matcha/50'
               }`}
@@ -125,10 +129,10 @@ export function ThemesPage({ state }: { state: AppState }) {
                   })}
                 </div>
               </div>
-            </article>
+            </motion.article>
           );
         })}
-      </div>
+      </Stagger>
     </div>
   );
 }

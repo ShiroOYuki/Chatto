@@ -5,6 +5,7 @@ import { api } from '../api';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
 import type { PageId } from '../components/Sidebar';
 import { moodFor } from '../components/Sidebar';
+import { RollingNumber, Stagger } from '../components/motion';
 import { TeaCup } from '../components/TeaCup';
 import { Button, CopyField, EmptyState, Sparkline, StatusDot, Tile, Toggle } from '../components/ui';
 import { useChatLog } from '../store';
@@ -25,7 +26,7 @@ function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: n
         {icon}
       </span>
       <div>
-        <div className="font-mono text-3xl font-semibold tabular-nums">{value.toLocaleString()}</div>
+        <RollingNumber value={value} className="font-mono text-3xl font-semibold" />
         <div className="text-xs text-ink-faint">{label}</div>
       </div>
     </Tile>
@@ -44,7 +45,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
     state.themes.find((theme) => theme.id === state.selectedThemes[target])?.name ?? '—';
 
   return (
-    <div className="grid auto-rows-[minmax(132px,auto)] grid-cols-6 gap-3">
+    <Stagger className="grid auto-rows-[minmax(132px,auto)] grid-cols-6 gap-3">
       {/* Hero */}
       <Tile className="col-span-2 row-span-2 justify-between border-transparent! bg-matcha-strong! text-on-matcha">
         <div className="flex items-start justify-between">
@@ -61,7 +62,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         </div>
         <div>
           <div className="flex items-baseline gap-2">
-            <span className="font-mono text-6xl font-semibold tabular-nums">{stats.rate}</span>
+            <RollingNumber value={stats.rate} className="font-mono text-6xl font-semibold" />
             <span className="text-sm opacity-80">則／分鐘</span>
           </div>
           <Sparkline
@@ -162,6 +163,6 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
           </div>
         )}
       </Tile>
-    </div>
+    </Stagger>
   );
 }

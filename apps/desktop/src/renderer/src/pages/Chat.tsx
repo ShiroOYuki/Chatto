@@ -2,6 +2,7 @@ import type { UserRole } from '@chatto/core';
 import { ArrowDown, Eraser, Pause, Play, Search, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
+import { RollingNumber, Stagger } from '../components/motion';
 import { Button, EmptyState, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/ui';
 import { useChatLog } from '../store';
 
@@ -65,7 +66,7 @@ export function ChatPage() {
         title="聊天室"
         description="完整的聊天紀錄。被刪除的訊息會在這裡標示出來，但不會出現在 Overlay 和 OBS。"
       />
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_280px] gap-3">
+      <Stagger className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_280px] gap-3">
         <Tile className="min-h-0 p-0!">
           <div className="flex flex-wrap items-center gap-2 border-b border-line p-3">
             <div className="flex h-9 min-w-40 flex-1 items-center gap-2 rounded-full border border-line bg-canvas px-3 focus-within:border-matcha">
@@ -147,7 +148,7 @@ export function ChatPage() {
         <div className="flex min-h-0 flex-col gap-3">
           <Tile title="訊息速度">
             <div className="flex items-baseline gap-1.5">
-              <span className="font-mono text-4xl font-semibold tabular-nums">{stats.rate}</span>
+              <RollingNumber value={stats.rate} className="font-mono text-4xl font-semibold" />
               <span className="text-xs text-ink-faint">則／分鐘</span>
             </div>
             <Sparkline values={stats.history} className="mt-3 h-12" />
@@ -170,7 +171,7 @@ export function ChatPage() {
             )}
           </Tile>
         </div>
-      </div>
+      </Stagger>
     </div>
   );
 }

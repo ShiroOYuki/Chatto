@@ -2,6 +2,7 @@ import { Copy, Minus, PanelsTopLeft, Square, X, LayoutDashboard } from 'lucide-r
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
+import { SwapIcon } from './motion';
 import { StatusDot } from './ui';
 
 function WindowButton({
@@ -63,7 +64,7 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
           className="app-no-drag mr-2 inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs text-ink-soft transition hover:bg-tile-muted hover:text-ink [&>svg]:size-3.5"
           title={compact ? '切換到完整模式' : '切換到精簡模式'}
         >
-          {compact ? <PanelsTopLeft /> : <LayoutDashboard />}
+          <SwapIcon swapped={compact} from={<LayoutDashboard />} to={<PanelsTopLeft />} />
           {compact ? '完整模式' : '精簡模式'}
         </button>
         <WindowButton label="最小化" onClick={() => void api.windowMinimize()}>

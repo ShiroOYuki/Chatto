@@ -1,5 +1,7 @@
 import { Check, Copy } from 'lucide-react';
-import { useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
+import type { HTMLMotionProps } from 'motion/react';
+import { useId, useState, type InputHTMLAttributes, type ReactNode } from 'react';
+import { motion, riseIn, softSpring, spring, SwapIcon } from './motion';
 import { TeaCup, type TeaCupMood } from './TeaCup';
 
 export function Tile({
@@ -16,7 +18,10 @@ export function Tile({
   children: ReactNode;
 }) {
   return (
-    <section className={`flex min-w-0 flex-col rounded-tile border border-line bg-tile p-5 ${className}`}>
+    <motion.section
+      variants={riseIn}
+      className={`flex min-w-0 flex-col rounded-tile border border-line bg-tile p-5 ${className}`}
+    >
       {title ? (
         <header className="mb-3 flex items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-medium text-ink-soft">
@@ -27,7 +32,7 @@ export function Tile({
         </header>
       ) : null}
       {children}
-    </section>
+    </motion.section>
   );
 }
 
@@ -39,7 +44,7 @@ export function Button({
   size = 'md',
   className = '',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize }) {
+}: HTMLMotionProps<'button'> & { variant?: ButtonVariant; size?: ButtonSize }) {
   const styles: Record<ButtonVariant, string> = {
     primary: 'bg-matcha-strong text-on-matcha hover:opacity-90',
     secondary: 'bg-tile-muted text-ink hover:bg-matcha-soft/60',
@@ -52,9 +57,12 @@ export function Button({
     lg: 'h-11 px-5 text-sm',
   };
   return (
-    <button
+    <motion.button
       type="button"
-      className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full font-medium transition active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-4 ${sizes[size]} ${styles[variant]} ${className}`}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.94, y: 0 }}
+      transition={spring}
+      className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-4 ${sizes[size]} ${styles[variant]} ${className}`}
       {...props}
     />
   );
@@ -76,10 +84,16 @@ export function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? 'bg-matcha' : 'bg-line'}`}
+      className={`flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-colors duration-200 ${
+        checked ? 'justify-end bg-matcha' : 'justify-start bg-line'
+      }`}
     >
-      <span
-        className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${checked ? 'left-6' : 'left-1'}`}
+      {/* The thumb glides with a spring and stretches while pressed. */}
+      <motion.span
+        layout
+        transition={spring}
+        whileTap={{ width: 24 }}
+        className="h-5 w-5 rounded-full bg-white shadow-sm"
       />
     </button>
   );
@@ -106,25 +120,36 @@ export function Segmented<T extends string>({
   onChange: (value: T) => void;
   size?: 'sm' | 'md';
 }) {
+  const group = useId();
   return (
     <div
       className={`inline-flex rounded-full bg-tile-muted p-1 ${size === 'sm' ? 'text-xs' : 'text-sm'}`}
       role="radiogroup"
     >
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          role="radio"
-          aria-checked={value === option.value}
-          onClick={() => onChange(option.value)}
-          className={`inline-flex items-center gap-1.5 rounded-full transition [&>svg]:size-3.5 ${size === 'sm' ? 'px-3 py-1' : 'px-4 py-1.5'} ${
-            value === option.value ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft hover:text-ink'
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
+      {options.map((option) => {
+        const active = value === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(option.value)}
+            className={`relative inline-flex items-center gap-1.5 rounded-full transition-colors [&_svg]:size-3.5 ${size === 'sm' ? 'px-3 py-1' : 'px-4 py-1.5'} ${
+              active ? 'font-medium text-ink' : 'text-ink-soft hover:text-ink'
+            }`}
+          >
+            {active ? (
+              <motion.span
+                layoutId={`segmented-${group}`}
+                transition={spring}
+                className="absolute inset-0 rounded-full bg-tile shadow-sm"
+              />
+            ) : null}
+            <span className="relative inline-flex items-center gap-1.5">{option.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -241,7 +266,7 @@ export function CopyField({ value }: { value: string }) {
           setTimeout(() => setCopied(false), 1600);
         }}
       >
-        {copied ? <Check /> : <Copy />}
+        <SwapIcon swapped={copied} from={<Copy />} to={<Check />} />
         {copied ? '複製好了' : '複製'}
       </Button>
     </div>
@@ -254,10 +279,12 @@ export function Sparkline({ values, className = '' }: { values: number[]; classN
   return (
     <div className={`flex items-end gap-[3px] ${className}`} aria-hidden="true">
       {values.map((value, index) => (
-        <span
+        <motion.span
           key={index}
           className={`flex-1 rounded-t-sm ${index === values.length - 1 ? 'bg-matcha' : 'bg-matcha/35'}`}
-          style={{ height: `${Math.max(4, (value / max) * 100)}%` }}
+          initial={{ height: '4%' }}
+          animate={{ height: `${Math.max(4, (value / max) * 100)}%` }}
+          transition={{ ...softSpring, delay: index * 0.01 }}
         />
       ))}
     </div>
@@ -267,7 +294,9 @@ export function Sparkline({ values, className = '' }: { values: number[]; classN
 export function EmptyState({ mood = 'sleepy', title, hint }: { mood?: TeaCupMood; title: string; hint?: string }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10 text-center">
-      <TeaCup mood={mood} size={64} />
+      <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}>
+        <TeaCup mood={mood} size={64} />
+      </motion.div>
       <p className="text-sm font-medium text-ink-soft">{title}</p>
       {hint ? <p className="max-w-xs text-xs text-ink-faint">{hint}</p> : null}
     </div>

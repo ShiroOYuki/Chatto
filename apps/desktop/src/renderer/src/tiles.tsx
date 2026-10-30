@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { AppState } from '../../shared/ipc';
 import { api } from './api';
 import { TeaCup, type TeaCupMood } from './components/TeaCup';
+import { RollingNumber } from './components/motion';
 import { Button, StatusDot, Tile, Toggle } from './components/ui';
 
 const STATE_LABEL: Record<AppState['channel']['state'], string> = {
@@ -40,7 +41,7 @@ export function HeroTile({ state, rate }: { state: AppState; rate: number }) {
           {state.channel.login ? <span className="opacity-70">· {state.channel.login}</span> : null}
         </div>
         <div className="mt-3 flex items-baseline gap-2">
-          <span className="font-mono text-5xl font-semibold tabular-nums">{rate}</span>
+          <RollingNumber value={rate} className="font-mono text-5xl font-semibold" />
           <span className="text-sm opacity-80">則／分鐘</span>
         </div>
       </div>

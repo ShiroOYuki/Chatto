@@ -58,6 +58,8 @@ docs/               architecture.md、message-format.md、theming.md
 ## 技術棧
 
 - TypeScript（strict）、React 19、Vite、Tailwind CSS v4（控制台與 viewer 外框）。
+- 動畫用 **Motion**（`motion/react`），共用彈簧與元件集中在 `apps/desktop/src/renderer/src/components/motion.tsx`。**不使用 Animate UI**：其 MIT + Commons Clause 授權與 GPL 不相容。新增第三方套件前先確認授權與 GPL-3.0 相容，並更新 `THIRD_PARTY_NOTICES.md`。
+- 介面字型為本地打包的 jf open 粉圓（Huninn，OFL-1.1）；不從 Google Fonts 等外部載入。
 - 聊天渲染用純 CSS 加 CSS 變數（`chat.css`），不依賴 Tailwind，確保自訂 CSS 好寫、OBS 載入輕量。
 - Electron + electron-vite、`ws` 作為本機 WebSocket server、electron-builder 打包。
 - 測試：Vitest。格式：Prettier（見 `.prettierrc`）。

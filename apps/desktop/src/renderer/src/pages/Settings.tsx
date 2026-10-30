@@ -2,6 +2,7 @@ import { LayoutDashboard, Monitor, Moon, PanelsTopLeft, Sun } from 'lucide-react
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
+import { Stagger } from '../components/motion';
 import { TeaCup } from '../components/TeaCup';
 import { Button, PageHeader, Segmented, Tile, Toggle } from '../components/ui';
 
@@ -23,7 +24,7 @@ export function SettingsPage({ state }: { state: AppState }) {
     <div className="max-w-3xl">
       <PageHeader title="設定" />
 
-      <div className="flex flex-col gap-3">
+      <Stagger className="flex flex-col gap-3">
         <Tile title="外觀">
           <Row title="主題色彩" hint="跟隨系統，或固定亮色／暗色。">
             <Segmented
@@ -124,7 +125,7 @@ export function SettingsPage({ state }: { state: AppState }) {
             </Button>
           </div>
         </Tile>
-      </div>
+      </Stagger>
     </div>
   );
 }

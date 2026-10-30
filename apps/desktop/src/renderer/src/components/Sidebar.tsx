@@ -2,6 +2,7 @@ import { Cable, Home, MessagesSquare, MonitorUp, Palette, Settings } from 'lucid
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { useChatLog } from '../store';
+import { motion, RollingNumber, spring } from './motion';
 import { TeaCup, type TeaCupMood } from './TeaCup';
 
 export type PageId = 'overview' | 'chat' | 'themes' | 'outputs' | 'connections' | 'settings';
@@ -29,22 +30,38 @@ function NavItem({
   badge?: number;
 }) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      className={`group flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm transition [&>svg]:size-[18px] ${
-        active ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft hover:bg-tile/60 hover:text-ink'
+      whileHover="hover"
+      whileTap={{ scale: 0.97 }}
+      className={`relative flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm transition-colors ${
+        active ? 'font-medium text-ink' : 'text-ink-soft hover:bg-tile/50 hover:text-ink'
       }`}
     >
-      <span className={active ? 'text-matcha' : 'text-ink-faint group-hover:text-ink-soft'}>{item.icon}</span>
-      {item.label}
+      {/* One shared highlight slides between items. */}
+      {active ? (
+        <motion.span
+          layoutId="nav-active"
+          transition={spring}
+          className="absolute inset-0 rounded-xl bg-tile shadow-sm"
+        />
+      ) : null}
+      <motion.span
+        variants={{ hover: { rotate: [0, -14, 10, 0], scale: 1.12 } }}
+        transition={{ duration: 0.45 }}
+        className={`relative [&>svg]:size-[18px] ${active ? 'text-matcha' : 'text-ink-faint'}`}
+      >
+        {item.icon}
+      </motion.span>
+      <span className="relative">{item.label}</span>
       {badge !== undefined ? (
-        <span className="ml-auto rounded-full bg-matcha-soft/60 px-2 font-mono text-[11px] text-matcha-strong">
-          {badge}
+        <span className="relative ml-auto rounded-full bg-matcha-soft/60 px-2 font-mono text-[11px] text-matcha-strong">
+          <RollingNumber value={badge} />
         </span>
       ) : null}
-    </button>
+    </motion.button>
   );
 }
 

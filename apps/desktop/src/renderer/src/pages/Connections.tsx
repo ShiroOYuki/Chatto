@@ -2,6 +2,7 @@ import { ExternalLink, KeyRound, LogOut, Plug, PlugZap } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
+import { Stagger } from '../components/motion';
 import { Badge, Button, Field, PageHeader, StatusDot, TextInput, Tile } from '../components/ui';
 
 function PlatformMark({ color, children }: { color: string; children: ReactNode }) {
@@ -201,11 +202,11 @@ export function ConnectionsPage({ state }: { state: AppState }) {
   return (
     <div>
       <PageHeader title="連線" description="管理直播平台的帳號與聊天室來源。" />
-      <div className="grid grid-cols-2 gap-3">
+      <Stagger className="grid grid-cols-2 gap-3">
         <TwitchCard state={state} />
         <ComingSoon name="YouTube" color="#E62117" mark="YT" />
         <ComingSoon name="Kick" color="#2D9D3A" mark="K" />
-      </div>
+      </Stagger>
     </div>
   );
 }
