@@ -5,7 +5,8 @@ import type { AppState } from '../../shared/ipc';
 import { api } from './api';
 import { TeaCup, type TeaCupMood } from './components/TeaCup';
 import { RollingNumber } from './components/motion';
-import { Button, StatusDot, Tile, Toggle } from './components/ui';
+import { BorderBeam } from './components/ui/border-beam';
+import { Button, StatusDot, Tile, Toggle } from './components/kit';
 
 const STATE_LABEL: Record<AppState['channel']['state'], string> = {
   idle: '尚未連線',
@@ -25,7 +26,8 @@ function moodFor(state: AppState, rate: number): TeaCupMood {
 export function HeroTile({ state, rate }: { state: AppState; rate: number }) {
   const connected = state.channel.state === 'connected';
   return (
-    <Tile className="row-span-2 justify-between bg-matcha-strong! text-on-matcha border-transparent!">
+    <Tile className="relative row-span-2 justify-between overflow-hidden bg-matcha-strong! text-on-matcha border-transparent!">
+      {connected ? <BorderBeam size={140} duration={7} borderWidth={2} colorFrom="#f4f9ee" colorTo="#c0dd97" /> : null}
       <div className="flex items-center gap-2 text-lg font-medium">
         Chatto <span className="text-sm opacity-70">チャット</span>
       </div>

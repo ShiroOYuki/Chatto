@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is([data-theme='dark'] *, [data-theme='dark']));
 
 /* Matcha design tokens for the control panel (light + dark). */
 @theme {
@@ -22,6 +25,35 @@
   --color-sidebar: var(--c-sidebar);
 
   --radius-tile: 20px;
+}
+
+/*
+ * shadcn/ui semantic tokens, mapped onto the matcha palette so components
+ * added with the shadcn CLI (incl. Magic UI) match the app automatically.
+ */
+@theme inline {
+  --color-background: var(--c-canvas);
+  --color-foreground: var(--c-ink);
+  --color-card: var(--c-tile);
+  --color-card-foreground: var(--c-ink);
+  --color-popover: var(--c-tile);
+  --color-popover-foreground: var(--c-ink);
+  --color-primary: var(--c-matcha-strong);
+  --color-primary-foreground: var(--c-on-matcha);
+  --color-secondary: var(--c-tile-muted);
+  --color-secondary-foreground: var(--c-ink);
+  --color-muted: var(--c-tile-muted);
+  --color-muted-foreground: var(--c-ink-soft);
+  --color-accent: var(--c-tile-muted);
+  --color-accent-foreground: var(--c-ink);
+  --color-destructive: var(--c-danger);
+  --color-border: var(--c-line);
+  --color-input: var(--c-line);
+  --color-ring: var(--c-matcha);
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 :root {
@@ -78,6 +110,16 @@
   --c-danger: #f09595;
   --c-sidebar: #161a15;
   color-scheme: dark;
+}
+
+/* shadcn/ui base: borders and focus rings use the palette instead of currentColor. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+    outline-color: color-mix(in oklab, var(--color-ring) 50%, transparent);
+  }
 }
 
 html,

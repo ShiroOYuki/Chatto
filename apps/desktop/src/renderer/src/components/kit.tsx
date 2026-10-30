@@ -2,6 +2,9 @@ import { Check, Copy } from 'lucide-react';
 import type { HTMLMotionProps } from 'motion/react';
 import { useId, useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import { motion, riseIn, softSpring, spring, SwapIcon } from './motion';
+import { Select as SelectRoot, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Slider as SliderRoot } from './ui/slider';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { TeaCup, type TeaCupMood } from './TeaCup';
 
 export function Tile({
@@ -173,6 +176,7 @@ export function TextInput({ className = '', ...props }: InputHTMLAttributes<HTML
   );
 }
 
+/** Radix-based select (shadcn/ui), styled for Chatto. */
 export function Select<T extends string>({
   value,
   options,
@@ -185,20 +189,22 @@ export function Select<T extends string>({
   className?: string;
 }) {
   return (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value as T)}
-      className={`h-9 rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-matcha ${className}`}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <SelectRoot value={value} onValueChange={(next) => onChange(next as T)}>
+      <SelectTrigger className={`h-9 w-full rounded-xl bg-canvas shadow-none ${className}`}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent position="popper" className="rounded-xl">
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value} className="rounded-lg">
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </SelectRoot>
   );
 }
 
+/** Radix-based slider (shadcn/ui) with a value readout. */
 export function Slider({
   value,
   min,
@@ -216,20 +222,39 @@ export function Slider({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <input
-        type="range"
+      <SliderRoot
+        value={[value]}
         min={min}
         max={max}
         step={step}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="h-1.5 flex-1 cursor-pointer accent-[var(--c-matcha)]"
+        onValueChange={([next]) => onChange(next ?? value)}
+        className="flex-1 [&_[data-slot=slider-range]]:bg-matcha [&_[data-slot=slider-thumb]]:border-matcha"
       />
       <span className="w-14 text-right font-mono text-xs tabular-nums text-ink-soft">
         {value}
         {unit}
       </span>
     </div>
+  );
+}
+
+/** Tooltip for icon-only controls. */
+export function Hint({
+  label,
+  side = 'bottom',
+  children,
+}: {
+  label: string;
+  side?: 'top' | 'bottom' | 'left' | 'right';
+  children: ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side={side} sideOffset={6}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

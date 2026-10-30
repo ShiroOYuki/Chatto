@@ -13,13 +13,19 @@ Fonts are distributed alongside the program as separate works; the OFL license t
 
 ## Libraries
 
-| Library                                       | License |
-| --------------------------------------------- | ------- |
-| [Motion](https://motion.dev) (`motion`)       | MIT     |
-| [Lucide](https://lucide.dev) (`lucide-react`) | ISC     |
-| [React](https://react.dev)                    | MIT     |
-| [Tailwind CSS](https://tailwindcss.com)       | MIT     |
-| [Electron](https://www.electronjs.org)        | MIT     |
-| [ws](https://github.com/websockets/ws)        | MIT     |
+| Library                                                                                                                                                              | License    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| [Motion](https://motion.dev) (`motion`)                                                                                                                              | MIT        |
+| [Lucide](https://lucide.dev) (`lucide-react`)                                                                                                                        | ISC        |
+| [React](https://react.dev)                                                                                                                                           | MIT        |
+| [Tailwind CSS](https://tailwindcss.com)                                                                                                                              | MIT        |
+| [Electron](https://www.electronjs.org)                                                                                                                               | MIT        |
+| [ws](https://github.com/websockets/ws)                                                                                                                               | MIT        |
+| [shadcn/ui](https://ui.shadcn.com) (components copied into `components/ui`)                                                                                          | MIT        |
+| [Magic UI](https://magicui.design) (`magic-card`, `border-beam`, `confetti`, copied into `components/ui`)                                                            | MIT        |
+| [Radix UI](https://www.radix-ui.com) (`radix-ui`)                                                                                                                    | MIT        |
+| [canvas-confetti](https://github.com/catdad/canvas-confetti)                                                                                                         | ISC        |
+| [class-variance-authority](https://cva.style)                                                                                                                        | Apache-2.0 |
+| [clsx](https://github.com/lukeed/clsx), [tailwind-merge](https://github.com/dcastil/tailwind-merge), [tw-animate-css](https://github.com/Wombosvideo/tw-animate-css) | MIT        |
 
-Animations are Chatto's own implementation on top of Motion. Animate UI is intentionally not used: its MIT + Commons Clause license is not compatible with GPL-3.0.
+Animations are Chatto's own implementation on top of Motion, plus the MIT-licensed shadcn/ui and Magic UI components listed above (Magic Card was adapted to read Chatto's theme instead of next-themes). Animate UI and React Bits are intentionally not used: their MIT + Commons Clause license is not compatible with GPL-3.0.

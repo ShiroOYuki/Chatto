@@ -3,7 +3,7 @@ import { ArrowDown, Eraser, Pause, Play, Search, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
 import { RollingNumber, Stagger } from '../components/motion';
-import { Button, EmptyState, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/ui';
+import { Button, EmptyState, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/kit';
 import { useChatLog } from '../store';
 
 type RoleFilter = 'all' | 'moderator' | 'subscriber' | 'vip';

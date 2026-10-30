@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { api } from '../api';
 import { ColorField } from '../components/ColorField';
 import { BACKDROPS, LiveThemePreview, type Backdrop } from '../components/ThemePreview';
-import { Button, Field, Segmented, Select, Slider, TextInput, Tile, Toggle } from '../components/ui';
+import { Button, Field, Segmented, Select, Slider, TextInput, Tile, Toggle } from '../components/kit';
 import { exportTheme } from './themeIO';
 
 const FONTS = [

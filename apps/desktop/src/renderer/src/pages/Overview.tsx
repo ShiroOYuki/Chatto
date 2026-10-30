@@ -7,7 +7,8 @@ import type { PageId } from '../components/Sidebar';
 import { moodFor } from '../components/Sidebar';
 import { RollingNumber, Stagger } from '../components/motion';
 import { TeaCup } from '../components/TeaCup';
-import { Button, CopyField, EmptyState, Sparkline, StatusDot, Tile, Toggle } from '../components/ui';
+import { BorderBeam } from '../components/ui/border-beam';
+import { Button, CopyField, EmptyState, Sparkline, StatusDot, Tile, Toggle } from '../components/kit';
 import { useChatLog } from '../store';
 
 const STATE_LABEL: Record<AppState['channel']['state'], string> = {
@@ -47,7 +48,10 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
   return (
     <Stagger className="grid auto-rows-[minmax(132px,auto)] grid-cols-6 gap-3">
       {/* Hero */}
-      <Tile className="col-span-2 row-span-2 justify-between border-transparent! bg-matcha-strong! text-on-matcha">
+      <Tile className="relative col-span-2 row-span-2 justify-between overflow-hidden border-transparent! bg-matcha-strong! text-on-matcha">
+        {connected ? (
+          <BorderBeam size={140} duration={7} borderWidth={2} colorFrom="#f4f9ee" colorTo="#c0dd97" />
+        ) : null}
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 text-sm opacity-90">

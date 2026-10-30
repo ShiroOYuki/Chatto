@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
 import { Stagger } from '../components/motion';
-import { Badge, Button, Field, PageHeader, StatusDot, TextInput, Tile } from '../components/ui';
+import { Badge, Button, Field, PageHeader, StatusDot, TextInput, Tile } from '../components/kit';
 
 function PlatformMark({ color, children }: { color: string; children: ReactNode }) {
   return (

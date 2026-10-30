@@ -4,7 +4,7 @@ import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
 import { Stagger } from '../components/motion';
 import { TeaCup } from '../components/TeaCup';
-import { Button, PageHeader, Segmented, Tile, Toggle } from '../components/ui';
+import { Button, PageHeader, Segmented, Tile, Toggle } from '../components/kit';
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (

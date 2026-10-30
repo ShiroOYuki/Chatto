@@ -1,7 +1,7 @@
 import type { ChatMessage, ChatNotice, MessageFragment, UserRole } from '@chatto/core';
 import { Gift, Megaphone, PartyPopper, Swords } from 'lucide-react';
 import { motion } from './motion';
-import { Badge } from './ui';
+import { Badge } from './kit';
 
 const ROLE_LABEL: Partial<Record<UserRole, { label: string; tone: 'matcha' | 'sakura' | 'neutral' }>> = {
   broadcaster: { label: '實況主', tone: 'sakura' },

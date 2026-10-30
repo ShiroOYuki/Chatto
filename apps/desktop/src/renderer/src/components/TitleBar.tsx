@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
 import { SwapIcon } from './motion';
-import { StatusDot } from './ui';
+import { Hint, StatusDot } from './kit';
 
 function WindowButton({
   label,
@@ -17,17 +17,18 @@ function WindowButton({
   children: ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className={`app-no-drag grid h-full w-12 place-items-center text-ink-soft transition [&>svg]:size-4 ${
-        danger ? 'hover:bg-[#c42b1c] hover:text-white' : 'hover:bg-tile-muted hover:text-ink'
-      }`}
-    >
-      {children}
-    </button>
+    <Hint label={label}>
+      <button
+        type="button"
+        aria-label={label}
+        onClick={onClick}
+        className={`app-no-drag grid h-full w-12 place-items-center text-ink-soft transition [&>svg]:size-4 ${
+          danger ? 'hover:bg-[#c42b1c] hover:text-white' : 'hover:bg-tile-muted hover:text-ink'
+        }`}
+      >
+        {children}
+      </button>
+    </Hint>
   );
 }
 

@@ -10,6 +10,7 @@ import { defineConfig } from 'vite';
  */
 export default defineConfig({
   root: resolve(__dirname, 'src/renderer'),
+  resolve: { alias: { '@': resolve(__dirname, 'src/renderer/src') } },
   plugins: [react(), tailwindcss()],
   server: { port: 5175, strictPort: true },
 });

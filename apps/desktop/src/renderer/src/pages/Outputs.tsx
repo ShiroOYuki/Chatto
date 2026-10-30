@@ -4,7 +4,7 @@ import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
 import { Stagger } from '../components/motion';
 import { LiveThemePreview } from '../components/ThemePreview';
-import { Badge, Button, CopyField, Field, PageHeader, Select, Tile, Toggle } from '../components/ui';
+import { Badge, Button, CopyField, Field, Hint, PageHeader, Select, Tile, Toggle } from '../components/kit';
 
 function ThemeSelect({ state, target }: { state: AppState; target: ViewerTarget }) {
   return (
@@ -54,14 +54,16 @@ export function OutputsPage({ state }: { state: AppState }) {
                 >
                   <Move /> {editing ? '完成調整' : '調整'}
                 </Button>
-                <Button
-                  variant="ghost"
-                  disabled={!enabled}
-                  title="移回右下角"
-                  onClick={() => void api.resetOverlayBounds()}
-                >
-                  <RotateCcw />
-                </Button>
+                <Hint label="移回右下角">
+                  <Button
+                    variant="ghost"
+                    disabled={!enabled}
+                    aria-label="移回右下角"
+                    onClick={() => void api.resetOverlayBounds()}
+                  >
+                    <RotateCcw />
+                  </Button>
+                </Hint>
               </div>
             </Field>
           </div>
