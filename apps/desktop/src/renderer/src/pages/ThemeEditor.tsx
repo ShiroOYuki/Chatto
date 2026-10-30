@@ -8,6 +8,7 @@ import { Button, Field, Segmented, Select, Slider, TextInput, Tile, Toggle } fro
 import { exportTheme } from './themeIO';
 
 const FONTS = [
+  { value: "'Huninn', 'Noto Sans TC', sans-serif", label: '粉圓（jf open Huninn）' },
   { value: "'Noto Sans TC', 'Inter', system-ui, sans-serif", label: '思源黑體（Noto Sans TC）' },
   { value: "'Noto Serif TC', 'Noto Serif JP', serif", label: '思源宋體（Noto Serif TC）' },
   { value: "'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace", label: '等寬（JetBrains Mono）' },

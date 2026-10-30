@@ -2,7 +2,8 @@
 
 /* Matcha design tokens for the control panel (light + dark). */
 @theme {
-  --font-sans: 'Noto Sans TC', system-ui, sans-serif;
+  /* jf open 粉圓 (Huninn, OFL-1.1): rounded Traditional Chinese, bundled locally. */
+  --font-sans: 'Huninn', 'Noto Sans TC', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   --color-canvas: var(--c-canvas);

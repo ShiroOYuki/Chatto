@@ -15,6 +15,39 @@ export const PAGES: { id: PageId; label: string; icon: ReactNode }[] = [
   { id: 'settings', label: '設定', icon: <Settings /> },
 ];
 
+const SETTINGS = PAGES.find((item) => item.id === 'settings')!;
+
+function NavItem({
+  item,
+  active,
+  onClick,
+  badge,
+}: {
+  item: (typeof PAGES)[number];
+  active: boolean;
+  onClick: () => void;
+  badge?: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
+      className={`group flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm transition [&>svg]:size-[18px] ${
+        active ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft hover:bg-tile/60 hover:text-ink'
+      }`}
+    >
+      <span className={active ? 'text-matcha' : 'text-ink-faint group-hover:text-ink-soft'}>{item.icon}</span>
+      {item.label}
+      {badge !== undefined ? (
+        <span className="ml-auto rounded-full bg-matcha-soft/60 px-2 font-mono text-[11px] text-matcha-strong">
+          {badge}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
 export function moodFor(state: AppState, rate: number): TeaCupMood {
   if (state.channel.state === 'error') return 'worried';
   if (state.channel.state !== 'connected') return 'sleepy';
@@ -42,28 +75,15 @@ export function Sidebar({
 
   return (
     <nav className="flex w-56 shrink-0 flex-col gap-1 border-r border-line bg-sidebar p-3">
-      {PAGES.map((item) => {
-        const active = item.id === page;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onNavigate(item.id)}
-            aria-current={active ? 'page' : undefined}
-            className={`group flex h-10 items-center gap-3 rounded-xl px-3 text-sm transition [&>svg]:size-[18px] ${
-              active ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft hover:bg-tile/60 hover:text-ink'
-            }`}
-          >
-            <span className={active ? 'text-matcha' : 'text-ink-faint group-hover:text-ink-soft'}>{item.icon}</span>
-            {item.label}
-            {item.id === 'chat' && stats.rate > 0 ? (
-              <span className="ml-auto rounded-full bg-matcha-soft/60 px-2 font-mono text-[11px] text-matcha-strong">
-                {stats.rate}
-              </span>
-            ) : null}
-          </button>
-        );
-      })}
+      {PAGES.filter((item) => item.id !== 'settings').map((item) => (
+        <NavItem
+          key={item.id}
+          item={item}
+          active={item.id === page}
+          onClick={() => onNavigate(item.id)}
+          badge={item.id === 'chat' && stats.rate > 0 ? stats.rate : undefined}
+        />
+      ))}
 
       <div className="mt-auto rounded-2xl border border-line bg-tile p-3">
         <div className="flex items-center gap-3">
@@ -73,7 +93,14 @@ export function Sidebar({
           <p className="text-xs leading-relaxed text-ink-soft">{MOOD_LINE[mood]}</p>
         </div>
       </div>
-      <p className="px-2 pt-2 text-[11px] text-ink-faint">Chatto v{state.appInfo.version}</p>
+
+      {/* Settings lives in the bottom-left corner, apart from the main pages. */}
+      <div className="mt-2 flex items-center gap-2 border-t border-line pt-2">
+        <div className="flex-1">
+          <NavItem item={SETTINGS} active={page === 'settings'} onClick={() => onNavigate('settings')} />
+        </div>
+        <span className="pr-2 text-[11px] text-ink-faint">v{state.appInfo.version}</span>
+      </div>
     </nav>
   );
 }

@@ -14,6 +14,7 @@
   "dependencies": {
     "@chatto/chat-ui": "0.1.0",
     "@chatto/core": "0.1.0",
+    "@fontsource/huninn": "^5.3.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
