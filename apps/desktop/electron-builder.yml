@@ -1,0 +1,23 @@
+appId: dev.ciel.chatto
+productName: Chatto
+copyright: Copyright © 2026 Ciel — GPL-3.0-or-later
+directories:
+  buildResources: build
+  output: release/${version}
+files:
+  - out/**
+  - package.json
+extraResources:
+  # Viewer pages served to the overlay window and OBS.
+  - from: ../viewer/dist
+    to: viewer
+  - from: resources
+    to: resources
+win:
+  target:
+    - nsis
+  icon: resources/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-Setup-${version}.${ext}

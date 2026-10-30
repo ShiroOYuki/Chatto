@@ -1,0 +1,30 @@
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  /* Transparent so OBS and the overlay window show what is behind. */
+  background: transparent;
+  overflow: hidden;
+}
+
+#root {
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+/* Overlay edit mode (toggled by the desktop app): show bounds and allow dragging. */
+body[data-edit] {
+  outline: 2px dashed rgba(192, 221, 151, 0.9);
+  outline-offset: -2px;
+  background: rgba(23, 52, 4, 0.25);
+  -webkit-app-region: drag;
+  cursor: move;
+}
+
+/* Preview backdrop used with ?mock=1&backdrop=1 so themes can be judged in a browser. */
+body[data-backdrop] {
+  background:
+    radial-gradient(circle at 20% 30%, #3b6d11 0, transparent 40%),
+    radial-gradient(circle at 80% 70%, #0f6e56 0, transparent 45%), #1b2230;
+}

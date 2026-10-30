@@ -1,0 +1,31 @@
+{
+  "name": "chatto",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chatto — Twitch chat overlay and OBS embed chat as a desktop app",
+  "license": "GPL-3.0-or-later",
+  "author": "Ciel",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run build -w @chatto/viewer && npm run dev -w @chatto/desktop",
+    "dev:viewer": "npm run dev -w @chatto/viewer",
+    "build": "npm run build -w @chatto/viewer && npm run build -w @chatto/desktop",
+    "dist": "npm run build && npm run dist -w @chatto/desktop",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "dev:web": "npm run dev:web -w @chatto/desktop"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

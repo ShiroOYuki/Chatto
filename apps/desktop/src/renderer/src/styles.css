@@ -1,0 +1,118 @@
+@import 'tailwindcss';
+
+/* Matcha design tokens for the control panel (light + dark). */
+@theme {
+  --font-sans: 'Noto Sans TC', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-canvas: var(--c-canvas);
+  --color-tile: var(--c-tile);
+  --color-tile-muted: var(--c-tile-muted);
+  --color-line: var(--c-line);
+  --color-ink: var(--c-ink);
+  --color-ink-soft: var(--c-ink-soft);
+  --color-ink-faint: var(--c-ink-faint);
+  --color-matcha: var(--c-matcha);
+  --color-matcha-strong: var(--c-matcha-strong);
+  --color-matcha-soft: var(--c-matcha-soft);
+  --color-on-matcha: var(--c-on-matcha);
+  --color-sakura: var(--c-sakura);
+  --color-danger: var(--c-danger);
+
+  --radius-tile: 20px;
+}
+
+:root {
+  --c-canvas: #f3f6ef;
+  --c-tile: #ffffff;
+  --c-tile-muted: #eaf1e2;
+  --c-line: #e1e8d9;
+  --c-ink: #1d2a14;
+  --c-ink-soft: #55634a;
+  --c-ink-faint: #8d9884;
+  --c-matcha: #6b9b2e;
+  --c-matcha-strong: #27500a;
+  --c-matcha-soft: #c0dd97;
+  --c-on-matcha: #f4f9ee;
+  --c-sakura: #f4c0d1;
+  --c-danger: #c2412d;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-canvas: #121512;
+    --c-tile: #1b201a;
+    --c-tile-muted: #232a21;
+    --c-line: #2c3429;
+    --c-ink: #eaf3de;
+    --c-ink-soft: #b3c0a6;
+    --c-ink-faint: #7b8773;
+    --c-matcha: #97c459;
+    --c-matcha-strong: #c0dd97;
+    --c-matcha-soft: #3b6d11;
+    --c-on-matcha: #10200a;
+    --c-sakura: #993556;
+    --c-danger: #f09595;
+    color-scheme: dark;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--c-canvas);
+  color: var(--c-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tea steam for the mascot. */
+@keyframes steam {
+  0% {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+.steam {
+  animation: steam 2.4s ease-in-out infinite;
+}
+.steam:nth-child(2) {
+  animation-delay: 0.8s;
+}
+.steam:nth-child(3) {
+  animation-delay: 1.6s;
+}
+
+@keyframes wobble {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-4deg);
+  }
+}
+.wobble {
+  animation: wobble 3s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .steam,
+  .wobble {
+    animation: none;
+  }
+}

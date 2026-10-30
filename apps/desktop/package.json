@@ -1,0 +1,37 @@
+{
+  "name": "@chatto/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "description": "Chatto desktop app (Electron)",
+  "author": "Ciel",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "dist": "electron-builder --win --config electron-builder.yml",
+    "typecheck": "tsc -p tsconfig.json",
+    "dev:web": "vite --config vite.web.config.ts"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/ws": "^8.18.2",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^45.2.0",
+    "electron-builder": "^26.18.0",
+    "electron-vite": "^6.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.5"
+  },
+  "dependencies": {
+    "@chatto/chat-ui": "0.1.0",
+    "@chatto/core": "0.1.0",
+    "@chatto/provider-twitch": "0.1.0",
+    "ws": "^8.22.0"
+  }
+}
