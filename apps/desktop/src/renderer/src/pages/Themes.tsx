@@ -27,14 +27,7 @@ import {
 import { MagicCard } from '../components/ui/magic-card';
 import { ThemeEditor } from './ThemeEditor';
 import { exportTheme, pickThemeFile } from './themeIO';
-
-const LAYOUT_LABEL: Record<string, string> = {
-  card: '卡片',
-  bubble: '泡泡',
-  inline: '單行',
-  tag: '標籤',
-  terminal: '終端機',
-};
+import { describeTheme } from './themeLabels';
 
 export function ThemesPage({ state }: { state: AppState }) {
   const [editing, setEditing] = useState<ChatTheme | null>(null);
@@ -110,7 +103,7 @@ export function ThemesPage({ state }: { state: AppState }) {
                       <div className="min-w-0">
                         <h3 className="truncate font-medium">{theme.name}</h3>
                         <p className="flex flex-wrap items-center gap-1.5 text-xs text-ink-faint">
-                          {LAYOUT_LABEL[theme.layout] ?? theme.layout} · {theme.builtIn ? '內建' : '自訂'}
+                          {describeTheme(theme)} · {theme.builtIn ? '內建' : '自訂'}
                           {targets.map((target) => (
                             <Badge key={target} tone="matcha">
                               {target === 'overlay' ? 'Overlay' : 'OBS'}

@@ -1,5 +1,5 @@
 import type { ChatTheme, ConnectionState, ViewerTarget } from '@chatto/core';
-import { PRESET_THEMES, getPresetTheme } from '@chatto/chat-ui/themes';
+import { PRESET_THEMES, getPresetTheme, normalizeTheme } from '@chatto/chat-ui/themes';
 import { TwitchChatProvider } from '@chatto/provider-twitch';
 import { app, nativeTheme } from 'electron';
 import type { AppPrefs, AppState, DeviceCodeInfo } from '../shared/ipc';
@@ -43,7 +43,14 @@ export class AppController {
   // ---------- state ----------
 
   themes(): ChatTheme[] {
-    return [...PRESET_THEMES, ...this.settings.get().customThemes];
+    const custom = this.settings.get().customThemes.flatMap((theme) => {
+      try {
+        return [normalizeTheme(theme)]; // migrates themes saved by older versions
+      } catch {
+        return [];
+      }
+    });
+    return [...PRESET_THEMES, ...custom];
   }
 
   themeFor(target: ViewerTarget): ChatTheme {
@@ -222,6 +229,7 @@ export class AppController {
 
   saveTheme(theme: ChatTheme): void {
     if (getPresetTheme(theme.id)) throw new Error('Built-in themes are read-only; duplicate it first');
+    theme = normalizeTheme(theme);
     this.settings.update((draft) => {
       const index = draft.customThemes.findIndex((item) => item.id === theme.id);
       const stored = { ...theme, builtIn: false };

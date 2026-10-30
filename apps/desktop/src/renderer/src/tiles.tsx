@@ -5,6 +5,7 @@ import type { AppState } from '../../shared/ipc';
 import { api } from './api';
 import { TeaCup, type TeaCupMood } from './components/TeaCup';
 import { RollingNumber } from './components/motion';
+import { describeTheme, themeSwatch } from './pages/themeLabels';
 import { BorderBeam } from './components/ui/border-beam';
 import { Button, StatusDot, Tile, Toggle } from './components/kit';
 
@@ -274,13 +275,10 @@ function ThemeChip({ theme, active, onSelect }: { theme: ChatTheme; active: bool
         active ? 'border-matcha bg-matcha-soft/40' : 'border-line hover:bg-tile-muted'
       }`}
     >
-      <span
-        className="h-8 w-8 shrink-0 rounded-xl border border-line"
-        style={{ background: theme.palette.surface === 'transparent' ? theme.palette.name : theme.palette.surface }}
-      />
+      <span className="h-8 w-8 shrink-0 rounded-xl border border-line" style={{ background: themeSwatch(theme) }} />
       <span className="min-w-0">
         <span className="block truncate font-medium">{theme.name}</span>
-        <span className="block text-xs text-ink-faint">{theme.layout}</span>
+        <span className="block text-xs text-ink-faint">{describeTheme(theme)}</span>
       </span>
     </button>
   );

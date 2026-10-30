@@ -182,16 +182,19 @@ export function Select<T extends string>({
   options,
   onChange,
   className = '',
+  placeholder,
 }: {
-  value: T;
+  /** An empty string shows the placeholder. */
+  value: T | '';
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
   className?: string;
+  placeholder?: string;
 }) {
   return (
     <SelectRoot value={value} onValueChange={(next) => onChange(next as T)}>
       <SelectTrigger className={`h-9 w-full rounded-xl bg-canvas shadow-none ${className}`}>
-        <SelectValue />
+        <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent position="popper" className="rounded-xl">
         {options.map((option) => (

@@ -34,7 +34,7 @@ export function StaticThemePreview({ theme, backdrop = 'game' }: { theme: ChatTh
     const options = { ...theme.options, hiddenPrefixes: [], hiddenUsers: [], maxMessages: 5 };
     return SAMPLE_EVENTS.reduce((state, event) => reduceFeed(state, event, options, 0), emptyFeed).items;
   }, [theme]);
-  const quiet = useMemo(() => ({ ...theme, options: { ...theme.options, enterAnimation: 'none' as const } }), [theme]);
+  const quiet = useMemo(() => ({ ...theme, animation: { ...theme.animation, enter: 'none' as const } }), [theme]);
   return (
     <div className="pointer-events-none h-full overflow-hidden p-3" style={{ background: BACKDROPS[backdrop] }}>
       <ChatView theme={quiet} items={items} />

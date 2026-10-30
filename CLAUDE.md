@@ -41,9 +41,11 @@ docs/               architecture.md、message-format.md、theming.md
 
 ## 聊天室主題系統
 
-- 主題分成兩個獨立軸：**`layout`（風格、結構）** 與 **`palette`（配色 token）**，另有 typography、shape、options 與 `customCss`。
-- 預設主題：抹茶玻璃、和紙、泡泡、極簡描邊、暖簾、終端機（`packages/chat-ui/src/themes.ts`）。
-- 使用者可以選預設、用視覺化編輯器調整、切換 layout、寫自訂 CSS、匯出／匯入 JSON。Overlay 與 Embed 可以各自使用不同主題。
+- Schema v2：**一個基底、全部是參數**。所有主題都經過同一個渲染器與 CSS 產生器（`packages/chat-ui/src/themeCss.ts`），主題只是 `BASE_THEME` 的參數值。**不得**為單一風格寫死專用 CSS；需要新外觀時，新增或擴充參數，讓編輯器也能調。
+- 內建預設：抹茶玻璃、和紙、泡泡、極簡描邊、暖簾、終端機，全部只覆蓋基底參數；另有 `blank`（`base: 'blank'`，不產生任何樣式，只留結構與 `customCss`）。
+- 新增參數時要同時：更新 `BASE_THEME` 預設值、`themeToCss`、編輯器欄位、`docs/theming.md`，並在 `normalizeTheme` 補舊資料的預設。
+- 使用者可以選預設、逐項精細調整（四邊內距、四角圓角、框線、陰影、模糊、身分樣式等）、寫自訂 CSS、匯出／匯入 JSON。Overlay 與 Embed 可以各自使用不同主題。
+- 控制台裡的聊天預覽用 `all: revert` 隔離 Tailwind preflight，確保預覽與 OBS 實際畫面一致。
 - 所有可被客製的元素使用穩定的 `chatto-*` class 與 `data-*` 屬性，視為公開 API，改名屬於破壞性變更。
 
 ## 控制台 App UI 方向

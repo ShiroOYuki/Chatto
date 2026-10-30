@@ -112,6 +112,20 @@
   color-scheme: dark;
 }
 
+/*
+ * Chat previews must look exactly like OBS, which has no Tailwind preflight:
+ * reset everything inside .chatto-root back to browser defaults. Theme CSS is
+ * unlayered, so it still wins over this layer.
+ */
+@layer base {
+  .chatto-root,
+  .chatto-root *,
+  .chatto-root *::before,
+  .chatto-root *::after {
+    all: revert;
+  }
+}
+
 /* shadcn/ui base: borders and focus rings use the palette instead of currentColor. */
 @layer base {
   *,

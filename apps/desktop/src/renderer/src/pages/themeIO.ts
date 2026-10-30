@@ -1,4 +1,5 @@
-import { THEME_SCHEMA_VERSION, type ChatTheme } from '@chatto/core';
+import { normalizeTheme } from '@chatto/chat-ui';
+import type { ChatTheme } from '@chatto/core';
 
 /** Downloads a theme as a shareable JSON file. */
 export function exportTheme(theme: ChatTheme): void {
@@ -17,17 +18,19 @@ export function exportTheme(theme: ChatTheme): void {
  * never overwrite a built-in or an existing custom theme.
  */
 export function parseThemeFile(text: string): ChatTheme {
-  const data = JSON.parse(text) as Partial<ChatTheme>;
-  if (data.schemaVersion !== THEME_SCHEMA_VERSION) throw new Error('不支援的主題版本');
-  if (!data.layout || !data.palette || !data.typography || !data.shape || !data.options) {
-    throw new Error('檔案缺少必要的主題欄位');
+  let theme: ChatTheme;
+  try {
+    theme = normalizeTheme(JSON.parse(text));
+  } catch (error) {
+    if (error instanceof SyntaxError) throw error;
+    throw new Error('不支援的主題檔案或版本');
   }
   return {
-    ...(data as ChatTheme),
+    ...theme,
     id: `custom-${Date.now().toString(36)}`,
-    name: data.name ? `${data.name}（匯入）` : '匯入的主題',
+    name: theme.name ? `${theme.name}（匯入）` : '匯入的主題',
     builtIn: false,
-    customCss: typeof data.customCss === 'string' ? data.customCss : '',
+    customCss: typeof theme.customCss === 'string' ? theme.customCss : '',
   };
 }
 

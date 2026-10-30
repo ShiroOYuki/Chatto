@@ -1,7 +1,7 @@
 import type { ChatMessage, ChatNotice, ChatTheme, ChatUser, MessageFragment } from '@chatto/core';
-import { useMemo, type CSSProperties } from 'react';
+import { useId, useMemo } from 'react';
 import type { FeedItem } from './feed';
-import { themeToCssVariables } from './themes';
+import { scopeCustomCss, themeToCss } from './themeCss';
 
 export interface ChatViewProps {
   theme: ChatTheme;
@@ -10,22 +10,29 @@ export interface ChatViewProps {
 }
 
 /**
- * Renders a chat feed with a theme. Every part carries a stable `chatto-*`
- * class so user CSS can target it; see docs/theming.md.
+ * Renders a chat feed through the shared base. The theme only supplies
+ * parameters (turned into CSS by {@link themeToCss}) and optional custom CSS.
+ * Every part carries a stable `chatto-*` class; see docs/theming.md.
  */
 export function ChatView({ theme, items, className }: ChatViewProps) {
-  const style = useMemo(() => themeToCssVariables(theme) as CSSProperties, [theme]);
-  const ordered = theme.options.direction === 'top-down' ? [...items].reverse() : items;
+  const id = useId();
+  const scope = `.chatto-root[data-chatto-id="${id}"]`;
+  const css = useMemo(
+    () => [themeToCss(theme, scope), scopeCustomCss(theme.customCss, scope)].filter(Boolean).join('\n'),
+    [theme, scope],
+  );
+  const ordered = theme.list.direction === 'top-down' ? [...items].reverse() : items;
 
   return (
     <div
       className={['chatto-root', className].filter(Boolean).join(' ')}
-      data-layout={theme.layout}
-      data-direction={theme.options.direction}
-      data-animation={theme.options.enterAnimation}
-      style={style}
+      data-chatto-id={id}
+      data-theme-id={theme.id}
+      data-base={theme.base}
+      data-arrangement={theme.message.arrangement}
+      data-direction={theme.list.direction}
     >
-      {theme.customCss ? <style>{scopeCss(theme.customCss)}</style> : null}
+      {css ? <style>{css}</style> : null}
       <ol className="chatto-list">
         {ordered.map((item) =>
           item.kind === 'message' ? (
@@ -39,41 +46,37 @@ export function ChatView({ theme, items, className }: ChatViewProps) {
   );
 }
 
-/** Prefixes custom CSS with `.chatto-root` unless the author already did. */
-function scopeCss(css: string): string {
-  return css.includes('.chatto-root') ? css : `@scope (.chatto-root) {\n${css}\n}`;
-}
-
 function MessageRow({ message, theme }: { message: ChatMessage; theme: ChatTheme }) {
-  const { options } = theme;
   const roles = message.author.roles.join(' ');
   return (
     <li
       className="chatto-message"
       data-platform={message.platform}
-      data-roles={roles}
+      data-roles={roles || undefined}
       data-action={message.isAction || undefined}
       data-highlight={message.highlights.join(' ') || undefined}
       data-user={message.author.login}
     >
-      {options.showAvatars ? <Avatar user={message.author} /> : null}
+      {theme.avatar.show ? <Avatar user={message.author} /> : null}
       <div className="chatto-content">
-        <div className="chatto-header">
-          {options.showTimestamps ? <time className="chatto-time">{formatTime(message.timestamp)}</time> : null}
-          {options.showBadges && message.author.badges.length > 0 ? <Badges user={message.author} /> : null}
-          <span
-            className="chatto-author"
-            style={options.useUserColors && message.author.color ? { color: message.author.color } : undefined}
-          >
-            {message.author.displayName}
-          </span>
-          <span className="chatto-separator" aria-hidden="true" />
-        </div>
         {message.reply ? (
           <div className="chatto-reply">
             ↪ @{message.reply.parentAuthor.displayName}: {message.reply.parentText}
           </div>
         ) : null}
+        <div className="chatto-header">
+          {theme.timestamp.show ? (
+            <time className="chatto-time">{formatTime(message.timestamp, theme.timestamp.hour12)}</time>
+          ) : null}
+          {theme.badges.show && message.author.badges.length > 0 ? <Badges user={message.author} /> : null}
+          <span
+            className="chatto-author"
+            style={theme.author.useUserColor && message.author.color ? { color: message.author.color } : undefined}
+          >
+            {message.author.displayName}
+          </span>
+          <span className="chatto-separator" aria-hidden="true" />
+        </div>
         <div className="chatto-body">
           <Fragments fragments={message.fragments} />
         </div>
@@ -88,7 +91,7 @@ function NoticeRow({ notice, theme }: { notice: ChatNotice; theme: ChatTheme }) 
       <div className="chatto-notice-system">{notice.systemText}</div>
       {notice.fragments.length > 0 ? (
         <div className="chatto-body">
-          {notice.author && theme.options.showBadges ? <Badges user={notice.author} /> : null}
+          {notice.author && theme.badges.show ? <Badges user={notice.author} /> : null}
           <Fragments fragments={notice.fragments} />
         </div>
       ) : null}
@@ -177,6 +180,6 @@ function Fragments({ fragments }: { fragments: MessageFragment[] }) {
   );
 }
 
-function formatTime(timestamp: number): string {
-  return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+function formatTime(timestamp: number, hour12: boolean): string {
+  return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12 });
 }
