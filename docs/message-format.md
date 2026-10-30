@@ -30,8 +30,11 @@ viewer、主題、外掛唯一需要理解的資料流。
   highlights: ('first-message' | 'highlighted' | ...)[];
   reply?: { parentMessageId, parentAuthor, parentText };
   cheerAmount?: number;
+  eventType?: string;      // 這則訊息同時是平台事件時，例如 'cheer'、'highlighted'
 }
 ```
+
+`ChatNotice` 也有 `eventType?: string`（kebab-case，例如 `resub`、`community-gift`、`watch-streak`）。樣式鍵為 `${platform}:${eventType}`，例如 `twitch:cheer`；渲染器輸出為 `data-event` 屬性。各平台的事件清單見 `packages/chat-ui/src/events.ts`。
 
 ### ChatUser
 
@@ -74,6 +77,9 @@ viewer、主題、外掛唯一需要理解的資料流。
 | `channel.chat.clear_user_messages` | `user-cleared`    |
 | `channel.chat.clear`               | `chat-cleared`    |
 
+事件類型：附帶小奇點的訊息 → `cheer`；`message_type: channel_points_highlighted` → `highlighted`；通知的 `notice_type` 轉成 kebab-case 並去掉 `shared_chat_` 前綴，`sub_gift` → `sub-gift`、`community_sub_gift` → `community-gift`（`twitchNoticeEventType()`）。
+
 ## 變更紀錄
 
+- **v1.1**（2026-10-31）：新增選填欄位 `eventType`（非破壞性）。
 - **v1**（2026-10-31）：初版。

@@ -24,6 +24,7 @@ Fonts are distributed alongside the program as separate works; the OFL license t
 | [shadcn/ui](https://ui.shadcn.com) (components copied into `components/ui`)                                                                                          | MIT        |
 | [Magic UI](https://magicui.design) (`magic-card`, `border-beam`, `confetti`, copied into `components/ui`)                                                            | MIT        |
 | [Radix UI](https://www.radix-ui.com) (`radix-ui`)                                                                                                                    | MIT        |
+| [CodeMirror 6](https://codemirror.net) (`codemirror`, `@codemirror/*`, `@lezer/*`, `style-mod`, `w3c-keyname`, `crelt`)                                              | MIT        |
 | [canvas-confetti](https://github.com/catdad/canvas-confetti)                                                                                                         | ISC        |
 | [class-variance-authority](https://cva.style)                                                                                                                        | Apache-2.0 |
 | [clsx](https://github.com/lukeed/clsx), [tailwind-merge](https://github.com/dcastil/tailwind-merge), [tw-animate-css](https://github.com/Wombosvideo/tw-animate-css) | MIT        |

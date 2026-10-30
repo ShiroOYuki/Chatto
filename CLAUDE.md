@@ -45,6 +45,9 @@ docs/               architecture.md、message-format.md、theming.md
 - 內建預設：抹茶玻璃、和紙、泡泡、極簡描邊、暖簾、終端機，全部只覆蓋基底參數；另有 `blank`（`base: 'blank'`，不產生任何樣式，只留結構與 `customCss`）。
 - 新增參數時要同時：更新 `BASE_THEME` 預設值、`themeToCss`、編輯器欄位、`docs/theming.md`，並在 `normalizeTheme` 補舊資料的預設。
 - 使用者可以選預設、逐項精細調整（四邊內距、四角圓角、框線、陰影、模糊、身分樣式等）、寫自訂 CSS、匯出／匯入 JSON。Overlay 與 Embed 可以各自使用不同主題。
+- **平台事件**：以 `平台:事件` 識別（如 `twitch:cheer`），清單集中在 `packages/chat-ui/src/events.ts` 的 `EVENT_CATALOG`，編輯器的「<平台> 專屬元件」選單由它產生。`theme.notice` 是通用事件訊息；`theme.events[key]` 為 `{ linked, style }`，linked 時持續跟隨通用樣式，編輯即解除連動。新增平台事件時：provider mapper 設 `eventType`、在 catalog 加定義與範例、更新 `docs/message-format.md`。
+- 可客製元素的說明集中在 `packages/chat-ui/src/reference.ts`（編輯器的 class 標籤、自動完成、檢查標籤都用它），新增 class 或屬性時同步更新。
+- 主題編輯器的預覽有「範例」（`createSpecimenEvents()`，涵蓋所有元件與事件）與「即時」兩種模式，並提供檢查模式與選擇器建構器；自訂 CSS 使用 CodeMirror 6。
 - 控制台裡的聊天預覽用 `all: revert` 隔離 Tailwind preflight，確保預覽與 OBS 實際畫面一致。
 - 所有可被客製的元素使用穩定的 `chatto-*` class 與 `data-*` 屬性，視為公開 API，改名屬於破壞性變更。
 

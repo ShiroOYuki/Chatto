@@ -61,7 +61,35 @@ export type EnterAnimation = 'none' | 'fade' | 'slide-up' | 'slide-left' | 'slid
 export type MessageArrangement = 'inline' | 'stacked' | 'columns';
 
 /** Keys for per-role and per-highlight overrides. */
-export type RoleKey = 'broadcaster' | 'moderator' | 'vip' | 'subscriber' | 'first-message' | 'highlighted';
+export type RoleKey = 'broadcaster' | 'moderator' | 'vip' | 'subscriber' | 'first-message';
+
+/**
+ * Style of an event message (subs, raids, cheers …). The theme's `notice`
+ * field is the generic event base; individual events can follow it or override it.
+ */
+export interface EventStyle {
+  box: BoxStyle;
+  /** Left accent bar colour. */
+  accentColor: string;
+  /** Left accent bar width, px. */
+  accentWidth: number;
+  /** Colour of the event title line (system text, or e.g. the bits amount). */
+  titleColor: string;
+  /** Colour of the attached message text; empty string inherits. */
+  bodyColor: string;
+  /** Text shown before the title, e.g. an emoji; empty for none. */
+  icon: string;
+}
+
+/**
+ * Per-event setting, keyed by `${platform}:${eventType}` (e.g. `twitch:resub`).
+ * `linked: true` keeps following the generic event base (`notice`) as it
+ * changes; editing the event turns it into an independent copy (`linked: false`).
+ */
+export interface EventOverride {
+  linked: boolean;
+  style: EventStyle;
+}
 
 export interface RoleStyle {
   nameColor?: string;
@@ -198,13 +226,11 @@ export interface ChatTheme {
     color: string;
   };
 
-  notice: {
-    box: BoxStyle;
-    accentColor: string;
-    /** Left accent bar width, px. */
-    accentWidth: number;
-    titleColor: string;
-  };
+  /** Generic event message base (通用事件訊息). Every event follows it unless overridden. */
+  notice: EventStyle;
+
+  /** Per-event overrides; a missing key means the event follows `notice`. */
+  events: Partial<Record<string, EventOverride>>;
 
   roles: Partial<Record<RoleKey, RoleStyle>>;
 

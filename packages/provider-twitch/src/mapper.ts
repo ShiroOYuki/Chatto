@@ -210,7 +210,20 @@ export function mapChatMessage(event: TwitchChatMessageEvent, lookup: BadgeLooku
         }
       : undefined,
     cheerAmount: event.cheer?.bits,
+    eventType: event.cheer?.bits ? 'cheer' : (MESSAGE_EVENT_BY_TYPE[event.message_type] ?? undefined),
   };
+}
+
+/** Chat messages that are also events, keyed by EventSub `message_type`. */
+const MESSAGE_EVENT_BY_TYPE: Record<string, string> = {
+  channel_points_highlighted: 'highlighted',
+};
+
+/** EventSub `notice_type` → Chatto event type (kebab-case, platform-specific). */
+export function twitchNoticeEventType(noticeType: string): string {
+  if (noticeType === 'sub_gift') return 'sub-gift';
+  if (noticeType === 'community_sub_gift') return 'community-gift';
+  return noticeType.replace(/^shared_chat_/, '').replace(/_/g, '-');
 }
 
 const NOTICE_KIND: Record<string, NoticeKind> = {
@@ -235,6 +248,7 @@ export function mapNotification(event: TwitchNotificationEvent, lookup: BadgeLoo
     channelId: event.broadcaster_user_id,
     timestamp: now,
     kind: NOTICE_KIND[event.notice_type] ?? 'other',
+    eventType: twitchNoticeEventType(event.notice_type),
     systemText: event.system_message,
     author: event.chatter_is_anonymous
       ? undefined

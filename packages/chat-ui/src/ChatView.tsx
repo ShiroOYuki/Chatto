@@ -1,5 +1,6 @@
 import type { ChatMessage, ChatNotice, ChatTheme, ChatUser, MessageFragment } from '@chatto/core';
-import { useId, useMemo } from 'react';
+import { useId, useMemo, type CSSProperties } from 'react';
+import { eventKeyOf, findEvent } from './events';
 import type { FeedItem } from './feed';
 import { scopeCustomCss, themeToCss } from './themeCss';
 
@@ -48,10 +49,13 @@ export function ChatView({ theme, items, className }: ChatViewProps) {
 
 function MessageRow({ message, theme }: { message: ChatMessage; theme: ChatTheme }) {
   const roles = message.author.roles.join(' ');
+  const event = eventKeyOf(message);
+  const title = event ? (findEvent(event)?.title?.(message) ?? message.eventType) : undefined;
   return (
     <li
       className="chatto-message"
       data-platform={message.platform}
+      data-event={event}
       data-roles={roles || undefined}
       data-action={message.isAction || undefined}
       data-highlight={message.highlights.join(' ') || undefined}
@@ -59,6 +63,7 @@ function MessageRow({ message, theme }: { message: ChatMessage; theme: ChatTheme
     >
       {theme.avatar.show ? <Avatar user={message.author} /> : null}
       <div className="chatto-content">
+        {title ? <div className="chatto-event-title">{title}</div> : null}
         {message.reply ? (
           <div className="chatto-reply">
             ↪ @{message.reply.parentAuthor.displayName}: {message.reply.parentText}
@@ -71,7 +76,9 @@ function MessageRow({ message, theme }: { message: ChatMessage; theme: ChatTheme
           {theme.badges.show && message.author.badges.length > 0 ? <Badges user={message.author} /> : null}
           <span
             className="chatto-author"
-            style={theme.author.useUserColor && message.author.color ? { color: message.author.color } : undefined}
+            style={
+              message.author.color ? ({ '--chatto-user-color': message.author.color } as CSSProperties) : undefined
+            }
           >
             {message.author.displayName}
           </span>
@@ -87,7 +94,12 @@ function MessageRow({ message, theme }: { message: ChatMessage; theme: ChatTheme
 
 function NoticeRow({ notice, theme }: { notice: ChatNotice; theme: ChatTheme }) {
   return (
-    <li className="chatto-notice" data-kind={notice.kind} data-platform={notice.platform}>
+    <li
+      className="chatto-notice"
+      data-kind={notice.kind}
+      data-platform={notice.platform}
+      data-event={eventKeyOf(notice)}
+    >
       <div className="chatto-notice-system">{notice.systemText}</div>
       {notice.fragments.length > 0 ? (
         <div className="chatto-body">

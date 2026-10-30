@@ -1,4 +1,4 @@
-import { THEME_SCHEMA_VERSION, type BoxStyle, type ChatTheme } from '@chatto/core';
+import { THEME_SCHEMA_VERSION, type BoxStyle, type ChatTheme, type EventOverride, type EventStyle } from '@chatto/core';
 
 /** Deep partial used to describe presets as overrides of the base theme. */
 export type ThemeOverrides<T = ChatTheme> = {
@@ -79,7 +79,10 @@ export const BASE_THEME: ChatTheme = {
     accentColor: '#C0DD97',
     accentWidth: 3,
     titleColor: '#C0DD97',
+    bodyColor: '',
+    icon: '',
   },
+  events: {},
   roles: {},
   animation: { enter: 'slide-up', duration: 260 },
   options: {
@@ -130,6 +133,12 @@ export const BLANK_STARTER_CSS = `/*
   display: inline;
 }
 
+/* 平台上的名稱顏色 */
+.chatto-author {
+  color: var(--chatto-user-color, inherit);
+  font-weight: bold;
+}
+
 .chatto-separator::after {
   content: ': ';
 }
@@ -137,6 +146,18 @@ export const BLANK_STARTER_CSS = `/*
 .chatto-emote {
   height: 1.5em;
   vertical-align: middle;
+}
+
+.chatto-badge {
+  height: 1.1em;
+  margin-right: 0.2em;
+  vertical-align: -0.15em;
+}
+
+.chatto-notice-system,
+.chatto-event-title {
+  display: block;
+  font-weight: bold;
 }
 `;
 
@@ -356,5 +377,50 @@ export function normalizeTheme(raw: unknown): ChatTheme {
   if (version !== THEME_SCHEMA_VERSION) throw new Error(`Unsupported theme schema ${version}`);
   const data = raw as Partial<ChatTheme>;
   const theme = mergeDeep(BASE_THEME, data);
-  return { ...theme, id: data.id ?? `custom-${Date.now().toString(36)}`, name: data.name ?? '未命名主題' };
+  // Roles once had a 'highlighted' entry; that is now the twitch:highlighted event.
+  const { highlighted: _legacy, ...roles } = theme.roles as ChatTheme['roles'] & { highlighted?: unknown };
+  const events: ChatTheme['events'] = {};
+  for (const [key, override] of Object.entries(theme.events ?? {})) {
+    if (!isPlainObject(override)) continue;
+    events[key] = {
+      linked: (override as Partial<EventOverride>).linked !== false,
+      style: mergeDeep(theme.notice, (override as Partial<EventOverride>).style),
+    };
+  }
+  return {
+    ...theme,
+    roles,
+    events,
+    id: data.id ?? `custom-${Date.now().toString(36)}`,
+    name: data.name ?? '未命名主題',
+  };
+}
+
+// ---------- events ----------
+
+/**
+ * The style an event renders with: its own style when unlinked, otherwise
+ * the generic event style (`theme.notice`), which linked events follow.
+ */
+export function resolveEventStyle(theme: ChatTheme, key: string): EventStyle {
+  const override = theme.events[key];
+  return override && !override.linked ? override.style : theme.notice;
+}
+
+/** Links an event back to the generic event style (keeps its last own style). */
+export function linkEvent(theme: ChatTheme, key: string): ChatTheme {
+  const current = theme.events[key];
+  return {
+    ...theme,
+    events: { ...theme.events, [key]: { linked: true, style: structuredClone(current?.style ?? theme.notice) } },
+  };
+}
+
+/**
+ * Applies an edit to one event's style. A linked event first copies the
+ * generic style, so editing it unlinks it without losing the current look.
+ */
+export function editEventStyle(theme: ChatTheme, key: string, update: (style: EventStyle) => EventStyle): ChatTheme {
+  const start = structuredClone(resolveEventStyle(theme, key));
+  return { ...theme, events: { ...theme.events, [key]: { linked: false, style: update(start) } } };
 }

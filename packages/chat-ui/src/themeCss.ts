@@ -1,4 +1,4 @@
-import type { BoxStyle, ChatTheme, Corners, RoleKey, ShadowSpec, Sides } from '@chatto/core';
+import type { BoxStyle, ChatTheme, Corners, EventStyle, RoleKey, ShadowSpec, Sides } from '@chatto/core';
 
 /**
  * Turns theme parameters into CSS for the shared chat markup. This is the
@@ -57,8 +57,26 @@ const ROLE_SELECTOR: Record<RoleKey, string> = {
   vip: `.chatto-message[data-roles~="vip"]`,
   subscriber: `.chatto-message[data-roles~="subscriber"]`,
   'first-message': `.chatto-message[data-highlight~="first-message"]`,
-  highlighted: `.chatto-message[data-highlight~="highlighted"]`,
 };
+
+/** Generic event targets: system notices and chat messages that are events. */
+const EVENT_NOTICE = '.chatto-notice';
+const EVENT_MESSAGE = '.chatto-message[data-event]';
+
+type Rule = (selector: string, declarations: string[]) => void;
+
+/** Emits one event style for a notice selector and a message-event selector. */
+function eventRules(rule: Rule, style: EventStyle, notice: string, message: string) {
+  rule(`${notice}, ${message}`, [
+    ...boxDeclarations(style.box),
+    ...(style.accentWidth > 0 ? [`border-left: ${px(style.accentWidth)} solid ${style.accentColor}`] : []),
+  ]);
+  rule(`${notice} .chatto-notice-system, ${message} .chatto-event-title`, [`color: ${style.titleColor}`]);
+  rule(`${notice} .chatto-notice-system::before, ${message} .chatto-event-title::before`, [
+    style.icon ? `content: ${cssString(`${style.icon} `)}` : 'content: none',
+  ]);
+  if (style.bodyColor) rule(`${notice} .chatto-body, ${message} .chatto-body`, [`color: ${style.bodyColor}`]);
+}
 
 const ENTER_KEYFRAMES: Record<Exclude<ChatTheme['animation']['enter'], 'none'>, string> = {
   fade: 'from { opacity: 0; }',
@@ -165,7 +183,7 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
     rule('.chatto-body', ['display: inline-block', 'max-width: 100%']);
   } else {
     rule('.chatto-content', ['min-width: 0', 'flex: 1', 'display: flex', 'flex-wrap: wrap', 'align-items: stretch']);
-    rule('.chatto-reply', ['flex-basis: 100%']);
+    rule('.chatto-reply, .chatto-event-title', ['flex-basis: 100%']);
     rule('.chatto-header', ['display: flex', 'align-items: center', 'flex: none']);
     rule('.chatto-body', ['display: block', 'flex: 1', 'min-width: 0']);
   }
@@ -173,7 +191,8 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
   // Header box (time, badges, name).
   rule('.chatto-header', [...boxDeclarations(author.box)]);
   rule('.chatto-author', [
-    `color: ${author.color}`,
+    // The platform name color arrives as --chatto-user-color so custom CSS can still override it.
+    `color: ${author.useUserColor ? `var(--chatto-user-color, ${author.color})` : author.color}`,
     `font-weight: ${author.weight}`,
     `font-size: ${em(author.size)}`,
     `text-transform: ${author.transform}`,
@@ -257,16 +276,10 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
     'text-overflow: ellipsis',
   ]);
 
-  // Notices (subs, raids, announcements).
-  rule('.chatto-notice', [
-    'display: flex',
-    'flex-direction: column',
-    'gap: 2px',
-    'overflow-wrap: anywhere',
-    ...boxDeclarations(notice.box),
-    ...(notice.accentWidth > 0 ? [`border-left: ${px(notice.accentWidth)} solid ${notice.accentColor}`] : []),
-  ]);
-  rule('.chatto-notice-system', [`color: ${notice.titleColor}`, 'font-weight: 700']);
+  // Notices (subs, raids, announcements) share structure; colors come from event rules below.
+  rule('.chatto-notice', ['display: flex', 'flex-direction: column', 'gap: 2px', 'overflow-wrap: anywhere']);
+  rule('.chatto-notice-system, .chatto-event-title', ['font-weight: 700']);
+  rule('.chatto-event-title', ['display: block', 'font-size: 0.85em']);
   rule('.chatto-notice .chatto-body', [
     'display: block',
     'background: transparent',
@@ -280,12 +293,21 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
   for (const [key, style] of Object.entries(theme.roles) as [RoleKey, NonNullable<ChatTheme['roles'][RoleKey]>][]) {
     const base = ROLE_SELECTOR[key];
     if (!base || !style) continue;
-    if (style.nameColor) rule(`${base} .chatto-author`, [`color: ${style.nameColor} !important`]);
+    if (style.nameColor) rule(`${base} .chatto-author`, [`color: ${style.nameColor}`]);
     if (style.nameBackground) rule(`${base} .chatto-header`, [`background: ${style.nameBackground}`]);
     if (style.surfaceBackground) {
       rule(surfaceIsBody ? `${base} .chatto-body` : base, [`background: ${style.surfaceBackground}`]);
     }
     if (style.borderColor) rule(surfaceIsBody ? `${base} .chatto-body` : base, [`border-color: ${style.borderColor}`]);
+  }
+
+  // Events: the generic style, then each event that has its own style.
+  // These come after role rules so an event's look wins over the author's role.
+  eventRules(rule, notice, EVENT_NOTICE, EVENT_MESSAGE);
+  for (const [key, override] of Object.entries(theme.events)) {
+    if (!override || override.linked) continue;
+    const attr = `[data-event=${cssString(key)}]`;
+    eventRules(rule, override.style, `.chatto-notice${attr}`, `.chatto-message${attr}`);
   }
 
   // Enter animation.

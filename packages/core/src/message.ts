@@ -101,6 +101,12 @@ export interface ChatMessage {
   reply?: ChatMessageReply;
   /** Total bits / currency attached to the message, if any. */
   cheerAmount?: number;
+  /**
+   * Set when this chat message is also a platform event (a Twitch cheer, a
+   * channel-points highlighted message …). Platform-specific, kebab-case; the
+   * styling key is `${platform}:${eventType}`, e.g. `twitch:cheer`.
+   */
+  eventType?: string;
 }
 
 /** Non-chat channel activity rendered inline in the chat (subs, raids, …). */
@@ -111,6 +117,12 @@ export interface ChatNotice {
   id: string;
   platform: PlatformId;
   channelId: string;
+  /**
+   * Platform-specific event type, kebab-case (e.g. `resub`, `community-gift`).
+   * `kind` is the cross-platform category; `eventType` keeps the precise
+   * variant for per-event styling via the key `${platform}:${eventType}`.
+   */
+  eventType?: string;
   timestamp: number;
   kind: NoticeKind;
   /** Human-readable system line, e.g. "Ciel subscribed for 3 months". */

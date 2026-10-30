@@ -1,12 +1,26 @@
-import { BLANK_STARTER_CSS, PRESET_THEMES } from '@chatto/chat-ui';
-import type { ChatTheme, EnterAnimation, MessageArrangement, RoleKey, RoleStyle } from '@chatto/core';
+import {
+  ATTRIBUTE_REFERENCE,
+  BLANK_STARTER_CSS,
+  CLASS_REFERENCE,
+  editEventStyle,
+  EVENT_CATALOG,
+  EVENT_REFERENCE,
+  findEvent,
+  linkEvent,
+  PRESET_THEMES,
+  resolveEventStyle,
+  type SelectorReference,
+} from '@chatto/chat-ui';
+import type { ChatTheme, EnterAnimation, EventStyle, MessageArrangement, RoleKey, RoleStyle } from '@chatto/core';
 import {
   ArrowLeft,
   AtSign,
   Bell,
   Braces,
   Check,
+  Crosshair,
   Download,
+  Link2,
   Layers,
   LayoutList,
   MessageSquare,
@@ -18,10 +32,14 @@ import {
   Type,
   UserRound,
   UsersRound,
+  X,
+  Zap,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { api } from '../api';
-import { Button, Segmented, Tile } from '../components/kit';
+import { CssEditor, type CursorRequest } from '../components/CssEditor';
+import { describeInspected, InspectablePreview, type PreviewMode } from '../components/InspectablePreview';
+import { Badge, Button, Hint, Segmented, Tile } from '../components/kit';
 import { motion, PageTransition, spring } from '../components/motion';
 import {
   BoxEditor,
@@ -34,8 +52,9 @@ import {
   TextRow,
   ToggleRow,
 } from '../components/themeFields';
-import { BACKDROPS, LiveThemePreview, type Backdrop } from '../components/ThemePreview';
+import { BACKDROPS, type Backdrop } from '../components/ThemePreview';
 import { Select } from '../components/kit';
+import { appendRule, buildSelector, scopesFor, type InspectedElement, type SelectorScope } from '../lib/cssSelector';
 import { exportTheme } from './themeIO';
 
 const FONTS = [
@@ -63,10 +82,9 @@ const ROLE_LABELS: { key: RoleKey; label: string }[] = [
   { key: 'vip', label: 'VIP' },
   { key: 'subscriber', label: '訂閱者' },
   { key: 'first-message', label: '首次發言' },
-  { key: 'highlighted', label: '點數強調訊息' },
 ];
 
-type SectionId =
+type BaseSectionId =
   | 'base'
   | 'text'
   | 'list'
@@ -80,7 +98,10 @@ type SectionId =
   | 'behavior'
   | 'css';
 
-const SECTIONS: { id: SectionId; label: string; icon: ReactNode; styledOnly?: boolean }[] = [
+/** Platform event pages are `event:<platform>:<eventType>`. */
+type SectionId = BaseSectionId | `event:${string}`;
+
+const SECTIONS: { id: BaseSectionId; label: string; icon: ReactNode; styledOnly?: boolean }[] = [
   { id: 'base', label: '基底與結構', icon: <Layers /> },
   { id: 'text', label: '文字', icon: <Type />, styledOnly: true },
   { id: 'list', label: '面板', icon: <LayoutList />, styledOnly: true },
@@ -88,37 +109,47 @@ const SECTIONS: { id: SectionId; label: string; icon: ReactNode; styledOnly?: bo
   { id: 'author', label: '名稱', icon: <UserRound />, styledOnly: true },
   { id: 'body', label: '內容', icon: <AtSign />, styledOnly: true },
   { id: 'parts', label: '細節元件', icon: <Shapes />, styledOnly: true },
-  { id: 'notice', label: '通知', icon: <Bell />, styledOnly: true },
+  { id: 'notice', label: '通用事件訊息', icon: <Bell />, styledOnly: true },
   { id: 'roles', label: '身分樣式', icon: <UsersRound />, styledOnly: true },
   { id: 'motion', label: '動畫', icon: <Sparkles />, styledOnly: true },
   { id: 'behavior', label: '顯示規則', icon: <SlidersHorizontal /> },
   { id: 'css', label: '自訂 CSS', icon: <Braces /> },
 ];
 
-const CLASS_REFERENCE = [
-  '.chatto-root',
-  '.chatto-list',
-  '.chatto-message',
-  '.chatto-avatar',
-  '.chatto-content',
-  '.chatto-reply',
-  '.chatto-header',
-  '.chatto-time',
-  '.chatto-badges',
-  '.chatto-badge',
-  '.chatto-author',
-  '.chatto-separator',
-  '.chatto-body',
-  '.chatto-emote',
-  '.chatto-mention',
-  '.chatto-link',
-  '.chatto-cheer',
-  '.chatto-notice',
-  '.chatto-notice-system',
-  '[data-roles~="moderator"]',
-  '[data-highlight~="first-message"]',
-  '[data-platform="twitch"]',
+const REFERENCE_GROUPS: { label: string; items: SelectorReference[] }[] = [
+  { label: '元件', items: CLASS_REFERENCE },
+  { label: '條件', items: ATTRIBUTE_REFERENCE },
+  { label: '平台事件', items: EVENT_REFERENCE },
 ];
+
+const ROLE_NAMES: Record<string, string> = {
+  broadcaster: '實況主',
+  moderator: '管理員',
+  vip: 'VIP',
+  subscriber: '訂閱者',
+  founder: '創始訂閱者',
+  'first-message': '首次發言',
+  highlighted: '點數強調訊息',
+};
+
+function scopeLabel(scope: SelectorScope, info: InspectedElement): string {
+  switch (scope.kind) {
+    case 'all':
+      return info.part === 'chatto-root' || info.part === 'chatto-list' ? '整個聊天室' : '全部';
+    case 'role':
+      return `身分：${ROLE_NAMES[scope.role] ?? scope.role}`;
+    case 'highlight':
+      return ROLE_NAMES[scope.highlight] ?? scope.highlight;
+    case 'user':
+      return `使用者：${scope.user}`;
+    case 'event':
+      return `事件：${findEvent(scope.event)?.label ?? scope.event}`;
+    case 'platform':
+      return `平台：${scope.platform}`;
+    case 'badge':
+      return `徽章：${scope.badge}`;
+  }
+}
 
 const splitList = (text: string) =>
   text
@@ -150,6 +181,15 @@ export function ThemeEditor({
   const [section, setSection] = useState<SectionId>('base');
   const [backdrop, setBackdrop] = useState<Backdrop>('game');
   const [justSaved, setJustSaved] = useState(false);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('specimen');
+  const [inspect, setInspect] = useState(false);
+  const [picked, setPicked] = useState<InspectedElement | null>(null);
+  const [pickedScope, setPickedScope] = useState(0);
+  /** Selector previewed while hovering a chip or a builder option. */
+  const [hoverSelector, setHoverSelector] = useState<string | null>(null);
+  /** Selector of the CSS rule the editor cursor is in. */
+  const [cursorSelector, setCursorSelector] = useState<string | null>(null);
+  const [cursorRequest, setCursorRequest] = useState<CursorRequest | null>(null);
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
   const blank = draft.base === 'blank';
 
@@ -174,7 +214,26 @@ export function ThemeEditor({
   };
 
   const sections = SECTIONS.filter((item) => !(blank && item.styledOnly));
-  const active = sections.some((item) => item.id === section) ? section : 'base';
+  const eventGroups = blank ? [] : EVENT_CATALOG;
+  const activeEvent = section.startsWith('event:') && !blank ? findEvent(section.slice('event:'.length)) : undefined;
+  const active: SectionId = activeEvent ? section : sections.some((item) => item.id === section) ? section : 'base';
+  const activeLabel = activeEvent ? activeEvent.label : sections.find((item) => item.id === active)?.label;
+
+  /** Inserts an empty rule into the custom CSS and puts the cursor inside it. */
+  const insertRule = (selector: string) => {
+    const next = appendRule(draft.customCss, selector);
+    set('customCss')(next.css);
+    setSection('css');
+    setCursorRequest({ position: next.cursor, nonce: Date.now() });
+  };
+
+  const pickedScopes = picked ? scopesFor(picked) : [];
+  const pickedSelector = picked ? buildSelector(picked, pickedScopes[pickedScope] ?? { kind: 'all' }) : null;
+  const highlight =
+    hoverSelector ??
+    pickedSelector ??
+    (active === 'css' ? cursorSelector : null) ??
+    (activeEvent ? `[data-event="${activeEvent.key}"]` : active === 'notice' ? '.chatto-notice, [data-event]' : null);
   const role = (key: RoleKey): RoleStyle => draft.roles[key] ?? {};
   const setRole = (key: RoleKey, patch: Partial<RoleStyle>) => {
     const next = { ...role(key), ...patch };
@@ -200,7 +259,7 @@ export function ThemeEditor({
     options,
   } = draft;
 
-  const panels: Record<SectionId, ReactNode> = {
+  const panels: Record<BaseSectionId, ReactNode> = {
     base: (
       <>
         <FieldRow label="基底" hint="空白不產生任何樣式，只保留結構與自訂 CSS。">
@@ -521,20 +580,14 @@ export function ThemeEditor({
     ),
     notice: (
       <>
-        <ColorRow label="標題顏色" value={notice.titleColor} onChange={set('notice', 'titleColor')} />
-        <NumberField
-          label="左側色條"
-          value={notice.accentWidth}
-          min={0}
-          max={12}
-          unit="px"
-          onChange={set('notice', 'accentWidth')}
+        <p className="pb-2 text-xs text-ink-faint">
+          所有平台事件（訂閱、揪團、小奇點…）共用的樣式。各事件預設跟隨這裡，個別調整後會改用自己的樣式。
+        </p>
+        <EventStyleFields
+          style={notice}
+          fallbackBody={text.color}
+          onField={(path, value) => set('notice', ...path)(value)}
         />
-        {notice.accentWidth > 0 ? (
-          <ColorRow label="色條顏色" value={notice.accentColor} onChange={set('notice', 'accentColor')} />
-        ) : null}
-        <div className="mt-2 border-t border-line pt-2 text-xs font-medium text-ink-faint">通知外框</div>
-        <BoxEditor value={notice.box} onChange={set('notice', 'box')} />
       </>
     ),
     roles: (
@@ -615,34 +668,85 @@ export function ThemeEditor({
     ),
     css: (
       <>
-        <textarea
-          value={draft.customCss}
-          onChange={(event) => set('customCss')(event.target.value)}
-          spellCheck={false}
-          rows={18}
-          placeholder={".chatto-message[data-roles~='moderator'] .chatto-author::before {\n  content: '🛡 ';\n}"}
-          className="w-full resize-y rounded-xl border border-line bg-canvas p-3 font-mono text-xs leading-relaxed outline-none focus:border-matcha"
-        />
-        <p className="pt-2 text-xs text-ink-faint">
+        <p className="pb-2 text-xs text-ink-faint">
           {blank
             ? '空白基底不會產生任何樣式，畫面完全由這裡的 CSS 決定。'
             : '這裡的 CSS 會套在參數樣式之後，可以覆蓋任何設定。'}
-          點下面的 class 可以插入到最後。
+          游標所在規則符合的元素會在預覽中標示出來。
         </p>
-        <div className="flex flex-wrap gap-1.5 pt-2">
-          {CLASS_REFERENCE.map((name) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => set('customCss')(`${draft.customCss.trimEnd()}\n\n${name} {\n  \n}\n`)}
-              className="rounded-md bg-tile-muted px-2 py-0.5 font-mono text-[11px] text-ink-soft transition-colors hover:bg-matcha-soft/50 hover:text-ink"
-            >
-              {name}
-            </button>
-          ))}
+        <div className="h-[360px]">
+          <CssEditor
+            value={draft.customCss}
+            onChange={set('customCss')}
+            onSelectorChange={setCursorSelector}
+            cursorRequest={cursorRequest}
+            placeholder={".chatto-message[data-roles~='moderator'] .chatto-author::before {\n  content: '🛡 ';\n}"}
+          />
         </div>
+        <p className="pt-3 text-xs text-ink-faint">
+          滑過可在預覽中標示，點一下插入一條新規則。也可以開啟預覽的「檢查」直接點選元素。
+        </p>
+        {REFERENCE_GROUPS.map((group) => (
+          <div key={group.label} className="pt-2">
+            <div className="pb-1 text-[11px] font-medium text-ink-faint">{group.label}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {group.items.map((item) => {
+                const selector = item.selector.startsWith('[')
+                  ? `.chatto-message${item.selector}, .chatto-notice${item.selector}`
+                  : item.selector;
+                return (
+                  <Hint key={item.selector} label={`${item.label}：${item.description}`} side="top">
+                    <button
+                      type="button"
+                      onMouseEnter={() => setHoverSelector(selector)}
+                      onMouseLeave={() => setHoverSelector(null)}
+                      onFocus={() => setHoverSelector(selector)}
+                      onBlur={() => setHoverSelector(null)}
+                      onClick={() =>
+                        insertRule(item.selector.startsWith('[') ? `.chatto-message${item.selector}` : item.selector)
+                      }
+                      className="rounded-md bg-tile-muted px-2 py-0.5 font-mono text-[11px] text-ink-soft transition-colors hover:bg-matcha-soft/50 hover:text-ink"
+                    >
+                      {item.selector}
+                    </button>
+                  </Hint>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </>
     ),
+  };
+
+  const eventPanel = (key: string) => {
+    const override = draft.events[key];
+    const linked = !override || override.linked;
+    const event = findEvent(key)!;
+    return (
+      <>
+        <p className="pb-2 text-xs text-ink-faint">
+          {event.description}・
+          {event.category === 'message' ? '保留聊天訊息結構，並加上事件標題與外框。' : '系統通知。'}
+        </p>
+        <div className="mb-3 flex items-center gap-2 rounded-xl bg-tile-muted px-3 py-2">
+          <Badge tone={linked ? 'matcha' : 'sakura'}>{linked ? '跟隨通用事件訊息' : '獨立樣式'}</Badge>
+          <span className="min-w-0 flex-1 truncate text-xs text-ink-faint">
+            {linked ? '修改任一項會改為獨立樣式。' : '通用事件訊息的變更不會影響這裡。'}
+          </span>
+          <Button size="sm" disabled={linked} onClick={() => setDraft((current) => linkEvent(current, key))}>
+            <Link2 /> 與通用事件訊息同步
+          </Button>
+        </div>
+        <EventStyleFields
+          style={resolveEventStyle(draft, key)}
+          fallbackBody={text.color}
+          onField={(path, value) =>
+            setDraft((current) => editEventStyle(current, key, (style) => setIn(style, path, value)))
+          }
+        />
+      </>
+    );
   };
 
   return (
@@ -673,41 +777,71 @@ export function ThemeEditor({
       <div className="grid min-h-0 flex-1 grid-cols-[168px_minmax(0,1fr)_minmax(300px,380px)] gap-3">
         <nav className="flex flex-col gap-0.5 overflow-y-auto">
           {sections.map((item) => (
-            <button
+            <NavItem
               key={item.id}
-              type="button"
+              active={active === item.id}
+              icon={item.icon}
+              label={item.label}
               onClick={() => setSection(item.id)}
-              className={`relative flex h-9 items-center gap-2.5 rounded-xl px-3 text-left text-sm transition-colors ${
-                active === item.id ? 'font-medium text-ink' : 'text-ink-soft hover:text-ink'
-              }`}
-            >
-              {active === item.id ? (
-                <motion.span
-                  layoutId="editor-section"
-                  transition={spring}
-                  className="absolute inset-0 rounded-xl bg-tile shadow-sm"
-                />
-              ) : null}
-              <span className={`relative [&>svg]:size-4 ${active === item.id ? 'text-matcha' : 'text-ink-faint'}`}>
-                {item.icon}
-              </span>
-              <span className="relative">{item.label}</span>
-            </button>
+            />
+          ))}
+          {eventGroups.map((group) => (
+            <div key={group.platform} className="mt-3 flex flex-col gap-0.5">
+              <div className="px-3 pb-1 text-[11px] font-medium tracking-wide text-ink-faint">
+                {group.label} 專屬元件
+              </div>
+              {group.events.map((event) => {
+                const id: SectionId = `event:${event.key}`;
+                const own = draft.events[event.key]?.linked === false;
+                return (
+                  <NavItem
+                    key={event.key}
+                    active={active === id}
+                    icon={<Zap />}
+                    label={event.label}
+                    trailing={own ? <span className="size-1.5 rounded-full bg-sakura" aria-label="獨立樣式" /> : null}
+                    onClick={() => setSection(id)}
+                  />
+                );
+              })}
+            </div>
           ))}
         </nav>
 
         <Tile className="min-h-0 overflow-y-auto">
           <PageTransition id={active}>
-            <h2 className="mb-2 text-sm font-semibold">{sections.find((item) => item.id === active)?.label}</h2>
-            {panels[active]}
+            <h2 className="mb-2 text-sm font-semibold">{activeLabel}</h2>
+            {activeEvent ? eventPanel(activeEvent.key) : panels[active as BaseSectionId]}
           </PageTransition>
         </Tile>
 
-        <Tile
-          title="即時預覽"
-          className="min-h-0 p-3!"
-          action={
-            <div className="flex gap-1">
+        <Tile className="min-h-0 p-3!">
+          <div className="mb-2 flex items-center gap-2">
+            <Segmented
+              size="sm"
+              value={previewMode}
+              onChange={setPreviewMode}
+              options={[
+                { value: 'specimen', label: '範例' },
+                { value: 'live', label: '即時' },
+              ]}
+            />
+            <Hint label="檢查：滑過預覽顯示 class，點一下產生選擇器">
+              <button
+                type="button"
+                aria-pressed={inspect}
+                onClick={() => {
+                  setInspect((value) => !value);
+                  setPicked(null);
+                }}
+                className={`grid size-8 place-items-center rounded-full transition-colors [&>svg]:size-4 ${
+                  inspect ? 'bg-matcha-strong text-on-matcha' : 'text-ink-soft hover:bg-tile-muted'
+                }`}
+              >
+                <Crosshair />
+              </button>
+            </Hint>
+            <div className="ml-auto flex gap-1">
               {(Object.keys(BACKDROPS) as Backdrop[]).map((key) => (
                 <button
                   key={key}
@@ -719,13 +853,187 @@ export function ThemeEditor({
                 />
               ))}
             </div>
-          }
-        >
-          <div className="min-h-0 flex-1 overflow-hidden rounded-2xl">
-            <LiveThemePreview theme={draft} backdrop={backdrop} />
+          </div>
+          <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl">
+            <InspectablePreview
+              theme={draft}
+              backdrop={backdrop}
+              mode={previewMode}
+              inspect={inspect && !picked}
+              highlight={highlight}
+              onPick={(info) => {
+                setPicked(info);
+                setPickedScope(0);
+              }}
+            />
+            {picked ? (
+              <SelectorBuilder
+                info={picked}
+                scopes={pickedScopes}
+                selected={pickedScope}
+                onSelect={setPickedScope}
+                onHover={(index) =>
+                  setHoverSelector(index === null ? null : buildSelector(picked, pickedScopes[index]!))
+                }
+                onCancel={() => {
+                  setPicked(null);
+                  setHoverSelector(null);
+                }}
+                onInsert={() => {
+                  if (pickedSelector) insertRule(pickedSelector);
+                  setPicked(null);
+                  setHoverSelector(null);
+                }}
+              />
+            ) : null}
           </div>
         </Tile>
       </div>
     </div>
+  );
+}
+
+function NavItem({
+  active,
+  icon,
+  label,
+  trailing,
+  onClick,
+}: {
+  active: boolean;
+  icon: ReactNode;
+  label: string;
+  trailing?: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex h-9 shrink-0 items-center gap-2.5 rounded-xl px-3 text-left text-sm transition-colors ${
+        active ? 'font-medium text-ink' : 'text-ink-soft hover:text-ink'
+      }`}
+    >
+      {active ? (
+        <motion.span
+          layoutId="editor-section"
+          transition={spring}
+          className="absolute inset-0 rounded-xl bg-tile shadow-sm"
+        />
+      ) : null}
+      <span className={`relative [&>svg]:size-4 ${active ? 'text-matcha' : 'text-ink-faint'}`}>{icon}</span>
+      <span className="relative min-w-0 flex-1 truncate">{label}</span>
+      {trailing ? <span className="relative flex">{trailing}</span> : null}
+    </button>
+  );
+}
+
+/** Fields shared by the generic event style and every platform event. */
+function EventStyleFields({
+  style,
+  fallbackBody,
+  onField,
+}: {
+  style: EventStyle;
+  fallbackBody: string;
+  onField: (path: (keyof EventStyle)[], value: unknown) => void;
+}) {
+  const field = (key: keyof EventStyle) => (value: unknown) => onField([key], value);
+  return (
+    <>
+      <ColorRow label="標題顏色" value={style.titleColor} onChange={field('titleColor')} />
+      <TextRow
+        label="標題圖示"
+        hint="顯示在標題前，可用 emoji"
+        value={style.icon}
+        onChange={field('icon')}
+        placeholder="例如 ✨"
+      />
+      <OptionalColorRow
+        label="內容顏色"
+        value={style.bodyColor || undefined}
+        fallback={fallbackBody}
+        onChange={(value) => onField(['bodyColor'], value ?? '')}
+      />
+      <NumberField
+        label="左側色條"
+        value={style.accentWidth}
+        min={0}
+        max={12}
+        unit="px"
+        onChange={field('accentWidth')}
+      />
+      {style.accentWidth > 0 ? (
+        <ColorRow label="色條顏色" value={style.accentColor} onChange={field('accentColor')} />
+      ) : null}
+      <div className="mt-2 border-t border-line pt-2 text-xs font-medium text-ink-faint">事件外框</div>
+      <BoxEditor value={style.box} onChange={field('box')} />
+    </>
+  );
+}
+
+/** Popover over the preview: pick how widely a picked part's rule applies. */
+function SelectorBuilder({
+  info,
+  scopes,
+  selected,
+  onSelect,
+  onHover,
+  onCancel,
+  onInsert,
+}: {
+  info: InspectedElement;
+  scopes: SelectorScope[];
+  selected: number;
+  onSelect: (index: number) => void;
+  onHover: (index: number | null) => void;
+  onCancel: () => void;
+  onInsert: () => void;
+}) {
+  const { title } = describeInspected(info);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={spring}
+      className="absolute inset-x-2 bottom-2 z-20 rounded-2xl border border-line bg-tile p-3 shadow-xl"
+    >
+      <div className="mb-2 flex items-center gap-2">
+        <span className="min-w-0 flex-1 truncate font-mono text-xs font-medium">{title}</span>
+        <button
+          type="button"
+          aria-label="關閉"
+          onClick={onCancel}
+          className="grid size-6 place-items-center rounded-full text-ink-faint hover:bg-tile-muted [&>svg]:size-3.5"
+        >
+          <X />
+        </button>
+      </div>
+      <div className="text-[11px] text-ink-faint">套用範圍</div>
+      <div className="mt-1 flex max-h-44 flex-col gap-0.5 overflow-y-auto" onMouseLeave={() => onHover(null)}>
+        {scopes.map((scope, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => onSelect(index)}
+            onMouseEnter={() => onHover(index)}
+            className={`rounded-lg px-2 py-1 text-left transition-colors ${
+              index === selected ? 'bg-matcha-soft/50' : 'hover:bg-tile-muted'
+            }`}
+          >
+            <div className="text-xs">{scopeLabel(scope, info)}</div>
+            <div className="truncate font-mono text-[10px] text-ink-faint">{buildSelector(info, scope)}</div>
+          </button>
+        ))}
+      </div>
+      <div className="mt-2 flex justify-end gap-2">
+        <Button size="sm" variant="ghost" onClick={onCancel}>
+          取消
+        </Button>
+        <Button size="sm" variant="primary" onClick={onInsert}>
+          <Braces /> 插入到自訂 CSS
+        </Button>
+      </div>
+    </motion.div>
   );
 }
