@@ -1,5 +1,6 @@
 import type { ChatTheme, ViewerTarget } from '@chatto/core';
 import { DEFAULT_THEME_ID } from '@chatto/chat-ui/themes';
+import type { AppPrefs } from '../shared/ipc';
 import { app } from 'electron';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -18,6 +19,9 @@ export interface Settings {
   overlay: { enabled: boolean; bounds?: Rect };
   selectedThemes: Record<ViewerTarget, string>;
   customThemes: ChatTheme[];
+  prefs: AppPrefs;
+  /** Main window bounds, restored on launch. */
+  windowBounds?: Rect;
 }
 
 const defaults = (): Settings => ({
@@ -27,6 +31,7 @@ const defaults = (): Settings => ({
   overlay: { enabled: false },
   selectedThemes: { overlay: DEFAULT_THEME_ID, embed: DEFAULT_THEME_ID },
   customThemes: [],
+  prefs: { uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false },
 });
 
 /** JSON settings in the user data folder, written atomically. */
@@ -60,6 +65,7 @@ export class SettingsStore {
         twitchClientId: raw.twitchClientId || base.twitchClientId,
         overlay: { ...base.overlay, ...raw.overlay },
         selectedThemes: { ...base.selectedThemes, ...raw.selectedThemes },
+        prefs: { ...base.prefs, ...raw.prefs },
       };
     } catch {
       return defaults();

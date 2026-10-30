@@ -1,13 +1,17 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { Check, Copy } from 'lucide-react';
+import { useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
+import { TeaCup, type TeaCupMood } from './TeaCup';
 
 export function Tile({
   className = '',
   title,
+  icon,
   action,
   children,
 }: {
   className?: string;
   title?: string;
+  icon?: ReactNode;
   action?: ReactNode;
   children: ReactNode;
 }) {
@@ -15,7 +19,10 @@ export function Tile({
     <section className={`flex min-w-0 flex-col rounded-tile border border-line bg-tile p-5 ${className}`}>
       {title ? (
         <header className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-medium text-ink-soft">{title}</h2>
+          <h2 className="flex items-center gap-2 text-sm font-medium text-ink-soft">
+            {icon ? <span className="text-matcha [&>svg]:size-4">{icon}</span> : null}
+            {title}
+          </h2>
           {action}
         </header>
       ) : null}
@@ -24,22 +31,30 @@ export function Tile({
   );
 }
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
 export function Button({
   variant = 'secondary',
+  size = 'md',
   className = '',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize }) {
   const styles: Record<ButtonVariant, string> = {
     primary: 'bg-matcha-strong text-on-matcha hover:opacity-90',
     secondary: 'bg-tile-muted text-ink hover:bg-matcha-soft/60',
     ghost: 'text-ink-soft hover:bg-tile-muted',
+    danger: 'text-danger hover:bg-danger/10',
+  };
+  const sizes: Record<ButtonSize, string> = {
+    sm: 'h-8 px-3 text-xs',
+    md: 'h-9 px-4 text-sm',
+    lg: 'h-11 px-5 text-sm',
   };
   return (
     <button
       type="button"
-      className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium transition active:scale-[0.97] disabled:opacity-50 ${styles[variant]} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full font-medium transition active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-4 ${sizes[size]} ${styles[variant]} ${className}`}
       {...props}
     />
   );
@@ -73,9 +88,208 @@ export function Toggle({
 export function StatusDot({ tone }: { tone: 'ok' | 'idle' | 'warn' | 'error' }) {
   const color = { ok: 'bg-matcha', idle: 'bg-ink-faint', warn: 'bg-amber-400', error: 'bg-danger' }[tone];
   return (
-    <span className="relative inline-flex h-2.5 w-2.5">
+    <span className="relative inline-flex h-2.5 w-2.5 shrink-0">
       {tone === 'ok' ? <span className={`absolute inset-0 animate-ping rounded-full ${color} opacity-60`} /> : null}
       <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${color}`} />
     </span>
+  );
+}
+
+export function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  size = 'md',
+}: {
+  value: T;
+  options: { value: T; label: ReactNode }[];
+  onChange: (value: T) => void;
+  size?: 'sm' | 'md';
+}) {
+  return (
+    <div
+      className={`inline-flex rounded-full bg-tile-muted p-1 ${size === 'sm' ? 'text-xs' : 'text-sm'}`}
+      role="radiogroup"
+    >
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="radio"
+          aria-checked={value === option.value}
+          onClick={() => onChange(option.value)}
+          className={`inline-flex items-center gap-1.5 rounded-full transition [&>svg]:size-3.5 ${size === 'sm' ? 'px-3 py-1' : 'px-4 py-1.5'} ${
+            value === option.value ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft hover:text-ink'
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs font-medium text-ink-soft">{label}</span>
+      {children}
+      {hint ? <span className="text-xs text-ink-faint">{hint}</span> : null}
+    </label>
+  );
+}
+
+export function TextInput({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      className={`h-9 min-w-0 rounded-xl border border-line bg-canvas px-3 text-sm outline-none transition focus:border-matcha disabled:opacity-60 ${className}`}
+      {...props}
+    />
+  );
+}
+
+export function Select<T extends string>({
+  value,
+  options,
+  onChange,
+  className = '',
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+  className?: string;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value as T)}
+      className={`h-9 rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-matcha ${className}`}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+export function Slider({
+  value,
+  min,
+  max,
+  step = 1,
+  unit = '',
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="h-1.5 flex-1 cursor-pointer accent-[var(--c-matcha)]"
+      />
+      <span className="w-14 text-right font-mono text-xs tabular-nums text-ink-soft">
+        {value}
+        {unit}
+      </span>
+    </div>
+  );
+}
+
+export function Badge({
+  children,
+  tone = 'neutral',
+}: {
+  children: ReactNode;
+  tone?: 'neutral' | 'matcha' | 'sakura' | 'danger';
+}) {
+  const tones = {
+    neutral: 'bg-tile-muted text-ink-soft',
+    matcha: 'bg-matcha-soft/50 text-matcha-strong',
+    sakura: 'bg-sakura/40 text-ink',
+    danger: 'bg-danger/10 text-danger',
+  };
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${tones[tone]}`}>
+      {children}
+    </span>
+  );
+}
+
+export function CopyField({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="flex items-center gap-2 rounded-2xl bg-tile-muted p-1.5 pl-4">
+      <code className="min-w-0 flex-1 truncate font-mono text-sm text-matcha-strong">{value}</code>
+      <Button
+        variant="primary"
+        onClick={() => {
+          void navigator.clipboard.writeText(value);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1600);
+        }}
+      >
+        {copied ? <Check /> : <Copy />}
+        {copied ? '複製好了' : '複製'}
+      </Button>
+    </div>
+  );
+}
+
+/** Minimal bar sparkline for message rate history. */
+export function Sparkline({ values, className = '' }: { values: number[]; className?: string }) {
+  const max = Math.max(1, ...values);
+  return (
+    <div className={`flex items-end gap-[3px] ${className}`} aria-hidden="true">
+      {values.map((value, index) => (
+        <span
+          key={index}
+          className={`flex-1 rounded-t-sm ${index === values.length - 1 ? 'bg-matcha' : 'bg-matcha/35'}`}
+          style={{ height: `${Math.max(4, (value / max) * 100)}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function EmptyState({ mood = 'sleepy', title, hint }: { mood?: TeaCupMood; title: string; hint?: string }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10 text-center">
+      <TeaCup mood={mood} size={64} />
+      <p className="text-sm font-medium text-ink-soft">{title}</p>
+      {hint ? <p className="max-w-xs text-xs text-ink-faint">{hint}</p> : null}
+    </div>
+  );
+}
+
+export function PageHeader({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <header className="mb-5 flex items-end justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        {description ? <p className="mt-1 text-sm text-ink-soft">{description}</p> : null}
+      </div>
+      {action}
+    </header>
   );
 }

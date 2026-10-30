@@ -1,7 +1,8 @@
 import type { ChatTheme, ConnectionState, ViewerTarget } from '@chatto/core';
 import { PRESET_THEMES, getPresetTheme } from '@chatto/chat-ui/themes';
 import { TwitchChatProvider } from '@chatto/provider-twitch';
-import type { AppState, DeviceCodeInfo } from '../shared/ipc';
+import { app, nativeTheme } from 'electron';
+import type { AppPrefs, AppState, DeviceCodeInfo } from '../shared/ipc';
 import { ChatHub } from './chat-hub';
 import type { LocalServer } from './server';
 import type { OverlayWindow } from './overlay-window';
@@ -24,10 +25,13 @@ export class AppController {
   server!: LocalServer;
   overlay!: OverlayWindow;
   onChange: (state: AppState) => void = () => undefined;
+  /** Supplied by index.ts, which owns the main window. */
+  isWindowMaximized: () => boolean = () => false;
 
   constructor(private readonly settings: SettingsStore) {}
 
   async init(): Promise<void> {
+    this.#applyPrefs(this.settings.get().prefs);
     this.#createProvider();
     const identity = await this.#provider?.auth.currentIdentity();
     if (identity) this.#auth = { status: 'signed-in', login: identity.login };
@@ -50,6 +54,9 @@ export class AppController {
   state(): AppState {
     const settings = this.settings.get();
     return {
+      appInfo: { version: app.getVersion(), platform: process.platform },
+      window: { maximized: this.isWindowMaximized() },
+      prefs: settings.prefs,
       clientIdConfigured: Boolean(settings.twitchClientId),
       auth: this.#auth,
       channel: { ...this.#channel, login: settings.channelLogin || undefined },
@@ -60,8 +67,29 @@ export class AppController {
     };
   }
 
-  #emit(): void {
+  /** Public so window events (maximize/restore) can push a fresh state. */
+  emit(): void {
     this.onChange(this.state());
+  }
+
+  #emit(): void {
+    this.emit();
+  }
+
+  // ---------- preferences ----------
+
+  setPrefs(patch: Partial<AppPrefs>): void {
+    const next = this.settings.update((draft) => {
+      draft.prefs = { ...draft.prefs, ...patch };
+    });
+    this.#applyPrefs(next.prefs);
+    this.#emit();
+  }
+
+  #applyPrefs(prefs: AppPrefs): void {
+    // Keeps native surfaces (context menus, scrollbars) in step with the app theme.
+    nativeTheme.themeSource = prefs.appearance;
+    if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: prefs.launchAtLogin });
   }
 
   // ---------- auth ----------
@@ -170,6 +198,14 @@ export class AppController {
 
   setOverlayEditing(editing: boolean): void {
     this.overlay.setEditing(editing);
+    this.#emit();
+  }
+
+  resetOverlayBounds(): void {
+    this.settings.update((draft) => {
+      delete draft.overlay.bounds;
+    });
+    this.overlay.resetBounds();
     this.#emit();
   }
 

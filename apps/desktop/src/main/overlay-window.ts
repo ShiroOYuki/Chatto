@@ -23,10 +23,19 @@ export class OverlayWindow {
     return this.#editing;
   }
 
+  static defaultBounds(): Rect {
+    const area = screen.getPrimaryDisplay().workArea;
+    return { width: 420, height: 560, x: area.x + area.width - 440, y: area.y + area.height - 600 };
+  }
+
+  /** Moves the overlay back to the bottom-right corner of the primary display. */
+  resetBounds(): void {
+    if (this.isOpen) this.#window!.setBounds(OverlayWindow.defaultBounds());
+  }
+
   open(bounds?: Rect): void {
     if (this.isOpen) return;
-    const area = screen.getPrimaryDisplay().workArea;
-    const initial = bounds ?? { width: 420, height: 560, x: area.x + area.width - 440, y: area.y + area.height - 600 };
+    const initial = bounds ?? OverlayWindow.defaultBounds();
 
     const window = new BrowserWindow({
       ...initial,

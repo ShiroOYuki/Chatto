@@ -215,10 +215,12 @@ export function ThemeTile({
   state,
   target,
   onTargetChange,
+  onOpenThemes,
 }: {
   state: AppState;
   target: ViewerTarget;
   onTargetChange: (target: ViewerTarget) => void;
+  onOpenThemes: () => void;
 }) {
   const selected = state.selectedThemes[target];
   return (
@@ -251,11 +253,8 @@ export function ThemeTile({
         ))}
       </div>
       <div className="mt-auto flex gap-2 pt-4">
-        <Button className="flex-1" disabled title="下一個里程碑：主題編輯器">
-          複製並編輯
-        </Button>
-        <Button variant="ghost" disabled title="下一個里程碑：匯入 JSON">
-          匯入
+        <Button className="flex-1" onClick={onOpenThemes}>
+          編輯與管理主題
         </Button>
       </div>
     </Tile>

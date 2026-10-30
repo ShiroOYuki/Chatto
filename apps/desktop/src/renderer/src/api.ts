@@ -1,4 +1,4 @@
-import { PRESET_THEMES, createMockMessage } from '@chatto/chat-ui';
+import { createMockMessage, createMockNotice, PRESET_THEMES } from '@chatto/chat-ui';
 import type { ChatEvent } from '@chatto/core';
 import type { AppState, ChattoApi } from '../../shared/ipc';
 
@@ -11,9 +11,19 @@ declare global {
 /**
  * In-browser stand-in for the Electron preload API, so the control panel can
  * be developed with `npm run dev:web` and previewed without Electron.
+ * `?compact` starts in compact mode, `?page=<id>` opens a page.
  */
 function createMockApi(): ChattoApi {
+  const params = new URLSearchParams(location.search);
   let state: AppState = {
+    appInfo: { version: '0.1.0', platform: 'web' },
+    window: { maximized: false },
+    prefs: {
+      uiMode: params.has('compact') ? 'compact' : 'full',
+      appearance: 'system',
+      closeToTray: true,
+      launchAtLogin: false,
+    },
     clientIdConfigured: true,
     auth: { status: 'signed-in', login: 'shiraine_ciel' },
     channel: { login: 'shiraine_ciel', state: 'connected' },
@@ -28,15 +38,29 @@ function createMockApi(): ChattoApi {
     state = { ...state, ...patch };
     stateListeners.forEach((listener) => listener(state));
   };
+  const emitChat = (event: ChatEvent) => chatListeners.forEach((listener) => listener(event));
+
+  let sent: string[] = [];
   setInterval(() => {
+    const roll = Math.random();
+    if (roll < 0.05) return emitChat(createMockNotice());
+    if (roll < 0.08 && sent.length > 3) {
+      const messageId = sent[sent.length - 3]!;
+      return emitChat({ type: 'message-deleted', platform: 'twitch', channelId: '1', messageId });
+    }
     const event = createMockMessage();
-    chatListeners.forEach((listener) => listener(event));
-  }, 1400);
+    if (event.type === 'message') sent = [...sent.slice(-20), event.message.id];
+    emitChat(event);
+  }, 1200);
 
   return {
     getState: async () => state,
     onState: (listener) => (stateListeners.add(listener), () => stateListeners.delete(listener)),
     onChatEvent: (listener) => (chatListeners.add(listener), () => chatListeners.delete(listener)),
+    windowMinimize: async () => undefined,
+    windowToggleMaximize: async () => set({ window: { maximized: !state.window.maximized } }),
+    windowClose: async () => undefined,
+    setPrefs: async (patch) => set({ prefs: { ...state.prefs, ...patch } }),
     setClientId: async () => set({ clientIdConfigured: true }),
     signIn: async () => {
       set({
@@ -57,9 +81,17 @@ function createMockApi(): ChattoApi {
     disconnect: async () => set({ channel: { ...state.channel, state: 'closed' } }),
     setOverlayEnabled: async (enabled) => set({ overlay: { ...state.overlay, enabled } }),
     setOverlayEditing: async (editing) => set({ overlay: { ...state.overlay, editing } }),
+    resetOverlayBounds: async () => undefined,
     selectTheme: async (target, themeId) => set({ selectedThemes: { ...state.selectedThemes, [target]: themeId } }),
-    saveTheme: async () => undefined,
-    deleteTheme: async () => undefined,
+    saveTheme: async (theme) => {
+      const exists = state.themes.some((item) => item.id === theme.id);
+      set({
+        themes: exists
+          ? state.themes.map((item) => (item.id === theme.id ? theme : item))
+          : [...state.themes, { ...theme, builtIn: false }],
+      });
+    },
+    deleteTheme: async (themeId) => set({ themes: state.themes.filter((item) => item.id !== themeId) }),
     openExternal: async (url) => void window.open(url, '_blank'),
   };
 }

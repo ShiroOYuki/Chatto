@@ -18,6 +18,7 @@
   --color-on-matcha: var(--c-on-matcha);
   --color-sakura: var(--c-sakura);
   --color-danger: var(--c-danger);
+  --color-sidebar: var(--c-sidebar);
 
   --radius-tile: 20px;
 }
@@ -36,11 +37,13 @@
   --c-on-matcha: #f4f9ee;
   --c-sakura: #f4c0d1;
   --c-danger: #c2412d;
+  --c-sidebar: #e9efe2;
   color-scheme: light;
 }
 
+/* Dark: follows the OS unless the app forces light ([data-theme] is set from prefs.appearance). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --c-canvas: #121512;
     --c-tile: #1b201a;
     --c-tile-muted: #232a21;
@@ -54,8 +57,26 @@
     --c-on-matcha: #10200a;
     --c-sakura: #993556;
     --c-danger: #f09595;
+    --c-sidebar: #161a15;
     color-scheme: dark;
   }
+}
+:root[data-theme='dark'] {
+  --c-canvas: #121512;
+  --c-tile: #1b201a;
+  --c-tile-muted: #232a21;
+  --c-line: #2c3429;
+  --c-ink: #eaf3de;
+  --c-ink-soft: #b3c0a6;
+  --c-ink-faint: #7b8773;
+  --c-matcha: #97c459;
+  --c-matcha-strong: #c0dd97;
+  --c-matcha-soft: #3b6d11;
+  --c-on-matcha: #10200a;
+  --c-sakura: #993556;
+  --c-danger: #f09595;
+  --c-sidebar: #161a15;
+  color-scheme: dark;
 }
 
 html,
@@ -113,6 +134,36 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .steam,
   .wobble {
+    animation: none;
+  }
+}
+
+/* Frameless window: the title bar drags the window, interactive children opt out. */
+.app-drag {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Thin, theme-aware scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-line) transparent;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+.page-enter {
+  animation: pop-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-enter {
     animation: none;
   }
 }

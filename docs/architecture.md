@@ -14,7 +14,7 @@
 - **ChatHub** 是唯一的事件匯流點，保留最近 50 則，讓新開的 viewer 不會空白。刪除與清除事件也會同步修正 backlog。
 - **LocalServer** 是只綁 `127.0.0.1` 的 HTTP 加 WebSocket 伺服器：HTTP 提供 viewer 靜態檔，`/ws` 推送事件與主題。
 - **Overlay 視窗** 是透明、無框、置頂、滑鼠穿透的 `BrowserWindow`，載入 `/overlay`。編輯模式下暫時接受滑鼠，讓使用者拖曳與縮放，位置會存進設定。
-- **控制台** 只透過 `window.chatto`（preload 暴露的 `ChattoApi`）和 main 溝通，拿不到 token。
+- **控制台** 是 frameless 視窗，自繪標題列（含視窗按鈕）；有完整模式（側邊導覽多頁面）與精簡模式（單頁 Bento）。它只透過 `window.chatto`（preload 暴露的 `ChattoApi`）和 main 溝通，拿不到 token。
 
 ## Packages
 
@@ -44,8 +44,8 @@ workspace package 直接提供 TypeScript 原始碼，由 Vite／electron-vite �
 
 ## 路線圖
 
-- [ ] 主題編輯器（視覺化調整、版型切換、自訂 CSS、即時預覽）
-- [ ] 主題匯出／匯入（JSON）
+- [x] 主題編輯器（視覺化調整、版型切換、自訂 CSS、即時預覽）
+- [x] 主題匯出／匯入（JSON）
 - [ ] 第三方表情（7TV、BTTV、FFZ）resolver
 - [ ] Provider registry 與多平台同時連線
 - [ ] 自動更新、開機自動啟動
