@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
 import { MagicCard } from '../components/ui/magic-card';
-import { ThemeEditor } from './ThemeEditor';
+import { ThemeEditor } from './theme-editor/ThemeEditor';
 import { exportTheme, pickThemeFile } from './themeIO';
 import { describeTheme } from './themeLabels';
 
