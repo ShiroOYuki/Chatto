@@ -1,7 +1,7 @@
 import type { ChatTheme } from '@chatto/core';
 import { ArrowLeft, Check, Download, RotateCcw, Save } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { api } from '../../api';
+import { themes } from '../../services/themes';
 import type { CursorRequest } from '../../components/CssEditor';
 import { Button, Tile } from '../../components/kit';
 import { PageTransition } from '../../components/motion';
@@ -32,7 +32,7 @@ export function ThemeEditor({
 }) {
   const { draft, setDraft, set, dirty, saving, justSaved, saveError, save, revert } = useThemeDraft(
     initial,
-    api.saveTheme,
+    themes.save,
     onSaved,
   );
   const [section, setSection] = useState<SectionId>('base');

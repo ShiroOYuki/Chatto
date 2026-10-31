@@ -1,7 +1,7 @@
 import { LayoutDashboard, Monitor, Moon, PanelsTopLeft, Sun } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
-import { api } from '../api';
+import { appPrefs, openExternal } from '../services/app';
 import { Stagger } from '../components/motion';
 import { ThemeSwitcher } from '../components/kibo-ui/theme-switcher';
 import { TeaCup } from '../components/TeaCup';
@@ -30,7 +30,7 @@ export function SettingsPage({ state }: { state: AppState }) {
           <Row title="主題色彩" hint="跟隨系統，或固定亮色／暗色。">
             <ThemeSwitcher
               value={prefs.appearance}
-              onChange={(appearance) => void api.setPrefs({ appearance })}
+              onChange={(appearance) => appPrefs.set({ appearance })}
               className="h-9 bg-tile-muted p-1.5 ring-0 [&_button]:size-6"
             />
           </Row>
@@ -38,7 +38,7 @@ export function SettingsPage({ state }: { state: AppState }) {
             <Segmented
               size="sm"
               value={prefs.uiMode}
-              onChange={(uiMode) => void api.setPrefs({ uiMode })}
+              onChange={(uiMode) => appPrefs.set({ uiMode })}
               options={[
                 {
                   value: 'full',
@@ -66,14 +66,14 @@ export function SettingsPage({ state }: { state: AppState }) {
             <Toggle
               checked={prefs.closeToTray}
               label="關閉時縮到系統匣"
-              onChange={(closeToTray) => void api.setPrefs({ closeToTray })}
+              onChange={(closeToTray) => appPrefs.set({ closeToTray })}
             />
           </Row>
           <Row title="開機時自動啟動" hint="只在安裝版生效。">
             <Toggle
               checked={prefs.launchAtLogin}
               label="開機時自動啟動"
-              onChange={(launchAtLogin) => void api.setPrefs({ launchAtLogin })}
+              onChange={(launchAtLogin) => appPrefs.set({ launchAtLogin })}
             />
           </Row>
         </Tile>
@@ -91,11 +91,7 @@ export function SettingsPage({ state }: { state: AppState }) {
               <div className="font-semibold">Chatto チャット</div>
               <div className="text-xs text-ink-faint">v{state.appInfo.version} · GPL-3.0-or-later · © 2026 Ciel</div>
             </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => void api.openExternal('https://www.gnu.org/licenses/gpl-3.0.html')}
-            >
+            <Button size="sm" variant="ghost" onClick={() => openExternal('https://www.gnu.org/licenses/gpl-3.0.html')}>
               授權條款
             </Button>
           </div>

@@ -2,7 +2,9 @@ import { ChatView, startMockStream, useChatFeed } from '@chatto/chat-ui';
 import type { ChatTheme, ViewerTarget } from '@chatto/core';
 import { useEffect, useState } from 'react';
 import type { AppState } from '../../shared/ipc';
-import { api } from './api';
+import { overlay } from './services/overlay';
+import { themes } from './services/themes';
+import { twitch, twitchStatus } from './services/twitch';
 import { TeaCup, type TeaCupMood } from './components/TeaCup';
 import { RollingNumber } from './components/motion';
 import { describeTheme, themeSwatch } from './pages/themeLabels';
@@ -67,7 +69,7 @@ export function AccountTile({ state }: { state: AppState }) {
             value={clientId}
             onChange={(event) => setClientId(event.target.value)}
           />
-          <Button variant="primary" disabled={!clientId.trim()} onClick={() => void api.setClientId(clientId)}>
+          <Button variant="primary" disabled={!clientId.trim()} onClick={() => twitch.setClientId(clientId)}>
             儲存
           </Button>
         </div>
@@ -80,7 +82,7 @@ export function AccountTile({ state }: { state: AppState }) {
       <Tile
         title="Twitch 帳號"
         action={
-          <Button variant="ghost" onClick={() => void api.cancelSignIn()}>
+          <Button variant="ghost" onClick={() => twitch.cancelSignIn()}>
             取消
           </Button>
         }
@@ -90,7 +92,7 @@ export function AccountTile({ state }: { state: AppState }) {
           {auth.deviceCode?.userCode ?? '······'}
         </div>
         {auth.deviceCode ? (
-          <Button className="mt-auto" onClick={() => void api.openExternal(auth.deviceCode!.verificationUri)}>
+          <Button className="mt-auto" onClick={() => twitch.openVerificationPage(state)}>
             重新開啟授權頁
           </Button>
         ) : null}
@@ -103,7 +105,7 @@ export function AccountTile({ state }: { state: AppState }) {
       <Tile
         title="Twitch 帳號"
         action={
-          <Button variant="ghost" onClick={() => void api.signOut()}>
+          <Button variant="ghost" onClick={() => twitch.signOut()}>
             登出
           </Button>
         }
@@ -125,7 +127,7 @@ export function AccountTile({ state }: { state: AppState }) {
     <Tile title="Twitch 帳號">
       <p className="text-sm text-ink-soft">登入後才能讀取聊天室，Chatto 只會要求讀取聊天的權限。</p>
       {auth.error ? <p className="mt-2 text-xs text-danger">{auth.error}</p> : null}
-      <Button variant="primary" className="mt-auto" onClick={() => void api.signIn()}>
+      <Button variant="primary" className="mt-auto" onClick={() => twitch.signIn()}>
         用 Twitch 登入
       </Button>
     </Tile>
@@ -134,9 +136,7 @@ export function AccountTile({ state }: { state: AppState }) {
 
 export function ChannelTile({ state }: { state: AppState }) {
   const [login, setLogin] = useState(state.channel.login ?? '');
-  const busy = state.channel.state === 'connecting' || state.channel.state === 'reconnecting';
-  const connected = state.channel.state === 'connected';
-  const signedIn = state.auth.status === 'signed-in';
+  const { signedIn, connected, busy } = twitchStatus(state);
 
   return (
     <Tile title="聊天室頻道" className="col-span-2">
@@ -144,7 +144,7 @@ export function ChannelTile({ state }: { state: AppState }) {
         className="flex gap-2"
         onSubmit={(event) => {
           event.preventDefault();
-          void api.connect(login).catch(() => undefined);
+          twitch.connect(login);
         }}
       >
         <div className="flex h-11 min-w-0 flex-1 items-center rounded-full border border-line bg-canvas pl-4 focus-within:border-matcha">
@@ -158,7 +158,7 @@ export function ChannelTile({ state }: { state: AppState }) {
           />
         </div>
         {connected ? (
-          <Button className="h-11" onClick={() => void api.disconnect()}>
+          <Button className="h-11" onClick={() => twitch.disconnect()}>
             中斷
           </Button>
         ) : (
@@ -189,10 +189,10 @@ export function OverlayTile({ state }: { state: AppState }) {
   return (
     <Tile
       title="桌面 Overlay"
-      action={<Toggle checked={enabled} label="桌面 Overlay" onChange={(v) => void api.setOverlayEnabled(v)} />}
+      action={<Toggle checked={enabled} label="桌面 Overlay" onChange={(v) => overlay.setEnabled(v)} />}
     >
       <p className="text-sm text-ink-soft">透明聊天室浮在所有視窗上方，滑鼠可以直接穿過。</p>
-      <Button className="mt-auto" disabled={!enabled} onClick={() => void api.setOverlayEditing(!editing)}>
+      <Button className="mt-auto" disabled={!enabled} onClick={() => overlay.setEditing(!editing)}>
         {editing ? '完成調整' : '調整位置與大小'}
       </Button>
     </Tile>
@@ -258,7 +258,7 @@ export function ThemeTile({
             key={theme.id}
             theme={theme}
             active={theme.id === selected}
-            onSelect={() => void api.selectTheme(target, theme.id)}
+            onSelect={() => themes.select(target, theme.id)}
           />
         ))}
       </div>

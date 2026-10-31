@@ -1,7 +1,8 @@
 import type { ViewerTarget } from '@chatto/core';
 import { AppWindow, Info, Move, RotateCcw, Tv } from 'lucide-react';
 import type { AppState } from '../../../shared/ipc';
-import { api } from '../api';
+import { overlay } from '../services/overlay';
+import { themes } from '../services/themes';
 import { Stagger } from '../components/motion';
 import { LiveThemePreview } from '../components/ThemePreview';
 import { Badge, Button, CopyField, Field, Hint, PageHeader, Select, Tile, Toggle } from '../components/kit';
@@ -12,7 +13,7 @@ function ThemeSelect({ state, target }: { state: AppState; target: ViewerTarget 
       <Select
         value={state.selectedThemes[target]}
         options={state.themes.map((theme) => ({ value: theme.id, label: theme.name }))}
-        onChange={(id) => void api.selectTheme(target, id)}
+        onChange={(id) => themes.select(target, id)}
       />
     </Field>
   );
@@ -33,7 +34,7 @@ export function OutputsPage({ state }: { state: AppState }) {
         <Tile
           title="桌面 Overlay"
           icon={<AppWindow />}
-          action={<Toggle checked={enabled} label="桌面 Overlay" onChange={(v) => void api.setOverlayEnabled(v)} />}
+          action={<Toggle checked={enabled} label="桌面 Overlay" onChange={(v) => overlay.setEnabled(v)} />}
         >
           <p className="text-sm text-ink-soft">
             給自己看的透明聊天室，浮在所有視窗上方，滑鼠可以直接穿過。OBS
@@ -50,7 +51,7 @@ export function OutputsPage({ state }: { state: AppState }) {
                   className="flex-1"
                   variant={editing ? 'primary' : 'secondary'}
                   disabled={!enabled}
-                  onClick={() => void api.setOverlayEditing(!editing)}
+                  onClick={() => overlay.setEditing(!editing)}
                 >
                   <Move /> {editing ? '完成調整' : '調整'}
                 </Button>
@@ -59,7 +60,7 @@ export function OutputsPage({ state }: { state: AppState }) {
                     variant="ghost"
                     disabled={!enabled}
                     aria-label="移回右下角"
-                    onClick={() => void api.resetOverlayBounds()}
+                    onClick={() => overlay.resetBounds()}
                   >
                     <RotateCcw />
                   </Button>

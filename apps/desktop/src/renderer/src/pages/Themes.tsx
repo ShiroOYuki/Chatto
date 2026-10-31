@@ -3,7 +3,7 @@ import type { ChatTheme, ViewerTarget } from '@chatto/core';
 import { Copy, Download, Ellipsis, MonitorUp, Pencil, Plus, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
-import { api } from '../api';
+import { themes } from '../services/themes';
 import { motion, riseIn, Stagger } from '../components/motion';
 import { StaticThemePreview } from '../components/ThemePreview';
 import { Badge, Button, Hint, PageHeader } from '../components/kit';
@@ -42,16 +42,21 @@ export function ThemesPage({ state }: { state: AppState }) {
     (['overlay', 'embed'] as const).filter((target) => state.selectedThemes[target] === theme.id);
 
   const duplicate = async (theme: ChatTheme) => {
+    setError(null);
     const copy = duplicateTheme(theme, `${theme.name} 副本`);
-    await api.saveTheme(copy);
-    setEditing(copy);
+    try {
+      await themes.save(copy);
+      setEditing(copy);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    }
   };
 
   const importTheme = async () => {
     setError(null);
     try {
       const theme = await pickThemeFile();
-      await api.saveTheme(theme);
+      await themes.save(theme);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
     }
@@ -165,7 +170,7 @@ export function ThemesPage({ state }: { state: AppState }) {
                             key={target}
                             size="sm"
                             variant={active ? 'primary' : 'secondary'}
-                            onClick={() => void api.selectTheme(target, theme.id)}
+                            onClick={() => themes.select(target, theme.id)}
                           >
                             <MonitorUp />
                             {target === 'overlay' ? 'Overlay' : 'OBS'}
@@ -194,7 +199,7 @@ export function ThemesPage({ state }: { state: AppState }) {
             <AlertDialogAction
               variant="destructive"
               className="rounded-full"
-              onClick={() => pendingDelete && void api.deleteTheme(pendingDelete.id)}
+              onClick={() => pendingDelete && themes.remove(pendingDelete.id)}
             >
               刪除
             </AlertDialogAction>

@@ -1,7 +1,7 @@
 import { ExternalLink, KeyRound, LogOut, Plug, PlugZap } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
-import { api } from '../api';
+import { twitch, twitchStatus } from '../services/twitch';
 import { Stagger } from '../components/motion';
 import {
   Badge,
@@ -40,9 +40,7 @@ function TwitchCard({ state }: { state: AppState }) {
   const [editingClientId, setEditingClientId] = useState(!state.clientIdConfigured);
   const [login, setLogin] = useState(state.channel.login ?? '');
   const { auth, channel } = state;
-  const signedIn = auth.status === 'signed-in';
-  const connected = channel.state === 'connected';
-  const busy = channel.state === 'connecting' || channel.state === 'reconnecting';
+  const { signedIn, connected, busy } = twitchStatus(state);
 
   return (
     <Tile className="col-span-2 gap-5">
@@ -79,13 +77,13 @@ function TwitchCard({ state }: { state: AppState }) {
                   variant="primary"
                   disabled={!clientId.trim()}
                   onClick={() => {
-                    void api.setClientId(clientId);
+                    twitch.setClientId(clientId);
                     setEditingClientId(false);
                   }}
                 >
                   儲存
                 </Button>
-                <Button variant="ghost" onClick={() => void api.openExternal('https://dev.twitch.tv/console/apps')}>
+                <Button variant="ghost" onClick={() => twitch.openDevConsole()}>
                   <ExternalLink /> 開啟 Console
                 </Button>
               </div>
@@ -113,11 +111,11 @@ function TwitchCard({ state }: { state: AppState }) {
               </div>
               <div className="mt-auto flex gap-2">
                 {auth.deviceCode ? (
-                  <Button size="sm" onClick={() => void api.openExternal(auth.deviceCode!.verificationUri)}>
+                  <Button size="sm" onClick={() => twitch.openVerificationPage(state)}>
                     重新開啟授權頁
                   </Button>
                 ) : null}
-                <Button size="sm" variant="ghost" onClick={() => void api.cancelSignIn()}>
+                <Button size="sm" variant="ghost" onClick={() => twitch.cancelSignIn()}>
                   取消
                 </Button>
               </div>
@@ -133,7 +131,7 @@ function TwitchCard({ state }: { state: AppState }) {
                   <div className="text-xs text-ink-faint">權限：讀取聊天室</div>
                 </div>
               </div>
-              <Button className="mt-auto self-start" size="sm" variant="ghost" onClick={() => void api.signOut()}>
+              <Button className="mt-auto self-start" size="sm" variant="ghost" onClick={() => twitch.signOut()}>
                 <LogOut /> 登出
               </Button>
             </>
@@ -145,7 +143,7 @@ function TwitchCard({ state }: { state: AppState }) {
                 className="mt-auto self-start"
                 variant="primary"
                 disabled={!state.clientIdConfigured}
-                onClick={() => void api.signIn()}
+                onClick={() => twitch.signIn()}
               >
                 用 Twitch 登入
               </Button>
@@ -162,7 +160,7 @@ function TwitchCard({ state }: { state: AppState }) {
             className="flex flex-col gap-3"
             onSubmit={(event) => {
               event.preventDefault();
-              void api.connect(login).catch(() => undefined);
+              twitch.connect(login);
             }}
           >
             <Field label="頻道名稱" hint="可以是自己或任何頻道。">
@@ -174,7 +172,7 @@ function TwitchCard({ state }: { state: AppState }) {
               />
             </Field>
             {connected ? (
-              <Button className="self-start" onClick={() => void api.disconnect()}>
+              <Button className="self-start" onClick={() => twitch.disconnect()}>
                 中斷連線
               </Button>
             ) : (

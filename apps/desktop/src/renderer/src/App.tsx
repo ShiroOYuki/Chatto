@@ -1,8 +1,8 @@
 import type { ViewerTarget } from '@chatto/core';
 import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../../shared/ipc';
-import { api } from './api';
 import { PAGES, Sidebar, type PageId } from './components/Sidebar';
+import { appPrefs } from './services/app';
 import { PageTransition, Stagger } from './components/motion';
 import { TeaCup } from './components/TeaCup';
 import { TitleBar } from './components/TitleBar';
@@ -123,7 +123,7 @@ function Shell() {
               state={state}
               onOpenThemes={() => {
                 setPage('themes');
-                void api.setPrefs({ uiMode: 'full' });
+                appPrefs.set({ uiMode: 'full' });
               }}
             />
           </div>

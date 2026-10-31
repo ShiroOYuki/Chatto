@@ -1,7 +1,7 @@
 import { ArrowRight, Eraser, MessageCircle, MonitorUp, Palette, Sparkles, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
-import { api } from '../api';
+import { overlay } from '../services/overlay';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
 import type { PageId } from '../components/Sidebar';
 import { moodFor } from '../components/Sidebar';
@@ -101,11 +101,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
             <div className="text-sm font-medium">桌面 Overlay</div>
             <div className="text-xs text-ink-faint">{state.overlay.enabled ? '顯示中' : '已關閉'}</div>
           </div>
-          <Toggle
-            checked={state.overlay.enabled}
-            label="桌面 Overlay"
-            onChange={(v) => void api.setOverlayEnabled(v)}
-          />
+          <Toggle checked={state.overlay.enabled} label="桌面 Overlay" onChange={(v) => overlay.setEnabled(v)} />
         </div>
         <div className="mt-2">
           <CopyField label="OBS 瀏覽器來源" value={state.server.embedUrl} />
