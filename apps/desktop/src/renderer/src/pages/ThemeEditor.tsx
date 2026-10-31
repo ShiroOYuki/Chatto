@@ -102,16 +102,39 @@ type BaseSectionId =
 /** Platform event pages are `event:<platform>:<eventType>`. */
 type SectionId = BaseSectionId | `event:${string}`;
 
-const SECTIONS: { id: BaseSectionId; label: string; icon: ReactNode; styledOnly?: boolean }[] = [
+/**
+ * `selector` is what hovering the menu item outlines in the preview.
+ * Sections without one (structure, motion, rules, CSS) have no single target.
+ */
+const SECTIONS: { id: BaseSectionId; label: string; icon: ReactNode; styledOnly?: boolean; selector?: string }[] = [
   { id: 'base', label: '基底與結構', icon: <Layers /> },
-  { id: 'text', label: '文字', icon: <Type />, styledOnly: true },
-  { id: 'list', label: '面板', icon: <LayoutList />, styledOnly: true },
-  { id: 'message', label: '訊息', icon: <MessageSquare />, styledOnly: true },
-  { id: 'author', label: '名稱', icon: <UserRound />, styledOnly: true },
-  { id: 'body', label: '內容', icon: <AtSign />, styledOnly: true },
-  { id: 'parts', label: '細節元件', icon: <Shapes />, styledOnly: true },
-  { id: 'notice', label: '通用事件訊息', icon: <Bell />, styledOnly: true },
-  { id: 'roles', label: '身分樣式', icon: <UsersRound />, styledOnly: true },
+  { id: 'text', label: '文字', icon: <Type />, styledOnly: true, selector: '.chatto-root' },
+  { id: 'list', label: '面板', icon: <LayoutList />, styledOnly: true, selector: '.chatto-list' },
+  { id: 'message', label: '訊息', icon: <MessageSquare />, styledOnly: true, selector: '.chatto-message' },
+  { id: 'author', label: '名稱', icon: <UserRound />, styledOnly: true, selector: '.chatto-message .chatto-header' },
+  { id: 'body', label: '內容', icon: <AtSign />, styledOnly: true, selector: '.chatto-message .chatto-body' },
+  {
+    id: 'parts',
+    label: '細節元件',
+    icon: <Shapes />,
+    styledOnly: true,
+    selector:
+      '.chatto-avatar, .chatto-badge, .chatto-time, .chatto-emote, .chatto-mention, .chatto-link, .chatto-reply',
+  },
+  {
+    id: 'notice',
+    label: '通用事件訊息',
+    icon: <Bell />,
+    styledOnly: true,
+    selector: '.chatto-notice, .chatto-message[data-event]',
+  },
+  {
+    id: 'roles',
+    label: '身分樣式',
+    icon: <UsersRound />,
+    styledOnly: true,
+    selector: '.chatto-message[data-roles], .chatto-message[data-highlight~="first-message"]',
+  },
   { id: 'motion', label: '動畫', icon: <Sparkles />, styledOnly: true },
   { id: 'behavior', label: '顯示規則', icon: <SlidersHorizontal /> },
   { id: 'css', label: '自訂 CSS', icon: <Braces /> },
@@ -239,11 +262,16 @@ export function ThemeEditor({
 
   const pickedScopes = picked ? scopesFor(picked) : [];
   const pickedSelector = picked ? buildSelector(picked, pickedScopes[pickedScope] ?? { kind: 'all' }) : null;
-  const highlight =
-    hoverSelector ??
-    pickedSelector ??
-    (active === 'css' ? cursorSelector : null) ??
-    (activeEvent ? `[data-event="${activeEvent.key}"]` : active === 'notice' ? '.chatto-notice, [data-event]' : null);
+  // Only explicit pointing highlights the preview (hover, inspect pick, CSS cursor);
+  // simply opening a section does not, so the styling stays easy to judge.
+  const highlight = hoverSelector ?? pickedSelector ?? (active === 'css' ? cursorSelector : null);
+  const hoverProps = (selector?: string) =>
+    selector
+      ? {
+          onMouseEnter: () => setHoverSelector(selector),
+          onMouseLeave: () => setHoverSelector(null),
+        }
+      : {};
   const role = (key: RoleKey): RoleStyle => draft.roles[key] ?? {};
   const setRole = (key: RoleKey, patch: Partial<RoleStyle>) => {
     const next = { ...role(key), ...patch };
@@ -796,6 +824,7 @@ export function ThemeEditor({
               icon={item.icon}
               label={item.label}
               onClick={() => setSection(item.id)}
+              {...hoverProps(item.selector)}
             />
           ))}
           {eventGroups.map((group) => (
@@ -814,6 +843,7 @@ export function ThemeEditor({
                     label={event.label}
                     trailing={own ? <span className="size-1.5 rounded-full bg-sakura" aria-label="獨立樣式" /> : null}
                     onClick={() => setSection(id)}
+                    {...hoverProps(`[data-event="${event.key}"]`)}
                   />
                 );
               })}
@@ -912,17 +942,23 @@ function NavItem({
   label,
   trailing,
   onClick,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   active: boolean;
   icon: ReactNode;
   label: string;
   trailing?: ReactNode;
   onClick: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       className={`relative flex h-9 shrink-0 items-center gap-2.5 rounded-xl px-3 text-left text-sm transition-colors ${
         active ? 'font-medium text-ink' : 'text-ink-soft hover:text-ink'
       }`}
