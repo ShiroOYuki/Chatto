@@ -4,6 +4,8 @@ export * from './useChatFeed';
 export * from './themes';
 export * from './themeCss';
 export * from './mock';
+export * from './mockData';
+export * from './eventSamples';
 export * from './events';
 export * from './reference';
 export * from './fontStacks';

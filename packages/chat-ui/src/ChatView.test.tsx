@@ -3,7 +3,8 @@ import { act, render, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChatView } from './ChatView';
 import type { FeedItem } from './feed';
-import { MOCK_USERS, createSpecimenEvents, mockMessage } from './mock';
+import { createSpecimenEvents } from './mock';
+import { MOCK_USERS, mockMessage } from './mockData';
 import { PRESET_THEMES, getPresetTheme } from './themes';
 import { useChatFeed } from './useChatFeed';
 

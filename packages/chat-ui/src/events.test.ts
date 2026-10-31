@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EVENT_CATALOG, eventKeyOf, findEvent } from './events';
+import { EVENT_SAMPLES, sampleEvent } from './eventSamples';
 import { createSpecimenEvents } from './mock';
 import { themeToCss } from './themeCss';
 import { BASE_THEME, editEventStyle, linkEvent, normalizeTheme, resolveEventStyle } from './themes';
@@ -7,11 +8,15 @@ import { BASE_THEME, editEventStyle, linkEvent, normalizeTheme, resolveEventStyl
 describe('platform events', () => {
   it('every catalogued sample carries its own event key', () => {
     for (const event of EVENT_CATALOG.flatMap((group) => group.events)) {
-      const sample = event.sample();
+      const sample = sampleEvent(event.key);
       const item = sample.type === 'message' ? sample.message : sample.type === 'notice' ? sample.notice : null;
       expect(item && eventKeyOf(item)).toBe(event.key);
       expect(findEvent(event.key)).toBe(event);
     }
+  });
+
+  it('every sample belongs to a catalogued event', () => {
+    for (const key of Object.keys(EVENT_SAMPLES)) expect(findEvent(key)).toBeDefined();
   });
 
   it('specimen covers every event', () => {
