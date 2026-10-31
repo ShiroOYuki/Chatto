@@ -1,4 +1,5 @@
 import { THEME_SCHEMA_VERSION, type BoxStyle, type ChatTheme, type EventOverride, type EventStyle } from '@chatto/core';
+import { FONT_STACKS, upgradeFontStack } from './fontStacks';
 
 /** Deep partial used to describe presets as overrides of the base theme. */
 export type ThemeOverrides<T = ChatTheme> = {
@@ -34,7 +35,7 @@ export function emptyBox(overrides: ThemeOverrides<BoxStyle> = {}): BoxStyle {
   );
 }
 
-const sans = "'Huninn', 'Noto Sans TC', 'Inter', system-ui, sans-serif";
+const sans = FONT_STACKS.huninn;
 
 /**
  * The one base every theme is built from. Presets below only override values;
@@ -217,7 +218,7 @@ export const PRESET_THEMES: ChatTheme[] = [
     },
   }),
   preset('washi', '和紙', {
-    font: { family: "'Noto Serif TC', 'Noto Serif JP', serif" },
+    font: { family: FONT_STACKS.serif },
     text: { color: '#2C2C2A', mutedColor: '#5F5E5A', accentColor: '#A32D2D' },
     message: { box: { background: '#F6F0E2', radius: [2, 2, 2, 2], padding: [6, 12, 6, 12] } },
     author: { color: '#712B13', useUserColor: false },
@@ -276,7 +277,7 @@ export const PRESET_THEMES: ChatTheme[] = [
     animation: { enter: 'slide-left', duration: 260 },
   }),
   preset('terminal', '終端機', {
-    font: { family: "'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace", size: 14 },
+    font: { family: FONT_STACKS.mono, size: 14 },
     text: { color: '#D3D1C7', mutedColor: '#888780', accentColor: '#5DCAA5' },
     list: {
       gap: 0,
@@ -404,6 +405,12 @@ function migrateV1(v1: ThemeV1): ChatTheme {
  * missing fields from the base, so older files keep working.
  */
 export function normalizeTheme(raw: unknown): ChatTheme {
+  const theme = normalizeSchema(raw);
+  // Older versions named fonts loaded from Google Fonts; point them at the bundled ones.
+  return { ...theme, font: { ...theme.font, family: upgradeFontStack(theme.font.family) } };
+}
+
+function normalizeSchema(raw: unknown): ChatTheme {
   const version = (raw as { schemaVersion?: number } | null)?.schemaVersion;
   if (version === 1) return migrateV1(raw as ThemeV1);
   if (version !== THEME_SCHEMA_VERSION) throw new Error(`Unsupported theme schema ${version}`);

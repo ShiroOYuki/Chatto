@@ -1,4 +1,5 @@
-import '@fontsource/huninn';
+// Every font chat themes can use ships with the app; nothing loads from the internet.
+import '@chatto/chat-ui/fonts';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

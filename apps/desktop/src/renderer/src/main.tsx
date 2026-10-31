@@ -1,6 +1,5 @@
-import '@fontsource/huninn';
-import '@fontsource/jetbrains-mono/400.css';
-import '@fontsource/jetbrains-mono/600.css';
+// UI fonts and every font chat themes can use, all bundled.
+import '@chatto/chat-ui/fonts';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

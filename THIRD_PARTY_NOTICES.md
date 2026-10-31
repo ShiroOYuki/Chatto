@@ -4,10 +4,12 @@ Chatto is licensed under GPL-3.0-or-later. It bundles the following third-party 
 
 ## Fonts
 
-| Font                                                                                             | Use                                   | License                   |
-| ------------------------------------------------------------------------------------------------ | ------------------------------------- | ------------------------- |
-| [jf open 粉圓（Huninn）](https://github.com/justfont/open-huninn-font), via `@fontsource/huninn` | Control panel UI, optional chat font  | SIL Open Font License 1.1 |
-| [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono), via `@fontsource/jetbrains-mono`   | Numbers and code in the control panel | SIL Open Font License 1.1 |
+| Font                                                                                             | Use                                                   | License                   |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------- | ------------------------- |
+| [jf open 粉圓（Huninn）](https://github.com/justfont/open-huninn-font), via `@fontsource/huninn` | Control panel UI, optional chat font                  | SIL Open Font License 1.1 |
+| [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono), via `@fontsource/jetbrains-mono`   | Numbers and code in the control panel, mono chat font | SIL Open Font License 1.1 |
+| [Noto Sans TC](https://github.com/notofonts/noto-cjk), via `@fontsource-variable/noto-sans-tc`   | Chat font (思源黑體)                                  | SIL Open Font License 1.1 |
+| [Noto Serif TC](https://github.com/notofonts/noto-cjk), via `@fontsource-variable/noto-serif-tc` | Chat font (思源宋體)                                  | SIL Open Font License 1.1 |
 
 Fonts are distributed alongside the program as separate works; the OFL license texts ship in the respective packages.
 

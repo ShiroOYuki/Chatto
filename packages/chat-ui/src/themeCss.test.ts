@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FONT_STACKS } from './fontStacks';
 import { scopeCustomCss, themeToCss } from './themeCss';
 import { BASE_THEME, createTheme, getPresetTheme, normalizeTheme, PLAIN_PRESET, PRESET_THEMES } from './themes';
 
@@ -118,5 +119,26 @@ describe('normalizeTheme', () => {
 
   it('rejects unknown versions', () => {
     expect(() => normalizeTheme({ schemaVersion: 99 })).toThrow();
+  });
+});
+
+describe('fonts', () => {
+  const bundled = ['Huninn', 'Noto Sans TC Variable', 'Noto Serif TC Variable', 'JetBrains Mono'];
+  const firstFamily = (stack: string) => stack.split(',')[0]!.trim().replace(/^'|'$/g, '');
+
+  it('presets lead with a bundled font so OBS looks the same on every PC', () => {
+    for (const theme of PRESET_THEMES) {
+      expect(bundled, theme.id).toContain(firstFamily(theme.font.family));
+    }
+  });
+
+  it('upgrades stacks saved before fonts were bundled', () => {
+    const old = {
+      ...structuredClone(PRESET_THEMES[0]!),
+      font: { ...PRESET_THEMES[0]!.font, family: "'Noto Serif TC', 'Noto Serif JP', serif" },
+    };
+    expect(normalizeTheme(old).font.family).toBe(FONT_STACKS.serif);
+    const custom = { ...old, font: { ...old.font, family: "'My Font', serif" } };
+    expect(normalizeTheme(custom).font.family).toBe("'My Font', serif");
   });
 });

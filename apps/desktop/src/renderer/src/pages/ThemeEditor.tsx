@@ -6,6 +6,7 @@ import {
   EVENT_CATALOG,
   EVENT_REFERENCE,
   findEvent,
+  FONT_STACKS,
   linkEvent,
   PLAIN_PRESET,
   PRESET_THEMES,
@@ -59,11 +60,11 @@ import { appendRule, buildSelector, scopesFor, type InspectedElement, type Selec
 import { exportTheme } from './themeIO';
 
 const FONTS = [
-  { value: "'Huninn', 'Noto Sans TC', 'Inter', system-ui, sans-serif", label: '粉圓（jf open Huninn）' },
-  { value: "'Noto Sans TC', 'Inter', system-ui, sans-serif", label: '思源黑體（Noto Sans TC）' },
-  { value: "'Noto Serif TC', 'Noto Serif JP', serif", label: '思源宋體（Noto Serif TC）' },
-  { value: "'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace", label: '等寬（JetBrains Mono）' },
-  { value: 'system-ui, sans-serif', label: '系統字型' },
+  { value: FONT_STACKS.huninn, label: '粉圓（jf open Huninn）' },
+  { value: FONT_STACKS.sans, label: '思源黑體（Noto Sans TC）' },
+  { value: FONT_STACKS.serif, label: '思源宋體（Noto Serif TC）' },
+  { value: FONT_STACKS.mono, label: '等寬（JetBrains Mono）' },
+  { value: FONT_STACKS.system, label: '系統字型' },
 ];
 
 const ANIMATIONS: { value: EnterAnimation; label: string }[] = [
