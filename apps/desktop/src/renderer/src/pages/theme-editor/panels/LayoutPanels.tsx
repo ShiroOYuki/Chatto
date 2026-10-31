@@ -1,6 +1,6 @@
 import type { MessageArrangement } from '@chatto/core';
 import { Segmented } from '../../../components/kit';
-import { BoxEditor, FieldRow, NumberField } from '../../../components/themeFields';
+import { BoxEditor, FieldRow, NumberField } from '../fields';
 import { SubHeading, type PanelProps } from './shared';
 
 export function ListPanel({ draft, set }: PanelProps) {

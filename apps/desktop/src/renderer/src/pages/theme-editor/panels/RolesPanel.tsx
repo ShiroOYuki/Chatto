@@ -1,6 +1,6 @@
 import type { ChatTheme, RoleKey, RoleStyle } from '@chatto/core';
 import type { Dispatch, SetStateAction } from 'react';
-import { OptionalColorRow } from '../../../components/themeFields';
+import { OptionalColorRow } from '../fields';
 import { patchRole } from '../draft';
 import { ROLE_LABELS } from '../options';
 import { PanelIntro } from './shared';

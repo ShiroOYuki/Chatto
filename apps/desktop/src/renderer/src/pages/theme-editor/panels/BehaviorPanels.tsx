@@ -1,5 +1,5 @@
 import { TagsField } from '../../../components/kit';
-import { FieldRow, NumberField, SelectRow } from '../../../components/themeFields';
+import { FieldRow, NumberField, SelectRow } from '../fields';
 import { ANIMATIONS, BOT_SUGGESTIONS, PREFIX_SUGGESTIONS } from '../options';
 import type { PanelProps } from './shared';
 

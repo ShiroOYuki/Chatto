@@ -1,12 +1,4 @@
-import {
-  BoxEditor,
-  ColorRow,
-  NumberField,
-  OptionalColorRow,
-  SelectRow,
-  TextRow,
-  ToggleRow,
-} from '../../../components/themeFields';
+import { BoxEditor, ColorRow, NumberField, OptionalColorRow, SelectRow, TextRow, ToggleRow } from '../fields';
 import { WEIGHTS } from '../options';
 import { SubHeading, type PanelProps } from './shared';
 

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Monitor, Moon, PanelsTopLeft, Sun } from 'lucide-react';
+import { LayoutDashboard, PanelsTopLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { appPrefs, openExternal } from '../services/app';

@@ -3,7 +3,7 @@ import type { ChatTheme, EventStyle } from '@chatto/core';
 import { Link2 } from 'lucide-react';
 import { useMemo, type Dispatch, type SetStateAction } from 'react';
 import { Badge, Button } from '../../../components/kit';
-import { BoxEditor, ColorRow, NumberField, OptionalColorRow, TextRow } from '../../../components/themeFields';
+import { BoxEditor, ColorRow, NumberField, OptionalColorRow, TextRow } from '../fields';
 import { pathSetter, type PathSetter } from '../draft';
 import { PanelIntro, SubHeading } from './shared';
 

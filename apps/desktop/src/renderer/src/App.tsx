@@ -1,9 +1,8 @@
-import type { ViewerTarget } from '@chatto/core';
 import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../../shared/ipc';
 import { PAGES, Sidebar, type PageId } from './components/Sidebar';
 import { appPrefs } from './services/app';
-import { PageTransition, Stagger } from './components/motion';
+import { PageTransition } from './components/motion';
 import { TeaCup } from './components/TeaCup';
 import { TitleBar } from './components/TitleBar';
 import { Confetti, type ConfettiRef } from './components/ui/confetti';
@@ -14,27 +13,10 @@ import { OutputsPage } from './pages/Outputs';
 import { OverviewPage } from './pages/Overview';
 import { SettingsPage } from './pages/Settings';
 import { ThemesPage } from './pages/Themes';
-import { StoreProvider, useAppState, useChatLog } from './store';
-import { AccountTile, ChannelTile, EmbedTile, HeroTile, OverlayTile, PreviewTile, ThemeTile } from './tiles';
+import { StoreProvider, useAppState } from './store';
+import { CompactDashboard } from './pages/compact/CompactDashboard';
 
 const initialPage = (new URLSearchParams(location.search).get('page') as PageId | null) ?? 'overview';
-
-/** Single-page bento dashboard (compact mode). */
-function CompactDashboard({ state, onOpenThemes }: { state: AppState; onOpenThemes: () => void }) {
-  const { stats } = useChatLog();
-  const [target, setTarget] = useState<ViewerTarget>('overlay');
-  return (
-    <Stagger className="mx-auto grid h-full min-h-[680px] w-full max-w-[1280px] auto-rows-[minmax(150px,auto)] grid-cols-4 gap-3 p-4">
-      <HeroTile state={state} rate={stats.rate} />
-      <AccountTile state={state} />
-      <ChannelTile state={state} />
-      <OverlayTile state={state} />
-      <EmbedTile state={state} />
-      <ThemeTile state={state} target={target} onTargetChange={setTarget} onOpenThemes={onOpenThemes} />
-      <PreviewTile state={state} target={target} />
-    </Stagger>
-  );
-}
 
 function Page({ id, state, onNavigate }: { id: PageId; state: AppState; onNavigate: (page: PageId) => void }) {
   switch (id) {

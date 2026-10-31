@@ -1,4 +1,4 @@
-import { ColorRow, NumberField, SelectRow, ShadowEditor, TextRow } from '../../../components/themeFields';
+import { ColorRow, NumberField, SelectRow, ShadowEditor, TextRow } from '../fields';
 import { FONTS, WEIGHTS } from '../options';
 import type { PanelProps } from './shared';
 

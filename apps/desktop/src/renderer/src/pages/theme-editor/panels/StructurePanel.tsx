@@ -2,7 +2,7 @@ import { BLANK_STARTER_CSS } from '@chatto/chat-ui';
 import type { ChatTheme } from '@chatto/core';
 import type { Dispatch, SetStateAction } from 'react';
 import { ChoiceCards, Segmented, Select } from '../../../components/kit';
-import { FieldRow, ToggleRow } from '../../../components/themeFields';
+import { FieldRow, ToggleRow } from '../fields';
 import { applyPreset, PRESET_CHOICES } from '../draft';
 import { SubHeading, type PanelProps } from './shared';
 
