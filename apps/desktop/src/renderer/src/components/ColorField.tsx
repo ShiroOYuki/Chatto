@@ -1,4 +1,14 @@
 import { useEffect, useState } from 'react';
+import {
+  ColorPicker,
+  ColorPickerAlpha,
+  ColorPickerEyeDropper,
+  ColorPickerFormat,
+  ColorPickerHue,
+  ColorPickerOutput,
+  ColorPickerSelection,
+} from './kibo-ui/color-picker';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 interface Rgba {
   hex: string;
@@ -43,19 +53,45 @@ export function ColorField({
 
   return (
     <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas p-2">
-      <label
-        className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-line"
-        style={{ background: 'repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 10px 10px' }}
-        title={label}
-      >
-        <span className="absolute inset-0" style={{ background: value }} />
-        <input
-          type="color"
-          className="absolute inset-0 cursor-pointer opacity-0"
-          value={parsed?.hex ?? '#000000'}
-          onChange={(event) => onChange(formatColor({ hex: event.target.value, alpha: parsed?.alpha || 1 }))}
-        />
-      </label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={`${label}：開啟調色盤`}
+            className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-line transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-matcha focus-visible:outline-none"
+            style={{ background: 'repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 10px 10px' }}
+          >
+            <span className="absolute inset-0" style={{ background: value }} />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" side="left" className="w-64 rounded-2xl border-line bg-tile p-3">
+          <ColorPicker
+            className="gap-3"
+            value={parsed ? value : '#000000'}
+            onChange={([r, g, b, alpha]) =>
+              onChange(
+                formatColor({
+                  hex: `#${[r, g, b].map((n) => Math.round(n).toString(16).padStart(2, '0')).join('')}`,
+                  alpha,
+                }),
+              )
+            }
+          >
+            <ColorPickerSelection className="h-36 rounded-lg" />
+            <div className="flex items-center gap-3">
+              <ColorPickerEyeDropper />
+              <div className="grid w-full gap-2">
+                <ColorPickerHue />
+                <ColorPickerAlpha />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ColorPickerOutput />
+              <ColorPickerFormat />
+            </div>
+          </ColorPicker>
+        </PopoverContent>
+      </Popover>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-xs font-medium text-ink-soft">{label}</span>

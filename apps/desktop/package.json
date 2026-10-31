@@ -48,6 +48,7 @@
     "@chatto/core": "0.1.0",
     "@chatto/provider-twitch": "0.1.0",
     "canvas-confetti": "^1.9.4",
+    "color": "^5.0.3",
     "radix-ui": "^1.8.1",
     "ws": "^8.22.0"
   }

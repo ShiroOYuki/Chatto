@@ -24,6 +24,8 @@ Fonts are distributed alongside the program as separate works; the OFL license t
 | [shadcn/ui](https://ui.shadcn.com) (components copied into `components/ui`)                                                                                          | MIT        |
 | [Magic UI](https://magicui.design) (`magic-card`, `border-beam`, `confetti`, copied into `components/ui`)                                                            | MIT        |
 | [Radix UI](https://www.radix-ui.com) (`radix-ui`)                                                                                                                    | MIT        |
+| [Kibo UI](https://www.kibo-ui.com) color picker (adapted copy in `components/kibo-ui/color-picker`)                                                                  | MIT        |
+| [color](https://github.com/Qix-/color) (with `color-convert`, `color-string`, `color-name`)                                                                          | MIT        |
 | [CodeMirror 6](https://codemirror.net) (`codemirror`, `@codemirror/*`, `@lezer/*`, `style-mod`, `w3c-keyname`, `crelt`)                                              | MIT        |
 | [canvas-confetti](https://github.com/catdad/canvas-confetti)                                                                                                         | ISC        |
 | [class-variance-authority](https://cva.style)                                                                                                                        | Apache-2.0 |

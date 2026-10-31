@@ -64,7 +64,7 @@ docs/               architecture.md、message-format.md、theming.md
 
 - TypeScript（strict）、React 19、Vite、Tailwind CSS v4（控制台與 viewer 外框）。
 - 動畫用 **Motion**（`motion/react`），共用彈簧與元件集中在 `apps/desktop/src/renderer/src/components/motion.tsx`。**不使用 Animate UI**：其 MIT + Commons Clause 授權與 GPL 不相容。新增第三方套件前先確認授權與 GPL-3.0 相容，並更新 `THIRD_PARTY_NOTICES.md`。
-- 元件：**shadcn/ui + Radix**（互動元件）與 **Magic UI**（特效），程式碼放在 `apps/desktop/src/renderer/src/components/ui/`；Chatto 自己的包裝在 `components/kit.tsx`，頁面優先使用 kit。新增元件時在 `apps/desktop` 執行 `npx shadcn@latest add <name>` 或 `npx shadcn@latest add @magicui/<name>`，之後檢查 `import { cn } from "cn"` 要改回 `@/lib/utils`，並移除 CLI 多裝的 `cn`、`next-themes` 套件。
+- 元件：**shadcn/ui + Radix**（互動元件）與 **Magic UI**（特效）放在 `apps/desktop/src/renderer/src/components/ui/`，**Kibo UI**（功能型元件，目前用顏色選擇器）放在 `components/kibo-ui/`；Chatto 自己的包裝在 `components/kit.tsx`，頁面優先使用 kit。新增元件時在 `apps/desktop` 執行 `npx shadcn@latest add <name>` 、`npx shadcn@latest add @magicui/<name>` 或 `npx shadcn@latest add @kibo-ui/<name>`，之後檢查 `import { cn } from "cn"` 要改回 `@/lib/utils`，並移除 CLI 多裝的 `cn`、`next-themes` 套件；CLI 若詢問是否覆寫既有的 `ui/` 元件，不要覆寫。Kibo 的顏色選擇器已改寫（HSV 狀態、受控值不回授、HEX 可編輯），重新安裝會蓋掉這些修改。
 - 介面字型為本地打包的 jf open 粉圓（Huninn，OFL-1.1）；不從 Google Fonts 等外部載入。
 - 聊天渲染用純 CSS 加 CSS 變數（`chat.css`），不依賴 Tailwind，確保自訂 CSS 好寫、OBS 載入輕量。
 - Electron + electron-vite、`ws` 作為本機 WebSocket server、electron-builder 打包。
