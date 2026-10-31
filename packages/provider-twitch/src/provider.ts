@@ -86,11 +86,11 @@ export class TwitchChatProvider implements ChatProvider {
               resolve();
             }
           } catch (error) {
-            this.#setState('error', error instanceof Error ? error.message : String(error));
             if (!settled) {
               settled = true;
               reject(error);
             }
+            throw error; // the session reports the error state and stops
           }
         },
         onNotification: (type, event) => {

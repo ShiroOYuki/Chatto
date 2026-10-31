@@ -24,11 +24,14 @@ interface EventSubFrame {
 }
 
 export interface EventSubHandlers {
-  /** Called with a fresh session id; subscriptions must be created within 10 s. */
+  /**
+   * Called with a fresh session id; subscriptions must be created within 10 s.
+   * Rejecting ends the session with an `error` state instead of reporting it connected.
+   */
   onWelcome(sessionId: string): Promise<void>;
   onNotification(type: string, event: unknown): void;
   onRevocation(type: string, status: string): void;
-  onStateChange(state: 'connecting' | 'connected' | 'reconnecting' | 'closed', detail?: string): void;
+  onStateChange(state: 'connecting' | 'connected' | 'reconnecting' | 'closed' | 'error', detail?: string): void;
 }
 
 export class EventSubSession {
@@ -99,13 +102,20 @@ export class EventSubSession {
       case 'session_welcome': {
         const session = payload.session!;
         this.#keepaliveMs = ((session.keepalive_timeout_seconds ?? 10) + 5) * 1000;
+        // Restart the watchdog with the window this session announced.
+        this.#resetWatchdog();
         if (socket === this.#pendingReconnect) {
           // Server-initiated reconnect: subscriptions carry over, swap sockets.
           this.#pendingReconnect = null;
           this.#socket = socket;
           previous?.close();
         } else {
-          await this.handlers.onWelcome(session.id);
+          try {
+            await this.handlers.onWelcome(session.id);
+          } catch (error) {
+            this.#fail(error instanceof Error ? error.message : String(error));
+            return;
+          }
         }
         this.#attempt = 0;
         this.handlers.onStateChange('connected');
@@ -123,6 +133,15 @@ export class EventSubSession {
         if (payload.subscription) this.handlers.onRevocation(payload.subscription.type, payload.subscription.status);
         break;
     }
+  }
+
+  /** Ends the session for good: without subscriptions no chat would ever arrive. */
+  #fail(detail: string): void {
+    this.#closedByUser = true;
+    this.#clearWatchdog();
+    this.#socket?.close();
+    this.#socket = null;
+    this.handlers.onStateChange('error', detail);
   }
 
   #scheduleReconnect(reason: string): void {
