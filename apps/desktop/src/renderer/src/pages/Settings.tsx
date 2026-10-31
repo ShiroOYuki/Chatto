@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
 import { Stagger } from '../components/motion';
+import { ThemeSwitcher } from '../components/kibo-ui/theme-switcher';
 import { TeaCup } from '../components/TeaCup';
 import { Button, PageHeader, Segmented, Tile, Toggle } from '../components/kit';
 
@@ -27,36 +28,10 @@ export function SettingsPage({ state }: { state: AppState }) {
       <Stagger className="flex flex-col gap-3">
         <Tile title="外觀">
           <Row title="主題色彩" hint="跟隨系統，或固定亮色／暗色。">
-            <Segmented
-              size="sm"
+            <ThemeSwitcher
               value={prefs.appearance}
               onChange={(appearance) => void api.setPrefs({ appearance })}
-              options={[
-                {
-                  value: 'system',
-                  label: (
-                    <>
-                      <Monitor /> 系統
-                    </>
-                  ),
-                },
-                {
-                  value: 'light',
-                  label: (
-                    <>
-                      <Sun /> 亮色
-                    </>
-                  ),
-                },
-                {
-                  value: 'dark',
-                  label: (
-                    <>
-                      <Moon /> 暗色
-                    </>
-                  ),
-                },
-              ]}
+              className="h-9 bg-tile-muted p-1.5 ring-0 [&_button]:size-6"
             />
           </Row>
           <Row title="介面模式" hint="精簡模式把常用功能集中在一頁，適合開台時放在副螢幕。">

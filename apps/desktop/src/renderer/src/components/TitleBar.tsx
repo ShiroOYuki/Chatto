@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
 import { SwapIcon } from './motion';
-import { Hint, StatusDot } from './kit';
+import { Hint, channelTone, StatusDot } from './kit';
 
 function WindowButton({
   label,
@@ -54,7 +54,7 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
       </div>
 
       <div className="ml-4 flex items-center gap-2 text-xs text-ink-soft">
-        <StatusDot tone={connected ? 'ok' : state.channel.state === 'error' ? 'error' : 'idle'} />
+        <StatusDot tone={channelTone(state.channel.state, connected)} />
         {connected ? (state.channel.login ?? '已連線') : '未連線'}
       </div>
 

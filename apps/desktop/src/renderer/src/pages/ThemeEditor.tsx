@@ -40,7 +40,7 @@ import { useState, type ReactNode } from 'react';
 import { api } from '../api';
 import { CssEditor, type CursorRequest } from '../components/CssEditor';
 import { describeInspected, InspectablePreview, type PreviewMode } from '../components/InspectablePreview';
-import { Badge, Button, Hint, Segmented, Tile } from '../components/kit';
+import { Badge, Button, ChoiceCards, Hint, Segmented, TagsField, Tile } from '../components/kit';
 import { motion, PageTransition, spring } from '../components/motion';
 import {
   BoxEditor,
@@ -175,11 +175,8 @@ function scopeLabel(scope: SelectorScope, info: InspectedElement): string {
   }
 }
 
-const splitList = (text: string) =>
-  text
-    .split(/[,\s]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+const BOT_SUGGESTIONS = ['nightbot', 'streamelements', 'moobot', 'fossabot', 'wizebot', 'streamlabs', 'soundalerts'];
+const PREFIX_SUGGESTIONS = ['!', '?', '~', '$'];
 
 /** Immutable update of a nested field by path. */
 function setIn<T>(target: T, path: (string | number)[], value: unknown): T {
@@ -300,9 +297,9 @@ export function ThemeEditor({
   const panels: Record<BaseSectionId, ReactNode> = {
     base: (
       <>
-        <FieldRow label="基底" hint="空白不產生任何樣式，只保留結構與自訂 CSS。">
-          <Segmented
-            size="sm"
+        <div className="pb-2">
+          <div className="pb-2 text-xs font-medium text-ink-soft">基底</div>
+          <ChoiceCards
             value={draft.base}
             onChange={(value) =>
               setDraft((current) => ({
@@ -313,11 +310,15 @@ export function ThemeEditor({
               }))
             }
             options={[
-              { value: 'styled', label: '參數樣式' },
-              { value: 'blank', label: '空白（Blank）' },
+              { value: 'styled', title: '參數樣式', description: '用下方各項參數調整外觀，也可以再加自訂 CSS。' },
+              {
+                value: 'blank',
+                title: '空白（Blank）',
+                description: '不產生任何樣式，只保留結構，外觀完全由自訂 CSS 決定。',
+              },
             ]}
           />
-        </FieldRow>
+        </div>
         {!blank ? (
           <FieldRow
             label="載入預設參數"
@@ -693,18 +694,24 @@ export function ThemeEditor({
           max={200}
           onChange={set('options', 'maxMessages')}
         />
-        <TextRow
-          label="隱藏的使用者"
-          hint="逗號或空白分隔"
-          value={options.hiddenUsers.join(', ')}
-          onChange={(value) => set('options', 'hiddenUsers')(splitList(value.toLowerCase()))}
-        />
-        <TextRow
-          label="隱藏的指令前綴"
-          hint="例如 !"
-          value={options.hiddenPrefixes.join(' ')}
-          onChange={(value) => set('options', 'hiddenPrefixes')(splitList(value))}
-        />
+        <FieldRow label="隱藏的使用者" hint="這些帳號的訊息不會顯示">
+          <TagsField
+            value={options.hiddenUsers}
+            onChange={set('options', 'hiddenUsers')}
+            suggestions={BOT_SUGGESTIONS}
+            normalize={(text) => text.trim().toLowerCase().replace(/^@/, '')}
+            placeholder="新增使用者…"
+          />
+        </FieldRow>
+        <FieldRow label="隱藏的指令前綴" hint="以這些字元開頭的訊息不會顯示">
+          <TagsField
+            value={options.hiddenPrefixes}
+            onChange={set('options', 'hiddenPrefixes')}
+            suggestions={PREFIX_SUGGESTIONS}
+            normalize={(text) => text.trim()}
+            placeholder="新增前綴…"
+          />
+        </FieldRow>
       </>
     ),
     css: (

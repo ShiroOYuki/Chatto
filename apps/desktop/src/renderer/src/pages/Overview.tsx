@@ -8,7 +8,7 @@ import { moodFor } from '../components/Sidebar';
 import { RollingNumber, Stagger } from '../components/motion';
 import { TeaCup } from '../components/TeaCup';
 import { BorderBeam } from '../components/ui/border-beam';
-import { Button, CopyField, EmptyState, Sparkline, StatusDot, Tile, Toggle } from '../components/kit';
+import { Button, CopyField, EmptyState, Sparkline, channelTone, StatusDot, Tile, Toggle } from '../components/kit';
 import { useChatLog } from '../store';
 
 const STATE_LABEL: Record<AppState['channel']['state'], string> = {
@@ -55,7 +55,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 text-sm opacity-90">
-              <StatusDot tone={connected ? 'ok' : state.channel.state === 'error' ? 'error' : 'idle'} />
+              <StatusDot tone={channelTone(state.channel.state, connected)} />
               {STATE_LABEL[state.channel.state]}
             </div>
             <div className="mt-1 text-xl font-semibold">{state.channel.login ?? '還沒選擇頻道'}</div>
@@ -108,7 +108,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
           />
         </div>
         <div className="mt-2">
-          <CopyField value={state.server.embedUrl} />
+          <CopyField label="OBS 瀏覽器來源" value={state.server.embedUrl} />
         </div>
       </Tile>
 

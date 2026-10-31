@@ -7,7 +7,7 @@ import { TeaCup, type TeaCupMood } from './components/TeaCup';
 import { RollingNumber } from './components/motion';
 import { describeTheme, themeSwatch } from './pages/themeLabels';
 import { BorderBeam } from './components/ui/border-beam';
-import { Button, StatusDot, Tile, Toggle } from './components/kit';
+import { Button, LoadingSpinner, channelTone, StatusDot, Tile, Toggle } from './components/kit';
 
 const STATE_LABEL: Record<AppState['channel']['state'], string> = {
   idle: '尚未連線',
@@ -39,7 +39,7 @@ export function HeroTile({ state, rate }: { state: AppState; rate: number }) {
       </div>
       <div>
         <div className="flex items-center gap-2 text-sm opacity-90">
-          <StatusDot tone={connected ? 'ok' : state.channel.state === 'error' ? 'error' : 'idle'} />
+          <StatusDot tone={channelTone(state.channel.state, connected)} />
           {STATE_LABEL[state.channel.state]}
           {state.channel.login ? <span className="opacity-70">· {state.channel.login}</span> : null}
         </div>
@@ -163,7 +163,13 @@ export function ChannelTile({ state }: { state: AppState }) {
           </Button>
         ) : (
           <Button type="submit" variant="primary" className="h-11" disabled={!signedIn || busy || !login.trim()}>
-            {busy ? '連線中…' : '連線'}
+            {busy ? (
+              <>
+                <LoadingSpinner /> 連線中…
+              </>
+            ) : (
+              '連線'
+            )}
           </Button>
         )}
       </form>

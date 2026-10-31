@@ -86,7 +86,7 @@ export function OutputsPage({ state }: { state: AppState }) {
           <ThemeSelect state={state} target="embed" />
           <div className="mt-3">
             <Field label="來源網址">
-              <CopyField value={state.server.embedUrl} />
+              <CopyField label="OBS 瀏覽器來源" value={state.server.embedUrl} />
             </Field>
           </div>
           <ol className="mt-4 flex flex-col gap-2 text-sm text-ink-soft">

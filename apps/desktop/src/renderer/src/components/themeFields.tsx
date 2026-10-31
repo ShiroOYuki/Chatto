@@ -5,7 +5,9 @@
 import type { BorderSpec, BorderStyle, BoxStyle, Corners, ShadowSpec, Sides } from '@chatto/core';
 import { Link2, Link2Off } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 import { ColorField } from './ColorField';
+import { Input } from './ui/input';
 import { Hint, Select, Slider, Toggle } from './kit';
 
 export function FieldRow({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
@@ -45,7 +47,7 @@ function NumberInput({
     else setText(String(value));
   };
   return (
-    <input
+    <Input
       type="number"
       aria-label={label}
       value={text}
@@ -58,7 +60,10 @@ function NumberInput({
         if (event.target.value !== '' && Number.isFinite(parsed)) onChange(parsed);
       }}
       onBlur={commit}
-      className={`h-8 w-16 rounded-lg border border-line bg-canvas px-2 text-right font-mono text-xs tabular-nums outline-none focus:border-matcha ${className}`}
+      className={cn(
+        'h-8 w-16 rounded-lg border-line bg-canvas px-2 text-right font-mono text-xs tabular-nums shadow-none focus-visible:border-matcha focus-visible:ring-matcha/20 md:text-xs',
+        className,
+      )}
     />
   );
 }
@@ -244,11 +249,14 @@ export function TextRow({
 }) {
   return (
     <FieldRow label={label} hint={hint}>
-      <input
+      <Input
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className={`h-8 w-full rounded-lg border border-line bg-canvas px-2 text-sm outline-none focus:border-matcha ${mono ? 'font-mono text-xs' : ''}`}
+        className={cn(
+          'h-8 rounded-lg border-line bg-canvas px-2 text-sm shadow-none focus-visible:border-matcha focus-visible:ring-matcha/20 md:text-sm',
+          mono && 'font-mono text-xs md:text-xs',
+        )}
       />
     </FieldRow>
   );

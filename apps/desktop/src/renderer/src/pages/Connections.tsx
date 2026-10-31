@@ -3,7 +3,17 @@ import { useState, type ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { api } from '../api';
 import { Stagger } from '../components/motion';
-import { Badge, Button, Field, PageHeader, StatusDot, TextInput, Tile } from '../components/kit';
+import {
+  Badge,
+  Button,
+  LoadingSpinner,
+  Field,
+  PageHeader,
+  channelTone,
+  StatusDot,
+  TextInput,
+  Tile,
+} from '../components/kit';
 
 function PlatformMark({ color, children }: { color: string; children: ReactNode }) {
   return (
@@ -41,7 +51,7 @@ function TwitchCard({ state }: { state: AppState }) {
         <div className="flex-1">
           <h2 className="font-semibold">Twitch</h2>
           <p className="flex items-center gap-2 text-xs text-ink-soft">
-            <StatusDot tone={connected ? 'ok' : channel.state === 'error' ? 'error' : 'idle'} />
+            <StatusDot tone={channelTone(channel.state, connected)} />
             {STATE_TEXT[channel.state]}
             {connected && channel.login ? ` · ${channel.login}` : ''}
           </p>
@@ -174,7 +184,13 @@ function TwitchCard({ state }: { state: AppState }) {
                 className="self-start"
                 disabled={!signedIn || busy || !login.trim()}
               >
-                {busy ? '連線中…' : '連線'}
+                {busy ? (
+                  <>
+                    <LoadingSpinner /> 連線中…
+                  </>
+                ) : (
+                  '連線'
+                )}
               </Button>
             )}
             {channel.state === 'error' ? <p className="text-xs text-danger">{channel.detail}</p> : null}

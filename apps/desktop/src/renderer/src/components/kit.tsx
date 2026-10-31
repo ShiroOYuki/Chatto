@@ -1,6 +1,42 @@
 import { Check, Copy } from 'lucide-react';
 import type { HTMLMotionProps } from 'motion/react';
 import { useId, useState, type InputHTMLAttributes, type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import {
+  Choicebox,
+  ChoiceboxIndicator,
+  ChoiceboxItem,
+  ChoiceboxItemDescription,
+  ChoiceboxItemHeader,
+  ChoiceboxItemTitle,
+} from './kibo-ui/choicebox';
+import { Pill } from './kibo-ui/pill';
+import {
+  Snippet,
+  SnippetCopyButton,
+  SnippetHeader,
+  SnippetTabsContent,
+  SnippetTabsList,
+  SnippetTabsTrigger,
+} from './kibo-ui/snippet';
+import { Spinner } from './kibo-ui/spinner';
+import { Status, StatusIndicator, StatusLabel } from './kibo-ui/status';
+import {
+  Tags,
+  TagsContent,
+  TagsEmpty,
+  TagsGroup,
+  TagsInput,
+  TagsItem,
+  TagsList,
+  TagsTrigger,
+  TagsValue,
+} from './kibo-ui/tags';
+import { Button as UiButton } from './ui/button';
+import { Field as UiField, FieldDescription, FieldLabel } from './ui/field';
+import { Input } from './ui/input';
+import { Switch } from './ui/switch';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { motion, riseIn, softSpring, spring, SwapIcon } from './motion';
 import { Select as SelectRoot, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Slider as SliderRoot } from './ui/slider';
@@ -42,35 +78,46 @@ export function Tile({
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
+const BUTTON_VARIANT: Record<ButtonVariant, { variant: 'default' | 'secondary' | 'ghost'; className: string }> = {
+  primary: { variant: 'default', className: '' },
+  secondary: { variant: 'secondary', className: 'hover:bg-matcha-soft/60' },
+  ghost: { variant: 'ghost', className: 'text-ink-soft hover:bg-tile-muted' },
+  danger: { variant: 'ghost', className: 'text-danger hover:bg-danger/10 hover:text-danger' },
+};
+const BUTTON_SIZE: Record<ButtonSize, { size: 'sm' | 'default' | 'lg'; className: string }> = {
+  sm: { size: 'sm', className: 'text-xs' },
+  md: { size: 'default', className: '' },
+  lg: { size: 'lg', className: 'h-11' },
+};
+
+/** shadcn/ui button with Chatto variants and a small spring on hover/tap. */
 export function Button({
   variant = 'secondary',
   size = 'md',
   className = '',
   ...props
 }: HTMLMotionProps<'button'> & { variant?: ButtonVariant; size?: ButtonSize }) {
-  const styles: Record<ButtonVariant, string> = {
-    primary: 'bg-matcha-strong text-on-matcha hover:opacity-90',
-    secondary: 'bg-tile-muted text-ink hover:bg-matcha-soft/60',
-    ghost: 'text-ink-soft hover:bg-tile-muted',
-    danger: 'text-danger hover:bg-danger/10',
-  };
-  const sizes: Record<ButtonSize, string> = {
-    sm: 'h-8 px-3 text-xs',
-    md: 'h-9 px-4 text-sm',
-    lg: 'h-11 px-5 text-sm',
-  };
+  const v = BUTTON_VARIANT[variant];
+  const z = BUTTON_SIZE[size];
   return (
-    <motion.button
-      type="button"
-      whileHover={{ y: -1 }}
-      whileTap={{ scale: 0.94, y: 0 }}
-      transition={spring}
-      className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-4 ${sizes[size]} ${styles[variant]} ${className}`}
-      {...props}
-    />
+    <UiButton
+      asChild
+      variant={v.variant}
+      size={z.size}
+      className={cn('gap-1.5 rounded-full', v.className, z.className, className)}
+    >
+      <motion.button
+        type="button"
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.94, y: 0 }}
+        transition={spring}
+        {...props}
+      />
+    </UiButton>
   );
 }
 
+/** shadcn/ui switch, sized and coloured for Chatto. */
 export function Toggle({
   checked,
   onChange,
@@ -81,37 +128,54 @@ export function Toggle({
   label: string;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
+    <Switch
+      size="lg"
+      checked={checked}
+      onCheckedChange={onChange}
       aria-label={label}
-      onClick={() => onChange(!checked)}
-      className={`flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-colors duration-200 ${
-        checked ? 'justify-end bg-matcha' : 'justify-start bg-line'
-      }`}
-    >
-      {/* The thumb glides with a spring and stretches while pressed. */}
-      <motion.span
-        layout
-        transition={spring}
-        whileTap={{ width: 24 }}
-        className="h-5 w-5 rounded-full bg-white shadow-sm"
-      />
-    </button>
+      className="shadow-none data-[state=checked]:bg-matcha data-[state=unchecked]:bg-line dark:data-[state=unchecked]:bg-line"
+      thumbClassName="bg-white shadow-sm duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)] dark:data-[state=checked]:bg-white dark:data-[state=unchecked]:bg-white"
+    />
   );
 }
 
-export function StatusDot({ tone }: { tone: 'ok' | 'idle' | 'warn' | 'error' }) {
-  const color = { ok: 'bg-matcha', idle: 'bg-ink-faint', warn: 'bg-amber-400', error: 'bg-danger' }[tone];
+const STATUS_BY_TONE = { ok: 'online', idle: 'offline', warn: 'degraded', error: 'error' } as const;
+
+/** Kibo UI spinner sized for buttons and inline text. */
+export function LoadingSpinner({ size = 14 }: { size?: number }) {
+  return <Spinner variant="circle-filled" size={size} />;
+}
+
+export type StatusTone = 'ok' | 'idle' | 'warn' | 'error';
+
+/** Maps a provider connection state to a status tone. */
+export function channelTone(state: string, connected: boolean): StatusTone {
+  if (connected) return 'ok';
+  if (state === 'connecting' || state === 'reconnecting') return 'warn';
+  return state === 'error' ? 'error' : 'idle';
+}
+
+/** Kibo UI status indicator (dot only); a Kibo spinner while connecting. */
+export function StatusDot({ tone }: { tone: StatusTone }) {
+  if (tone === 'warn') return <Spinner variant="circle-filled" size={12} className="text-amber-500" />;
   return (
-    <span className="relative inline-flex h-2.5 w-2.5 shrink-0">
-      {tone === 'ok' ? <span className={`absolute inset-0 animate-ping rounded-full ${color} opacity-60`} /> : null}
-      <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${color}`} />
+    <span className={cn('group inline-flex', STATUS_BY_TONE[tone])}>
+      <StatusIndicator />
     </span>
   );
 }
 
+/** Kibo UI status pill: dot plus label. */
+export function StatusPill({ tone, children }: { tone: StatusTone; children?: ReactNode }) {
+  return (
+    <Status status={STATUS_BY_TONE[tone]} className="rounded-full bg-tile-muted px-2.5 py-1 font-normal">
+      {tone === 'warn' ? <Spinner variant="circle-filled" size={12} className="text-amber-500" /> : <StatusIndicator />}
+      <StatusLabel className="text-xs text-ink-soft">{children}</StatusLabel>
+    </Status>
+  );
+}
+
+/** shadcn/ui tabs used as a segmented control, with a sliding highlight. */
 export function Segmented<T extends string>({
   value,
   options,
@@ -125,52 +189,103 @@ export function Segmented<T extends string>({
 }) {
   const group = useId();
   return (
-    <div
-      className={`inline-flex rounded-full bg-tile-muted p-1 ${size === 'sm' ? 'text-xs' : 'text-sm'}`}
-      role="radiogroup"
+    <Tabs value={value} onValueChange={(next) => onChange(next as T)} className="inline-flex">
+      <TabsList className={cn('h-auto rounded-full bg-tile-muted p-1', size === 'sm' ? 'text-xs' : 'text-sm')}>
+        {options.map((option) => {
+          const active = value === option.value;
+          return (
+            <TabsTrigger
+              key={option.value}
+              value={option.value}
+              className={cn(
+                'relative h-auto flex-none rounded-full border-0 font-normal text-ink-soft hover:text-ink [&_svg]:size-3.5',
+                'data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-ink data-[state=active]:shadow-none',
+                'dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-ink',
+                size === 'sm' ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm',
+              )}
+            >
+              {active ? (
+                <motion.span
+                  layoutId={`segmented-${group}`}
+                  transition={spring}
+                  className="absolute inset-0 rounded-full bg-tile shadow-sm"
+                />
+              ) : null}
+              <span className="relative inline-flex items-center gap-1.5">{option.label}</span>
+            </TabsTrigger>
+          );
+        })}
+      </TabsList>
+    </Tabs>
+  );
+}
+
+/** Kibo UI choicebox: radio cards with a title and description. */
+export function ChoiceCards<T extends string>({
+  value,
+  options,
+  onChange,
+  columns = 2,
+}: {
+  value: T;
+  options: { value: T; title: string; description?: string }[];
+  onChange: (value: T) => void;
+  columns?: number;
+}) {
+  const group = useId();
+  return (
+    <Choicebox
+      value={value}
+      onValueChange={(next) => onChange(next as T)}
+      className="grid gap-2"
+      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
     >
-      {options.map((option) => {
-        const active = value === option.value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            onClick={() => onChange(option.value)}
-            className={`relative inline-flex items-center gap-1.5 rounded-full transition-colors [&_svg]:size-3.5 ${size === 'sm' ? 'px-3 py-1' : 'px-4 py-1.5'} ${
-              active ? 'font-medium text-ink' : 'text-ink-soft hover:text-ink'
-            }`}
-          >
-            {active ? (
-              <motion.span
-                layoutId={`segmented-${group}`}
-                transition={spring}
-                className="absolute inset-0 rounded-full bg-tile shadow-sm"
-              />
+      {options.map((option) => (
+        <ChoiceboxItem
+          key={option.value}
+          value={option.value}
+          id={`${group}-${option.value}`}
+          className={cn(
+            'cursor-pointer rounded-xl border border-line bg-canvas p-3 transition-colors hover:border-matcha/60',
+            value === option.value && 'border-matcha bg-matcha-soft/20',
+          )}
+        >
+          <ChoiceboxItemHeader>
+            <ChoiceboxItemTitle className="text-sm">{option.title}</ChoiceboxItemTitle>
+            {option.description ? (
+              <ChoiceboxItemDescription className="text-xs text-ink-faint">
+                {option.description}
+              </ChoiceboxItemDescription>
             ) : null}
-            <span className="relative inline-flex items-center gap-1.5">{option.label}</span>
-          </button>
-        );
-      })}
-    </div>
+          </ChoiceboxItemHeader>
+          <ChoiceboxIndicator
+            id={`${group}-${option.value}`}
+            className="border-line text-matcha data-[state=checked]:border-matcha [&_svg]:fill-matcha"
+          />
+        </ChoiceboxItem>
+      ))}
+    </Choicebox>
   );
 }
 
 export function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-ink-soft">{label}</span>
+    <UiField className="gap-1.5">
+      <FieldLabel className="text-xs font-medium text-ink-soft">{label}</FieldLabel>
       {children}
-      {hint ? <span className="text-xs text-ink-faint">{hint}</span> : null}
-    </label>
+      {hint ? <FieldDescription className="text-xs text-ink-faint">{hint}</FieldDescription> : null}
+    </UiField>
   );
 }
 
+/** shadcn/ui input, styled for Chatto. */
 export function TextInput({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <input
-      className={`h-9 min-w-0 rounded-xl border border-line bg-canvas px-3 text-sm outline-none transition focus:border-matcha disabled:opacity-60 ${className}`}
+    <Input
+      className={cn(
+        'h-9 rounded-xl border-line bg-canvas shadow-none focus-visible:border-matcha focus-visible:ring-matcha/20 disabled:opacity-60',
+        className,
+      )}
       {...props}
     />
   );
@@ -261,6 +376,7 @@ export function Hint({
   );
 }
 
+/** Kibo UI pill, compact, in Chatto tones. */
 export function Badge({
   children,
   tone = 'neutral',
@@ -274,30 +390,105 @@ export function Badge({
     sakura: 'bg-sakura/40 text-ink',
     danger: 'bg-danger/10 text-danger',
   };
+  return <Pill className={cn('gap-1 px-2 py-0.5 text-[11px] font-medium', tones[tone])}>{children}</Pill>;
+}
+
+/** Kibo UI snippet: a read-only value with a copy button. */
+export function CopyField({ value, label = '網址' }: { value: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${tones[tone]}`}>
-      {children}
-    </span>
+    <Snippet value="value" className="rounded-2xl border-line bg-tile-muted">
+      <SnippetHeader className="border-line bg-transparent py-1 pr-1 pl-3">
+        <SnippetTabsList className="h-auto bg-transparent p-0">
+          <SnippetTabsTrigger
+            value="value"
+            className="h-7 rounded-full border-0 px-0 text-xs text-ink-faint shadow-none data-[state=active]:bg-transparent data-[state=active]:text-ink-faint data-[state=active]:shadow-none dark:data-[state=active]:border-0 dark:data-[state=active]:bg-transparent"
+          >
+            {label}
+          </SnippetTabsTrigger>
+        </SnippetTabsList>
+        <SnippetCopyButton
+          value={value}
+          onCopy={() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1600);
+          }}
+          asChild
+        >
+          <Button variant="primary" size="sm">
+            <SwapIcon swapped={copied} from={<Copy />} to={<Check />} />
+            {copied ? '複製好了' : '複製'}
+          </Button>
+        </SnippetCopyButton>
+      </SnippetHeader>
+      <SnippetTabsContent value="value" className="bg-transparent px-4 py-3 font-mono text-sm text-matcha-strong">
+        {value}
+      </SnippetTabsContent>
+    </Snippet>
   );
 }
 
-export function CopyField({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
+/** Kibo UI tags: a list of strings with removable chips, free entry and suggestions. */
+export function TagsField({
+  value,
+  onChange,
+  suggestions = [],
+  placeholder = '新增…',
+  normalize = (text: string) => text.trim(),
+}: {
+  value: string[];
+  onChange: (value: string[]) => void;
+  suggestions?: string[];
+  placeholder?: string;
+  normalize?: (text: string) => string;
+}) {
+  const [query, setQuery] = useState('');
+  const typed = normalize(query);
+  const add = (item: string) => {
+    if (item && !value.includes(item)) onChange([...value, item]);
+    setQuery('');
+  };
+  const remove = (item: string) => onChange(value.filter((entry) => entry !== item));
+  const options = suggestions.filter((item) => !value.includes(item));
   return (
-    <div className="flex items-center gap-2 rounded-2xl bg-tile-muted p-1.5 pl-4">
-      <code className="min-w-0 flex-1 truncate font-mono text-sm text-matcha-strong">{value}</code>
-      <Button
-        variant="primary"
-        onClick={() => {
-          void navigator.clipboard.writeText(value);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1600);
-        }}
+    <Tags className="w-full">
+      <TagsTrigger
+        placeholder={value.length ? '' : placeholder}
+        className="min-h-9 rounded-xl border-line bg-canvas px-2 py-1.5 shadow-none hover:bg-canvas"
       >
-        <SwapIcon swapped={copied} from={<Copy />} to={<Check />} />
-        {copied ? '複製好了' : '複製'}
-      </Button>
-    </div>
+        {value.map((item) => (
+          <TagsValue
+            key={item}
+            onRemove={() => remove(item)}
+            className="gap-1 rounded-full bg-tile-muted px-2 py-0.5 font-mono text-[11px] font-normal text-ink"
+          >
+            {item}
+          </TagsValue>
+        ))}
+      </TagsTrigger>
+      <TagsContent className="rounded-xl" align="start">
+        <TagsInput value={query} onValueChange={setQuery} placeholder="輸入後按 Enter 新增" />
+        <TagsList>
+          <TagsEmpty>{typed ? null : '沒有建議'}</TagsEmpty>
+          {typed && !value.includes(typed) && !options.includes(typed) ? (
+            <TagsGroup>
+              <TagsItem value={`add:${typed}`} onSelect={() => add(typed)}>
+                新增「{typed}」
+              </TagsItem>
+            </TagsGroup>
+          ) : null}
+          {options.length ? (
+            <TagsGroup heading="建議">
+              {options.map((item) => (
+                <TagsItem key={item} value={item} onSelect={() => add(item)}>
+                  <span className="font-mono">{item}</span>
+                </TagsItem>
+              ))}
+            </TagsGroup>
+          ) : null}
+        </TagsList>
+      </TagsContent>
+    </Tags>
   );
 }
 
