@@ -7,6 +7,7 @@ import {
   EVENT_REFERENCE,
   findEvent,
   linkEvent,
+  PLAIN_PRESET,
   PRESET_THEMES,
   resolveEventStyle,
   type SelectorReference,
@@ -209,8 +210,17 @@ export function ThemeEditor({
 
   /** Copies every parameter from a preset, keeping this theme's id and name. */
   const loadPreset = (presetId: string) => {
-    const preset = PRESET_THEMES.find((item) => item.id === presetId);
-    if (preset) setDraft({ ...structuredClone(preset), id: draft.id, name: draft.name, builtIn: false });
+    const preset = [PLAIN_PRESET, ...PRESET_THEMES].find((item) => item.id === presetId);
+    if (!preset) return;
+    // Style parameters only: display rules and custom CSS belong to this theme.
+    setDraft((current) => ({
+      ...structuredClone(preset),
+      id: current.id,
+      name: current.name,
+      builtIn: false,
+      options: current.options,
+      customCss: current.customCss,
+    }));
   };
 
   const sections = SECTIONS.filter((item) => !(blank && item.styledOnly));
@@ -281,11 +291,14 @@ export function ThemeEditor({
           />
         </FieldRow>
         {!blank ? (
-          <FieldRow label="載入預設參數" hint="把任一內建主題的參數套進來，再自行微調。">
+          <FieldRow
+            label="載入預設參數"
+            hint="套用內建主題的樣式參數再微調；選「空白」會把所有參數歸零。顯示規則與自訂 CSS 不受影響。"
+          >
             <Select
               value=""
               placeholder="選擇預設…"
-              options={PRESET_THEMES.filter((item) => item.base === 'styled').map((item) => ({
+              options={[PLAIN_PRESET, ...PRESET_THEMES.filter((item) => item.base === 'styled')].map((item) => ({
                 value: item.id,
                 label: item.name,
               }))}

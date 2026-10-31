@@ -162,6 +162,37 @@ export const BLANK_STARTER_CSS = `/*
 `;
 
 /** Built-in presets: every one is the same base with different parameters. */
+/**
+ * Parametric "blank": the styled base with every visual parameter zeroed —
+ * no fills, borders, radius, padding, gaps, shadows, accents or animation.
+ * Only plain readable text remains, so a look can be built up field by field.
+ * Unlike the `blank` preset it still renders through the generator, so the
+ * editor's controls keep working. Not listed as a theme card; the editor
+ * offers it under "load preset parameters".
+ */
+export const PLAIN_PRESET: ChatTheme = createTheme('plain', '空白（從零開始）', {
+  text: { color: '#FFFFFF', mutedColor: '#B4B2A9', accentColor: '#FFFFFF', strokeWidth: 0, shadow: null },
+  list: { box: emptyBox(), gap: 0 },
+  message: { box: emptyBox(), gap: 0, maxWidth: 0 },
+  author: {
+    color: '#FFFFFF',
+    useUserColor: false,
+    weight: 700,
+    prefix: '',
+    suffix: '',
+    separator: ': ',
+    box: emptyBox(),
+  },
+  body: { color: '', box: emptyBox() },
+  avatar: { show: false },
+  badges: { gap: 0, radius: 0 },
+  timestamp: { show: false, color: '#B4B2A9' },
+  mention: { color: '#FFFFFF', background: 'transparent', weight: 400 },
+  reply: { color: '#B4B2A9' },
+  notice: { box: emptyBox(), accentWidth: 0, accentColor: '#FFFFFF', titleColor: '#FFFFFF', bodyColor: '', icon: '' },
+  animation: { enter: 'none', duration: 0 },
+});
+
 export const PRESET_THEMES: ChatTheme[] = [
   preset('matcha-glass', '抹茶玻璃', {
     text: { color: '#EAF3DE', mutedColor: '#9FE1CB', accentColor: '#C0DD97' },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { scopeCustomCss, themeToCss } from './themeCss';
-import { BASE_THEME, createTheme, getPresetTheme, normalizeTheme, PRESET_THEMES } from './themes';
+import { BASE_THEME, createTheme, getPresetTheme, normalizeTheme, PLAIN_PRESET, PRESET_THEMES } from './themes';
 
 describe('theme base', () => {
   it('every styled preset is generated from the same base', () => {
@@ -15,6 +15,16 @@ describe('theme base', () => {
           .sort();
       expect(keys(theme)).toEqual(keys(BASE_THEME));
     }
+  });
+
+  it('the parametric blank zeroes every visual parameter', () => {
+    const css = themeToCss(PLAIN_PRESET, '.s');
+    expect(PLAIN_PRESET.base).toBe('styled');
+    expect(css).toContain('.s .chatto-message');
+    for (const fill of ['rgba(', 'border-left', '@keyframes', 'backdrop-filter']) expect(css).not.toContain(fill);
+    expect(css).not.toMatch(/background: (?!transparent)/);
+    expect(css).not.toMatch(/padding: (?!0px 0px 0px 0px|0;)/);
+    expect(css).not.toMatch(/box-shadow: (?!none)/);
   });
 
   it('blank generates no styles at all', () => {
