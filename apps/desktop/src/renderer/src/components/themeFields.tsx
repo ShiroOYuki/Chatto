@@ -207,13 +207,21 @@ export function OptionalColorRow({
     <FieldRow label={label}>
       <div className="flex items-center gap-2">
         <Toggle checked={value !== undefined} label={label} onChange={(on) => onChange(on ? fallback : undefined)} />
-        {value !== undefined ? (
-          <div className="min-w-0 flex-1">
-            <ColorField label={label} value={value} onChange={onChange} />
+        {/* The colour field stays mounted while off so toggling never changes the row height. */}
+        <div className="relative min-w-0 flex-1">
+          <div
+            inert={value === undefined}
+            aria-hidden={value === undefined}
+            className={`transition-opacity duration-150 ${value === undefined ? 'opacity-30 grayscale' : ''}`}
+          >
+            <ColorField label={label} value={value ?? fallback} onChange={onChange} />
           </div>
-        ) : (
-          <span className="text-xs text-ink-faint">沿用主題</span>
-        )}
+          {value === undefined ? (
+            <span className="pointer-events-none absolute inset-0 grid place-items-center">
+              <span className="rounded-full bg-tile px-2.5 py-0.5 text-xs text-ink-soft shadow-sm">沿用主題</span>
+            </span>
+          ) : null}
+        </div>
       </div>
     </FieldRow>
   );
