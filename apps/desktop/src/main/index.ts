@@ -14,6 +14,9 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let quitting = false;
 
+// Lets end-to-end tests run against an isolated profile (and its own single-instance lock).
+if (!app.isPackaged && process.env.CHATTO_USER_DATA) app.setPath('userData', process.env.CHATTO_USER_DATA);
+
 if (!app.requestSingleInstanceLock()) app.quit();
 
 /** Restores saved bounds only when they still fit on a connected display. */

@@ -5,6 +5,8 @@ import type { AppState, ChattoApi } from '../../shared/ipc';
 declare global {
   interface Window {
     chatto?: ChattoApi;
+    /** Test hooks of the browser mock API, only with `?e2e`. */
+    __chattoMock?: { emitChat(event: ChatEvent): void; setState(patch: Partial<AppState>): void };
   }
 }
 
@@ -12,6 +14,8 @@ declare global {
  * In-browser stand-in for the Electron preload API, so the control panel can
  * be developed with `npm run dev:web` and previewed without Electron.
  * `?compact` starts in compact mode, `?page=<id>` opens a page.
+ * `?e2e` turns off the random chat stream and exposes `window.__chattoMock`
+ * so end-to-end tests can push exact events and state.
  */
 function createMockApi(): ChattoApi {
   const params = new URLSearchParams(location.search);
@@ -40,18 +44,23 @@ function createMockApi(): ChattoApi {
   };
   const emitChat = (event: ChatEvent) => chatListeners.forEach((listener) => listener(event));
 
+  if (params.has('e2e')) {
+    window.__chattoMock = { emitChat, setState: set };
+  }
+
   let sent: string[] = [];
-  setInterval(() => {
-    const roll = Math.random();
-    if (roll < 0.05) return emitChat(createMockNotice());
-    if (roll < 0.08 && sent.length > 3) {
-      const messageId = sent[sent.length - 3]!;
-      return emitChat({ type: 'message-deleted', platform: 'twitch', channelId: '1', messageId });
-    }
-    const event = createMockMessage();
-    if (event.type === 'message') sent = [...sent.slice(-20), event.message.id];
-    emitChat(event);
-  }, 1200);
+  if (!params.has('e2e'))
+    setInterval(() => {
+      const roll = Math.random();
+      if (roll < 0.05) return emitChat(createMockNotice());
+      if (roll < 0.08 && sent.length > 3) {
+        const messageId = sent[sent.length - 3]!;
+        return emitChat({ type: 'message-deleted', platform: 'twitch', channelId: '1', messageId });
+      }
+      const event = createMockMessage();
+      if (event.type === 'message') sent = [...sent.slice(-20), event.message.id];
+      emitChat(event);
+    }, 1200);
 
   return {
     getState: async () => state,

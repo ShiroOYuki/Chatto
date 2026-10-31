@@ -68,7 +68,7 @@ docs/               architecture.md、message-format.md、theming.md
 - 介面字型為本地打包的 jf open 粉圓（Huninn，OFL-1.1）；不從 Google Fonts 等外部載入。
 - 聊天渲染用純 CSS 加 CSS 變數（`chat.css`），不依賴 Tailwind，確保自訂 CSS 好寫、OBS 載入輕量。
 - Electron + electron-vite、`ws` 作為本機 WebSocket server、electron-builder 打包。
-- 測試：Vitest。格式：Prettier（見 `.prettierrc`）。
+- 測試：Vitest（單元、元件，jsdom + Testing Library）、Playwright（網頁 E2E、視覺回歸、Electron）。格式：Prettier（見 `.prettierrc`）。分層與寫法見 `docs/testing.md`。
 
 ## 常用指令
 
@@ -77,7 +77,10 @@ npm install
 npm run dev          # 啟動桌面 App（含 viewer）
 npm run dev:viewer   # 只開 viewer，瀏覽器開 /overlay?mock=1 預覽
 npm run typecheck
-npm test
+npm test             # Vitest 單元與元件測試
+npm run test:e2e     # Playwright 網頁 E2E
+npm run test:visual  # 視覺回歸
+npm run test:electron  # 建置後測試 Electron App
 npm run dist         # 打包 Windows 安裝檔
 ```
 
@@ -85,7 +88,10 @@ npm run dist         # 打包 Windows 安裝檔
 
 - 能在瀏覽器驗證的 UI（viewer、控制台頁面）先用網頁模式加 mock 資料驗證。
 - 透明、置頂、滑鼠穿透這類原生行為，要在使用者的 Windows 桌面上實測。
-- 完成功能前執行 `npm run typecheck` 與 `npm test`。
+- 完成功能前執行 `npm run typecheck` 與 `npm test`；動到 UI 時加跑 `npm run test:e2e` 與 `npm run test:visual`，動到 main process 或視窗時加跑 `npm run test:electron`。
+- 新功能要附測試：純邏輯寫單元測試、React 元件寫元件測試、跨頁流程寫 E2E。修 bug 時先寫一個會失敗的測試。
+- 外觀刻意改變時，用 `npm run test:visual:update` 更新基準截圖，並在 commit 中一起提交；更新前先看過差異。
+- 原生行為（透明、穿透）只能部分自動化，仍要在 Windows 桌面實測。
 
 ## Git
 

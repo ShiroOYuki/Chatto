@@ -42,13 +42,19 @@ npm run dev:web      # 控制台在瀏覽器執行（使用假資料）http://lo
 
 ## 指令
 
-| 指令                | 說明                                                  |
-| ------------------- | ----------------------------------------------------- |
-| `npm run dev`       | 建置 viewer 並啟動 Electron                           |
-| `npm run typecheck` | 所有 workspace 型別檢查                               |
-| `npm test`          | Vitest 單元測試                                       |
-| `npm run build`     | 建置 viewer 與桌面 App                                |
-| `npm run dist`      | 打包 Windows 安裝檔（輸出到 `apps/desktop/release/`） |
+| 指令                    | 說明                                                  |
+| ----------------------- | ----------------------------------------------------- |
+| `npm run dev`           | 建置 viewer 並啟動 Electron                           |
+| `npm run typecheck`     | 所有 workspace 型別檢查                               |
+| `npm test`              | Vitest 單元與元件測試                                 |
+| `npm run test:e2e`      | Playwright：控制台與 viewer 的網頁 E2E                |
+| `npm run test:visual`   | Playwright：主題與控制台的視覺回歸                    |
+| `npm run test:electron` | 建置後以 Playwright 測試 Electron App                 |
+| `npm run test:all`      | 型別檢查加上所有測試                                  |
+| `npm run build`         | 建置 viewer 與桌面 App                                |
+| `npm run dist`          | 打包 Windows 安裝檔（輸出到 `apps/desktop/release/`） |
+
+測試的分層與寫法見 [`docs/testing.md`](docs/testing.md)。
 
 ## 專案結構
 

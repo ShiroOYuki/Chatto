@@ -1,5 +1,6 @@
 import {
   ChatView,
+  createSpecimenEvents,
   DEFAULT_THEME_ID,
   getPresetTheme,
   PRESET_THEMES,
@@ -13,6 +14,8 @@ import { connectToApp } from './connection';
 const params = new URLSearchParams(location.search);
 const target: ViewerTarget = location.pathname.includes('embed') ? 'embed' : 'overlay';
 const isMock = params.has('mock');
+/** `?specimen` renders the fixed specimen set once, for screenshots and visual tests. */
+const isSpecimen = params.has('specimen');
 const presetFromQuery = params.get('theme');
 const fallbackTheme = getPresetTheme(presetFromQuery ?? DEFAULT_THEME_ID) ?? PRESET_THEMES[0]!;
 
@@ -20,7 +23,8 @@ if (params.has('backdrop')) document.body.dataset.backdrop = '';
 
 /**
  * Viewer page. Online it mirrors the desktop app over WebSocket; with
- * `?mock=1` it runs standalone with fake chat (`&theme=<preset id>` picks a theme).
+ * `?mock=1` it runs standalone with fake chat, or with `?specimen` it shows a
+ * fixed set covering every part (`&theme=<preset id>` picks a theme).
  */
 export function App() {
   const [theme, setTheme] = useState<ChatTheme>(fallbackTheme);
@@ -28,6 +32,7 @@ export function App() {
   const { push, reset } = feed;
 
   useEffect(() => {
+    if (isSpecimen) return reset(createSpecimenEvents());
     if (isMock) return startMockStream(push);
     const wsUrl = params.get('ws') ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
     return connectToApp(wsUrl, target, {
