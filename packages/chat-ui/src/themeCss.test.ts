@@ -27,6 +27,12 @@ describe('theme base', () => {
     expect(css).not.toMatch(/box-shadow: (?!none)/);
   });
 
+  it('rows never shrink when the list overflows', () => {
+    for (const theme of PRESET_THEMES.filter((item) => item.base === 'styled')) {
+      expect(themeToCss(theme, '.s')).toContain('.s .chatto-list > li {\n  flex-shrink: 0;\n}');
+    }
+  });
+
   it('blank generates no styles at all', () => {
     const blank = getPresetTheme('blank')!;
     expect(blank.base).toBe('blank');

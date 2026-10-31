@@ -115,6 +115,7 @@ export const BLANK_STARTER_CSS = `/*
 
 .chatto-root {
   height: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;

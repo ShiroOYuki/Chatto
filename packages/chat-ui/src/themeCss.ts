@@ -161,6 +161,10 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
     ...boxDeclarations(list.box),
   ]);
 
+  // Rows keep their natural height; the root clips the oldest ones instead.
+  // Without this, rows with overflow:hidden (columns) get squashed when the list overflows.
+  rule('.chatto-list > li', ['flex-shrink: 0']);
+
   // Message container.
   rule('.chatto-message', [
     'display: flex',
