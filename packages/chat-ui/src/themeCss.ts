@@ -51,7 +51,20 @@ function boxDeclarations(box: BoxStyle): string[] {
   return declarations;
 }
 
+/** The colours of a box without its shape (radius, padding), for restyling another surface. */
+function surfaceDeclarations(box: BoxStyle): string[] {
+  return boxDeclarations(box).filter((line) => !line.startsWith('border-radius') && !line.startsWith('padding'));
+}
+
+const accentDeclarations = (style: EventStyle) =>
+  style.accentWidth > 0 ? [`border-left: ${px(style.accentWidth)} solid ${style.accentColor}`] : [];
+
+/** Roles that make an author more than a regular viewer. */
+const RANKED_ROLES = ['broadcaster', 'moderator', 'vip', 'subscriber', 'founder'];
+
 const ROLE_SELECTOR: Record<RoleKey, string> = {
+  // :where keeps the specificity of a single class, so every other role or highlight still wins.
+  viewer: `.chatto-message:where(${RANKED_ROLES.map((role) => `:not([data-roles~="${role}"])`).join('')})`,
   broadcaster: `.chatto-message[data-roles~="broadcaster"]`,
   moderator: `.chatto-message[data-roles~="moderator"]`,
   vip: `.chatto-message[data-roles~="vip"]`,
@@ -65,12 +78,33 @@ const EVENT_MESSAGE = '.chatto-message[data-event]';
 
 type Rule = (selector: string, declarations: string[]) => void;
 
+interface EventContext {
+  rule: Rule;
+  /** Whether a chat message's visible surface is its body (it has a fill) rather than the message box. */
+  surfaceIsBody: boolean;
+  /**
+   * Set for per-event overrides: the base message and body boxes, re-applied to undo
+   * whatever the generic event style set on the part this event leaves alone.
+   */
+  restore?: { message: BoxStyle; body: BoxStyle };
+}
+
 /** Emits one event style for a notice selector and a message-event selector. */
-function eventRules(rule: Rule, style: EventStyle, notice: string, message: string) {
-  rule(`${notice}, ${message}`, [
-    ...boxDeclarations(style.box),
-    ...(style.accentWidth > 0 ? [`border-left: ${px(style.accentWidth)} solid ${style.accentColor}`] : []),
-  ]);
+function eventRules(
+  { rule, surfaceIsBody, restore }: EventContext,
+  style: EventStyle,
+  notice: string,
+  message: string,
+) {
+  const frame = [...boxDeclarations(style.box), ...accentDeclarations(style)];
+  if (style.messageFrame === 'surface' && surfaceIsBody) {
+    rule(notice, frame);
+    rule(`${message} .chatto-body`, [...surfaceDeclarations(style.box), ...accentDeclarations(style)]);
+    if (restore) rule(message, boxDeclarations(restore.message));
+  } else {
+    rule(`${notice}, ${message}`, frame);
+    if (restore && surfaceIsBody) rule(`${message} .chatto-body`, surfaceDeclarations(restore.body));
+  }
   rule(`${notice} .chatto-notice-system, ${message} .chatto-event-title`, [`color: ${style.titleColor}`]);
   rule(`${notice} .chatto-notice-system::before, ${message} .chatto-event-title::before`, [
     style.icon ? `content: ${cssString(`${style.icon} `)}` : 'content: none',
@@ -157,6 +191,9 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
     'flex-direction: column',
     `gap: ${px(list.gap)}`,
     `align-items: ${list.align === 'start' ? 'flex-start' : list.align === 'end' ? 'flex-end' : 'stretch'}`,
+    // The list shrinks to the root when chat overflows; pack rows at the newest end so the
+    // oldest ones are clipped instead of the newest.
+    `justify-content: ${list.direction === 'top-down' ? 'flex-start' : 'flex-end'}`,
     'min-height: 0',
     ...boxDeclarations(list.box),
   ]);
@@ -307,11 +344,12 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
 
   // Events: the generic style, then each event that has its own style.
   // These come after role rules so an event's look wins over the author's role.
-  eventRules(rule, notice, EVENT_NOTICE, EVENT_MESSAGE);
+  eventRules({ rule, surfaceIsBody }, notice, EVENT_NOTICE, EVENT_MESSAGE);
+  const restore = { message: message.box, body: body.box };
   for (const [key, override] of Object.entries(theme.events)) {
     if (!override || override.linked) continue;
     const attr = `[data-event=${cssString(key)}]`;
-    eventRules(rule, override.style, `.chatto-notice${attr}`, `.chatto-message${attr}`);
+    eventRules({ rule, surfaceIsBody, restore }, override.style, `.chatto-notice${attr}`, `.chatto-message${attr}`);
   }
 
   // Enter animation.

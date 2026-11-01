@@ -1,3 +1,4 @@
+import type { ChatTheme } from '@chatto/core';
 import { describe, expect, it } from 'vitest';
 import { FONT_STACKS } from './fontStacks';
 import { scopeCustomCss, themeToCss } from './themeCss';
@@ -34,6 +35,19 @@ describe('theme base', () => {
     }
   });
 
+  it('clips the oldest rows when chat overflows', () => {
+    const list = (theme: ChatTheme) => themeToCss(theme, '.s').split('.s .chatto-list {')[1]!.split('}')[0]!;
+    expect(list(BASE_THEME)).toContain('justify-content: flex-end');
+    expect(list(createTheme('t', 't', { list: { direction: 'top-down' } }))).toContain('justify-content: flex-start');
+  });
+
+  it('styles regular viewers without outranking other roles', () => {
+    const css = themeToCss(createTheme('t', 't', { roles: { viewer: { nameColor: '#123456' } } }), '.s');
+    expect(css).toContain(
+      '.s .chatto-message:where(:not([data-roles~="broadcaster"]):not([data-roles~="moderator"]):not([data-roles~="vip"]):not([data-roles~="subscriber"]):not([data-roles~="founder"])) .chatto-author',
+    );
+  });
+
   it('blank generates no styles at all', () => {
     const blank = getPresetTheme('blank')!;
     expect(blank.base).toBe('blank');
@@ -68,6 +82,73 @@ describe('theme base', () => {
     expect(css).toContain(':scope { color: red }');
     expect(css).toContain(':scope .chatto-body');
     expect(scopeCustomCss('   ', '.s')).toBe('');
+  });
+});
+
+describe('event message frame', () => {
+  const bubble = getPresetTheme('bubble')!;
+  const rulesFor = (css: string, selector: string) =>
+    css
+      .split('}')
+      .filter((block) =>
+        block
+          .split('{')[0]!
+          .split(',')
+          .some((part) => part.trim() === selector),
+      )
+      .join('}');
+
+  it('wrap frames the whole message', () => {
+    const css = themeToCss({ ...bubble, notice: { ...bubble.notice, messageFrame: 'wrap' } }, '.s');
+    expect(rulesFor(css, '.s .chatto-message[data-event]')).toContain('background: #FAECE7');
+  });
+
+  it('surface restyles the bubble instead of drawing a frame around it', () => {
+    const css = themeToCss(bubble, '.s');
+    expect(bubble.notice.messageFrame).toBe('surface');
+    expect(rulesFor(css, '.s .chatto-message[data-event]')).toBe('');
+    const body = rulesFor(css, '.s .chatto-message[data-event] .chatto-body');
+    expect(body).toContain('background: #FAECE7');
+    // Keeps the bubble's own shape.
+    expect(body).not.toContain('border-radius');
+    expect(body).not.toContain('padding');
+    // System notices still get the whole box.
+    expect(rulesFor(css, '.s .chatto-notice')).toContain('border-radius: 16px 16px 16px 16px');
+  });
+
+  it('surface falls back to the message box when the body has no fill', () => {
+    const glass = getPresetTheme('matcha-glass')!;
+    const css = themeToCss({ ...glass, notice: { ...glass.notice, messageFrame: 'surface' } }, '.s');
+    expect(rulesFor(css, '.s .chatto-message[data-event]')).toContain('rgba(30, 70, 50, 0.72)');
+  });
+
+  it('an event with its own mode undoes what the generic style set', () => {
+    const cheer = '.s .chatto-message[data-event="twitch:cheer"]';
+    const wrapped = themeToCss(
+      {
+        ...bubble,
+        events: {
+          'twitch:cheer': {
+            linked: false,
+            style: { ...bubble.notice, messageFrame: 'wrap', box: { ...bubble.notice.box, background: '#111111' } },
+          },
+        },
+      },
+      '.s',
+    );
+    expect(rulesFor(wrapped, cheer)).toContain('background: #111111');
+    expect(rulesFor(wrapped, `${cheer} .chatto-body`)).toContain(`background: ${bubble.body.box.background}`);
+
+    const glass = getPresetTheme('matcha-glass')!;
+    const restyled = themeToCss(
+      {
+        ...glass,
+        body: { ...glass.body, box: { ...glass.body.box, background: '#222222' } },
+        events: { 'twitch:cheer': { linked: false, style: { ...glass.notice, messageFrame: 'surface' } } },
+      },
+      '.s',
+    );
+    expect(rulesFor(restyled, cheer)).toContain(`background: ${glass.message.box.background}`);
   });
 });
 

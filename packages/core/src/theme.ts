@@ -61,7 +61,17 @@ export type EnterAnimation = 'none' | 'fade' | 'slide-up' | 'slide-left' | 'slid
 export type MessageArrangement = 'inline' | 'stacked' | 'columns';
 
 /** Keys for per-role and per-highlight overrides. */
-export type RoleKey = 'broadcaster' | 'moderator' | 'vip' | 'subscriber' | 'first-message';
+/** `viewer` is everyone without a broadcaster, moderator, VIP or subscriber (founder) role. */
+export type RoleKey = 'viewer' | 'broadcaster' | 'moderator' | 'vip' | 'subscriber' | 'first-message';
+
+/**
+ * Where an event's frame goes on events that are chat messages (cheers, highlighted messages …):
+ * - `wrap`: the event box wraps the whole message.
+ * - `surface`: the event colours (fill, border, shadow, blur, accent) restyle the message's own
+ *   visible surface — the body when it has a fill (bubbles, tags) — keeping its shape, so
+ *   the event does not draw a frame around a frame. System notices always use the full box.
+ */
+export type EventMessageFrame = 'wrap' | 'surface';
 
 /**
  * Style of an event message (subs, raids, cheers …). The theme's `notice`
@@ -79,6 +89,8 @@ export interface EventStyle {
   bodyColor: string;
   /** Text shown before the title, e.g. an emoji; empty for none. */
   icon: string;
+  /** How the frame applies to events that are chat messages. */
+  messageFrame: EventMessageFrame;
 }
 
 /**

@@ -27,6 +27,7 @@ export const WEIGHTS = [300, 400, 500, 600, 700, 800, 900].map((weight) => ({
 
 /** Display names for roles and highlight kinds, shared by the role panel and the selector builder. */
 export const ROLE_NAMES: Record<string, string> = {
+  viewer: '一般觀眾',
   broadcaster: '實況主',
   moderator: '管理員',
   vip: 'VIP',
@@ -37,7 +38,7 @@ export const ROLE_NAMES: Record<string, string> = {
 };
 
 /** Roles that can be styled, in priority order (later entries win). */
-const STYLED_ROLES: RoleKey[] = ['broadcaster', 'moderator', 'vip', 'subscriber', 'first-message'];
+const STYLED_ROLES: RoleKey[] = ['viewer', 'broadcaster', 'moderator', 'vip', 'subscriber', 'first-message'];
 
 export const ROLE_LABELS: { key: RoleKey; label: string }[] = STYLED_ROLES.map((key) => ({
   key,

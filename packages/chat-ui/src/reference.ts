@@ -38,6 +38,12 @@ export const CLASS_REFERENCE: SelectorReference[] = [
 
 export const ATTRIBUTE_REFERENCE: SelectorReference[] = [
   { selector: '[data-roles~="broadcaster"]', label: '實況主', description: '訊息作者是實況主' },
+  {
+    selector:
+      ':not([data-roles~="broadcaster"]):not([data-roles~="moderator"]):not([data-roles~="vip"]):not([data-roles~="subscriber"]):not([data-roles~="founder"])',
+    label: '一般觀眾',
+    description: '訊息作者不是實況主、管理員、VIP 或訂閱者',
+  },
   { selector: '[data-roles~="moderator"]', label: '管理員', description: '訊息作者是管理員' },
   { selector: '[data-roles~="vip"]', label: 'VIP', description: '訊息作者是 VIP' },
   { selector: '[data-roles~="subscriber"]', label: '訂閱者', description: '訊息作者是訂閱者' },
