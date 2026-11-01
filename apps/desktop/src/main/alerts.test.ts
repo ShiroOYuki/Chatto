@@ -1,4 +1,10 @@
-import { defaultAlertSettings, type ChatEvent, type ChatMessage, type EventAlertSettings } from '@chatto/core';
+import {
+  defaultAlertSettings,
+  defaultEventAlertRule,
+  type ChatEvent,
+  type ChatMessage,
+  type EventAlertSettings,
+} from '@chatto/core';
 import { mockMessage, MOCK_USERS, sampleEvent } from '@chatto/chat-ui';
 import { describe, expect, it } from 'vitest';
 import { alertCue, markAfterSilence, SilenceTracker } from './alerts';
@@ -53,8 +59,10 @@ describe('alertCue', () => {
     ...patch,
   });
 
-  it('alerts platform events with the default rule', () => {
-    const cue = alertCue(sampleEvent('twitch:sub'), settings({ durationSeconds: 4 }));
+  it('alerts nothing until an event is switched on', () => {
+    expect(alertCue(sampleEvent('twitch:sub'), settings())).toBeNull();
+    const on = { ...defaultEventAlertRule(), enabled: true };
+    const cue = alertCue(sampleEvent('twitch:sub'), settings({ durationSeconds: 4, rules: { 'any:sub': on } }));
     expect(cue).toMatchObject({ durationMs: 4000, sound: { enabled: true } });
   });
 
@@ -79,7 +87,7 @@ describe('alertCue', () => {
 
   it('applies a category rule to every event in it', () => {
     const off = { enabled: false, minimum: 0, sound: defaultAlertSettings().silence.sound };
-    const gifts = settings({ rules: { 'any:gift': off } });
+    const gifts = settings({ rules: { 'any:gift': off, 'any:sub': { ...off, enabled: true } } });
     expect(alertCue(sampleEvent('twitch:sub-gift'), gifts)).toBeNull();
     expect(alertCue(sampleEvent('twitch:community-gift'), gifts)).toBeNull();
     expect(alertCue(sampleEvent('twitch:sub'), gifts)).not.toBeNull();

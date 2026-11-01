@@ -1,4 +1,10 @@
-import { defaultAlertSettings, type ChatEvent, type ChatTheme } from '@chatto/core';
+import {
+  defaultAlertSettings,
+  defaultEventAlertRule,
+  type AlertSettings,
+  type ChatEvent,
+  type ChatTheme,
+} from '@chatto/core';
 import { mockMessage, MOCK_USERS, sampleEvent } from '@chatto/chat-ui';
 import { PRESET_THEMES } from '@chatto/chat-ui/themes';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -333,6 +339,15 @@ describe('AppController preferences', () => {
   });
 });
 
+/** Alert settings with the raid category switched on. */
+const raidOn = (alerts: AlertSettings): AlertSettings => ({
+  ...alerts,
+  events: {
+    ...alerts.events,
+    rules: { ...alerts.events.rules, 'any:raid': { ...defaultEventAlertRule(), enabled: true } },
+  },
+});
+
 describe('AppController alerts', () => {
   const say = (text: string): ChatEvent => ({
     type: 'message',
@@ -369,6 +384,8 @@ describe('AppController alerts', () => {
 
   it('sends the alert overlay only events that pass their rule, with a cue', () => {
     const { controller } = setup();
+    expect(controller.route('alerts', sampleEvent('twitch:raid'))).toBeNull(); // every event starts off
+    controller.setAlertSettings(raidOn(controller.state().alerts));
     expect(controller.route('alerts', say('hi'))).toBeNull();
     expect(controller.route('alerts', connected)).toBeNull();
     expect(controller.route('alerts', sampleEvent('twitch:raid'))).toMatchObject({ alert: { durationMs: 5000 } });
@@ -379,10 +396,8 @@ describe('AppController alerts', () => {
   it('leaves alerted events out of the chat overlay only when asked and the alert overlay is open', () => {
     const { controller, settings } = setup();
     const raid = sampleEvent('twitch:raid');
-    controller.setAlertSettings({
-      ...settings.get().alerts,
-      events: { ...settings.get().alerts.events, hideInChatOverlay: true },
-    });
+    const alerts = raidOn(settings.get().alerts);
+    controller.setAlertSettings({ ...alerts, events: { ...alerts.events, hideInChatOverlay: true } });
     expect(controller.route('overlay', raid)).not.toBeNull();
     controller.setAlertsOverlayEnabled(true);
     expect(controller.route('overlay', raid)).toBeNull();
