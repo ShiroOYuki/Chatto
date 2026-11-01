@@ -1,14 +1,7 @@
 import { Check, Copy } from 'lucide-react';
 import { useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import {
-  Snippet,
-  SnippetCopyButton,
-  SnippetHeader,
-  SnippetTabsContent,
-  SnippetTabsList,
-  SnippetTabsTrigger,
-} from '../kibo-ui/snippet';
+import { Snippet, SnippetCopyButton, SnippetHeader, SnippetTabsContent } from '../kibo-ui/snippet';
 import {
   Tags,
   TagsContent,
@@ -54,14 +47,8 @@ export function CopyField({ value, label = '網址' }: { value: string; label?: 
   return (
     <Snippet value="value" className="rounded-2xl border-line bg-tile-muted">
       <SnippetHeader className="border-line bg-transparent py-1 pr-1 pl-3">
-        <SnippetTabsList className="h-auto bg-transparent p-0">
-          <SnippetTabsTrigger
-            value="value"
-            className="h-7 rounded-full border-0 px-0 text-xs text-ink-faint shadow-none data-[state=active]:bg-transparent data-[state=active]:text-ink-faint data-[state=active]:shadow-none dark:data-[state=active]:border-0 dark:data-[state=active]:bg-transparent"
-          >
-            {label}
-          </SnippetTabsTrigger>
-        </SnippetTabsList>
+        {/* A plain label, not a tab: a lone TabsTrigger picks up the active-tab island and border. */}
+        <span className="text-xs text-ink-faint">{label}</span>
         <SnippetCopyButton
           value={value}
           onCopy={() => {

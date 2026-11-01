@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { channelTone, Segmented, Toggle } from './kit';
+import { channelTone, CopyField, Segmented, Toggle } from './kit';
 
 describe('kit', () => {
   it('Toggle is a labelled switch that reports the new value', async () => {
@@ -28,6 +28,13 @@ describe('kit', () => {
     expect(screen.getByRole('tab', { name: '完整' }).getAttribute('aria-selected')).toBe('true');
     await userEvent.click(screen.getByRole('tab', { name: '精簡' }));
     expect(onChange).toHaveBeenCalledWith('compact');
+  });
+
+  it('CopyField labels the value without a lone tab', () => {
+    render(<CopyField label="OBS 瀏覽器來源" value="http://127.0.0.1:4820/embed" />);
+    expect(screen.getByText('OBS 瀏覽器來源')).toBeTruthy();
+    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.getByText('http://127.0.0.1:4820/embed')).toBeTruthy();
   });
 
   it('maps connection states to status tones', () => {
