@@ -251,7 +251,13 @@ export const PRESET_THEMES: ChatTheme[] = [
     mention: { color: '#D85A30' },
     reply: { color: '#F5C4B3' },
     notice: {
-      box: { background: '#FAECE7', radius: [16, 16, 16, 16], padding: [6, 12, 6, 12] },
+      // The coral border sets events apart from chat bubbles, which share the same fill.
+      box: {
+        background: '#FAECE7',
+        border: { width: 2, style: 'solid', color: '#F0997B' },
+        radius: [16, 16, 16, 16],
+        padding: [6, 12, 6, 12],
+      },
       accentWidth: 0,
       titleColor: '#D85A30',
       messageFrame: 'surface',
