@@ -96,7 +96,7 @@ function Shell() {
 
   const compact = state.prefs.uiMode === 'compact';
   // Pages that manage their own scrolling fill the viewport instead of the page scrolling.
-  const fillsViewport = page === 'chat' || page === 'themes';
+  const fillsViewport = page === 'overview' || page === 'chat' || page === 'themes';
 
   return (
     <TooltipProvider delayDuration={300}>

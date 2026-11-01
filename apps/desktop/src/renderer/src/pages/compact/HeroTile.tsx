@@ -22,7 +22,7 @@ function moodFor(state: AppState, rate: number): TeaCupMood {
 export function HeroTile({ state, rate }: { state: AppState; rate: number }) {
   const connected = state.channel.state === 'connected';
   return (
-    <Tile className="relative row-span-2 justify-between overflow-hidden bg-matcha-strong! text-on-matcha border-transparent!">
+    <Tile className="relative row-span-2 min-h-min justify-between overflow-hidden bg-matcha-strong! text-on-matcha border-transparent!">
       {connected ? <BorderBeam size={140} duration={7} borderWidth={2} colorFrom="#f4f9ee" colorTo="#c0dd97" /> : null}
       <div className="flex items-center gap-2 text-lg font-medium">
         Chatto <span className="text-sm opacity-70">チャット</span>

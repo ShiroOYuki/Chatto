@@ -12,8 +12,10 @@ import { AccountTile, ChannelTile } from './TwitchTiles';
 export function CompactDashboard({ state, onOpenThemes }: { state: AppState; onOpenThemes: () => void }) {
   const { stats } = useChatLog();
   const [target, setTarget] = useState<ViewerTarget>('overlay');
+  // Rows take their content height and share the rest; the theme list and preview shrink to fit
+  // the smallest window, and the page only scrolls below the minimum height.
   return (
-    <Stagger className="mx-auto grid h-full min-h-[680px] w-full max-w-[1280px] auto-rows-[minmax(150px,auto)] grid-cols-4 gap-3 p-4">
+    <Stagger className="mx-auto grid h-full min-h-[560px] w-full max-w-[1280px] grid-cols-4 gap-3 p-4">
       <HeroTile state={state} rate={stats.rate} />
       <AccountTile state={state} />
       <ChannelTile state={state} />

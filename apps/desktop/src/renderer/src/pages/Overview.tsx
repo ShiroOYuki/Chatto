@@ -20,6 +20,10 @@ const STATE_LABEL: Record<AppState['channel']['state'], string> = {
   closed: '已中斷',
 };
 
+/** Enough to fill a 4K-tall tile; the rest is clipped. */
+const RECENT_MESSAGES = 60;
+const RECENT_NOTICES = 16;
+
 function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   return (
     <Tile className="justify-between gap-3">
@@ -37,16 +41,19 @@ function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: n
 export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigate: (page: PageId) => void }) {
   const { entries, stats } = useChatLog();
   const connected = state.channel.state === 'connected';
-  const recentMessages = entries.filter((entry) => entry.kind === 'message').slice(-9);
+  // Render more than fits; the tiles clip what does not fit, so bigger windows show more.
+  const recentMessages = entries.filter((entry) => entry.kind === 'message').slice(-RECENT_MESSAGES);
   const recentNotices = entries
     .filter((entry) => entry.kind === 'notice')
-    .slice(-4)
+    .slice(-RECENT_NOTICES)
     .reverse();
   const themeName = (target: 'overlay' | 'embed') =>
     state.themes.find((theme) => theme.id === state.selectedThemes[target])?.name ?? '—';
 
   return (
-    <Stagger className="grid auto-rows-[minmax(132px,auto)] grid-cols-6 gap-3">
+    // Fills the viewport: the stats rows keep their content height and the chat row takes the rest.
+    // Below the minimum height the page scrolls instead of squeezing the tiles.
+    <Stagger className="grid h-full min-h-[520px] grid-cols-6 grid-rows-[minmax(132px,auto)_auto_minmax(160px,1fr)] gap-3">
       {/* Hero */}
       <Tile className="relative col-span-2 row-span-2 justify-between overflow-hidden border-transparent! bg-matcha-strong! text-on-matcha">
         {connected ? (
@@ -132,7 +139,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
       <Tile
         title="最新留言"
         icon={<MessageCircle />}
-        className="col-span-4 row-span-2"
+        className="col-span-4 min-h-0 overflow-hidden"
         action={
           <Button size="sm" variant="ghost" onClick={() => onNavigate('chat')}>
             開啟聊天室 <ArrowRight />
@@ -142,7 +149,10 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         {recentMessages.length === 0 ? (
           <EmptyState title="還沒有人說話" hint="連上頻道後，新的留言會出現在這裡。" />
         ) : (
-          <div className="-mx-3 flex flex-1 flex-col justify-end">
+          <div
+            data-testid="recent-messages"
+            className="-mx-3 flex min-h-0 flex-1 flex-col justify-end overflow-hidden mask-t-from-[calc(100%-2rem)]"
+          >
             {recentMessages.map((entry) =>
               entry.kind === 'message' ? (
                 <ChatLine key={entry.id} message={entry.message} deleted={entry.deleted} />
@@ -152,11 +162,14 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         )}
       </Tile>
 
-      <Tile title="最近活動" icon={<Sparkles />} className="col-span-2 row-span-2">
+      <Tile title="最近活動" icon={<Sparkles />} className="col-span-2 min-h-0 overflow-hidden">
         {recentNotices.length === 0 ? (
           <EmptyState mood="happy" title="還沒有新活動" hint="訂閱、揪團和公告會顯示在這裡。" />
         ) : (
-          <div className="flex flex-col">
+          <div
+            data-testid="recent-notices"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden mask-b-from-[calc(100%-2rem)]"
+          >
             {recentNotices.map((entry) =>
               entry.kind === 'notice' ? <NoticeLine key={entry.id} notice={entry.notice} /> : null,
             )}

@@ -21,7 +21,7 @@ export function ThemeTile({
   return (
     <Tile
       title="聊天室主題"
-      className="col-span-2 row-span-2"
+      className="col-span-2 row-span-2 min-h-0"
       action={
         <div className="flex rounded-full bg-tile-muted p-1 text-xs">
           {(['overlay', 'embed'] as const).map((item) => (
@@ -37,7 +37,7 @@ export function ThemeTile({
         </div>
       }
     >
-      <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
+      <div className="-m-1 grid min-h-0 flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-1 xl:grid-cols-3">
         {state.themes.map((theme) => (
           <ThemeChip
             key={theme.id}
@@ -47,7 +47,7 @@ export function ThemeTile({
           />
         ))}
       </div>
-      <div className="mt-auto flex gap-2 pt-4">
+      <div className="flex gap-2 pt-4">
         <Button className="flex-1" onClick={onOpenThemes}>
           編輯與管理主題
         </Button>
@@ -84,7 +84,7 @@ export function PreviewTile({ state, target }: { state: AppState; target: Viewer
   return (
     <Tile
       title="即時預覽"
-      className="col-span-2 row-span-2"
+      className="col-span-2 row-span-2 min-h-0"
       action={<span className="text-xs text-ink-faint">{theme.name}</span>}
     >
       <div

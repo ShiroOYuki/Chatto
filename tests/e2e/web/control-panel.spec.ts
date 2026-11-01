@@ -1,3 +1,4 @@
+import { createMockNotice } from '@chatto/chat-ui';
 import { chatMessage, expect, test } from '../fixtures';
 
 const PAGES = ['總覽', '聊天室', '主題', '輸出', '連線', '設定'];
@@ -41,6 +42,54 @@ test('the chat log can be searched and cleared', async ({ panel, page }) => {
   await page.getByPlaceholder('搜尋留言或名稱').fill('');
   await page.getByRole('button', { name: '清除紀錄' }).click();
   await expect(page.getByText('還沒有人說話')).toBeVisible();
+});
+
+for (const [width, height] of [
+  [960, 640],
+  [1280, 820],
+  [1920, 1080],
+] as const) {
+  test(`the overview fills a ${width}×${height} window without overflowing`, async ({ panel, page }) => {
+    await page.setViewportSize({ width, height });
+    await panel.open('page=overview');
+    const events = Array.from({ length: 80 }, (_, i) => (i % 5 === 0 ? createMockNotice() : chatMessage(`留言 ${i}`)));
+    await panel.emit(...events);
+    await expect(page.getByText('留言 79')).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      // Either `main` or the page wrapper scrolls, depending on the page.
+      const scrollers = [document.querySelector('main')!, document.querySelector('main > div')!];
+      const tiles = ['最新留言', '最近活動'].map((title) => {
+        const tile = [...document.querySelectorAll('section')].find(
+          (el) => el.querySelector('h2')?.textContent === title,
+        )!;
+        return tile.getBoundingClientRect().bottom;
+      });
+      return {
+        overflow: Math.max(...scrollers.map((el) => el.scrollHeight - el.clientHeight)),
+        tiles,
+        bottom: document.querySelector('main')!.getBoundingClientRect().bottom,
+      };
+    });
+    // Busy chat stays inside the tiles instead of growing the page (1px for rounding).
+    expect(layout.overflow).toBeLessThanOrEqual(1);
+    // Both tiles reach down to the page padding, however tall the window is.
+    for (const bottom of layout.tiles) {
+      expect(bottom).toBeGreaterThan(layout.bottom - 40);
+      expect(bottom).toBeLessThanOrEqual(layout.bottom);
+    }
+  });
+}
+
+test('compact mode fits the smallest window', async ({ panel, page }) => {
+  await page.setViewportSize({ width: 960, height: 640 });
+  await panel.open('compact');
+  await expect(page.getByText('編輯與管理主題')).toBeVisible();
+  const overflow = await page.evaluate(() => {
+    const scroller = document.querySelector('.overflow-y-auto')!;
+    return scroller.scrollHeight - scroller.clientHeight;
+  });
+  expect(overflow).toBeLessThanOrEqual(1);
 });
 
 test('switching to compact mode and back', async ({ panel, page }) => {
