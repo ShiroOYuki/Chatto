@@ -1,9 +1,12 @@
 import type { BuiltinSoundId, SoundSetting } from '@chatto/core';
+import type { SoundAsset } from './soundcn/types';
 
 /**
- * Alert sounds. Built-in sounds are synthesized with Web Audio, so Chatto
- * ships no audio files (and no third-party licences); user files are fetched
- * from the local server. Browser-only: callers run in the control panel or a viewer.
+ * Alert sounds. Built-in sounds are CC0 sounds vendored from soundcn
+ * (`./soundcn/`), each imported on demand so pages that never play a sound
+ * (the OBS embed) do not carry them. Their data URIs are decoded directly,
+ * so no fetch (and no CSP change) is needed. User files are fetched from the
+ * local server. Browser-only: callers run in the control panel or a viewer.
  */
 
 export const SOUND_LABELS: Record<BuiltinSoundId, string> = {
@@ -11,42 +14,20 @@ export const SOUND_LABELS: Record<BuiltinSoundId, string> = {
   chime: '和弦',
   bubble: '泡泡',
   bell: '鈴聲',
+  pizzicato: '撥弦',
+  coin: '金幣',
+  'level-up': '升級',
 };
 
-interface Tone {
-  /** Hz at the start, and optionally at the end of the tone. */
-  from: number;
-  to?: number;
-  type: OscillatorType;
-  /** Seconds after the sound starts. */
-  at: number;
-  /** Seconds until the tone fades out. */
-  decay: number;
-  /** Relative loudness, 0–1. */
-  level: number;
-}
-
-const BUILTIN: Record<BuiltinSoundId, Tone[]> = {
-  // Porcelain: two bright, quickly fading pings.
-  teacup: [
-    { from: 2093, type: 'sine', at: 0, decay: 0.35, level: 0.6 },
-    { from: 3136, type: 'sine', at: 0, decay: 0.2, level: 0.25 },
-    { from: 2349, type: 'sine', at: 0.12, decay: 0.3, level: 0.45 },
-  ],
-  // Rising major arpeggio.
-  chime: [
-    { from: 1047, type: 'triangle', at: 0, decay: 0.5, level: 0.5 },
-    { from: 1319, type: 'triangle', at: 0.09, decay: 0.5, level: 0.45 },
-    { from: 1568, type: 'triangle', at: 0.18, decay: 0.7, level: 0.45 },
-  ],
-  // A quick upward pop.
-  bubble: [{ from: 380, to: 980, type: 'sine', at: 0, decay: 0.16, level: 0.7 }],
-  // Bell with an overtone and a long tail.
-  bell: [
-    { from: 880, type: 'sine', at: 0, decay: 1.2, level: 0.55 },
-    { from: 1760, type: 'sine', at: 0, decay: 0.6, level: 0.2 },
-    { from: 2640, type: 'sine', at: 0, decay: 0.3, level: 0.1 },
-  ],
+/** Which soundcn sound each built-in id plays. */
+export const BUILTIN_SOUND_ASSETS: Record<BuiltinSoundId, () => Promise<SoundAsset>> = {
+  teacup: () => import('./soundcn/impact-glass-light-004').then((m) => m.impactGlassLight004Sound),
+  chime: () => import('./soundcn/two-tone-1').then((m) => m.twoTone1Sound),
+  bubble: () => import('./soundcn/notification-pop').then((m) => m.notificationPopSound),
+  bell: () => import('./soundcn/impact-bell-heavy-004').then((m) => m.impactBellHeavy004Sound),
+  pizzicato: () => import('./soundcn/jingles-pizzi-10').then((m) => m.jinglesPizzi10Sound),
+  coin: () => import('./soundcn/coin-collect').then((m) => m.coinCollectSound),
+  'level-up': () => import('./soundcn/power-up-5').then((m) => m.powerUp5Sound),
 };
 
 let context: AudioContext | null = null;
@@ -59,42 +40,29 @@ function audio(): AudioContext | null {
   return context;
 }
 
-function playTones(ctx: AudioContext, tones: Tone[], volume: number): void {
-  const start = ctx.currentTime + 0.01;
-  for (const tone of tones) {
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const t = start + tone.at;
-    oscillator.type = tone.type;
-    oscillator.frequency.setValueAtTime(tone.from, t);
-    if (tone.to) oscillator.frequency.exponentialRampToValueAtTime(tone.to, t + tone.decay);
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, tone.level * volume), t + 0.008);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + tone.decay);
-    oscillator.connect(gain).connect(ctx.destination);
-    oscillator.start(t);
-    oscillator.stop(t + tone.decay + 0.05);
-  }
+/** Bytes of a base64 data URI. */
+export function dataUriBytes(dataUri: string): ArrayBuffer {
+  const binary = atob(dataUri.slice(dataUri.indexOf(',') + 1));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
 }
 
-async function playFile(ctx: AudioContext, url: string, volume: number): Promise<void> {
-  let buffer = buffers.get(url);
-  if (!buffer) {
-    buffer = fetch(url)
-      .then((response) => {
-        if (!response.ok) throw new Error(`Sound ${url}: HTTP ${response.status}`);
-        return response.arrayBuffer();
-      })
-      .then((data) => ctx.decodeAudioData(data));
-    buffers.set(url, buffer);
-    buffer.catch(() => buffers.delete(url));
+/** Decodes once per key and caches the buffer; a failed load is retried next time. */
+function buffer(key: string, load: () => Promise<ArrayBuffer>, ctx: AudioContext): Promise<AudioBuffer> {
+  let pending = buffers.get(key);
+  if (!pending) {
+    pending = load().then((data) => ctx.decodeAudioData(data));
+    buffers.set(key, pending);
+    pending.catch(() => buffers.delete(key));
   }
-  const source = ctx.createBufferSource();
-  const gain = ctx.createGain();
-  source.buffer = await buffer;
-  gain.gain.value = volume;
-  source.connect(gain).connect(ctx.destination);
-  source.start();
+  return pending;
+}
+
+async function fetchBytes(url: string): Promise<ArrayBuffer> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Sound ${url}: HTTP ${response.status}`);
+  return response.arrayBuffer();
 }
 
 /**
@@ -106,7 +74,19 @@ export async function playSound(setting: SoundSetting | undefined, fileUrl: (id:
   if (!setting?.enabled || setting.volume <= 0) return;
   const ctx = audio();
   if (!ctx) return;
-  const volume = Math.min(1, setting.volume);
-  if (setting.sound.kind === 'builtin') playTones(ctx, BUILTIN[setting.sound.id], volume);
-  else await playFile(ctx, fileUrl(setting.sound.id), volume);
+  const { sound } = setting;
+  const decoded =
+    sound.kind === 'builtin'
+      ? await buffer(
+          `builtin:${sound.id}`,
+          async () => dataUriBytes((await BUILTIN_SOUND_ASSETS[sound.id]()).dataUri),
+          ctx,
+        )
+      : await buffer(`file:${sound.id}`, () => fetchBytes(fileUrl(sound.id)), ctx);
+  const source = ctx.createBufferSource();
+  const gain = ctx.createGain();
+  source.buffer = decoded;
+  gain.gain.value = Math.min(1, setting.volume);
+  source.connect(gain).connect(ctx.destination);
+  source.start();
 }

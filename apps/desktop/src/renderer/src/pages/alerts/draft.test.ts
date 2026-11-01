@@ -1,4 +1,4 @@
-import { defaultAlertSettings } from '@chatto/core';
+import { BUILTIN_SOUNDS, defaultAlertSettings } from '@chatto/core';
 import { describe, expect, it } from 'vitest';
 import {
   IMPORT_SOUND,
@@ -31,7 +31,7 @@ describe('alert settings drafts', () => {
   it('lists built-in sounds, the chosen file and a file picker', () => {
     const file = { kind: 'file' as const, id: 'a.mp3', name: '叮.mp3' };
     const values = soundOptions(file).map((option) => option.value);
-    expect(values).toEqual(['teacup', 'chime', 'bubble', 'bell', 'file:a.mp3', IMPORT_SOUND]);
+    expect(values).toEqual([...BUILTIN_SOUNDS, 'file:a.mp3', IMPORT_SOUND]);
     expect(soundOptions({ kind: 'builtin', id: 'bell' }).some((option) => option.value.startsWith('file:'))).toBe(
       false,
     );

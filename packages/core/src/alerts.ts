@@ -4,8 +4,8 @@
  * control panel (editing, playback) and the alerts viewer (playback).
  */
 
-/** Built-in sounds are synthesized at playback, so no audio files are bundled. */
-export const BUILTIN_SOUNDS = ['teacup', 'chime', 'bubble', 'bell'] as const;
+/** Built-in sounds: CC0 sounds from soundcn, loaded on demand (see `@chatto/chat-ui` sounds.ts). */
+export const BUILTIN_SOUNDS = ['teacup', 'chime', 'bubble', 'bell', 'pizzicato', 'coin', 'level-up'] as const;
 export type BuiltinSoundId = (typeof BUILTIN_SOUNDS)[number];
 
 export type SoundRef =
