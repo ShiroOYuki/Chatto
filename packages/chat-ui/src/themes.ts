@@ -1,5 +1,16 @@
-import { THEME_SCHEMA_VERSION, type BoxStyle, type ChatTheme, type EventOverride, type EventStyle } from '@chatto/core';
+import {
+  isValidImageSrc,
+  THEME_SCHEMA_VERSION,
+  type BoxImage,
+  type BoxImageRepeat,
+  type BoxStyle,
+  type ChatTheme,
+  type EventOverride,
+  type EventStyle,
+  type Sides,
+} from '@chatto/core';
 import { FONT_STACKS, upgradeFontStack } from './fontStacks';
+import { TEA_LEAF_FRAME } from './frames/teaLeafFrame';
 
 /** Deep partial used to describe presets as overrides of the base theme. */
 export type ThemeOverrides<T = ChatTheme> = {
@@ -30,9 +41,82 @@ export function emptyBox(overrides: ThemeOverrides<BoxStyle> = {}): BoxStyle {
       padding: [0, 0, 0, 0],
       shadow: null,
       backdropBlur: 0,
+      image: null,
     },
     overrides,
   );
+}
+
+// ---------- nine-slice image frames ----------
+
+/** Starting values for a newly picked frame image. */
+export const DEFAULT_BOX_IMAGE: BoxImage = {
+  src: '',
+  slice: [16, 16, 16, 16],
+  fill: true,
+  scale: 1,
+  repeat: 'stretch',
+  outset: [0, 0, 0, 0],
+};
+
+const IMAGE_REPEATS: BoxImageRepeat[] = ['stretch', 'repeat', 'round', 'space'];
+
+const finite = (value: unknown, fallback: number, min: number, max: number) =>
+  typeof value === 'number' && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+
+const sidesOf = (value: unknown, fallback: Sides, min: number, max: number): Sides =>
+  Array.isArray(value) && value.length === 4
+    ? (value.map((side, index) => finite(side, fallback[index]!, min, max)) as Sides)
+    : fallback;
+
+/** Fills missing fields and clamps values; null when the source is not one Chatto loads. */
+export function sanitizeBoxImage(raw: unknown): BoxImage | null {
+  if (!isPlainObject(raw) || typeof raw.src !== 'string' || !isValidImageSrc(raw.src)) return null;
+  const d = DEFAULT_BOX_IMAGE;
+  return {
+    src: raw.src,
+    slice: sidesOf(raw.slice, d.slice, 0, 4096),
+    fill: typeof raw.fill === 'boolean' ? raw.fill : d.fill,
+    scale: finite(raw.scale, d.scale, 0.1, 8),
+    repeat: IMAGE_REPEATS.includes(raw.repeat as BoxImageRepeat) ? (raw.repeat as BoxImageRepeat) : d.repeat,
+    outset: sidesOf(raw.outset, d.outset, 0, 200),
+  };
+}
+
+/** Theme keys that hold a frame image: every box's `image` and a role's `frame`. */
+const IMAGE_KEYS = new Set(['image', 'frame']);
+
+/**
+ * Rebuilds a theme with every frame image passed through `update`; returning
+ * null removes that frame. Walks the whole theme, so new boxes are covered too.
+ */
+export function mapThemeImages(theme: ChatTheme, update: (image: BoxImage) => BoxImage | null): ChatTheme {
+  const walk = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value;
+    if (!isPlainObject(value)) return value;
+    const result: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value)) {
+      if (IMAGE_KEYS.has(key) && isPlainObject(child) && 'src' in child) {
+        const next = update(child as unknown as BoxImage);
+        if (next) result[key] = next;
+        else if (key === 'image') result[key] = null;
+      } else {
+        result[key] = walk(child);
+      }
+    }
+    return result;
+  };
+  return walk(theme) as ChatTheme;
+}
+
+/** Every frame image source a theme uses, without duplicates. */
+export function themeImageSources(theme: ChatTheme): string[] {
+  const sources = new Set<string>();
+  mapThemeImages(theme, (image) => {
+    sources.add(image.src);
+    return image;
+  });
+  return [...sources];
 }
 
 const sans = FONT_STACKS.huninn;
@@ -209,6 +293,14 @@ export const PLAIN_PRESET: ChatTheme = createTheme('plain', '空白（從零開�
   attention: { effect: 'none', label: '' },
 });
 
+/** The built-in nine-slice frame: 32 px slices of a 96 px image, shown at half size. */
+const TEA_LEAF_IMAGE: BoxImage = {
+  ...DEFAULT_BOX_IMAGE,
+  src: TEA_LEAF_FRAME,
+  slice: [32, 32, 32, 32],
+  scale: 0.5,
+};
+
 export const PRESET_THEMES: ChatTheme[] = [
   preset('matcha-glass', '抹茶玻璃', {
     text: { color: '#EAF3DE', mutedColor: '#9FE1CB', accentColor: '#C0DD97' },
@@ -316,6 +408,22 @@ export const PRESET_THEMES: ChatTheme[] = [
     notice: { box: { padding: [2, 10, 2, 10] }, accentColor: '#5DCAA5', titleColor: '#5DCAA5' },
     attention: { color: '#5DCAA5', labelColor: '#0A0E14' },
     animation: { enter: 'none' },
+  }),
+  preset('tea-leaf', '茶葉框', {
+    text: { color: '#EAF3DE', mutedColor: '#C0DD97', accentColor: '#F4C0D1' },
+    list: { gap: 4 },
+    message: { box: { padding: [0, 4, 0, 4], image: TEA_LEAF_IMAGE } },
+    author: { color: '#C0DD97' },
+    mention: { color: '#F4C0D1' },
+    notice: {
+      box: { padding: [0, 4, 0, 4], image: TEA_LEAF_IMAGE },
+      accentWidth: 0,
+      accentColor: '#F4C0D1',
+      titleColor: '#F4C0D1',
+      icon: '🍵',
+    },
+    attention: { color: '#F4C0D1', labelColor: '#3A1020' },
+    animation: { enter: 'pop', duration: 300 },
   }),
   preset('blank', 'Blank（自訂 CSS）', {
     base: 'blank',
@@ -452,13 +560,17 @@ function normalizeSchema(raw: unknown): ChatTheme {
       style: mergeDeep(theme.notice, (override as Partial<EventOverride>).style),
     };
   }
-  return {
-    ...theme,
-    roles,
-    events,
-    id: data.id ?? `custom-${Date.now().toString(36)}`,
-    name: data.name ?? '未命名主題',
-  };
+  // Frames from files may be partial or point at something Chatto will not load.
+  return mapThemeImages(
+    {
+      ...theme,
+      roles,
+      events,
+      id: data.id ?? `custom-${Date.now().toString(36)}`,
+      name: data.name ?? '未命名主題',
+    },
+    sanitizeBoxImage,
+  );
 }
 
 // ---------- events ----------

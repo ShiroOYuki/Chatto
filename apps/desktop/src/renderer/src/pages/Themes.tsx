@@ -3,6 +3,7 @@ import type { ChatTheme, ViewerTarget } from '@chatto/core';
 import { Copy, Download, Ellipsis, MonitorUp, Pencil, Plus, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
+import { runAction } from '../services/run';
 import { themes } from '../services/themes';
 import { motion, riseIn, Stagger } from '../components/motion';
 import { StaticThemePreview } from '../components/ThemePreview';
@@ -26,7 +27,7 @@ import {
 } from '../components/ui/dropdown-menu';
 import { MagicCard } from '../components/ui/magic-card';
 import { ThemeEditor } from './theme-editor/ThemeEditor';
-import { exportTheme, pickThemeFile } from './themeIO';
+import { exportTheme, needsPackage, pickThemeFile } from './themeIO';
 import { describeTheme } from './themeLabels';
 
 export function ThemesPage({ state }: { state: AppState }) {
@@ -66,7 +67,7 @@ export function ThemesPage({ state }: { state: AppState }) {
     <div>
       <PageHeader
         title="主題"
-        description="風格與配色可以自由組合。內建主題可以複製後再編輯，也能匯出成 JSON 分享。"
+        description="風格與配色可以自由組合。內建主題可以複製後再編輯，也能匯出成檔案分享。"
         action={
           <div className="flex gap-2">
             <Button onClick={() => void importTheme()}>
@@ -142,8 +143,8 @@ export function ThemesPage({ state }: { state: AppState }) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44 rounded-xl">
-                            <DropdownMenuItem onSelect={() => exportTheme(theme)}>
-                              <Download /> 匯出 JSON
+                            <DropdownMenuItem onSelect={() => runAction('exportTheme', exportTheme(theme))}>
+                              <Download /> {needsPackage(theme) ? '匯出主題包' : '匯出 JSON'}
                             </DropdownMenuItem>
                             {!theme.builtIn ? (
                               <DropdownMenuItem onSelect={() => void duplicate(theme)}>

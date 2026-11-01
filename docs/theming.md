@@ -18,13 +18,14 @@
 
 ### 共用型別
 
-| 型別         | 內容                                                                        |
-| ------------ | --------------------------------------------------------------------------- |
-| `Sides`      | `[上, 右, 下, 左]`                                                          |
-| `Corners`    | `[左上, 右上, 右下, 左下]`                                                  |
-| `BorderSpec` | `width`、`style`（solid／dashed／dotted／double／none）、`color`            |
-| `ShadowSpec` | `x`、`y`、`blur`、`spread`、`color`、`inset?`（文字陰影忽略 spread、inset） |
-| `BoxStyle`   | `background`、`border`、`radius`、`padding`、`shadow`、`backdropBlur`       |
+| 型別         | 內容                                                                                                                 |
+| ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `Sides`      | `[上, 右, 下, 左]`                                                                                                   |
+| `Corners`    | `[左上, 右上, 右下, 左下]`                                                                                           |
+| `BorderSpec` | `width`、`style`（solid／dashed／dotted／double／none）、`color`                                                     |
+| `ShadowSpec` | `x`、`y`、`blur`、`spread`、`color`、`inset?`（文字陰影忽略 spread、inset）                                          |
+| `BoxStyle`   | `background`、`border`、`radius`、`padding`、`shadow`、`backdropBlur`、`image`（九宮格圖片外框，`null` 為不使用）    |
+| `BoxImage`   | `src`、`slice`（`Sides`，圖片像素）、`fill`、`scale`、`repeat`（stretch／repeat／round／space）、`outset`（`Sides`） |
 
 ### 主題欄位
 
@@ -45,7 +46,7 @@
 | `reply`     | `show`、`color`                                                                                                                                                                                                                                                                                       |
 | `notice`    | **通用事件訊息**（所有平台事件共用）：`box`、`accentColor`、`accentWidth`（左側色條）、`titleColor`、`bodyColor`（空字串＝沿用）、`icon`（標題前文字）、`messageFrame`（聊天訊息事件的外框位置）、`titlePlacement`（聊天訊息事件的標題位置）、`sticker`（標題貼紙的 `background`、`color`、`rotate`） |
 | `events`    | 各平台事件的樣式，鍵為 `平台:事件`（例如 `twitch:cheer`），值為 `{ linked, style }`；見下方「平台事件」                                                                                                                                                                                               |
-| `roles`     | 依身分覆蓋：鍵為 viewer（一般觀眾：沒有 broadcaster、moderator、vip、subscriber、founder 身分）／broadcaster／moderator／vip／subscriber／first-message，值為 `nameColor`、`nameBackground`、`surfaceBackground`、`borderColor`，皆可省略                                                             |
+| `roles`     | 依身分覆蓋：鍵為 viewer（一般觀眾：沒有 broadcaster、moderator、vip、subscriber、founder 身分）／broadcaster／moderator／vip／subscriber／first-message，值為 `nameColor`、`nameBackground`、`surfaceBackground`、`borderColor`、`frame`（`BoxImage`，套在訊息看得見的底色上），皆可省略              |
 | `animation` | `enter`（none／fade／slide-up／slide-left／slide-right／pop／bounce／shake／zoom）、`duration`（ms）、`exit`（none／fade／slide-up／slide-left／slide-right／pop／zoom，事件 Overlay 的卡片離場時使用）                                                                                               |
 | `attention` | 沉寂後新留言（`data-highlight~="after-silence"`，只在桌面 Overlay）：`effect`（none／glow／pulse／shake）、`color`、`repeat`（次數）、`label`（右上角標籤，空字串＝不顯示）、`labelColor`                                                                                                             |
 | `options`   | 顯示規則：`messageLifetime`（秒，0 為永久）、`maxMessages`、`hiddenUsers`、`hiddenPrefixes`                                                                                                                                                                                                           |
@@ -104,6 +105,7 @@
 | `bubble`       | 泡泡     | `stacked`、頭像、名稱縮小、內容框做成泡泡（左下角 4）、事件加珊瑚色框線、標題做成角落貼紙、彈出 |
 | `outline`      | 極簡描邊 | 無底色、字級 18、文字描邊 4px                                                                   |
 | `noren`        | 暖簾     | `columns`、名稱框藍底、內容框半透明藍、從左滑入                                                 |
+| `tea-leaf`     | 茶葉框   | 訊息與事件用九宮格圖片外框（內嵌的茶葉框圖，切線 32、縮放 0.5）、粉色強調、彈出                 |
 | `terminal`     | 終端機   | 等寬字、面板深色底、名稱前綴 `@`、分隔符號為空白、顯示時間、隱藏徽章                            |
 | `blank`        | Blank    | `base: 'blank'`，只有起始 CSS                                                                   |
 
@@ -172,8 +174,28 @@
 - 開啟時同時寫入工作區檔案：`.vscode/settings.json`（`css.customData` 指向 `.vscode/chatto.css-data.json`，描述 `VARIABLE_REFERENCE` 的 CSS 變數）與 `chatto-reference.css`（`reference.ts` 的所有選擇器與說明，只供參考，改了不會套用）。VSCode 內建的 CSS 支援不提供 class 名稱自動完成，所以選擇器用參考檔查閱。
 - 編輯器指令在設定頁「自訂 CSS → 外部編輯器」（`prefs.editorCommand`）。留空等於 `code "{folder}" "{file}"`；沒寫 `{file}` 時會把檔案路徑加在最後。指令失敗（非 0 結束碼）時改用系統關聯 `.css` 的程式開啟；也失敗時顯示檔案路徑。
 
+## 九宮格圖片外框
+
+每個 `BoxStyle` 都能用 `image` 加一張九宮格外框（CSS `border-image`）：四角固定，四邊依 `repeat` 拉伸或重複，`fill` 開啟時中間那格當背景。身分樣式的 `roles.<身分>.frame` 也是同一種設定。
+
+- **切線** `slice` 以圖片像素計算 `[上, 右, 下, 左]`。外框畫在一圈透明框線裡，寬度是 `slice × scale`，所以內容會像有真的框線一樣往內縮；`outset` 讓外框超出方框。
+- **高解析度圖片**：用兩倍大的圖並把 `scale` 設成 0.5，在高 DPI 螢幕與 OBS 縮放時比較銳利。
+- **和其他參數的關係**：有圖片時 `border` 不作用；`border-image` 不吃圓角，`radius` 只影響背景與模糊，建議背景用 `transparent`、交給 `fill`；`shadow` 改成 `filter: drop-shadow()`，會沿著圖片（連文字一起）投影；`backdropBlur` 仍是矩形範圍。內距建議不小於外框寬度。
+- **素材**：在編輯器選圖時，圖片複製到 userData `theme-assets/<sha256>.<副檔名>`，主題裡存 `asset:<檔名>`，本機 server 在 `/theme-assets/<檔名>` 提供（Viewer 自己的建置檔在 `/assets/`）。同一張圖只存一份；啟動時刪除沒有任何已儲存主題使用的圖。只接受 PNG（含 APNG）、WebP、GIF，單檔 2 MB 以內，依檔案內容判斷格式；不接受 SVG。`src` 也可以是 `data:image/(png|webp|gif);base64,…`，內建主題用這種方式內嵌圖片。其他來源在 `normalizeTheme()` 時會被移除。
+- **編輯器**：切線編輯器顯示原圖與四條虛線，可拖曳，或聚焦後用方向鍵（Shift 一次 10 px）；選新圖時先切成三等分。
+- **在自訂 CSS 覆寫**：產生的 CSS 用 `border-image-source`、`border-image-slice`、`border-image-width`、`border-image-outset`、`border-image-repeat`，自訂 CSS 可以直接覆寫這些屬性。
+
+### 主題包 `.chattotheme`
+
+用到 `asset:` 圖片的主題匯出成主題包：一個 zip，內含 `theme.json` 與 `assets/<sha256>.<副檔名>`。沒有用到的主題維持匯出 JSON。匯入兩種都接受：
+
+- 主題包的圖片依內容重新計算雜湊後存入，名稱對不上或不是支援的圖片時，用到它的外框會被移除。
+- 單一 JSON 檔帶不了圖片，匯入時 `asset:` 外框會被移除，`data:` 外框保留。
+- 匯入的主題一律存成新的自訂主題（新的 id）。
+
 ## 版本與遷移
 
+- **v2 新增欄位**（2026-11-02，非破壞性）：`BoxStyle.image`（九宮格圖片外框，預設 `null`）、`roles.<身分>.frame`；新增主題包 `.chattotheme`。`normalizeTheme()` 會補齊預設並移除無效的圖片來源。
 - **v2 新增欄位**（2026-11-01，非破壞性）：`animation.exit`、`attention`；`animation.enter` 新增 bounce、shake、zoom。`normalizeTheme()` 會補齊預設。
 - **v2 新增欄位**（2026-11-01，非破壞性）：`notice.messageFrame`、`notice.titlePlacement`、`notice.sticker` 與各事件的同名欄位（預設 `wrap`、`line`，`normalizeTheme()` 會補齊）；`roles.viewer`（一般觀眾）。
 - **v2 新增欄位**（2026-10-31，非破壞性）：`notice.bodyColor`、`notice.icon`、`events`；`roles.highlighted` 移除，改由 `twitch:highlighted` 事件處理（`normalizeTheme()` 會補齊預設並移除舊鍵）。

@@ -1,4 +1,5 @@
 import { createMockNotice } from '@chatto/chat-ui';
+import { fileURLToPath } from 'node:url';
 import { chatMessage, expect, test } from '../fixtures';
 
 const PAGES = ['總覽', '聊天室', '主題', '輸出', '連線', '設定'];
@@ -112,6 +113,30 @@ test('duplicating a built-in theme opens the editor and saves a custom copy', as
 
   await panel.nav('主題').click();
   await expect(page.getByText('E2E 測試主題')).toBeVisible();
+});
+
+test('a picked image becomes a nine-slice frame on the preview', async ({ panel, page }) => {
+  await panel.open('page=themes');
+  await page.getByRole('button', { name: '複製並編輯' }).first().click();
+  await page.getByRole('button', { name: '訊息', exact: true }).click();
+
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: '選擇圖片' }).first().click();
+  await (await chooser).setFiles(fileURLToPath(new URL('../../fixtures/frame.png', import.meta.url)));
+
+  // The slice editor opens with thirds of the 96 px image.
+  await expect(page.getByText('96 × 96 px')).toBeVisible();
+  await expect(page.getByRole('slider', { name: '上切線' })).toHaveAttribute('aria-valuenow', '32');
+  const message = page.locator('.chatto-root .chatto-message').first();
+  await expect(message).toHaveCSS('border-image-source', /^url\("data:image\/png;base64,/);
+  await expect(message).toHaveCSS('border-image-slice', '32 fill');
+
+  await page.getByRole('slider', { name: '上切線' }).focus();
+  await page.keyboard.press('Shift+ArrowDown');
+  await expect(message).toHaveCSS('border-image-slice', '42 32 32 fill');
+
+  await page.getByRole('button', { name: '移除' }).first().click();
+  await expect(message).toHaveCSS('border-image-source', 'none');
 });
 
 test('sign-in shows the device code', async ({ panel, page }) => {

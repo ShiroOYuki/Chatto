@@ -100,6 +100,10 @@ function LinkedQuad<T extends [number, number, number, number]>({
 }) {
   const allSame = value.every((item) => item === value[0]);
   const [linked, setLinked] = useState(allSame);
+  // Sides changed elsewhere (e.g. dragging a slice line) can no longer be shown as one value.
+  useEffect(() => {
+    if (!allSame) setLinked(false);
+  }, [allSame]);
   return (
     <FieldRow label={label}>
       <div className="flex items-center gap-2">

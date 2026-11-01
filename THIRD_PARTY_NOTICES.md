@@ -42,7 +42,10 @@ Built-in alert sounds are vendored from [soundcn](https://github.com/kapishdima/
 | [color](https://github.com/Qix-/color) (with `color-convert`, `color-string`, `color-name`)                                                                          | MIT        |
 | [CodeMirror 6](https://codemirror.net) (`codemirror`, `@codemirror/*`, `@lezer/*`, `style-mod`, `w3c-keyname`, `crelt`)                                              | MIT        |
 | [canvas-confetti](https://github.com/catdad/canvas-confetti)                                                                                                         | ISC        |
+| [fflate](https://github.com/101arrowz/fflate) (theme packages)                                                                                                       | MIT        |
 | [class-variance-authority](https://cva.style)                                                                                                                        | Apache-2.0 |
 | [clsx](https://github.com/lukeed/clsx), [tailwind-merge](https://github.com/dcastil/tailwind-merge), [tw-animate-css](https://github.com/Wombosvideo/tw-animate-css) | MIT        |
+
+The 茶葉框 frame image (`packages/chat-ui/src/frames/teaLeafFrame.ts`) was made for Chatto and is covered by Chatto's own license.
 
 Animations are Chatto's own implementation on top of Motion, plus the MIT-licensed shadcn/ui and Magic UI components listed above (Magic Card was adapted to read Chatto's theme instead of next-themes). Animate UI and React Bits are intentionally not used: their MIT + Commons Clause license is not compatible with GPL-3.0.

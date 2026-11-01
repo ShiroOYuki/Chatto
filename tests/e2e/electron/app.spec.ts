@@ -1,5 +1,8 @@
 import { decodeServerFrame, encodeFrame, PROTOCOL_VERSION, type ServerFrame } from '@chatto/core';
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
+import { PRESET_THEMES } from '@chatto/chat-ui/themes';
+import { strToU8, zipSync } from 'fflate';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -164,4 +167,44 @@ test('saving a theme CSS file outside Chatto saves the theme', async () => {
     await api.saveTheme({ ...theme, customCss: '.chatto-body { color: blue; }' });
   }, themeId);
   expect(readFileSync(opened.path, 'utf8')).toBe('.chatto-body { color: blue; }');
+});
+
+test('a theme package brings its frame image, which the server and previews use', async () => {
+  const image = readFileSync(resolve(import.meta.dirname, '../../fixtures/frame.png'));
+  const file = `${createHash('sha256').update(image).digest('hex')}.png`;
+  const frame = {
+    src: `asset:${file}`,
+    slice: [32, 32, 32, 32],
+    fill: true,
+    scale: 0.5,
+    repeat: 'stretch',
+    outset: [0, 0, 0, 0],
+  };
+  const theme = {
+    ...PRESET_THEMES[0]!,
+    id: 'framed',
+    name: '有圖片外框',
+    builtIn: false,
+    message: { ...PRESET_THEMES[0]!.message, box: { ...PRESET_THEMES[0]!.message.box, image: frame } },
+  };
+  const bytes = zipSync({ 'theme.json': strToU8(JSON.stringify(theme)), [`assets/${file}`]: new Uint8Array(image) });
+
+  const imported = await mainWindow.evaluate(
+    async (data) => {
+      const api = window.chatto!;
+      const result = await api.importThemePackage(new Uint8Array(data));
+      await api.saveTheme({ ...result, id: 'framed' });
+      return result;
+    },
+    [...bytes],
+  );
+  expect(imported.message.box.image?.src).toBe(`asset:${file}`);
+
+  const served = await fetch(`http://127.0.0.1:${port}/theme-assets/${file}`);
+  expect(served.headers.get('content-type')).toBe('image/png');
+  expect(Buffer.from(await served.arrayBuffer()).equals(image)).toBe(true);
+
+  await mainWindow.getByRole('button', { name: /^主題/ }).click();
+  const card = mainWindow.locator('.chatto-root[data-theme-id="framed"] .chatto-message').first();
+  await expect(card).toHaveCSS('border-image-source', `url("http://localhost:${port}/theme-assets/${file}")`);
 });

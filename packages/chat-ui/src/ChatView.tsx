@@ -10,6 +10,11 @@ export interface ChatViewProps {
   className?: string;
   /** Plays the theme's exit animation on every row (alert cards whose time is up). */
   leaving?: boolean;
+  /**
+   * URL of a file in Chatto's asset folder (frame images). Pages served by the
+   * local server can leave it out; the control panel points it at the server.
+   */
+  assetUrl?: (file: string) => string;
 }
 
 /**
@@ -17,12 +22,12 @@ export interface ChatViewProps {
  * parameters (turned into CSS by {@link themeToCss}) and optional custom CSS.
  * Every part carries a stable `chatto-*` class; see docs/theming.md.
  */
-export function ChatView({ theme, items, className, leaving }: ChatViewProps) {
+export function ChatView({ theme, items, className, leaving, assetUrl }: ChatViewProps) {
   const id = useId();
   const scope = `.chatto-root[data-chatto-id="${id}"]`;
   const css = useMemo(
-    () => [themeToCss(theme, scope), scopeCustomCss(theme.customCss, scope)].filter(Boolean).join('\n'),
-    [theme, scope],
+    () => [themeToCss(theme, scope, { assetUrl }), scopeCustomCss(theme.customCss, scope)].filter(Boolean).join('\n'),
+    [theme, scope, assetUrl],
   );
   const ordered = theme.list.direction === 'top-down' ? [...items].reverse() : items;
 

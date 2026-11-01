@@ -1,11 +1,15 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { ChatTheme } from '@chatto/core';
 import { IPC, type AppState } from '../shared/ipc';
 import { AppController } from './app-controller';
 import { CssFiles } from './css-files';
 import { OverlayWindow } from './overlay-window';
 import { LocalServer } from './server';
 import { SettingsStore, type Rect } from './settings';
+import { ThemeAssets } from './theme-assets';
+import { THEME_PACKAGE_EXTENSION } from './theme-package';
 
 const isDev = !app.isPackaged;
 const resourcesDir = isDev ? join(__dirname, '../../resources') : join(process.resourcesPath, 'resources');
@@ -145,6 +149,28 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.selectTheme, (_e, target, id: string) => controller.selectTheme(target, id));
   ipcMain.handle(IPC.saveTheme, (_e, theme) => controller.saveTheme(theme));
   ipcMain.handle(IPC.deleteTheme, (_e, id: string) => controller.deleteTheme(id));
+  ipcMain.handle(IPC.importThemeAsset, async () => {
+    const options = {
+      title: '選擇外框圖片',
+      properties: ['openFile' as const],
+      filters: [{ name: '圖片', extensions: ['png', 'webp', 'gif'] }],
+    };
+    const result = mainWindow ? await dialog.showOpenDialog(mainWindow, options) : await dialog.showOpenDialog(options);
+    const file = result.filePaths[0];
+    return result.canceled || !file ? null : controller.importThemeAsset(file);
+  });
+  ipcMain.handle(IPC.exportThemePackage, async (_e, theme: ChatTheme) => {
+    const options = {
+      title: '匯出主題包',
+      defaultPath: `chatto-theme-${theme.id}.${THEME_PACKAGE_EXTENSION}`,
+      filters: [{ name: 'Chatto 主題包', extensions: [THEME_PACKAGE_EXTENSION] }],
+    };
+    const result = mainWindow ? await dialog.showSaveDialog(mainWindow, options) : await dialog.showSaveDialog(options);
+    if (result.canceled || !result.filePath) return false;
+    writeFileSync(result.filePath, controller.exportThemePackage(theme));
+    return true;
+  });
+  ipcMain.handle(IPC.importThemePackage, (_e, bytes: Uint8Array) => controller.importThemePackage(bytes));
   ipcMain.handle(IPC.openCssFile, (_e, id: string) => controller.openCssFile(id));
   ipcMain.handle(IPC.openExternal, (_e, url: string) => openExternal(url));
 }
@@ -160,6 +186,9 @@ async function bootstrap(): Promise<void> {
   const settings = new SettingsStore();
   const controller = new AppController(settings);
   controller.soundsDir = join(app.getPath('userData'), 'sounds');
+  controller.assets = new ThemeAssets(join(app.getPath('userData'), 'theme-assets'));
+  // Safe here: no theme editor is open yet, so no unsaved theme can be using an image.
+  controller.collectThemeAssets();
   controller.cssFiles = new CssFiles({
     dir: join(app.getPath('userData'), 'custom-css'),
     onExternalChange: (themeId, css) => controller.applyExternalCss(themeId, css),
@@ -175,6 +204,7 @@ async function bootstrap(): Promise<void> {
     themeFor: (target) => controller.themeFor(target),
     route: (target, event) => controller.route(target, event),
     soundsDir: controller.soundsDir,
+    assets: controller.assets,
   });
   await controller.server.start();
 

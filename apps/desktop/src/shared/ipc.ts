@@ -98,6 +98,13 @@ export interface ChattoApi {
   saveTheme(theme: ChatTheme): Promise<void>;
   deleteTheme(themeId: string): Promise<void>;
 
+  /** Lets the user pick an image for a frame; resolves to its `asset:` source, or null when cancelled. */
+  importThemeAsset(): Promise<string | null>;
+  /** Saves a theme with its frame images as a `.chattotheme` package; false when cancelled. */
+  exportThemePackage(theme: ChatTheme): Promise<boolean>;
+  /** Stores a package's images and returns its theme (normalized, not saved yet). */
+  importThemePackage(bytes: Uint8Array): Promise<ChatTheme>;
+
   /** Writes the theme's saved custom CSS to its file and opens it in the editor. */
   openCssFile(themeId: string): Promise<CssFileOpenResult>;
   /** A theme's CSS file was saved outside Chatto; the theme is already saved with it. */
@@ -133,6 +140,9 @@ export const IPC = {
   selectTheme: 'theme:select',
   saveTheme: 'theme:save',
   deleteTheme: 'theme:delete',
+  importThemeAsset: 'theme:import-asset',
+  exportThemePackage: 'theme:export-package',
+  importThemePackage: 'theme:import-package',
   openCssFile: 'css-file:open',
   cssFileChanged: 'css-file:changed',
   openExternal: 'app:open-external',

@@ -1,4 +1,6 @@
 import {
+  assetFileOf,
+  assetSrc,
   SILENCE_THRESHOLD,
   VIEWER_TARGETS,
   type AlertSettings,
@@ -10,11 +12,11 @@ import {
   type SoundSetting,
   type ViewerTarget,
 } from '@chatto/core';
-import { PRESET_THEMES, getPresetTheme, normalizeTheme } from '@chatto/chat-ui/themes';
+import { PRESET_THEMES, getPresetTheme, mapThemeImages, normalizeTheme } from '@chatto/chat-ui/themes';
 import { TwitchChatProvider } from '@chatto/provider-twitch';
 import { app, nativeTheme } from 'electron';
 import { randomUUID } from 'node:crypto';
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 import type { AppPrefs, AppState, CssFileChange, CssFileOpenResult, DeviceCodeInfo } from '../shared/ipc';
 import { alertCue, markAfterSilence, SilenceTracker } from './alerts';
@@ -23,6 +25,8 @@ import type { CssFiles } from './css-files';
 import type { LocalServer, Routed } from './server';
 import type { OverlayWindow } from './overlay-window';
 import type { SettingsStore } from './settings';
+import { MAX_ASSET_BYTES, type ThemeAssets } from './theme-assets';
+import { packTheme, themeAssetFiles, unpackTheme } from './theme-package';
 import { SafeTokenStore } from './token-store';
 
 /**
@@ -52,6 +56,8 @@ export class AppController {
   onCssFileChanged: (change: CssFileChange) => void = () => undefined;
   /** Folder for user alert sounds, served by the local server. */
   soundsDir = '';
+  /** Frame images used by themes, served by the local server. */
+  assets!: ThemeAssets;
   onChange: (state: AppState) => void = () => undefined;
   /** Plays a reminder sound in the control panel (it runs even when no overlay is open). */
   onAlertSound: (sound: SoundSetting) => void = () => undefined;
@@ -401,6 +407,47 @@ export class AppController {
 
   #customTheme(themeId: string): ChatTheme | undefined {
     return this.themes().find((theme) => theme.id === themeId && !getPresetTheme(theme.id));
+  }
+
+  // ---------- theme frame images ----------
+
+  /** Copies an image file into the asset folder; returns the `asset:` source for a frame. */
+  importThemeAsset(file: string): string {
+    if (statSync(file).size > MAX_ASSET_BYTES) throw new Error('圖片超過 2 MB');
+    return assetSrc(this.assets.add(readFileSync(file)));
+  }
+
+  /** A theme package (`.chattotheme`) with the theme and every image it uses. */
+  exportThemePackage(theme: ChatTheme): Uint8Array {
+    return packTheme(theme, (file) => this.assets.read(file));
+  }
+
+  /**
+   * Stores a package's images and returns its theme, normalized but not saved:
+   * the control panel gives it a fresh id like any imported theme.
+   */
+  importThemePackage(bytes: Uint8Array): ChatTheme {
+    const { theme, assets } = unpackTheme(bytes);
+    // Store by content: a renamed or tampered file ends up under its real hash or is rejected.
+    const stored = new Map<string, string>();
+    for (const [name, data] of assets) {
+      try {
+        stored.set(name, this.assets.add(data));
+      } catch {
+        // Not an image Chatto accepts; frames that use it are dropped below.
+      }
+    }
+    return mapThemeImages(normalizeTheme(theme), (image) => {
+      const file = assetFileOf(image.src);
+      if (!file) return image;
+      const kept = stored.get(file) ?? (this.assets.has(file) ? file : undefined);
+      return kept ? { ...image, src: assetSrc(kept) } : null;
+    });
+  }
+
+  /** Deletes images no saved theme uses. Run at startup, never while an editor may hold unsaved ones. */
+  collectThemeAssets(): string[] {
+    return this.assets.collect(new Set(this.themes().flatMap(themeAssetFiles)));
   }
 
   deleteTheme(themeId: string): void {

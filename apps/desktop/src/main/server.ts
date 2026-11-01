@@ -12,6 +12,7 @@ import { createServer, type Server } from 'node:http';
 import { extname, join, normalize, sep } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { ChatHub } from './chat-hub';
+import type { ThemeAssets } from './theme-assets';
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -19,6 +20,8 @@ const MIME: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
   '.woff2': 'font/woff2',
   '.json': 'application/json',
   '.mp3': 'audio/mpeg',
@@ -28,6 +31,9 @@ const MIME: Record<string, string> = {
 
 /** What one output receives for an event: the event (possibly adjusted) and an alert cue, or nothing. */
 export type Routed = { event: ChatEvent; alert?: AlertCue } | null;
+
+/** URL path of theme frame images; matches `defaultAssetUrl` in @chatto/chat-ui. */
+export const THEME_ASSET_PATH = '/theme-assets/';
 
 /** Names of user sound files in the sounds folder. */
 export const SOUND_FILE = /^[\w-]+\.(mp3|ogg|wav)$/;
@@ -43,6 +49,8 @@ export interface LocalServerOptions {
   route?(target: ViewerTarget, event: ChatEvent): Routed;
   /** Folder with the user's alert sounds, served at `/sounds/<file>`. */
   soundsDir?: string;
+  /** Theme frame images, served at `/theme-assets/<file>` (the viewer's own build uses `/assets/`). */
+  assets?: ThemeAssets;
 }
 
 /**
@@ -151,6 +159,9 @@ export class LocalServer {
   }
 
   #resolve(pathname: string): string | null {
+    if (pathname.startsWith(THEME_ASSET_PATH)) {
+      return this.options.assets?.path(pathname.slice(THEME_ASSET_PATH.length)) ?? null;
+    }
     if (pathname.startsWith('/sounds/')) {
       const sound = pathname.slice('/sounds/'.length);
       const { soundsDir } = this.options;

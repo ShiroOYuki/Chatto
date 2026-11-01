@@ -1,5 +1,7 @@
 import type { ChatTheme, ViewerTarget } from '@chatto/core';
+import { useCallback } from 'react';
 import { api } from '../api';
+import { useAppState } from '../store';
 import { runAction } from './run';
 
 export const themes = {
@@ -7,4 +9,20 @@ export const themes = {
   /** Awaitable: callers show their own error when saving fails. */
   save: (theme: ChatTheme): Promise<void> => api.saveTheme(theme),
   remove: (themeId: string) => runAction('deleteTheme', api.deleteTheme(themeId)),
+  /** Opens an image picker for a frame; resolves to its source, or null when cancelled. Rejects on bad files. */
+  importAsset: (): Promise<string | null> => api.importThemeAsset(),
+  /** Saves a `.chattotheme` package; resolves false when cancelled. */
+  exportPackage: (theme: ChatTheme): Promise<boolean> => api.exportThemePackage(theme),
+  /** Stores a package's images and resolves to its (unsaved) theme. */
+  importPackage: (bytes: Uint8Array): Promise<ChatTheme> => api.importThemePackage(bytes),
 };
+
+/** URL of a theme frame image on the desktop app's local server. */
+export const themeAssetUrl = (port: number) => (file: string) =>
+  `http://localhost:${port}/theme-assets/${encodeURIComponent(file)}`;
+
+/** Resolves frame images for chat previews in the control panel; stable while the port is. */
+export function useThemeAssetUrl(): (file: string) => string {
+  const port = useAppState()?.server.port ?? 0;
+  return useCallback((file: string) => themeAssetUrl(port)(file), [port]);
+}

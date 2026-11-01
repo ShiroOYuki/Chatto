@@ -124,6 +124,12 @@ function createMockApi(): ChattoApi {
       });
     },
     deleteTheme: async (themeId) => set({ themes: state.themes.filter((item) => item.id !== themeId) }),
+    // The browser preview has no asset folder: frames keep the picked image as a data URL.
+    importThemeAsset: () => pickImageAsDataUrl(),
+    exportThemePackage: async () => false,
+    importThemePackage: async () => {
+      throw new Error('網頁預覽不支援主題包，請在桌面 App 匯入');
+    },
     // The browser preview has no files; report where the desktop app would put it.
     openCssFile: async (themeId) => ({
       launched: 'none',
@@ -132,6 +138,25 @@ function createMockApi(): ChattoApi {
     onCssFileChanged: (listener) => (cssFileListeners.add(listener), () => cssFileListeners.delete(listener)),
     openExternal: async (url) => void window.open(url, '_blank'),
   };
+}
+
+/** Browser-only stand-in for the asset picker: reads the chosen image as a data URL. */
+function pickImageAsDataUrl(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/webp,image/gif';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return resolve(null);
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    };
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
 }
 
 export const api: ChattoApi = window.chatto ?? createMockApi();

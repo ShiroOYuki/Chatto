@@ -9,6 +9,7 @@ import {
 } from '@chatto/chat-ui';
 import type { ChatEvent, ChatTheme } from '@chatto/core';
 import { useEffect, useMemo } from 'react';
+import { useThemeAssetUrl } from '../services/themes';
 
 export type Backdrop = 'game' | 'dark' | 'light' | 'checker';
 
@@ -35,9 +36,10 @@ export function StaticThemePreview({ theme, backdrop = 'game' }: { theme: ChatTh
     return SAMPLE_EVENTS.reduce((state, event) => reduceFeed(state, event, options, 0), emptyFeed).items;
   }, [theme]);
   const quiet = useMemo(() => ({ ...theme, animation: { ...theme.animation, enter: 'none' as const } }), [theme]);
+  const assetUrl = useThemeAssetUrl();
   return (
     <div className="pointer-events-none h-full overflow-hidden p-3" style={{ background: BACKDROPS[backdrop] }}>
-      <ChatView theme={quiet} items={items} />
+      <ChatView theme={quiet} items={items} assetUrl={assetUrl} />
     </div>
   );
 }
@@ -47,9 +49,10 @@ export function LiveThemePreview({ theme, backdrop = 'game' }: { theme: ChatThem
   const feed = useChatFeed(theme.options);
   const { push } = feed;
   useEffect(() => startMockStream(push, 1500), [push]);
+  const assetUrl = useThemeAssetUrl();
   return (
     <div className="h-full overflow-hidden p-3 transition-[background]" style={{ background: BACKDROPS[backdrop] }}>
-      <ChatView theme={theme} items={feed.items} />
+      <ChatView theme={theme} items={feed.items} assetUrl={assetUrl} />
     </div>
   );
 }

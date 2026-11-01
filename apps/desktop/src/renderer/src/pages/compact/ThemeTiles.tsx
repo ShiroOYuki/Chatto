@@ -3,7 +3,7 @@ import type { ChatTheme, ViewerTarget } from '@chatto/core';
 import { useEffect } from 'react';
 import type { AppState } from '../../../../shared/ipc';
 import { Button, Tile } from '../../components/kit';
-import { themes } from '../../services/themes';
+import { themes, useThemeAssetUrl } from '../../services/themes';
 import { describeTheme, themeSwatch } from '../themeLabels';
 
 export function ThemeTile({
@@ -57,6 +57,7 @@ export function ThemeTile({
 }
 
 function ThemeChip({ theme, active, onSelect }: { theme: ChatTheme; active: boolean; onSelect: () => void }) {
+  const assetUrl = useThemeAssetUrl();
   return (
     <button
       type="button"
@@ -66,7 +67,10 @@ function ThemeChip({ theme, active, onSelect }: { theme: ChatTheme; active: bool
         active ? 'border-matcha bg-matcha-soft/40' : 'border-line hover:bg-tile-muted'
       }`}
     >
-      <span className="h-8 w-8 shrink-0 rounded-xl border border-line" style={{ background: themeSwatch(theme) }} />
+      <span
+        className="h-8 w-8 shrink-0 rounded-xl border border-line"
+        style={{ background: themeSwatch(theme, assetUrl) }}
+      />
       <span className="min-w-0">
         <span className="block truncate font-medium">{theme.name}</span>
         <span className="block text-xs text-ink-faint">{describeTheme(theme)}</span>
@@ -80,6 +84,7 @@ export function PreviewTile({ state, target }: { state: AppState; target: Viewer
   const feed = useChatFeed(theme.options);
   const { push } = feed;
   useEffect(() => startMockStream(push, 1800), [push]);
+  const assetUrl = useThemeAssetUrl();
 
   return (
     <Tile
@@ -94,7 +99,7 @@ export function PreviewTile({ state, target }: { state: AppState; target: Viewer
             'radial-gradient(circle at 20% 25%, #3b6d11 0, transparent 45%), radial-gradient(circle at 85% 75%, #0f6e56 0, transparent 50%), #1b2230',
         }}
       >
-        <ChatView theme={theme} items={feed.items} />
+        <ChatView theme={theme} items={feed.items} assetUrl={assetUrl} />
       </div>
     </Tile>
   );

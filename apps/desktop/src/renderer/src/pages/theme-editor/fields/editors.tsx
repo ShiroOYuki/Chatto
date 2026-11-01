@@ -1,5 +1,6 @@
 import type { BorderSpec, BorderStyle, BoxStyle, ShadowSpec } from '@chatto/core';
 import { CornersField, NumberField, SidesField } from './numbers';
+import { ImageFrameEditor } from './ImageFrameEditor';
 import { ColorRow, SelectRow, ToggleRow } from './rows';
 
 const BORDER_STYLES: { value: BorderStyle; label: string }[] = [
@@ -80,7 +81,7 @@ export function ShadowEditor({
   );
 }
 
-/** Every property of a box: fill, border, radius, padding, shadow and backdrop blur. */
+/** Every property of a box: fill, border, radius, padding, shadow, backdrop blur and image frame. */
 export function BoxEditor({ value, onChange }: { value: BoxStyle; onChange: (value: BoxStyle) => void }) {
   const set = (patch: Partial<BoxStyle>) => onChange({ ...value, ...patch });
   return (
@@ -99,6 +100,7 @@ export function BoxEditor({ value, onChange }: { value: BoxStyle; onChange: (val
         unit="px"
         onChange={(backdropBlur) => set({ backdropBlur })}
       />
+      <ImageFrameEditor value={value.image} onChange={(image) => set({ image })} />
     </>
   );
 }

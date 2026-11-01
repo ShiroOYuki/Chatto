@@ -1,5 +1,7 @@
 import {
   AFTER_SILENCE,
+  assetFileOf,
+  type BoxImage,
   type BoxStyle,
   type ChatTheme,
   type Corners,
@@ -8,6 +10,7 @@ import {
   type ShadowSpec,
   type Sides,
 } from '@chatto/core';
+import { mapThemeImages } from './themes';
 
 /**
  * Turns theme parameters into CSS for the shared chat markup. This is the
@@ -39,18 +42,50 @@ export function textShadowCss(shadow: ShadowSpec | null): string {
 
 const hasFill = (color: string) => color.trim() !== '' && color.trim().toLowerCase() !== 'transparent';
 
+/**
+ * A nine-slice frame. The frame is drawn in a transparent border as wide as the
+ * scaled slices, so content sits inside it like it would inside a real border.
+ * `image.src` must already be a loadable URL (see {@link themeToCss}).
+ */
+export function imageDeclarations(image: BoxImage): string[] {
+  const [top, right, bottom, left] = image.slice;
+  const width = sides(image.slice.map((slice) => slice * image.scale) as Sides);
+  return [
+    'border-style: solid',
+    'border-color: transparent',
+    `border-width: ${width}`,
+    `border-image-source: url(${cssString(image.src)})`,
+    `border-image-slice: ${top} ${right} ${bottom} ${left}${image.fill ? ' fill' : ''}`,
+    `border-image-width: ${width}`,
+    `border-image-outset: ${sides(image.outset)}`,
+    `border-image-repeat: ${image.repeat}`,
+  ];
+}
+
 function boxDeclarations(box: BoxStyle): string[] {
+  const { image, shadow } = box;
+  // A box-shadow would trace the rectangle, not the frame's outline; a drop shadow follows the image.
+  const imageShadow = image && shadow && !shadow.inset;
   const declarations = [
     `background: ${box.background}`,
     `border-radius: ${corners(box.radius)}`,
     `padding: ${sides(box.padding)}`,
-    `box-shadow: ${boxShadowCss(box.shadow)}`,
+    `box-shadow: ${imageShadow ? 'none' : boxShadowCss(shadow)}`,
   ];
-  declarations.push(
-    box.border.style === 'none' || box.border.width <= 0
-      ? 'border: 0'
-      : `border: ${px(box.border.width)} ${box.border.style} ${box.border.color}`,
-  );
+  if (image) {
+    declarations.push(...imageDeclarations(image));
+    if (imageShadow) {
+      declarations.push(`filter: drop-shadow(${px(shadow.x)} ${px(shadow.y)} ${px(shadow.blur)} ${shadow.color})`);
+    }
+  } else {
+    declarations.push(
+      box.border.style === 'none' || box.border.width <= 0
+        ? 'border: 0'
+        : `border: ${px(box.border.width)} ${box.border.style} ${box.border.color}`,
+      // Undo a frame an earlier rule (a role) put on the same element.
+      'border-image: none',
+    );
+  }
   if (box.backdropBlur > 0) {
     declarations.push(
       `backdrop-filter: blur(${px(box.backdropBlur)})`,
@@ -269,8 +304,9 @@ export function exitDurationMs(theme: ChatTheme): number {
  * @param scope selector of the chat root this CSS applies to,
  *              e.g. `.chatto-root[data-chatto-id="t1"]`.
  */
-export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
+export function themeToCss(theme: ChatTheme, scope = '.chatto-root', options: ThemeCssOptions = {}): string {
   if (theme.base === 'blank') return '';
+  theme = resolveImages(theme, options.assetUrl ?? defaultAssetUrl);
 
   const {
     font,
@@ -477,6 +513,7 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
       rule(surfaceIsBody ? `${base} .chatto-body` : base, [`background: ${style.surfaceBackground}`]);
     }
     if (style.borderColor) rule(surfaceIsBody ? `${base} .chatto-body` : base, [`border-color: ${style.borderColor}`]);
+    if (style.frame) rule(surfaceIsBody ? `${base} .chatto-body` : base, imageDeclarations(style.frame));
   }
 
   // Events: the generic style, then each event that has its own style.
@@ -541,6 +578,22 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
   }
 
   return rules.join('\n');
+}
+
+export interface ThemeCssOptions {
+  /** URL of a file in Chatto's asset folder; defaults to the local server's `/theme-assets/` path. */
+  assetUrl?: (file: string) => string;
+}
+
+/** Viewer pages are served by the local server, so a relative path reaches its assets. */
+export const defaultAssetUrl = (file: string) => `/theme-assets/${file}`;
+
+/** Turns `asset:` frame sources into URLs; data URLs pass through. */
+function resolveImages(theme: ChatTheme, assetUrl: (file: string) => string): ChatTheme {
+  return mapThemeImages(theme, (image) => {
+    const file = assetFileOf(image.src);
+    return { ...image, src: file ? assetUrl(file) : image.src };
+  });
 }
 
 /**

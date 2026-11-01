@@ -38,6 +38,26 @@ export interface BorderSpec {
   color: string;
 }
 
+export type BoxImageRepeat = 'stretch' | 'repeat' | 'round' | 'space';
+
+/**
+ * A nine-slice image frame (CSS `border-image`): the corners stay fixed, the
+ * edges and the optional centre stretch or tile with the box.
+ */
+export interface BoxImage {
+  /** `asset:<file>` from Chatto's asset folder, or a `data:image/…;base64,` URL. */
+  src: string;
+  /** Slice lines in image pixels: [top, right, bottom, left]. */
+  slice: Sides;
+  /** Draw the centre slice as the box background. */
+  fill: boolean;
+  /** Displayed frame width = slice × scale (e.g. 0.5 for @2x art). */
+  scale: number;
+  repeat: BoxImageRepeat;
+  /** How far the frame overhangs the box, px: [top, right, bottom, left]. */
+  outset: Sides;
+}
+
 /** A styleable rectangle: used for the list panel, messages, name tags, bodies and notices. */
 export interface BoxStyle {
   background: string;
@@ -47,7 +67,33 @@ export interface BoxStyle {
   shadow: ShadowSpec | null;
   /** Backdrop blur in px (glass effects), 0 to disable. */
   backdropBlur: number;
+  /**
+   * Nine-slice image frame; replaces `border` and turns `shadow` into a drop
+   * shadow that follows the image. `null` for none.
+   */
+  image: BoxImage | null;
 }
+
+/** Image types a frame may use. SVG is excluded: it can pull in other resources. */
+export const ASSET_TYPES = { png: 'image/png', webp: 'image/webp', gif: 'image/gif' } as const;
+export type AssetExtension = keyof typeof ASSET_TYPES;
+
+/** A stored asset file: the SHA-256 of its bytes plus its extension. */
+export const ASSET_FILE = /^[0-9a-f]{64}\.(png|webp|gif)$/;
+const ASSET_PREFIX = 'asset:';
+const DATA_IMAGE = /^data:image\/(png|webp|gif);base64,[A-Za-z0-9+/=]+$/;
+
+/** The asset file a frame `src` points at, or null for data URLs and invalid values. */
+export function assetFileOf(src: string): string | null {
+  if (!src.startsWith(ASSET_PREFIX)) return null;
+  const file = src.slice(ASSET_PREFIX.length);
+  return ASSET_FILE.test(file) ? file : null;
+}
+
+export const assetSrc = (file: string) => `${ASSET_PREFIX}${file}`;
+
+/** Whether a frame `src` is something Chatto will load. */
+export const isValidImageSrc = (src: string) => assetFileOf(src) !== null || DATA_IMAGE.test(src);
 
 export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize';
 export type EnterAnimation =
@@ -134,6 +180,8 @@ export interface RoleStyle {
   /** Background of the message's visible surface (the body if it has a fill, otherwise the message). */
   surfaceBackground?: string;
   borderColor?: string;
+  /** Nine-slice frame on the message's visible surface. */
+  frame?: BoxImage;
 }
 
 export interface ChatThemeBehavior {

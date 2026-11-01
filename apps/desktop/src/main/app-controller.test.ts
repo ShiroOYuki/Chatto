@@ -1,4 +1,5 @@
 import {
+  assetSrc,
   defaultAlertSettings,
   defaultEventAlertRule,
   type AlertSettings,
@@ -6,13 +7,18 @@ import {
   type ChatTheme,
 } from '@chatto/core';
 import { mockMessage, MOCK_USERS, sampleEvent } from '@chatto/chat-ui';
-import { PRESET_THEMES } from '@chatto/chat-ui/themes';
+import { DEFAULT_BOX_IMAGE, PRESET_THEMES } from '@chatto/chat-ui/themes';
+import { strToU8, zipSync } from 'fflate';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DeviceCodeInfo } from '../shared/ipc';
 import type { Settings, SettingsStore } from './settings';
 import type { LocalServer } from './server';
 import type { OverlayWindow } from './overlay-window';
 import type { CssFiles } from './css-files';
+import { ThemeAssets } from './theme-assets';
 
 vi.mock('electron', () => ({
   app: { getVersion: () => '0.1.0-test', isPackaged: false, setLoginItemSettings: vi.fn() },
@@ -191,6 +197,73 @@ describe('AppController themes', () => {
       embed: 'washi',
       alerts: PRESET_THEMES[0]!.id,
     });
+  });
+});
+
+describe('AppController theme frame images', () => {
+  const PNG = new Uint8Array([0x89, ...Buffer.from('PNG\r\n\x1a\nframe')]);
+  const withAssets = (initial?: Partial<Settings>) => {
+    const context = setup(initial);
+    context.controller.assets = new ThemeAssets(mkdtempSync(join(tmpdir(), 'chatto-assets-')));
+    return context;
+  };
+  const framed = (src: string, id = 'framed'): ChatTheme => ({
+    ...customTheme(id),
+    message: { ...customTheme().message, box: { ...customTheme().message.box, image: { ...DEFAULT_BOX_IMAGE, src } } },
+  });
+
+  it('imports an image file as an asset source', () => {
+    const { controller } = withAssets();
+    const file = join(mkdtempSync(join(tmpdir(), 'chatto-pick-')), 'frame.png');
+    writeFileSync(file, PNG);
+    const src = controller.importThemeAsset(file);
+    expect(src).toMatch(/^asset:[0-9a-f]{64}\.png$/);
+    expect(controller.assets.has(src.slice('asset:'.length))).toBe(true);
+  });
+
+  it('exports and re-imports a theme with its images', () => {
+    const source = withAssets();
+    const src = assetSrc(source.controller.assets.add(PNG));
+    const bytes = source.controller.exportThemePackage(framed(src));
+
+    const target = withAssets();
+    const imported = target.controller.importThemePackage(bytes);
+    expect(imported.message.box.image?.src).toBe(src);
+    expect(target.controller.assets.has(src.slice('asset:'.length))).toBe(true);
+  });
+
+  it('stores package images under their real hash and drops frames whose image is missing or invalid', () => {
+    const { controller } = withAssets();
+    const wrongName = `${'c'.repeat(64)}.png`;
+    const missing = `${'d'.repeat(64)}.png`;
+    const notImage = `${'e'.repeat(64)}.png`;
+    const theme = {
+      ...framed(assetSrc(wrongName)),
+      body: {
+        ...customTheme().body,
+        box: { ...customTheme().body.box, image: { ...DEFAULT_BOX_IMAGE, src: assetSrc(missing) } },
+      },
+      roles: { vip: { frame: { ...DEFAULT_BOX_IMAGE, src: assetSrc(notImage) } } },
+    };
+    const bytes = zipSync({
+      'theme.json': strToU8(JSON.stringify(theme)),
+      [`assets/${wrongName}`]: PNG,
+      [`assets/${notImage}`]: strToU8('<svg/>'),
+    });
+    const imported = controller.importThemePackage(bytes);
+    const realName = controller.assets.add(PNG);
+    expect(imported.message.box.image?.src).toBe(assetSrc(realName));
+    expect(imported.body.box.image).toBeNull();
+    expect(imported.roles.vip).toEqual({});
+  });
+
+  it('keeps images saved themes use and deletes the rest at startup', () => {
+    const context = withAssets();
+    const used = context.controller.assets.add(PNG);
+    const unused = context.controller.assets.add(new Uint8Array([...Buffer.from('GIF89a-old')]));
+    context.controller.saveTheme(framed(assetSrc(used)));
+    expect(context.controller.collectThemeAssets()).toEqual([unused]);
+    expect(context.controller.assets.has(used)).toBe(true);
   });
 });
 

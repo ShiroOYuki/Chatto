@@ -1,5 +1,5 @@
 import { PRESET_THEMES } from '@chatto/chat-ui';
-import { defaultAlertSettings, type ChatEvent, type SoundSetting } from '@chatto/core';
+import { defaultAlertSettings, type ChatEvent, type ChatTheme, type SoundSetting } from '@chatto/core';
 import { vi } from 'vitest';
 import type { AppState, ChattoApi, CssFileChange } from '../apps/desktop/src/shared/ipc';
 
@@ -79,6 +79,11 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     selectTheme: resolved(),
     saveTheme: resolved(),
     deleteTheme: resolved(),
+    importThemeAsset: vi.fn(async (): Promise<string | null> => null),
+    exportThemePackage: vi.fn(async () => true),
+    importThemePackage: vi.fn(async (): Promise<ChatTheme> => {
+      throw new Error('not stubbed');
+    }),
     openCssFile: vi.fn(async (themeId: string) => ({ launched: 'editor', path: `C:\\custom-css\\${themeId}.css` })),
     onCssFileChanged: vi.fn((listener: (change: CssFileChange) => void) => {
       cssFileListeners.add(listener);

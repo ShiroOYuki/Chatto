@@ -2,6 +2,7 @@ import type { ChatTheme } from '@chatto/core';
 import { ArrowLeft, Check, Download, RotateCcw, Save } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useAppState } from '../../store';
+import { runAction } from '../../services/run';
 import { themes } from '../../services/themes';
 import type { CursorRequest } from '../../components/CssEditor';
 import { Button, Tile } from '../../components/kit';
@@ -118,7 +119,7 @@ export function ThemeEditor({
         <Button variant="ghost" disabled={!dirty} onClick={revert}>
           <RotateCcw /> 復原
         </Button>
-        <Button onClick={() => exportTheme(draft)}>
+        <Button onClick={() => runAction('exportTheme', exportTheme(draft))}>
           <Download /> 匯出
         </Button>
         <Button variant="primary" disabled={saving || (!dirty && !justSaved)} onClick={() => void save()}>

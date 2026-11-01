@@ -46,9 +46,10 @@ docs/               architecture.md、message-format.md、theming.md
 ## 聊天室主題系統
 
 - Schema v2：**一個基底、全部是參數**。所有主題都經過同一個渲染器與 CSS 產生器（`packages/chat-ui/src/themeCss.ts`），主題只是 `BASE_THEME` 的參數值。**不得**為單一風格寫死專用 CSS；需要新外觀時，新增或擴充參數，讓編輯器也能調。
-- 內建預設：抹茶玻璃、和紙、泡泡、極簡描邊、暖簾、終端機，全部只覆蓋基底參數；另有 `blank`（`base: 'blank'`，不產生任何樣式，只留結構與 `customCss`）。
+- 內建預設：抹茶玻璃、和紙、泡泡、極簡描邊、暖簾、終端機、茶葉框，全部只覆蓋基底參數；另有 `blank`（`base: 'blank'`，不產生任何樣式，只留結構與 `customCss`）。
 - 新增參數時要同時：更新 `BASE_THEME` 預設值、`themeToCss`、編輯器欄位、`docs/theming.md`，並在 `normalizeTheme` 補舊資料的預設。
-- 使用者可以選預設、逐項精細調整（四邊內距、四角圓角、框線、陰影、模糊、身分樣式等）、寫自訂 CSS、匯出／匯入 JSON。Overlay 與 Embed 可以各自使用不同主題。
+- 使用者可以選預設、逐項精細調整（四邊內距、四角圓角、框線、陰影、模糊、九宮格圖片外框、身分樣式等）、寫自訂 CSS、匯出／匯入（JSON，或含圖片的主題包 `.chattotheme`）。Overlay 與 Embed 可以各自使用不同主題。
+- 圖片外框（`BoxStyle.image`、`roles.<身分>.frame`）的圖片存在 userData `theme-assets/<sha256>.<ext>`，主題裡只存 `asset:<檔名>`，本機 server 在 `/theme-assets/` 提供（不要用 `/assets/`，那是 viewer 建置檔的路徑）。只收 PNG／WebP／GIF，依內容判斷格式，不收 SVG。控制台裡的 `ChatView` 要傳 `assetUrl={useThemeAssetUrl()}`。內建主題的圖片用 data URL 內嵌，必須自製或 CC0。
 - **平台事件**：以 `平台:事件` 識別（如 `twitch:cheer`），清單集中在 `packages/chat-ui/src/events.ts` 的 `EVENT_CATALOG`，編輯器的「<平台> 專屬元件」選單由它產生。`theme.notice` 是通用事件訊息；`theme.events[key]` 為 `{ linked, style }`，linked 時持續跟隨通用樣式，編輯即解除連動。新增平台事件時：provider mapper 設 `eventType`、在 `events.ts` 的 `EVENT_CATALOG` 加定義、在 `eventSamples.ts` 加預覽範例（`events.ts` 只放定義，不依賴 mock 資料）、更新 `docs/message-format.md`。
 - 可客製元素的說明集中在 `packages/chat-ui/src/reference.ts`（編輯器的 class 標籤、自動完成、檢查標籤，以及「在 VSCode 開啟」產生的 `chatto-reference.css`、`css.customData` 都用它），新增 class、屬性或 CSS 變數時同步更新。
 - 主題編輯器的預覽有「範例」（`createSpecimenEvents()`，涵蓋所有元件與事件）與「即時」兩種模式，並提供檢查模式與選擇器建構器；自訂 CSS 使用 CodeMirror 6。

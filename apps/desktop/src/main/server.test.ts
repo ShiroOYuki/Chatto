@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import { ChatHub } from './chat-hub';
 import { LocalServer, type LocalServerOptions } from './server';
+import { ThemeAssets } from './theme-assets';
 
 let server: LocalServer | null = null;
 afterEach(async () => {
@@ -174,5 +175,18 @@ describe('LocalServer', () => {
     expect((await fetch(`http://127.0.0.1:${port}/sounds/missing.mp3`)).status).toBe(404);
     expect((await fetch(`http://127.0.0.1:${port}/sounds/..%2fsettings.json`)).status).toBe(404);
     expect((await fetch(`http://127.0.0.1:${port}/sounds/notes.txt`)).status).toBe(404);
+  });
+
+  it('serves theme frame images by asset name only, next to the viewer build', async () => {
+    const assets = new ThemeAssets(mkdtempSync(join(tmpdir(), 'chatto-assets-')));
+    const file = assets.add(new Uint8Array([...Buffer.from('GIF89a-frame')]));
+    const { port } = await startServer({ assets });
+    const ok = await fetch(`http://127.0.0.1:${port}/theme-assets/${file}`);
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('content-type')).toBe('image/gif');
+    expect((await fetch(`http://127.0.0.1:${port}/theme-assets/${'f'.repeat(64)}.png`)).status).toBe(404);
+    expect((await fetch(`http://127.0.0.1:${port}/theme-assets/..%2fsettings.json`)).status).toBe(404);
+    // The viewer's own bundle keeps its /assets/ path.
+    expect(await (await fetch(`http://127.0.0.1:${port}/assets/app.js`)).text()).toBe('console.log(1)');
   });
 });

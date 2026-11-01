@@ -1,11 +1,11 @@
 import type { ChatTheme, RoleKey, RoleStyle } from '@chatto/core';
 import type { Dispatch, SetStateAction } from 'react';
-import { OptionalColorRow } from '../fields';
+import { ImageFrameEditor, OptionalColorRow } from '../fields';
 import { patchRole } from '../draft';
 import { ROLE_LABELS } from '../options';
 import { PanelIntro } from './shared';
 
-const ROLE_FIELDS: { field: keyof RoleStyle; label: string }[] = [
+const ROLE_FIELDS: { field: Exclude<keyof RoleStyle, 'frame'>; label: string }[] = [
   { field: 'nameColor', label: '名稱顏色' },
   { field: 'nameBackground', label: '名稱框底色' },
   { field: 'surfaceBackground', label: '訊息底色' },
@@ -28,6 +28,11 @@ export function RolesPanel({ draft, setDraft }: { draft: ChatTheme; setDraft: Di
               onChange={(value) => setRole(key, { [field]: value })}
             />
           ))}
+          <ImageFrameEditor
+            label="外框圖片"
+            value={draft.roles[key]?.frame}
+            onChange={(frame) => setRole(key, { frame: frame ?? undefined })}
+          />
         </div>
       ))}
     </>

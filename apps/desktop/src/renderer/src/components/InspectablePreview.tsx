@@ -12,6 +12,7 @@ import type { ChatTheme } from '@chatto/core';
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { inspectElement, queryInRoot, type InspectedElement } from '../lib/cssSelector';
 import { pillAtTop, type Box } from '../lib/matchPill';
+import { useThemeAssetUrl } from '../services/themes';
 import { BACKDROPS, type Backdrop } from './ThemePreview';
 
 export type PreviewMode = 'specimen' | 'live';
@@ -67,6 +68,7 @@ export function InspectablePreview({
   const feed = useChatFeed(theme.options);
   const { push } = feed;
   useEffect(() => (mode === 'live' ? startMockStream(push, 1500) : undefined), [mode, push]);
+  const assetUrl = useThemeAssetUrl();
 
   const specimen = useMemo(() => {
     const options = { ...theme.options, hiddenPrefixes: [], hiddenUsers: [], maxMessages: 100, messageLifetime: 0 };
@@ -165,7 +167,7 @@ export function InspectablePreview({
         onClickCapture={onClick}
       >
         <div ref={content} className={`relative p-3 ${mode === 'live' ? 'h-full' : ''}`}>
-          <ChatView theme={shownTheme} items={mode === 'specimen' ? specimen : feed.items} />
+          <ChatView theme={shownTheme} items={mode === 'specimen' ? specimen : feed.items} assetUrl={assetUrl} />
           <div className="pointer-events-none absolute inset-0">
             {matches.map((box, index) => (
               <div

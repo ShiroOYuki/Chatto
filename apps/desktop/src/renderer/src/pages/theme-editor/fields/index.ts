@@ -3,5 +3,6 @@
  * per-side spacing, per-corner radius, borders, shadows and whole boxes.
  */
 export { BorderEditor, BoxEditor, ShadowEditor } from './editors';
+export { ImageFrameEditor } from './ImageFrameEditor';
 export { CornersField, NumberField, SidesField } from './numbers';
 export { ColorRow, FieldRow, OptionalColorRow, SelectRow, TextRow, ToggleRow } from './rows';
