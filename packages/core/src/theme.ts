@@ -74,6 +74,22 @@ export type RoleKey = 'viewer' | 'broadcaster' | 'moderator' | 'vip' | 'subscrib
 export type EventMessageFrame = 'wrap' | 'surface';
 
 /**
+ * Where the title of an event chat message goes (cheers, highlighted messages …):
+ * - `line`: its own line above the message.
+ * - `sticker`: a small tilted pill on the top-right corner of the message's surface.
+ * System notices always show their text as the first line.
+ */
+export type EventTitlePlacement = 'line' | 'sticker';
+
+/** Look of the title when `titlePlacement` is `sticker`. */
+export interface EventSticker {
+  background: string;
+  color: string;
+  /** Tilt in degrees; negative tilts left. */
+  rotate: number;
+}
+
+/**
  * Style of an event message (subs, raids, cheers …). The theme's `notice`
  * field is the generic event base; individual events can follow it or override it.
  */
@@ -91,6 +107,9 @@ export interface EventStyle {
   icon: string;
   /** How the frame applies to events that are chat messages. */
   messageFrame: EventMessageFrame;
+  /** Where the title of events that are chat messages goes. */
+  titlePlacement: EventTitlePlacement;
+  sticker: EventSticker;
 }
 
 /**

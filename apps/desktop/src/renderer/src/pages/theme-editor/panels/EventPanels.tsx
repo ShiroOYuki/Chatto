@@ -1,5 +1,5 @@
 import { editEventStyle, linkEvent, resolveEventStyle, type EventDefinition } from '@chatto/chat-ui';
-import type { ChatTheme, EventMessageFrame, EventStyle } from '@chatto/core';
+import type { ChatTheme, EventMessageFrame, EventStyle, EventTitlePlacement } from '@chatto/core';
 import { Link2 } from 'lucide-react';
 import { useMemo, type Dispatch, type SetStateAction } from 'react';
 import { Badge, Button, Segmented } from '../../../components/kit';
@@ -82,6 +82,31 @@ function EventStyleFields({
         onChange={set('icon')}
         placeholder="例如 ✨"
       />
+      <FieldRow label="聊天訊息事件的標題" hint="小奇點、強調訊息。通知的標題固定在第一行。">
+        <Segmented
+          size="sm"
+          value={style.titlePlacement}
+          onChange={(value: EventTitlePlacement) => set('titlePlacement')(value)}
+          options={[
+            { value: 'line', label: '上方一行' },
+            { value: 'sticker', label: '角落貼紙' },
+          ]}
+        />
+      </FieldRow>
+      {style.titlePlacement === 'sticker' ? (
+        <>
+          <ColorRow label="貼紙底色" value={style.sticker.background} onChange={set('sticker', 'background')} />
+          <ColorRow label="貼紙文字" value={style.sticker.color} onChange={set('sticker', 'color')} />
+          <NumberField
+            label="貼紙傾斜"
+            value={style.sticker.rotate}
+            min={-15}
+            max={15}
+            unit="°"
+            onChange={set('sticker', 'rotate')}
+          />
+        </>
+      ) : null}
       <OptionalColorRow
         label="內容顏色"
         value={style.bodyColor || undefined}

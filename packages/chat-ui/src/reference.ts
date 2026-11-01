@@ -18,7 +18,11 @@ export const CLASS_REFERENCE: SelectorReference[] = [
   { selector: '.chatto-message', label: '訊息', description: '一則聊天訊息（<li>）' },
   { selector: '.chatto-avatar', label: '頭像', description: '訊息左側的頭像' },
   { selector: '.chatto-content', label: '訊息內容區', description: '頭像以外的部分：回覆、標題列、內容' },
-  { selector: '.chatto-event-title', label: '事件標題', description: '事件訊息（如小奇點）上方的標題' },
+  {
+    selector: '.chatto-event-title',
+    label: '事件標題',
+    description: '事件訊息（如小奇點）的標題，可在上方一行或做成角落貼紙',
+  },
   { selector: '.chatto-reply', label: '回覆引用', description: '回覆別人時顯示的原訊息' },
   { selector: '.chatto-header', label: '名稱框', description: '時間、徽章、名稱與分隔符號' },
   { selector: '.chatto-time', label: '時間', description: '訊息時間' },

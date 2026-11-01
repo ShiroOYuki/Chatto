@@ -80,6 +80,9 @@ type Rule = (selector: string, declarations: string[]) => void;
 
 interface EventContext {
   rule: Rule;
+  arrangement: ChatTheme['message']['arrangement'];
+  /** Corner radii of the message, header and body boxes; columns round the outer corners per part. */
+  radii: { message: Corners; header: Corners; body: Corners };
   /** Whether a chat message's visible surface is its body (it has a fill) rather than the message box. */
   surfaceIsBody: boolean;
   /**
@@ -90,12 +93,8 @@ interface EventContext {
 }
 
 /** Emits one event style for a notice selector and a message-event selector. */
-function eventRules(
-  { rule, surfaceIsBody, restore }: EventContext,
-  style: EventStyle,
-  notice: string,
-  message: string,
-) {
+function eventRules(context: EventContext, style: EventStyle, notice: string, message: string) {
+  const { rule, surfaceIsBody, restore } = context;
   const frame = [...boxDeclarations(style.box), ...accentDeclarations(style)];
   if (style.messageFrame === 'surface' && surfaceIsBody) {
     rule(notice, frame);
@@ -110,6 +109,90 @@ function eventRules(
     style.icon ? `content: ${cssString(`${style.icon} `)}` : 'content: none',
   ]);
   if (style.bodyColor) rule(`${notice} .chatto-body, ${message} .chatto-body`, [`color: ${style.bodyColor}`]);
+  titleRules(context, style, message);
+}
+
+/** Undoes a sticker title (set by the generic event style) for an event that keeps its title on a line. */
+const LINE_TITLE = [
+  'position: static',
+  'display: block',
+  'background: transparent',
+  'padding: 0',
+  'border-radius: 0',
+  'box-shadow: none',
+  'transform: none',
+  'white-space: normal',
+  'font-size: 0.85em',
+  'line-height: inherit',
+];
+
+/**
+ * Places the title of an event chat message. A sticker sits on the top-right corner of the
+ * message's visible surface: in stacked bubbles the title shares the body's grid cell, otherwise
+ * it is positioned on the message box.
+ */
+function titleRules(
+  { rule, arrangement, radii, surfaceIsBody, restore }: EventContext,
+  style: EventStyle,
+  message: string,
+) {
+  const title = `${message} .chatto-event-title`;
+  const onBody = arrangement === 'stacked' && surfaceIsBody;
+  const columns = arrangement === 'columns';
+  if (style.titlePlacement !== 'sticker') {
+    if (restore) {
+      if (onBody) rule(`${message} .chatto-content`, ['display: flex']);
+      if (columns) {
+        rule(message, ['overflow: hidden']);
+        rule(`${message} .chatto-header`, [`border-radius: ${corners(radii.header)}`]);
+        rule(`${message} .chatto-body`, [`border-radius: ${corners(radii.body)}`]);
+      }
+      rule(title, [...LINE_TITLE, `color: ${style.titleColor}`]);
+    }
+    return;
+  }
+  const { background, color, rotate } = style.sticker;
+  const look = [
+    'display: block',
+    `background: ${background}`,
+    `color: ${color}`,
+    'font-size: 0.7em',
+    'line-height: 1.3',
+    'padding: 2px 8px',
+    'border-radius: 999px',
+    'white-space: nowrap',
+    'box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25)',
+    'z-index: 1',
+  ];
+  const tilt = `rotate(${Math.round(rotate * 10) / 10}deg)`;
+  if (onBody) {
+    rule(`${message} .chatto-content`, ['display: grid', 'grid-template-columns: auto', 'justify-items: start']);
+    rule(`${message} .chatto-reply`, ['grid-row: 1', 'grid-column: 1']);
+    rule(`${message} .chatto-header`, ['grid-row: 2', 'grid-column: 1']);
+    rule(`${message} .chatto-body`, ['grid-row: 3', 'grid-column: 1']);
+    rule(title, [
+      ...look,
+      'position: relative',
+      'grid-row: 3',
+      'grid-column: 1',
+      'justify-self: end',
+      'align-self: start',
+      `transform: translate(10px, -55%) ${tilt}`,
+    ]);
+    return;
+  }
+  rule(message, ['position: relative']);
+  if (columns) {
+    // Columns normally clip their overflow to round the tag; that would cut the sticker off,
+    // so the header and body round the message's outer corners themselves instead.
+    const [tl, tr, br, bl] = radii.message;
+    const [htl, htr, hbr, hbl] = radii.header;
+    const [btl, btr, bbr, bbl] = radii.body;
+    rule(message, ['overflow: visible']);
+    rule(`${message} .chatto-header`, [`border-radius: ${corners([Math.max(htl, tl), htr, hbr, Math.max(hbl, bl)])}`]);
+    rule(`${message} .chatto-body`, [`border-radius: ${corners([btl, Math.max(btr, tr), Math.max(bbr, br), bbl])}`]);
+  }
+  rule(title, [...look, 'position: absolute', 'top: 0', 'right: 8px', `transform: translateY(-55%) ${tilt}`]);
 }
 
 const ENTER_KEYFRAMES: Record<Exclude<ChatTheme['animation']['enter'], 'none'>, string> = {
@@ -344,12 +427,18 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
 
   // Events: the generic style, then each event that has its own style.
   // These come after role rules so an event's look wins over the author's role.
-  eventRules({ rule, surfaceIsBody }, notice, EVENT_NOTICE, EVENT_MESSAGE);
+  const radii = { message: message.box.radius, header: author.box.radius, body: body.box.radius };
+  eventRules({ rule, arrangement: message.arrangement, radii, surfaceIsBody }, notice, EVENT_NOTICE, EVENT_MESSAGE);
   const restore = { message: message.box, body: body.box };
   for (const [key, override] of Object.entries(theme.events)) {
     if (!override || override.linked) continue;
     const attr = `[data-event=${cssString(key)}]`;
-    eventRules({ rule, surfaceIsBody, restore }, override.style, `.chatto-notice${attr}`, `.chatto-message${attr}`);
+    eventRules(
+      { rule, arrangement: message.arrangement, radii, surfaceIsBody, restore },
+      override.style,
+      `.chatto-notice${attr}`,
+      `.chatto-message${attr}`,
+    );
   }
 
   // Enter animation.

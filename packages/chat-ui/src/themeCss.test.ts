@@ -152,6 +152,61 @@ describe('event message frame', () => {
   });
 });
 
+describe('event title', () => {
+  const title = '.s .chatto-message[data-event] .chatto-event-title';
+  const block = (css: string, selector: string) =>
+    css
+      .split('}')
+      .filter((part) =>
+        part
+          .split('{')[0]!
+          .split(',')
+          .some((item) => item.trim() === selector),
+      )
+      .join('}');
+
+  it('keeps the title on its own line by default', () => {
+    expect(BASE_THEME.notice.titlePlacement).toBe('line');
+    expect(block(themeToCss(BASE_THEME, '.s'), title)).not.toContain('border-radius: 999px');
+  });
+
+  it('puts the bubble title on the corner of the bubble', () => {
+    const bubble = getPresetTheme('bubble')!;
+    const css = themeToCss(bubble, '.s');
+    const sticker = block(css, title);
+    expect(sticker).toContain('background: #F0997B');
+    expect(sticker).toContain('grid-row: 3');
+    expect(sticker).toContain('rotate(4deg)');
+    expect(block(css, '.s .chatto-message[data-event] .chatto-body')).toContain('grid-row: 3');
+  });
+
+  it('pins the sticker to the message box when the message is the surface', () => {
+    const glass = getPresetTheme('matcha-glass')!;
+    const css = themeToCss({ ...glass, notice: { ...glass.notice, titlePlacement: 'sticker' } }, '.s');
+    expect(block(css, title)).toContain('position: absolute');
+    expect(block(css, '.s .chatto-message[data-event]')).toContain('position: relative');
+  });
+
+  it('columns stop clipping so the sticker can sit on the edge, rounding the tag per part', () => {
+    const noren = getPresetTheme('noren')!;
+    const css = themeToCss({ ...noren, notice: { ...noren.notice, titlePlacement: 'sticker' } }, '.s');
+    expect(block(css, '.s .chatto-message[data-event]')).toContain('overflow: visible');
+    expect(block(css, '.s .chatto-message[data-event] .chatto-header')).toContain('border-radius: 6px 0px 0px 6px');
+    expect(block(css, '.s .chatto-message[data-event] .chatto-body')).toContain('border-radius: 0px 6px 6px 0px');
+  });
+
+  it('an event on a line undoes the generic sticker', () => {
+    const bubble = getPresetTheme('bubble')!;
+    const css = themeToCss(
+      { ...bubble, events: { 'twitch:cheer': { linked: false, style: { ...bubble.notice, titlePlacement: 'line' } } } },
+      '.s',
+    );
+    const cheer = '.s .chatto-message[data-event="twitch:cheer"]';
+    expect(block(css, `${cheer} .chatto-event-title`)).toContain('transform: none');
+    expect(block(css, `${cheer} .chatto-content`)).toContain('display: flex');
+  });
+});
+
 describe('normalizeTheme', () => {
   it('fills missing fields from the base', () => {
     const theme = normalizeTheme({ schemaVersion: 2, id: 'x', name: 'x', author: { color: '#fff' } });
