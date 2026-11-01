@@ -1,7 +1,7 @@
 import { ATTRIBUTE_REFERENCE, CLASS_REFERENCE, EVENT_REFERENCE, VARIABLE_REFERENCE } from '@chatto/chat-ui/reference';
 import { spawn } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
-import { basename, join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, rmSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
+import { join } from 'node:path';
 import type { CssFileOpenResult, EditorLaunch } from '../shared/ipc';
 
 /** Opens the theme folder as a workspace so the editor picks up `.vscode/settings.json`. */
@@ -12,6 +12,13 @@ const CUSTOM_DATA_FILE = 'chatto.css-data.json';
 const SETTLE_MS = 120;
 /** A command still running after this long is an editor that stays attached (e.g. Notepad++). */
 const LAUNCH_GRACE_MS = 4000;
+const THEME_ID = /^[\w-]+$/;
+
+/** The theme a file in the folder belongs to; null for the reference and other files. */
+export function themeIdOf(filename: string): string | null {
+  const match = /^([\w-]+)\.css$/.exec(filename);
+  return match && filename !== REFERENCE_FILE ? match[1]! : null;
+}
 
 /** Expands `{file}` / `{folder}` in the user's editor command; the file is appended when not mentioned. */
 export function editorCommandLine(command: string, folder: string, file: string): string {
@@ -50,7 +57,7 @@ export function referenceCss(): string {
   const lines = [
     '/*',
     ' * Chatto 自訂 CSS 參考，由 Chatto 自動產生，修改不會保留。',
-    ' * 每個主題的自訂 CSS 是這個資料夾裡的「主題 id.css」，在主題編輯器開著時會和 Chatto 同步。',
+    ' * 每個主題的自訂 CSS 是這個資料夾裡的「主題 id.css」，存檔後 Chatto 會直接儲存主題。',
     ' */',
     '',
     '/* CSS 變數 */',
@@ -88,7 +95,7 @@ function runShell(commandLine: string): Promise<number | null> {
 export interface CssFilesOptions {
   /** Folder holding one `<theme id>.css` per theme plus the editor workspace files. */
   dir: string;
-  /** The open theme's file was changed outside Chatto. */
+  /** A theme's file was changed outside Chatto. */
   onExternalChange: (themeId: string, css: string) => void;
   run?: (commandLine: string) => Promise<number | null>;
   /** Opens a file with the system's default app; resolves false when that fails. */
@@ -96,16 +103,16 @@ export interface CssFilesOptions {
 }
 
 /**
- * Mirrors the custom CSS of the theme being edited to a real file so it can be
- * edited in VSCode. Only one theme syncs at a time, while its editor is open;
- * both sides write through, and the last write wins.
+ * Keeps each custom theme's CSS in a real file so it can be edited in VSCode.
+ * The folder is watched for as long as Chatto runs: saving a file outside
+ * Chatto reports it right away (the controller saves the theme), and Chatto
+ * writes its own changes back. Both sides write through; the last write wins.
  */
 export class CssFiles {
   #watcher: FSWatcher | null = null;
-  #timer: ReturnType<typeof setTimeout> | null = null;
-  #themeId: string | null = null;
-  /** The file content as last written or read, so our own writes are not echoed back. */
-  #known = '';
+  #timers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** Each file's content as last written or read, so our own writes are not echoed back. */
+  #known = new Map<string, string>();
 
   constructor(private readonly options: CssFilesOptions) {}
 
@@ -114,14 +121,37 @@ export class CssFiles {
   }
 
   pathFor(themeId: string): string {
-    if (!/^[\w-]+$/.test(themeId)) throw new Error(`Invalid theme id ${themeId}`);
+    if (!THEME_ID.test(themeId)) throw new Error(`Invalid theme id ${themeId}`);
     return join(this.dir, `${themeId}.css`);
   }
 
-  /** Starts syncing the theme and opens its file in the user's editor. */
+  /** Watches the folder for outside edits. */
+  start(): void {
+    if (this.#watcher) return;
+    mkdirSync(this.dir, { recursive: true });
+    this.#watcher = watch(this.dir, (_event, filename) => {
+      const themeId = filename ? themeIdOf(filename) : null;
+      if (!themeId) return;
+      clearTimeout(this.#timers.get(themeId));
+      this.#timers.set(
+        themeId,
+        setTimeout(() => this.#readBack(themeId), SETTLE_MS),
+      );
+    });
+  }
+
+  stop(): void {
+    this.#watcher?.close();
+    this.#watcher = null;
+    for (const timer of this.#timers.values()) clearTimeout(timer);
+    this.#timers.clear();
+  }
+
+  /** Writes the workspace files and the theme's CSS, then opens it in the user's editor. */
   async open(themeId: string, css: string, editorCommand: string): Promise<CssFileOpenResult> {
-    this.sync(themeId, css);
+    this.#writeWorkspace();
     const path = this.pathFor(themeId);
+    this.#write(themeId, css);
     const run = this.options.run ?? runShell;
     const code = await run(editorCommandLine(editorCommand, this.dir, path));
     let launched: EditorLaunch = 'editor';
@@ -129,58 +159,45 @@ export class CssFiles {
     return { launched, path };
   }
 
-  /** Writes the workspace files and the theme's CSS, then watches the file for outside edits. */
-  sync(themeId: string, css: string): void {
-    this.close();
-    const path = this.pathFor(themeId);
-    mkdirSync(join(this.dir, '.vscode'), { recursive: true });
-    writeFileSync(join(this.dir, '.vscode', 'settings.json'), `${JSON.stringify(workspaceSettings(), null, 2)}\n`);
-    writeFileSync(join(this.dir, '.vscode', CUSTOM_DATA_FILE), `${JSON.stringify(cssCustomData(), null, 2)}\n`);
-    writeFileSync(join(this.dir, REFERENCE_FILE), referenceCss());
-    this.#themeId = themeId;
-    this.#known = css;
-    writeFileSync(path, css);
-    const name = basename(path);
-    this.#watcher = watch(this.dir, (_event, filename) => {
-      if (filename !== name) return;
-      if (this.#timer) clearTimeout(this.#timer);
-      this.#timer = setTimeout(() => this.#readBack(themeId, path), SETTLE_MS);
-    });
-  }
-
-  /** Writes the app's latest CSS to the file of the theme being synced. */
+  /**
+   * Writes Chatto's CSS to the theme's file, if the theme has one (it was opened
+   * in an editor before). Unchanged content is not rewritten.
+   */
   write(themeId: string, css: string): void {
-    if (themeId !== this.#themeId || css === this.#known) return;
-    this.#known = css;
-    writeFileSync(this.pathFor(themeId), css);
-  }
-
-  /** Stops syncing; with a theme id, only if that theme is the one syncing. */
-  close(themeId?: string): void {
-    if (themeId !== undefined && themeId !== this.#themeId) return;
-    this.#watcher?.close();
-    this.#watcher = null;
-    if (this.#timer) clearTimeout(this.#timer);
-    this.#timer = null;
-    this.#themeId = null;
+    if (existsSync(this.pathFor(themeId))) this.#write(themeId, css);
   }
 
   /** Deletes a theme's file, e.g. when the theme itself is deleted. */
   remove(themeId: string): void {
-    this.close(themeId);
+    clearTimeout(this.#timers.get(themeId));
+    this.#known.delete(themeId);
     rmSync(this.pathFor(themeId), { force: true });
   }
 
-  #readBack(themeId: string, path: string): void {
-    if (themeId !== this.#themeId) return;
+  #write(themeId: string, css: string): void {
+    const path = this.pathFor(themeId);
+    if (this.#known.get(themeId) === css && existsSync(path)) return;
+    this.#known.set(themeId, css);
+    writeFileSync(path, css);
+  }
+
+  #writeWorkspace(): void {
+    mkdirSync(join(this.dir, '.vscode'), { recursive: true });
+    writeFileSync(join(this.dir, '.vscode', 'settings.json'), `${JSON.stringify(workspaceSettings(), null, 2)}\n`);
+    writeFileSync(join(this.dir, '.vscode', CUSTOM_DATA_FILE), `${JSON.stringify(cssCustomData(), null, 2)}\n`);
+    writeFileSync(join(this.dir, REFERENCE_FILE), referenceCss());
+  }
+
+  #readBack(themeId: string): void {
+    this.#timers.delete(themeId);
     let css: string;
     try {
-      css = readFileSync(path, 'utf8');
+      css = readFileSync(this.pathFor(themeId), 'utf8');
     } catch {
       return; // deleted or mid-replace; the next event reads it again
     }
-    if (css === this.#known) return;
-    this.#known = css;
+    if (css === this.#known.get(themeId)) return;
+    this.#known.set(themeId, css);
     this.options.onExternalChange(themeId, css);
   }
 }

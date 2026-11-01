@@ -139,3 +139,29 @@ test('persists preference changes to the settings file', async () => {
   await mainWindow.evaluate(() => window.chatto!.setPrefs({ uiMode: 'compact', closeToTray: false }));
   expect(settings().prefs).toMatchObject({ uiMode: 'compact', closeToTray: false });
 });
+
+test('saving a theme CSS file outside Chatto saves the theme', async () => {
+  const themeId = 'custom-e2e';
+  await mainWindow.evaluate(async (id) => {
+    const api = window.chatto!;
+    const [preset] = (await api.getState()).themes;
+    await api.saveTheme({ ...preset!, id, name: 'E2E', builtIn: false, customCss: '' });
+    // A command that exits at once without opening anything.
+    await api.setPrefs({ editorCommand: 'rem {file}' });
+  }, themeId);
+  const opened = await mainWindow.evaluate((id) => window.chatto!.openCssFile(id), themeId);
+  expect(opened.launched).toBe('editor');
+  expect(opened.path).toBe(join(userData, 'custom-css', `${themeId}.css`));
+
+  writeFileSync(opened.path, '.chatto-author { color: red; }');
+  const savedCss = () => settings().customThemes.find((theme: { id: string }) => theme.id === themeId)?.customCss;
+  await expect.poll(savedCss).toBe('.chatto-author { color: red; }');
+
+  // Saving in Chatto writes the file back.
+  await mainWindow.evaluate(async (id) => {
+    const api = window.chatto!;
+    const theme = (await api.getState()).themes.find((item) => item.id === id)!;
+    await api.saveTheme({ ...theme, customCss: '.chatto-body { color: blue; }' });
+  }, themeId);
+  expect(readFileSync(opened.path, 'utf8')).toBe('.chatto-body { color: blue; }');
+});

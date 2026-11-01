@@ -145,9 +145,7 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.selectTheme, (_e, target, id: string) => controller.selectTheme(target, id));
   ipcMain.handle(IPC.saveTheme, (_e, theme) => controller.saveTheme(theme));
   ipcMain.handle(IPC.deleteTheme, (_e, id: string) => controller.deleteTheme(id));
-  ipcMain.handle(IPC.openCssFile, (_e, id: string, css: string) => controller.openCssFile(id, css));
-  ipcMain.handle(IPC.writeCssFile, (_e, id: string, css: string) => controller.cssFiles?.write(id, css));
-  ipcMain.handle(IPC.closeCssFile, (_e, id: string) => controller.cssFiles?.close(id));
+  ipcMain.handle(IPC.openCssFile, (_e, id: string) => controller.openCssFile(id));
   ipcMain.handle(IPC.openExternal, (_e, url: string) => openExternal(url));
 }
 
@@ -164,9 +162,11 @@ async function bootstrap(): Promise<void> {
   controller.soundsDir = join(app.getPath('userData'), 'sounds');
   controller.cssFiles = new CssFiles({
     dir: join(app.getPath('userData'), 'custom-css'),
-    onExternalChange: (themeId, css) => send(IPC.cssFileChanged, { themeId, css }),
+    onExternalChange: (themeId, css) => controller.applyExternalCss(themeId, css),
     openWithSystem: async (path) => (await shell.openPath(path)) === '',
   });
+  controller.onCssFileChanged = (change) => send(IPC.cssFileChanged, change);
+  controller.cssFiles.start();
 
   controller.server = new LocalServer({
     port: settings.get().serverPort,
@@ -208,6 +208,7 @@ async function bootstrap(): Promise<void> {
   });
   app.on('before-quit', () => {
     quitting = true;
+    controller.cssFiles?.stop();
     void controller.server.stop();
   });
 }

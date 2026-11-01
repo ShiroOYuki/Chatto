@@ -2,54 +2,40 @@ import { useEffect, useRef, useState } from 'react';
 import type { CssFileOpenResult } from '../../../../shared/ipc';
 import { cssFiles } from '../../services/cssFiles';
 
-/** Waits for typing to pause before writing the file, so the editor does not reload on every key. */
-export const WRITE_DELAY_MS = 250;
-
 export interface ExternalCss {
-  /** Set once the file is open; the draft and the file stay in sync from then on. */
-  synced: CssFileOpenResult | null;
+  /** How the file was opened, once it has been in this editor session. */
+  opened: CssFileOpenResult | null;
   opening: boolean;
   error: string | null;
   open: () => Promise<void>;
 }
 
 /**
- * Two-way sync between the draft's custom CSS and the theme's CSS file, from the
- * first "open in VSCode" until the theme editor closes. Outside edits land in the
- * draft like any other edit, so they are saved with the theme.
+ * Opens the theme's CSS file in an external editor. Saving the file there saves
+ * the theme in the main process (so OBS and the overlay update at once);
+ * `onSaved` brings that CSS into the open editor as well.
  */
-export function useExternalCss(themeId: string, css: string, setCss: (css: string) => void): ExternalCss {
-  const [synced, setSynced] = useState<CssFileOpenResult | null>(null);
+export function useExternalCss(themeId: string, onSaved: (css: string) => void): ExternalCss {
+  const [opened, setOpened] = useState<CssFileOpenResult | null>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const latest = useRef({ css, setCss });
-  latest.current = { css, setCss };
-  const active = synced !== null;
+  const latest = useRef(onSaved);
+  latest.current = onSaved;
 
-  useEffect(() => {
-    if (!active) return;
-    return cssFiles.onChange((change) => {
-      if (change.themeId === themeId) latest.current.setCss(change.css);
-    });
-  }, [active, themeId]);
-
-  useEffect(() => {
-    if (!active) return;
-    const timer = setTimeout(() => cssFiles.write(themeId, css), WRITE_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [active, themeId, css]);
-
-  useEffect(() => {
-    if (!active) return;
-    return () => cssFiles.close(themeId);
-  }, [active, themeId]);
+  useEffect(
+    () =>
+      cssFiles.onChange((change) => {
+        if (change.themeId === themeId) latest.current(change.css);
+      }),
+    [themeId],
+  );
 
   const open = async () => {
     if (opening) return;
     setOpening(true);
     setError(null);
     try {
-      setSynced(await cssFiles.open(themeId, latest.current.css));
+      setOpened(await cssFiles.open(themeId));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -57,5 +43,5 @@ export function useExternalCss(themeId: string, css: string, setCss: (css: strin
     }
   };
 
-  return { synced, opening, error, open };
+  return { opened, opening, error, open };
 }

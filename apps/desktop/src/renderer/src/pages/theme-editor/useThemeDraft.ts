@@ -6,6 +6,8 @@ const SAVED_FLASH_MS = 1600;
 
 export interface ThemeDraft {
   draft: ChatTheme;
+  /** The theme as last saved. */
+  saved: ChatTheme;
   setDraft: Dispatch<SetStateAction<ChatTheme>>;
   set: PathSetter<ChatTheme>;
   dirty: boolean;
@@ -15,6 +17,8 @@ export interface ThemeDraft {
   saveError: string | null;
   save: () => Promise<void>;
   revert: () => void;
+  /** The theme's custom CSS was saved elsewhere (its CSS file); take it into both copies. */
+  acceptSavedCss: (css: string) => void;
 }
 
 /**
@@ -56,5 +60,22 @@ export function useThemeDraft(
     }
   };
 
-  return { draft, setDraft, set, dirty, saving, justSaved, saveError, save, revert: () => setDraft(saved) };
+  const acceptSavedCss = (customCss: string) => {
+    setSaved((current) => ({ ...current, customCss }));
+    setDraft((current) => ({ ...current, customCss }));
+  };
+
+  return {
+    draft,
+    saved,
+    setDraft,
+    set,
+    dirty,
+    saving,
+    justSaved,
+    saveError,
+    save,
+    revert: () => setDraft(saved),
+    acceptSavedCss,
+  };
 }

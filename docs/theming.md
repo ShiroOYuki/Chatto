@@ -161,11 +161,15 @@
 
 ## 在 VSCode 編輯自訂 CSS
 
-主題編輯器的「自訂 CSS」區塊有「在 VSCode 開啟」按鈕（`main/css-files.ts`）：
+主題編輯器的「自訂 CSS」區塊有「在 VSCode 開啟」按鈕（main：`css-files.ts` 的 `CssFiles`；renderer：`useExternalCss`）：
 
 - 檔案在 userData 的 `custom-css/<主題 id>.css`，路徑固定，主題改名不影響；刪除主題時一起刪除。
-- 第一次按下後開始雙向同步，直到離開主題編輯器：編輯器裡的修改（停頓 250 ms 後）寫回檔案；檔案在外部存檔後進入草稿，和其他修改一樣要按「儲存」才會套到 Overlay／OBS。兩邊同時改時以最後寫入為準。
-- 開啟時同時寫入工作區檔案：`.vscode/settings.json`（`css.customData` 指向 `.vscode/chatto.css-data.json`，描述 `VARIABLE_REFERENCE` 的 CSS 變數）與 `chatto-reference.css`（`reference.ts` 的所有選擇器與說明，只供參考）。VSCode 內建的 CSS 支援不提供 class 名稱自動完成，所以選擇器用參考檔查閱。
+- **檔案永遠等於已儲存的主題**：
+  - 在外部編輯器存檔：Chatto 直接儲存主題，Overlay／OBS 立即更新（`AppController.applyExternalCss`）。資料夾在 Chatto 執行期間都在監看，不需要開著主題編輯器。
+  - 主題編輯器開著時，存檔的 CSS 同時進入草稿和已儲存版本（`acceptSavedCss`），其他未儲存的修改保留。
+  - 在 Chatto 按「儲存」時，把 CSS 寫回檔案（只寫已經開過的主題）。
+  - Chatto 裡還有未儲存的 CSS 修改時，按鈕停用，要先儲存。兩邊都改時以最後存檔為準。
+- 開啟時同時寫入工作區檔案：`.vscode/settings.json`（`css.customData` 指向 `.vscode/chatto.css-data.json`，描述 `VARIABLE_REFERENCE` 的 CSS 變數）與 `chatto-reference.css`（`reference.ts` 的所有選擇器與說明，只供參考，改了不會套用）。VSCode 內建的 CSS 支援不提供 class 名稱自動完成，所以選擇器用參考檔查閱。
 - 編輯器指令在設定頁「自訂 CSS → 外部編輯器」（`prefs.editorCommand`）。留空等於 `code "{folder}" "{file}"`；沒寫 `{file}` 時會把檔案路徑加在最後。指令失敗（非 0 結束碼）時改用系統關聯 `.css` 的程式開啟；也失敗時顯示檔案路徑。
 
 ## 版本與遷移

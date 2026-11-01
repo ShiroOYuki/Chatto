@@ -98,13 +98,9 @@ export interface ChattoApi {
   saveTheme(theme: ChatTheme): Promise<void>;
   deleteTheme(themeId: string): Promise<void>;
 
-  /** Writes the theme's custom CSS to its file, keeps the two in sync and opens it in the editor. */
-  openCssFile(themeId: string, css: string): Promise<CssFileOpenResult>;
-  /** Pushes the editor's latest custom CSS to the synced file. */
-  writeCssFile(themeId: string, css: string): Promise<void>;
-  /** Stops syncing the theme's CSS file (the theme editor closed). */
-  closeCssFile(themeId: string): Promise<void>;
-  /** The synced CSS file was changed outside Chatto. */
+  /** Writes the theme's saved custom CSS to its file and opens it in the editor. */
+  openCssFile(themeId: string): Promise<CssFileOpenResult>;
+  /** A theme's CSS file was saved outside Chatto; the theme is already saved with it. */
   onCssFileChanged(listener: (change: CssFileChange) => void): () => void;
 
   openExternal(url: string): Promise<void>;
@@ -138,8 +134,6 @@ export const IPC = {
   saveTheme: 'theme:save',
   deleteTheme: 'theme:delete',
   openCssFile: 'css-file:open',
-  writeCssFile: 'css-file:write',
-  closeCssFile: 'css-file:close',
   cssFileChanged: 'css-file:changed',
   openExternal: 'app:open-external',
 } as const;

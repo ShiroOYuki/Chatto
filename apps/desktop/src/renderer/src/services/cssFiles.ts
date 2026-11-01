@@ -1,12 +1,12 @@
 import type { CssFileChange, CssFileOpenResult } from '../../../shared/ipc';
 import { api } from '../api';
-import { runAction } from './run';
 
-/** Syncs a theme's custom CSS with a file the user edits in VSCode (or another editor). */
+/**
+ * Each custom theme's CSS also lives in a file for VSCode (or another editor).
+ * The file always holds the saved CSS: saving it outside Chatto saves the theme.
+ */
 export const cssFiles = {
   /** Awaitable: the editor shows how the file was opened, or the error. */
-  open: (themeId: string, css: string): Promise<CssFileOpenResult> => api.openCssFile(themeId, css),
-  write: (themeId: string, css: string) => runAction('writeCssFile', api.writeCssFile(themeId, css)),
-  close: (themeId: string) => runAction('closeCssFile', api.closeCssFile(themeId)),
+  open: (themeId: string): Promise<CssFileOpenResult> => api.openCssFile(themeId),
   onChange: (listener: (change: CssFileChange) => void) => api.onCssFileChanged(listener),
 };

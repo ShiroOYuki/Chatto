@@ -12,6 +12,7 @@ import type { DeviceCodeInfo } from '../shared/ipc';
 import type { Settings, SettingsStore } from './settings';
 import type { LocalServer } from './server';
 import type { OverlayWindow } from './overlay-window';
+import type { CssFiles } from './css-files';
 
 vi.mock('electron', () => ({
   app: { getVersion: () => '0.1.0-test', isPackaged: false, setLoginItemSettings: vi.fn() },
@@ -190,6 +191,68 @@ describe('AppController themes', () => {
       embed: 'washi',
       alerts: PRESET_THEMES[0]!.id,
     });
+  });
+});
+
+describe('AppController CSS files', () => {
+  const withCssFiles = (initial?: Partial<Settings>) => {
+    const context = setup(initial);
+    const cssFiles = {
+      open: vi.fn(async (_id: string, _css: string, _command: string) => ({ launched: 'editor', path: 'p' })),
+      write: vi.fn(),
+      remove: vi.fn(),
+    };
+    context.controller.cssFiles = cssFiles as unknown as CssFiles;
+    const onCssFileChanged = vi.fn();
+    context.controller.onCssFileChanged = onCssFileChanged;
+    return { ...context, cssFiles, onCssFileChanged };
+  };
+
+  it('opens the saved CSS of a custom theme with the configured editor', async () => {
+    const theme = { ...customTheme(), customCss: '.chatto-body {}' };
+    const { controller, cssFiles } = withCssFiles({
+      customThemes: [theme],
+      prefs: {
+        uiMode: 'full',
+        appearance: 'system',
+        closeToTray: true,
+        launchAtLogin: false,
+        editorCommand: 'notepad++',
+      },
+    });
+    await controller.openCssFile('my-theme');
+    expect(cssFiles.open).toHaveBeenCalledWith('my-theme', '.chatto-body {}', 'notepad++');
+    expect(() => controller.openCssFile(PRESET_THEMES[0]!.id)).toThrow(/Unknown custom theme/);
+  });
+
+  it('saves the theme and updates its outputs when its file is saved outside Chatto', () => {
+    const { controller, settings, server, onCssFileChanged } = withCssFiles({
+      customThemes: [customTheme()],
+      selectedThemes: { overlay: 'washi', embed: 'my-theme', alerts: 'washi' },
+    });
+    controller.applyExternalCss('my-theme', '.chatto-author { color: red; }');
+    expect(settings.get().customThemes[0]!.customCss).toBe('.chatto-author { color: red; }');
+    expect(server.broadcastTheme).toHaveBeenCalledWith(
+      'embed',
+      expect.objectContaining({ customCss: '.chatto-author { color: red; }' }),
+    );
+    expect(onCssFileChanged).toHaveBeenCalledWith({ themeId: 'my-theme', css: '.chatto-author { color: red; }' });
+  });
+
+  it('ignores files of unknown themes and unchanged CSS', () => {
+    const { controller, server, onCssFileChanged } = withCssFiles({ customThemes: [customTheme()] });
+    controller.applyExternalCss('gone', 'x');
+    controller.applyExternalCss('my-theme', customTheme().customCss);
+    expect(server.broadcastTheme).not.toHaveBeenCalled();
+    expect(onCssFileChanged).not.toHaveBeenCalled();
+  });
+
+  it('writes saved CSS back to the file and deletes the file with the theme', () => {
+    const { controller, cssFiles } = withCssFiles();
+    controller.saveTheme({ ...customTheme(), customCss: 'a {}' });
+    expect(cssFiles.write).toHaveBeenCalledWith('my-theme', 'a {}');
+    controller.deleteTheme('my-theme');
+    expect(cssFiles.remove).toHaveBeenCalledWith('my-theme');
   });
 });
 

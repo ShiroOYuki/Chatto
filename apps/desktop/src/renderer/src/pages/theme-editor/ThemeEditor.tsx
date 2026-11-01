@@ -33,17 +33,14 @@ export function ThemeEditor({
   onClose: () => void;
   onSaved: (theme: ChatTheme) => void;
 }) {
-  const { draft, setDraft, set, dirty, saving, justSaved, saveError, save, revert } = useThemeDraft(
-    initial,
-    themes.save,
-    onSaved,
-  );
+  const { draft, saved, setDraft, set, dirty, saving, justSaved, saveError, save, revert, acceptSavedCss } =
+    useThemeDraft(initial, themes.save, onSaved);
   const [section, setSection] = useState<SectionId>('base');
   const [cursorRequest, setCursorRequest] = useState<CursorRequest | null>(null);
   const blank = draft.base === 'blank';
   const resolved = resolveSection(section, blank);
   const hl = usePreviewHighlight(resolved.active === 'css');
-  const external = useExternalCss(draft.id, draft.customCss, set('customCss'));
+  const external = useExternalCss(draft.id, acceptSavedCss);
   const editorLabel = useAppState()?.prefs.editorCommand.trim() ? '在外部編輯器開啟' : '在 VSCode 開啟';
 
   /** Inserts an empty rule into the custom CSS and puts the cursor inside it. */
@@ -89,6 +86,7 @@ export function ThemeEditor({
             cursorRequest={cursorRequest}
             external={external}
             editorLabel={editorLabel}
+            cssUnsaved={draft.customCss !== saved.customCss}
             onChange={set('customCss')}
             onCursorSelector={hl.setCursorSelector}
             onHoverSelector={hl.setHoverSelector}

@@ -15,7 +15,8 @@ const isAttribute = (item: SelectorReference) => item.selector.startsWith('[');
 
 const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path;
 
-function ExternalStatus({ external }: { external: ExternalCss }) {
+function ExternalStatus({ external, cssUnsaved }: { external: ExternalCss; cssUnsaved: boolean }) {
+  if (cssUnsaved) return <span className="text-xs text-ink-faint">先儲存這裡的 CSS 修改再開啟。</span>;
   if (external.error) {
     return (
       <span role="alert" className="text-xs text-danger" title={external.error}>
@@ -23,18 +24,18 @@ function ExternalStatus({ external }: { external: ExternalCss }) {
       </span>
     );
   }
-  const { synced } = external;
-  if (!synced) return <span className="text-xs text-ink-faint">在外部編輯器寫 CSS，存檔後會同步回來。</span>;
+  const { opened } = external;
+  if (!opened) return <span className="text-xs text-ink-faint">在外部存檔就會直接儲存並套用。</span>;
   const file = (
-    <code className="font-mono text-ink-soft select-all" title={synced.path}>
-      {synced.launched === 'none' ? synced.path : fileName(synced.path)}
+    <code className="font-mono text-ink-soft select-all" title={opened.path}>
+      {opened.launched === 'none' ? opened.path : fileName(opened.path)}
     </code>
   );
   return (
     <span role="status" className="min-w-0 text-xs text-ink-faint">
-      {synced.launched === 'editor' ? <>同步中：{file}</> : null}
-      {synced.launched === 'system' ? <>找不到編輯器指令，已用預設程式開啟。同步中：{file}</> : null}
-      {synced.launched === 'none' ? <>無法開啟編輯器，請手動開啟 {file}，仍會同步。</> : null}
+      {opened.launched === 'editor' ? <>已開啟 {file}，存檔即套用。</> : null}
+      {opened.launched === 'system' ? <>找不到編輯器指令，已用預設程式開啟 {file}，存檔即套用。</> : null}
+      {opened.launched === 'none' ? <>無法開啟編輯器，請手動開啟 {file}，存檔即套用。</> : null}
     </span>
   );
 }
@@ -45,6 +46,7 @@ export function CssPanel({
   cursorRequest,
   external,
   editorLabel,
+  cssUnsaved,
   onChange,
   onCursorSelector,
   onHoverSelector,
@@ -56,6 +58,8 @@ export function CssPanel({
   external: ExternalCss;
   /** "Open in VSCode", or a generic label when the user set another editor. */
   editorLabel: string;
+  /** The CSS here has edits not saved yet; the file only ever holds the saved CSS. */
+  cssUnsaved: boolean;
   onChange: (css: string) => void;
   onCursorSelector: (selector: string | null) => void;
   onHoverSelector: (selector: string | null) => void;
@@ -70,10 +74,15 @@ export function CssPanel({
         游標所在規則符合的元素會在預覽中標示出來。
       </PanelIntro>
       <div className="flex items-center gap-3 pb-3">
-        <Button size="sm" className="shrink-0" disabled={external.opening} onClick={() => void external.open()}>
+        <Button
+          size="sm"
+          className="shrink-0"
+          disabled={external.opening || cssUnsaved}
+          onClick={() => void external.open()}
+        >
           <SquarePen /> {editorLabel}
         </Button>
-        <ExternalStatus external={external} />
+        <ExternalStatus external={external} cssUnsaved={cssUnsaved} />
       </div>
       <div className="h-[360px]">
         <CssEditor

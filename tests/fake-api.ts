@@ -28,7 +28,7 @@ export type FakeApi = { [K in keyof ChattoApi]: ReturnType<typeof vi.fn> & Chatt
   pushChat(event: ChatEvent): void;
   /** Asks the renderer to play a reminder sound, like the main process does over IPC. */
   pushAlertSound(sound: SoundSetting): void;
-  /** Reports an outside edit of the synced CSS file, like the main process does over IPC. */
+  /** Reports a CSS file saved outside Chatto, like the main process does over IPC. */
   pushCssFile(change: CssFileChange): void;
   state: AppState;
 };
@@ -80,8 +80,6 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     saveTheme: resolved(),
     deleteTheme: resolved(),
     openCssFile: vi.fn(async (themeId: string) => ({ launched: 'editor', path: `C:\\custom-css\\${themeId}.css` })),
-    writeCssFile: resolved(),
-    closeCssFile: resolved(),
     onCssFileChanged: vi.fn((listener: (change: CssFileChange) => void) => {
       cssFileListeners.add(listener);
       return () => cssFileListeners.delete(listener);

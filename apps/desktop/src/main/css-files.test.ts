@@ -1,8 +1,8 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CssFiles, editorCommandLine, referenceCss, REFERENCE_FILE, workspaceSettings } from './css-files';
+import { CssFiles, editorCommandLine, referenceCss, REFERENCE_FILE, themeIdOf, workspaceSettings } from './css-files';
 
 let dir = '';
 let files: CssFiles;
@@ -15,9 +15,12 @@ beforeEach(() => {
   files = new CssFiles({ dir, onExternalChange, run, openWithSystem });
 });
 afterEach(() => {
-  files.close();
+  files.stop();
   rmSync(dir, { recursive: true, force: true });
 });
+
+/** Gives the watcher time to deliver (or not deliver) events. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 400));
 
 describe('editorCommandLine', () => {
   it('opens the folder and the file in VSCode by default', () => {
@@ -41,6 +44,13 @@ describe('workspace files', () => {
     expect(css).toContain('.chatto-message[data-roles~="moderator"] {}');
     expect(css).toContain('.chatto-message[data-event="twitch:cheer"] {}');
     expect(css).toContain('--chatto-user-color');
+  });
+
+  it('maps theme files to theme ids and skips everything else', () => {
+    expect(themeIdOf('custom-a.css')).toBe('custom-a');
+    expect(themeIdOf(REFERENCE_FILE)).toBeNull();
+    expect(themeIdOf('notes.txt')).toBeNull();
+    expect(themeIdOf('custom-a.css~')).toBeNull();
   });
 });
 
@@ -74,32 +84,36 @@ describe('CssFiles', () => {
     expect(() => files.pathFor('../settings')).toThrow();
   });
 
-  it('writes app edits only for the theme being synced', () => {
-    files.sync('custom-a', 'a');
+  it('writes saved CSS only to themes that already have a file', async () => {
+    await files.open('custom-a', 'a', '');
     files.write('custom-a', 'b');
     files.write('custom-b', 'x');
     expect(readFileSync(join(dir, 'custom-a.css'), 'utf8')).toBe('b');
     expect(existsSync(join(dir, 'custom-b.css'))).toBe(false);
   });
 
-  it('reports outside edits but not its own writes', async () => {
-    files.sync('custom-a', 'a');
+  it('reports outside saves of any theme file, but not its own writes', async () => {
+    files.start();
+    await files.open('custom-a', 'a', '');
     files.write('custom-a', 'b');
-    writeFileSync(join(dir, 'custom-a.css'), '.chatto-body { color: blue; }');
-    await vi.waitFor(() => expect(onExternalChange).toHaveBeenCalledWith('custom-a', '.chatto-body { color: blue; }'));
+    writeFileSync(join(dir, 'custom-c.css'), '.chatto-body { color: blue; }');
+    await vi.waitFor(() => expect(onExternalChange).toHaveBeenCalledWith('custom-c', '.chatto-body { color: blue; }'));
+    await settle();
     expect(onExternalChange).toHaveBeenCalledTimes(1);
   });
 
-  it('stops reporting after closing', async () => {
-    files.sync('custom-a', 'a');
-    files.close('custom-a');
+  it('ignores the reference file and stops after stop()', async () => {
+    files.start();
+    writeFileSync(join(dir, REFERENCE_FILE), '/* edited */');
+    await settle();
+    files.stop();
     writeFileSync(join(dir, 'custom-a.css'), 'changed');
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await settle();
     expect(onExternalChange).not.toHaveBeenCalled();
   });
 
-  it('deletes the file with its theme', () => {
-    files.sync('custom-a', 'a');
+  it('deletes the file with its theme', async () => {
+    await files.open('custom-a', 'a', '');
     files.remove('custom-a');
     expect(existsSync(join(dir, 'custom-a.css'))).toBe(false);
   });

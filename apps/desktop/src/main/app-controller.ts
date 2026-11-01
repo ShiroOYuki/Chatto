@@ -16,7 +16,7 @@ import { app, nativeTheme } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
-import type { AppPrefs, AppState, CssFileOpenResult, DeviceCodeInfo } from '../shared/ipc';
+import type { AppPrefs, AppState, CssFileChange, CssFileOpenResult, DeviceCodeInfo } from '../shared/ipc';
 import { alertCue, markAfterSilence, SilenceTracker } from './alerts';
 import { ChatHub } from './chat-hub';
 import type { CssFiles } from './css-files';
@@ -46,8 +46,10 @@ export class AppController {
   overlay!: OverlayWindow;
   /** The event alert overlay window. */
   alertsOverlay!: OverlayWindow;
-  /** Syncs the custom CSS of the theme being edited with a file for external editors. */
+  /** Keeps each custom theme's CSS in a file for external editors. */
   cssFiles?: CssFiles;
+  /** Tells an open theme editor that a CSS file save already updated the theme. */
+  onCssFileChanged: (change: CssFileChange) => void = () => undefined;
   /** Folder for user alert sounds, served by the local server. */
   soundsDir = '';
   onChange: (state: AppState) => void = () => undefined;
@@ -377,13 +379,28 @@ export class AppController {
     for (const target of VIEWER_TARGETS) {
       if (this.settings.get().selectedThemes[target] === theme.id) this.server.broadcastTheme(target, theme);
     }
+    this.cssFiles?.write(theme.id, theme.customCss);
     this.#emit();
   }
 
-  openCssFile(themeId: string, css: string): Promise<CssFileOpenResult> {
-    if (!this.cssFiles) throw new Error('CSS file sync is not available');
-    if (getPresetTheme(themeId)) throw new Error('Built-in themes are read-only; duplicate it first');
-    return this.cssFiles.open(themeId, css, this.settings.get().prefs.editorCommand);
+  /** Opens the theme's saved custom CSS in the user's editor. */
+  openCssFile(themeId: string): Promise<CssFileOpenResult> {
+    if (!this.cssFiles) throw new Error('CSS files are not available');
+    const theme = this.#customTheme(themeId);
+    if (!theme) throw new Error(`Unknown custom theme ${themeId}`);
+    return this.cssFiles.open(themeId, theme.customCss, this.settings.get().prefs.editorCommand);
+  }
+
+  /** A theme's CSS file was saved outside Chatto: save the theme so every output updates. */
+  applyExternalCss(themeId: string, css: string): void {
+    const theme = this.#customTheme(themeId);
+    if (!theme || theme.customCss === css) return;
+    this.saveTheme({ ...theme, customCss: css });
+    this.onCssFileChanged({ themeId, css });
+  }
+
+  #customTheme(themeId: string): ChatTheme | undefined {
+    return this.themes().find((theme) => theme.id === themeId && !getPresetTheme(theme.id));
   }
 
   deleteTheme(themeId: string): void {

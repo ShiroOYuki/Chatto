@@ -10,7 +10,7 @@ declare global {
       emitChat(event: ChatEvent): void;
       setState(patch: Partial<AppState>): void;
       playAlertSound(sound: SoundSetting): void;
-      /** Simulates an outside edit of the synced CSS file. */
+      /** Simulates saving a theme's CSS file outside Chatto (does not save the theme). */
       changeCssFile(change: CssFileChange): void;
     };
   }
@@ -129,8 +129,6 @@ function createMockApi(): ChattoApi {
       launched: 'none',
       path: `%APPDATA%\\Chatto\\custom-css\\${themeId}.css`,
     }),
-    writeCssFile: async () => undefined,
-    closeCssFile: async () => undefined,
     onCssFileChanged: (listener) => (cssFileListeners.add(listener), () => cssFileListeners.delete(listener)),
     openExternal: async (url) => void window.open(url, '_blank'),
   };
