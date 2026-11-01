@@ -1,13 +1,13 @@
 import { PRESET_THEMES } from '@chatto/chat-ui';
 import { defaultAlertSettings, type ChatEvent, type SoundSetting } from '@chatto/core';
 import { vi } from 'vitest';
-import type { AppState, ChattoApi } from '../apps/desktop/src/shared/ipc';
+import type { AppState, ChattoApi, CssFileChange } from '../apps/desktop/src/shared/ipc';
 
 export function sampleState(patch: Partial<AppState> = {}): AppState {
   return {
     appInfo: { version: '0.1.0', platform: 'test' },
     window: { maximized: false },
-    prefs: { uiMode: 'full', appearance: 'light', closeToTray: true, launchAtLogin: false },
+    prefs: { uiMode: 'full', appearance: 'light', closeToTray: true, launchAtLogin: false, editorCommand: '' },
     clientIdConfigured: true,
     auth: { status: 'signed-in', login: 'shiraine_ciel' },
     channel: { login: 'shiraine_ciel', state: 'connected' },
@@ -28,6 +28,8 @@ export type FakeApi = { [K in keyof ChattoApi]: ReturnType<typeof vi.fn> & Chatt
   pushChat(event: ChatEvent): void;
   /** Asks the renderer to play a reminder sound, like the main process does over IPC. */
   pushAlertSound(sound: SoundSetting): void;
+  /** Reports an outside edit of the synced CSS file, like the main process does over IPC. */
+  pushCssFile(change: CssFileChange): void;
   state: AppState;
 };
 
@@ -39,6 +41,7 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
   const stateListeners = new Set<(state: AppState) => void>();
   const chatListeners = new Set<(event: ChatEvent) => void>();
   const soundListeners = new Set<(sound: SoundSetting) => void>();
+  const cssFileListeners = new Set<(change: CssFileChange) => void>();
   const resolved = () => vi.fn(async () => undefined);
   const fake = {
     state: initial,
@@ -76,6 +79,13 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     selectTheme: resolved(),
     saveTheme: resolved(),
     deleteTheme: resolved(),
+    openCssFile: vi.fn(async (themeId: string) => ({ launched: 'editor', path: `C:\\custom-css\\${themeId}.css` })),
+    writeCssFile: resolved(),
+    closeCssFile: resolved(),
+    onCssFileChanged: vi.fn((listener: (change: CssFileChange) => void) => {
+      cssFileListeners.add(listener);
+      return () => cssFileListeners.delete(listener);
+    }),
     openExternal: resolved(),
     pushState(patch: Partial<AppState>) {
       fake.state = { ...fake.state, ...patch };
@@ -86,6 +96,9 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     },
     pushAlertSound(sound: SoundSetting) {
       soundListeners.forEach((listener) => listener(sound));
+    },
+    pushCssFile(change: CssFileChange) {
+      cssFileListeners.forEach((listener) => listener(change));
     },
   };
   return fake as unknown as FakeApi;

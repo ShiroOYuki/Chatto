@@ -49,6 +49,7 @@ workspace package 直接提供 TypeScript 原始碼，由 Vite／electron-vite �
 - token 用 `safeStorage`（Windows DPAPI）加密存在 userData，只有 main process 讀得到。
 - 控制台與 Overlay 視窗都啟用 `sandbox` 與 `contextIsolation`；外部連結只允許 `https://`，並交給系統瀏覽器開啟。
 - 本機伺服器只綁 loopback，並限制靜態檔路徑不能跳出 viewer 資料夾。
+- 自訂 CSS 檔案的路徑由主題 id 產生，id 只接受 `[\w-]+`；外部編輯器指令只來自使用者自己的設定。
 
 ## 路線圖
 

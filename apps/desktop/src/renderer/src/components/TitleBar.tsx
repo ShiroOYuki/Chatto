@@ -1,9 +1,17 @@
-import { Copy, Minus, PanelsTopLeft, Square, X, LayoutDashboard } from 'lucide-react';
+import { Coffee, Copy, Minus, PanelsTopLeft, Square, X, LayoutDashboard } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
-import { appPrefs, appWindow } from '../services/app';
+import { SUPPORT_LINKS } from '../../../shared/support';
+import { appPrefs, appWindow, openExternal } from '../services/app';
 import { SwapIcon } from './motion';
 import { Hint, channelTone, StatusDot } from './kit';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 function WindowButton({
   label,
@@ -29,6 +37,34 @@ function WindowButton({
         {children}
       </button>
     </Hint>
+  );
+}
+
+/** A quiet tea cup that opens the support links. */
+function SupportMenu() {
+  return (
+    <DropdownMenu>
+      <Hint label="支持 Chatto">
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label="支持 Chatto"
+            className="app-no-drag mr-1 grid size-7 place-items-center rounded-full text-ink-faint transition hover:bg-tile-muted hover:text-matcha-strong [&>svg]:size-3.5"
+          >
+            <Coffee />
+          </button>
+        </DropdownMenuTrigger>
+      </Hint>
+      <DropdownMenuContent align="end" className="w-48 rounded-xl">
+        <DropdownMenuLabel className="text-xs font-normal text-ink-faint">請 Ciel 喝杯茶</DropdownMenuLabel>
+        {SUPPORT_LINKS.map((link) => (
+          <DropdownMenuItem key={link.id} onSelect={() => openExternal(link.url)}>
+            {link.label}
+            <span className="ml-auto text-xs text-ink-faint">{link.hint}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -59,6 +95,7 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
       </div>
 
       <div className="ml-auto flex h-full items-center">
+        <SupportMenu />
         <button
           type="button"
           onClick={() => appPrefs.set({ uiMode: compact ? 'full' : 'compact' })}

@@ -74,6 +74,12 @@ export const EVENT_REFERENCE: SelectorReference[] = EVENT_CATALOG.flatMap((group
   })),
 );
 
+/** CSS custom properties the renderer sets, which custom CSS can read. */
+export const VARIABLE_REFERENCE: { name: string; description: string }[] = [
+  { name: '--chatto-user-color', description: '發言者在平台上設定的名稱顏色，設在 .chatto-author 上' },
+  { name: '--chatto-attention', description: '「新留言提醒」效果的顏色，來自主題的 attention.color' },
+];
+
 const byClass = new Map(CLASS_REFERENCE.map((item) => [item.selector.slice(1), item]));
 
 /** Looks up the reference entry for a bare class name such as `chatto-author`. */

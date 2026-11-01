@@ -12,7 +12,8 @@
     "./themes": "./src/themes.ts",
     "./fonts": "./src/fonts.ts",
     "./feed": "./src/feed.ts",
-    "./events": "./src/events.ts"
+    "./events": "./src/events.ts",
+    "./reference": "./src/reference.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

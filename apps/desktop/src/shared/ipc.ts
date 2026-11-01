@@ -28,6 +28,22 @@ export interface AppPrefs {
   /** Closing the window hides Chatto to the tray instead of quitting. */
   closeToTray: boolean;
   launchAtLogin: boolean;
+  /** Command that opens a theme's CSS file; empty uses VSCode. Supports `{file}` and `{folder}`. */
+  editorCommand: string;
+}
+
+/** How a theme's CSS file was opened: the configured editor, the system default app, or not at all. */
+export type EditorLaunch = 'editor' | 'system' | 'none';
+
+export interface CssFileOpenResult {
+  launched: EditorLaunch;
+  /** Absolute path of the theme's CSS file. */
+  path: string;
+}
+
+export interface CssFileChange {
+  themeId: string;
+  css: string;
 }
 
 export interface AppState {
@@ -82,6 +98,15 @@ export interface ChattoApi {
   saveTheme(theme: ChatTheme): Promise<void>;
   deleteTheme(themeId: string): Promise<void>;
 
+  /** Writes the theme's custom CSS to its file, keeps the two in sync and opens it in the editor. */
+  openCssFile(themeId: string, css: string): Promise<CssFileOpenResult>;
+  /** Pushes the editor's latest custom CSS to the synced file. */
+  writeCssFile(themeId: string, css: string): Promise<void>;
+  /** Stops syncing the theme's CSS file (the theme editor closed). */
+  closeCssFile(themeId: string): Promise<void>;
+  /** The synced CSS file was changed outside Chatto. */
+  onCssFileChanged(listener: (change: CssFileChange) => void): () => void;
+
   openExternal(url: string): Promise<void>;
 }
 
@@ -112,5 +137,9 @@ export const IPC = {
   selectTheme: 'theme:select',
   saveTheme: 'theme:save',
   deleteTheme: 'theme:delete',
+  openCssFile: 'css-file:open',
+  writeCssFile: 'css-file:write',
+  closeCssFile: 'css-file:close',
+  cssFileChanged: 'css-file:changed',
   openExternal: 'app:open-external',
 } as const;

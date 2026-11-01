@@ -1,6 +1,6 @@
 import { createMockMessage, createMockNotice, PRESET_THEMES } from '@chatto/chat-ui';
 import { defaultAlertSettings, type ChatEvent, type SoundSetting } from '@chatto/core';
-import type { AppState, ChattoApi } from '../../shared/ipc';
+import type { AppState, ChattoApi, CssFileChange } from '../../shared/ipc';
 
 declare global {
   interface Window {
@@ -10,6 +10,8 @@ declare global {
       emitChat(event: ChatEvent): void;
       setState(patch: Partial<AppState>): void;
       playAlertSound(sound: SoundSetting): void;
+      /** Simulates an outside edit of the synced CSS file. */
+      changeCssFile(change: CssFileChange): void;
     };
   }
 }
@@ -31,6 +33,7 @@ function createMockApi(): ChattoApi {
       appearance: 'system',
       closeToTray: true,
       launchAtLogin: false,
+      editorCommand: '',
     },
     clientIdConfigured: true,
     auth: { status: 'signed-in', login: 'shiraine_ciel' },
@@ -45,6 +48,7 @@ function createMockApi(): ChattoApi {
   const stateListeners = new Set<(state: AppState) => void>();
   const chatListeners = new Set<(event: ChatEvent) => void>();
   const soundListeners = new Set<(sound: SoundSetting) => void>();
+  const cssFileListeners = new Set<(change: CssFileChange) => void>();
   const set = (patch: Partial<AppState>) => {
     state = { ...state, ...patch };
     stateListeners.forEach((listener) => listener(state));
@@ -56,6 +60,7 @@ function createMockApi(): ChattoApi {
       emitChat,
       setState: set,
       playAlertSound: (sound) => soundListeners.forEach((listener) => listener(sound)),
+      changeCssFile: (change) => cssFileListeners.forEach((listener) => listener(change)),
     };
   }
 
@@ -119,6 +124,14 @@ function createMockApi(): ChattoApi {
       });
     },
     deleteTheme: async (themeId) => set({ themes: state.themes.filter((item) => item.id !== themeId) }),
+    // The browser preview has no files; report where the desktop app would put it.
+    openCssFile: async (themeId) => ({
+      launched: 'none',
+      path: `%APPDATA%\\Chatto\\custom-css\\${themeId}.css`,
+    }),
+    writeCssFile: async () => undefined,
+    closeCssFile: async () => undefined,
+    onCssFileChanged: (listener) => (cssFileListeners.add(listener), () => cssFileListeners.delete(listener)),
     openExternal: async (url) => void window.open(url, '_blank'),
   };
 }

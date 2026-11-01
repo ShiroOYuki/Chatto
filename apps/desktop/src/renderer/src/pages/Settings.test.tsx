@@ -22,7 +22,9 @@ const renderPage = (state = sampleState()) =>
 describe('SettingsPage', () => {
   it('shows the current preferences', () => {
     renderPage(
-      sampleState({ prefs: { uiMode: 'compact', appearance: 'dark', closeToTray: false, launchAtLogin: true } }),
+      sampleState({
+        prefs: { uiMode: 'compact', appearance: 'dark', closeToTray: false, launchAtLogin: true, editorCommand: '' },
+      }),
     );
     expect(screen.getByRole('switch', { name: '關閉時縮到系統匣' }).getAttribute('aria-checked')).toBe('false');
     expect(screen.getByRole('switch', { name: '開機時自動啟動' }).getAttribute('aria-checked')).toBe('true');
@@ -36,5 +38,23 @@ describe('SettingsPage', () => {
 
     await userEvent.click(screen.getByRole('tab', { name: /精簡/ }));
     expect(api.setPrefs).toHaveBeenLastCalledWith({ uiMode: 'compact' });
+  });
+
+  it('opens each support link in the browser', async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: 'Ko-fi' }));
+    expect(api.openExternal).toHaveBeenLastCalledWith('https://ko-fi.com/ciel518');
+
+    await userEvent.click(screen.getByRole('button', { name: '綠界' }));
+    expect(api.openExternal).toHaveBeenLastCalledWith('https://p.ecpay.com.tw/C487EF9');
+  });
+
+  it('saves the editor command when the field loses focus', async () => {
+    renderPage();
+    const field = screen.getByRole('textbox', { name: '外部 CSS 編輯器指令' });
+    await userEvent.type(field, 'notepad++');
+    expect(api.setPrefs).not.toHaveBeenCalledWith({ editorCommand: 'notepad++' });
+    await userEvent.tab();
+    expect(api.setPrefs).toHaveBeenLastCalledWith({ editorCommand: 'notepad++' });
   });
 });

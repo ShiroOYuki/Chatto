@@ -50,7 +50,7 @@ docs/               architecture.md、message-format.md、theming.md
 - 新增參數時要同時：更新 `BASE_THEME` 預設值、`themeToCss`、編輯器欄位、`docs/theming.md`，並在 `normalizeTheme` 補舊資料的預設。
 - 使用者可以選預設、逐項精細調整（四邊內距、四角圓角、框線、陰影、模糊、身分樣式等）、寫自訂 CSS、匯出／匯入 JSON。Overlay 與 Embed 可以各自使用不同主題。
 - **平台事件**：以 `平台:事件` 識別（如 `twitch:cheer`），清單集中在 `packages/chat-ui/src/events.ts` 的 `EVENT_CATALOG`，編輯器的「<平台> 專屬元件」選單由它產生。`theme.notice` 是通用事件訊息；`theme.events[key]` 為 `{ linked, style }`，linked 時持續跟隨通用樣式，編輯即解除連動。新增平台事件時：provider mapper 設 `eventType`、在 `events.ts` 的 `EVENT_CATALOG` 加定義、在 `eventSamples.ts` 加預覽範例（`events.ts` 只放定義，不依賴 mock 資料）、更新 `docs/message-format.md`。
-- 可客製元素的說明集中在 `packages/chat-ui/src/reference.ts`（編輯器的 class 標籤、自動完成、檢查標籤都用它），新增 class 或屬性時同步更新。
+- 可客製元素的說明集中在 `packages/chat-ui/src/reference.ts`（編輯器的 class 標籤、自動完成、檢查標籤，以及「在 VSCode 開啟」產生的 `chatto-reference.css`、`css.customData` 都用它），新增 class、屬性或 CSS 變數時同步更新。
 - 主題編輯器的預覽有「範例」（`createSpecimenEvents()`，涵蓋所有元件與事件）與「即時」兩種模式，並提供檢查模式與選擇器建構器；自訂 CSS 使用 CodeMirror 6。
 - 控制台裡的聊天預覽用 `all: revert` 隔離 Tailwind preflight，確保預覽與 OBS 實際畫面一致。
 - 所有可被客製的元素使用穩定的 `chatto-*` class 與 `data-*` 屬性，視為公開 API，改名屬於破壞性變更。
@@ -70,6 +70,8 @@ docs/               architecture.md、message-format.md、theming.md
 - 由狀態推導的判斷（例如 `twitchStatus(state)` 的 signedIn／connected／busy）放在 services，完整模式與精簡模式共用，不要各自重寫。
 - 大頁面拆成資料夾，例如 `pages/theme-editor/`：狀態 hook（`useThemeDraft`、`usePreviewHighlight`）、純函式（`draft.ts`，有單元測試）、各區塊面板（`panels/`）、參數欄位（`fields/`）。只給單一頁面用的元件放在該頁資料夾，多處共用的才放 `components/`。
 - 主題草稿用型別化的 `set('author', 'box')(value)`（`PathSetter`）更新，路徑或值的型別錯了會直接編譯失敗。
+
+- 贊助連結（Ko-fi、綠界）集中在 `apps/desktop/src/shared/support.ts`，改動時同步 `README.md` 與 `.github/FUNDING.yml`。
 
 ## 技術棧
 

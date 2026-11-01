@@ -42,7 +42,7 @@ const defaults = (): Settings => ({
   alerts: defaultAlertSettings(),
   selectedThemes: { overlay: DEFAULT_THEME_ID, embed: DEFAULT_THEME_ID, alerts: DEFAULT_THEME_ID },
   customThemes: [],
-  prefs: { uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false },
+  prefs: { uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false, editorCommand: '' },
 });
 
 /** JSON settings in the user data folder, written atomically. */

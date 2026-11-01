@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, 
 import { join } from 'node:path';
 import { IPC, type AppState } from '../shared/ipc';
 import { AppController } from './app-controller';
+import { CssFiles } from './css-files';
 import { OverlayWindow } from './overlay-window';
 import { LocalServer } from './server';
 import { SettingsStore, type Rect } from './settings';
@@ -144,6 +145,9 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.selectTheme, (_e, target, id: string) => controller.selectTheme(target, id));
   ipcMain.handle(IPC.saveTheme, (_e, theme) => controller.saveTheme(theme));
   ipcMain.handle(IPC.deleteTheme, (_e, id: string) => controller.deleteTheme(id));
+  ipcMain.handle(IPC.openCssFile, (_e, id: string, css: string) => controller.openCssFile(id, css));
+  ipcMain.handle(IPC.writeCssFile, (_e, id: string, css: string) => controller.cssFiles?.write(id, css));
+  ipcMain.handle(IPC.closeCssFile, (_e, id: string) => controller.cssFiles?.close(id));
   ipcMain.handle(IPC.openExternal, (_e, url: string) => openExternal(url));
 }
 
@@ -152,9 +156,17 @@ async function bootstrap(): Promise<void> {
   app.setAppUserModelId('dev.ciel.chatto');
   Menu.setApplicationMenu(null);
 
+  const send = (channel: string, payload: unknown) => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
+  };
   const settings = new SettingsStore();
   const controller = new AppController(settings);
   controller.soundsDir = join(app.getPath('userData'), 'sounds');
+  controller.cssFiles = new CssFiles({
+    dir: join(app.getPath('userData'), 'custom-css'),
+    onExternalChange: (themeId, css) => send(IPC.cssFileChanged, { themeId, css }),
+    openWithSystem: async (path) => (await shell.openPath(path)) === '',
+  });
 
   controller.server = new LocalServer({
     port: settings.get().serverPort,
@@ -180,9 +192,6 @@ async function bootstrap(): Promise<void> {
     OverlayWindow.alertBounds,
   );
 
-  const send = (channel: string, payload: unknown) => {
-    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
-  };
   controller.onChange = (state: AppState) => send(IPC.state, state);
   controller.isWindowMaximized = () => Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized());
   controller.hub.subscribe((event) => send(IPC.chatEvent, event));

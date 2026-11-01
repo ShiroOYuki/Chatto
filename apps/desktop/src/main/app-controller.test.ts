@@ -73,7 +73,7 @@ function fakeSettings(initial: Partial<Settings> = {}) {
     alerts: defaultAlertSettings(),
     selectedThemes: { overlay: 'matcha-glass', embed: 'matcha-glass', alerts: 'matcha-glass' },
     customThemes: [],
-    prefs: { uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false },
+    prefs: { uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false, editorCommand: '' },
     ...initial,
   };
   return {

@@ -33,6 +33,10 @@ const api: ChattoApi = {
   selectTheme: (target, themeId) => ipcRenderer.invoke(IPC.selectTheme, target, themeId),
   saveTheme: (theme) => ipcRenderer.invoke(IPC.saveTheme, theme),
   deleteTheme: (themeId) => ipcRenderer.invoke(IPC.deleteTheme, themeId),
+  openCssFile: (themeId, css) => ipcRenderer.invoke(IPC.openCssFile, themeId, css),
+  writeCssFile: (themeId, css) => ipcRenderer.invoke(IPC.writeCssFile, themeId, css),
+  closeCssFile: (themeId) => ipcRenderer.invoke(IPC.closeCssFile, themeId),
+  onCssFileChanged: (listener) => listen(IPC.cssFileChanged, listener),
   openExternal: (url) => ipcRenderer.invoke(IPC.openExternal, url),
 };
 

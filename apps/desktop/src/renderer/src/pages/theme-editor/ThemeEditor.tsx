@@ -1,6 +1,7 @@
 import type { ChatTheme } from '@chatto/core';
 import { ArrowLeft, Check, Download, RotateCcw, Save } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { useAppState } from '../../store';
 import { themes } from '../../services/themes';
 import type { CursorRequest } from '../../components/CssEditor';
 import { Button, Tile } from '../../components/kit';
@@ -20,6 +21,7 @@ import { EditorNav } from './EditorNav';
 import { PreviewPane } from './PreviewPane';
 import { resolveSection, type BaseSectionId, type SectionId } from './sections';
 import { usePreviewHighlight } from './usePreviewHighlight';
+import { useExternalCss } from './useExternalCss';
 import { useThemeDraft } from './useThemeDraft';
 
 export function ThemeEditor({
@@ -41,6 +43,8 @@ export function ThemeEditor({
   const blank = draft.base === 'blank';
   const resolved = resolveSection(section, blank);
   const hl = usePreviewHighlight(resolved.active === 'css');
+  const external = useExternalCss(draft.id, draft.customCss, set('customCss'));
+  const editorLabel = useAppState()?.prefs.editorCommand.trim() ? '在外部編輯器開啟' : '在 VSCode 開啟';
 
   /** Inserts an empty rule into the custom CSS and puts the cursor inside it. */
   const insertRule = (selector: string) => {
@@ -83,6 +87,8 @@ export function ThemeEditor({
             css={draft.customCss}
             blank={blank}
             cursorRequest={cursorRequest}
+            external={external}
+            editorLabel={editorLabel}
             onChange={set('customCss')}
             onCursorSelector={hl.setCursorSelector}
             onHoverSelector={hl.setHoverSelector}

@@ -1,11 +1,12 @@
 import { LayoutDashboard, PanelsTopLeft } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
+import { SUPPORT_LINKS } from '../../../shared/support';
 import { appPrefs, openExternal } from '../services/app';
 import { Stagger } from '../components/motion';
 import { ThemeSwitcher } from '../components/kibo-ui/theme-switcher';
 import { TeaCup } from '../components/TeaCup';
-import { Button, PageHeader, Segmented, Tile, Toggle } from '../components/kit';
+import { Button, PageHeader, Segmented, TextInput, Tile, Toggle } from '../components/kit';
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
@@ -16,6 +17,28 @@ function Row({ title, hint, children }: { title: string; hint?: string; children
       </div>
       {children}
     </div>
+  );
+}
+
+/** Saved when the field loses focus or on Enter, not on every key. */
+function EditorCommandField({ value }: { value: string }) {
+  const [text, setText] = useState(value);
+  useEffect(() => setText(value), [value]);
+  const commit = () => {
+    if (text.trim() !== value) appPrefs.set({ editorCommand: text.trim() });
+  };
+  return (
+    <TextInput
+      aria-label="外部 CSS 編輯器指令"
+      value={text}
+      placeholder='code "{folder}" "{file}"'
+      onChange={(event) => setText(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') commit();
+      }}
+      className="w-72 font-mono text-xs md:text-xs"
+    />
   );
 }
 
@@ -78,6 +101,12 @@ export function SettingsPage({ state }: { state: AppState }) {
           </Row>
         </Tile>
 
+        <Tile title="自訂 CSS">
+          <Row title="外部編輯器" hint="留空使用 VSCode。可用 {file}、{folder} 代入路徑。">
+            <EditorCommandField value={prefs.editorCommand} />
+          </Row>
+        </Tile>
+
         <Tile title="本機伺服器">
           <Row title="連接埠" hint="只綁定 127.0.0.1，區網內其他裝置無法讀取。">
             <code className="rounded-lg bg-tile-muted px-3 py-1 font-mono text-sm">{state.server.port}</code>
@@ -94,6 +123,19 @@ export function SettingsPage({ state }: { state: AppState }) {
             <Button size="sm" variant="ghost" onClick={() => openExternal('https://www.gnu.org/licenses/gpl-3.0.html')}>
               授權條款
             </Button>
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-6 border-t border-line pt-4">
+            <div>
+              <div className="text-sm font-medium">支持 Chatto</div>
+              <div className="mt-0.5 text-xs text-ink-faint">Chatto 免費開源。喜歡的話，請 Ciel 喝杯茶。</div>
+            </div>
+            <div className="flex gap-2">
+              {SUPPORT_LINKS.map((link) => (
+                <Button key={link.id} size="sm" onClick={() => openExternal(link.url)} title={link.hint}>
+                  {link.label}
+                </Button>
+              ))}
+            </div>
           </div>
         </Tile>
       </Stagger>

@@ -19,7 +19,13 @@ describe('SettingsStore', () => {
     expect(settings.serverPort).toBe(4820);
     expect(settings.overlay).toEqual({ enabled: false });
     expect(settings.customThemes).toEqual([]);
-    expect(settings.prefs).toEqual({ uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false });
+    expect(settings.prefs).toEqual({
+      uiMode: 'full',
+      appearance: 'system',
+      closeToTray: true,
+      launchAtLogin: false,
+      editorCommand: '',
+    });
   });
 
   it('falls back to defaults when the file is corrupt', () => {

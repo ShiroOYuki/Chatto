@@ -1,6 +1,8 @@
 import { ATTRIBUTE_REFERENCE, CLASS_REFERENCE, EVENT_REFERENCE, type SelectorReference } from '@chatto/chat-ui';
+import { SquarePen } from 'lucide-react';
 import { CssEditor, type CursorRequest } from '../../../components/CssEditor';
-import { Hint } from '../../../components/kit';
+import { Button, Hint } from '../../../components/kit';
+import type { ExternalCss } from '../useExternalCss';
 import { PanelIntro } from './shared';
 
 const REFERENCE_GROUPS: { label: string; items: SelectorReference[] }[] = [
@@ -11,10 +13,38 @@ const REFERENCE_GROUPS: { label: string; items: SelectorReference[] }[] = [
 
 const isAttribute = (item: SelectorReference) => item.selector.startsWith('[');
 
+const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path;
+
+function ExternalStatus({ external }: { external: ExternalCss }) {
+  if (external.error) {
+    return (
+      <span role="alert" className="text-xs text-danger" title={external.error}>
+        無法開啟檔案，請再試一次
+      </span>
+    );
+  }
+  const { synced } = external;
+  if (!synced) return <span className="text-xs text-ink-faint">在外部編輯器寫 CSS，存檔後會同步回來。</span>;
+  const file = (
+    <code className="font-mono text-ink-soft select-all" title={synced.path}>
+      {synced.launched === 'none' ? synced.path : fileName(synced.path)}
+    </code>
+  );
+  return (
+    <span role="status" className="min-w-0 text-xs text-ink-faint">
+      {synced.launched === 'editor' ? <>同步中：{file}</> : null}
+      {synced.launched === 'system' ? <>找不到編輯器指令，已用預設程式開啟。同步中：{file}</> : null}
+      {synced.launched === 'none' ? <>無法開啟編輯器，請手動開啟 {file}，仍會同步。</> : null}
+    </span>
+  );
+}
+
 export function CssPanel({
   css,
   blank,
   cursorRequest,
+  external,
+  editorLabel,
   onChange,
   onCursorSelector,
   onHoverSelector,
@@ -23,6 +53,9 @@ export function CssPanel({
   css: string;
   blank: boolean;
   cursorRequest: CursorRequest | null;
+  external: ExternalCss;
+  /** "Open in VSCode", or a generic label when the user set another editor. */
+  editorLabel: string;
   onChange: (css: string) => void;
   onCursorSelector: (selector: string | null) => void;
   onHoverSelector: (selector: string | null) => void;
@@ -36,6 +69,12 @@ export function CssPanel({
           : '這裡的 CSS 會套在參數樣式之後，可以覆蓋任何設定。'}
         游標所在規則符合的元素會在預覽中標示出來。
       </PanelIntro>
+      <div className="flex items-center gap-3 pb-3">
+        <Button size="sm" className="shrink-0" disabled={external.opening} onClick={() => void external.open()}>
+          <SquarePen /> {editorLabel}
+        </Button>
+        <ExternalStatus external={external} />
+      </div>
       <div className="h-[360px]">
         <CssEditor
           value={css}

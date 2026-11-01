@@ -16,9 +16,10 @@ import { app, nativeTheme } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { copyFileSync, mkdirSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
-import type { AppPrefs, AppState, DeviceCodeInfo } from '../shared/ipc';
+import type { AppPrefs, AppState, CssFileOpenResult, DeviceCodeInfo } from '../shared/ipc';
 import { alertCue, markAfterSilence, SilenceTracker } from './alerts';
 import { ChatHub } from './chat-hub';
+import type { CssFiles } from './css-files';
 import type { LocalServer, Routed } from './server';
 import type { OverlayWindow } from './overlay-window';
 import type { SettingsStore } from './settings';
@@ -45,6 +46,8 @@ export class AppController {
   overlay!: OverlayWindow;
   /** The event alert overlay window. */
   alertsOverlay!: OverlayWindow;
+  /** Syncs the custom CSS of the theme being edited with a file for external editors. */
+  cssFiles?: CssFiles;
   /** Folder for user alert sounds, served by the local server. */
   soundsDir = '';
   onChange: (state: AppState) => void = () => undefined;
@@ -377,7 +380,14 @@ export class AppController {
     this.#emit();
   }
 
+  openCssFile(themeId: string, css: string): Promise<CssFileOpenResult> {
+    if (!this.cssFiles) throw new Error('CSS file sync is not available');
+    if (getPresetTheme(themeId)) throw new Error('Built-in themes are read-only; duplicate it first');
+    return this.cssFiles.open(themeId, css, this.settings.get().prefs.editorCommand);
+  }
+
   deleteTheme(themeId: string): void {
+    this.cssFiles?.remove(themeId);
     this.settings.update((draft) => {
       draft.customThemes = draft.customThemes.filter((theme) => theme.id !== themeId);
       for (const target of VIEWER_TARGETS) {
