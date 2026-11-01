@@ -2,6 +2,7 @@ import { findEvent, type EventDefinition } from '@chatto/chat-ui';
 import {
   AtSign,
   Bell,
+  BellRing,
   Braces,
   Layers,
   LayoutList,
@@ -25,6 +26,7 @@ export type BaseSectionId =
   | 'parts'
   | 'notice'
   | 'roles'
+  | 'attention'
   | 'motion'
   | 'behavior'
   | 'css';
@@ -73,6 +75,13 @@ export const SECTIONS: SectionDefinition[] = [
     icon: <UsersRound />,
     styledOnly: true,
     selector: '.chatto-message[data-roles], .chatto-message[data-highlight~="first-message"]',
+  },
+  {
+    id: 'attention',
+    label: '新留言提醒',
+    icon: <BellRing />,
+    styledOnly: true,
+    selector: '.chatto-message[data-highlight~="after-silence"]',
   },
   { id: 'motion', label: '動畫', icon: <Sparkles />, styledOnly: true },
   { id: 'behavior', label: '顯示規則', icon: <SlidersHorizontal /> },

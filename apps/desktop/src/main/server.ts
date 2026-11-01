@@ -1,4 +1,12 @@
-import { decodeClientFrame, encodeFrame, PROTOCOL_VERSION, type ChatTheme, type ViewerTarget } from '@chatto/core';
+import {
+  decodeClientFrame,
+  encodeFrame,
+  PROTOCOL_VERSION,
+  type AlertCue,
+  type ChatEvent,
+  type ChatTheme,
+  type ViewerTarget,
+} from '@chatto/core';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { extname, join, normalize, sep } from 'node:path';
@@ -13,7 +21,16 @@ const MIME: Record<string, string> = {
   '.png': 'image/png',
   '.woff2': 'font/woff2',
   '.json': 'application/json',
+  '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
 };
+
+/** What one output receives for an event: the event (possibly adjusted) and an alert cue, or nothing. */
+export type Routed = { event: ChatEvent; alert?: AlertCue } | null;
+
+/** Names of user sound files in the sounds folder. */
+export const SOUND_FILE = /^[\w-]+\.(mp3|ogg|wav)$/;
 
 export interface LocalServerOptions {
   /** 0 picks a free port; read it from `port` after `start()`. */
@@ -22,6 +39,10 @@ export interface LocalServerOptions {
   viewerDir: string;
   hub: ChatHub;
   themeFor(target: ViewerTarget): ChatTheme;
+  /** Adjusts or drops events per output; every output gets every event when omitted. */
+  route?(target: ViewerTarget, event: ChatEvent): Routed;
+  /** Folder with the user's alert sounds, served at `/sounds/<file>`. */
+  soundsDir?: string;
 }
 
 /**
@@ -73,7 +94,7 @@ export class LocalServer {
             type: 'hello',
             target: frame.target,
             theme: this.options.themeFor(frame.target),
-            backlog: this.options.hub.backlog(),
+            backlog: this.#backlogFor(frame.target),
           }),
         );
       });
@@ -81,8 +102,16 @@ export class LocalServer {
     });
 
     this.#unsubscribe = this.options.hub.subscribe((event) => {
-      const payload = encodeFrame({ v: PROTOCOL_VERSION, type: 'event', event });
-      for (const socket of this.#clients.keys()) socket.send(payload);
+      // Encode once per target: outputs may receive different versions of the same event.
+      const payloads = new Map<ViewerTarget, string | null>();
+      for (const [socket, target] of this.#clients) {
+        if (!payloads.has(target)) {
+          const routed = this.#route(target, event);
+          payloads.set(target, routed && encodeFrame({ v: PROTOCOL_VERSION, type: 'event', ...routed }));
+        }
+        const payload = payloads.get(target);
+        if (payload) socket.send(payload);
+      }
     });
 
     await new Promise<void>((resolve, reject) => {
@@ -108,7 +137,27 @@ export class LocalServer {
   }
 
   /** Maps a URL path to a file inside viewerDir; unknown routes get the SPA index. */
+  #route(target: ViewerTarget, event: ChatEvent): Routed {
+    return this.options.route ? this.options.route(target, event) : { event };
+  }
+
+  /** Recent events for a newly opened viewer. Alerts start empty so old alerts never replay. */
+  #backlogFor(target: ViewerTarget): ChatEvent[] {
+    if (target === 'alerts') return [];
+    return this.options.hub.backlog().flatMap((event) => {
+      const routed = this.#route(target, event);
+      return routed ? [routed.event] : [];
+    });
+  }
+
   #resolve(pathname: string): string | null {
+    if (pathname.startsWith('/sounds/')) {
+      const sound = pathname.slice('/sounds/'.length);
+      const { soundsDir } = this.options;
+      if (!soundsDir || !SOUND_FILE.test(sound)) return null;
+      const file = join(soundsDir, sound);
+      return existsSync(file) && statSync(file).isFile() ? file : null;
+    }
     const root = normalize(this.options.viewerDir);
     const candidate = normalize(join(root, pathname));
     if (!candidate.startsWith(root + sep) && candidate !== root) return null;

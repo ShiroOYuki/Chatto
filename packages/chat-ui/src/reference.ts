@@ -52,6 +52,12 @@ export const ATTRIBUTE_REFERENCE: SelectorReference[] = [
   { selector: '[data-roles~="vip"]', label: 'VIP', description: '訊息作者是 VIP' },
   { selector: '[data-roles~="subscriber"]', label: '訂閱者', description: '訊息作者是訂閱者' },
   { selector: '[data-highlight~="first-message"]', label: '首次發言', description: '第一次在頻道發言' },
+  {
+    selector: '[data-highlight~="after-silence"]',
+    label: '沉寂後的新留言',
+    description: '聊天室安靜一段時間後的第一則留言（只在桌面 Overlay）',
+  },
+  { selector: '.chatto-root[data-leaving]', label: '提醒卡片離場', description: '事件 Overlay 的卡片時間到、正在離場' },
   { selector: '[data-action]', label: '/me 動作', description: '用 /me 發送的訊息' },
   { selector: '[data-user="login"]', label: '特定使用者', description: '以登入名稱指定使用者' },
   { selector: '[data-platform="twitch"]', label: '平台', description: '訊息或通知來自的平台' },

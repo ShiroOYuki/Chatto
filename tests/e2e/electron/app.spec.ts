@@ -83,6 +83,28 @@ test('the overlay window is transparent-ready, on top and click-through', async 
   expect(settings().overlay.enabled).toBe(false);
 });
 
+test('the event alert overlay opens as its own click-through window', async () => {
+  await mainWindow.evaluate(() => window.chatto!.setAlertsOverlayEnabled(true));
+  const alertsWindow = async () => (await windows()).find((w) => w.url.includes('/alerts'));
+  await expect.poll(alertsWindow).toBeTruthy();
+  const alerts = (await alertsWindow())!;
+  expect(alerts.alwaysOnTop).toBe(true);
+  expect(alerts.focusable).toBe(false);
+  expect(settings().alertsOverlay.enabled).toBe(true);
+
+  await mainWindow.evaluate(() => window.chatto!.setAlertsOverlayEnabled(false));
+  await expect.poll(async () => (await windows()).length).toBe(1);
+  expect(settings().alertsOverlay.enabled).toBe(false);
+});
+
+test('alert settings persist to the settings file', async () => {
+  await mainWindow.evaluate(async () => {
+    const { alerts } = await window.chatto!.getState();
+    await window.chatto!.setAlertSettings({ ...alerts, silence: { ...alerts.silence, thresholdSeconds: 300 } });
+  });
+  expect(settings().alerts.silence.thresholdSeconds).toBe(300);
+});
+
 test('saving and selecting a theme persists it and live-updates OBS', async () => {
   const socket = new WebSocket(`ws://127.0.0.1:${port}/ws`);
   const frames: ServerFrame[] = [];

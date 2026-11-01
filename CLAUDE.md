@@ -29,6 +29,9 @@ docs/               architecture.md、message-format.md、theming.md
 
 資料流：`Provider → ChatHub（main process）→ 本機 WebSocket → viewer（overlay 視窗與 OBS）`；控制台透過 IPC 與 main 溝通。
 
+- 三個輸出 target：`overlay`（桌面聊天室）、`embed`（OBS）、`alerts`（桌面事件 Overlay）。每個 target 收到什麼由 `AppController.route()` 決定（見 `docs/architecture.md`「輸出路由」）；只給實況主看的東西（沉寂提醒標記、事件卡片）不得送到 `embed`。
+- 提醒邏輯（沉寂偵測、事件規則）是 `apps/desktop/src/main/alerts.ts` 的純函式；提示音的內建音效用 Web Audio 合成（`packages/chat-ui/src/sounds.ts`），不附帶音檔。
+
 ### 核心原則
 
 - **所有平台只輸出 `ChatEvent`**（`@chatto/core/src/message.ts`）。renderer、主題、傳輸層不得相依任何平台的原生 payload。

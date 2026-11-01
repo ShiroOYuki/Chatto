@@ -39,7 +39,18 @@ describe('connectToApp', () => {
 
     expect(h.onHello).toHaveBeenCalledWith(theme, [event]);
     expect(h.onEvent).toHaveBeenCalledTimes(1);
+    expect(h.onEvent).toHaveBeenCalledWith(event, undefined);
     expect(h.onTheme).toHaveBeenCalledTimes(1);
+  });
+
+  it('passes the alert cue along with events for the alert overlay', () => {
+    const h = handlers();
+    connectToApp('ws://x/ws', 'alerts', h);
+    const socket = FakeWebSocket.latest();
+    socket.serverOpen();
+    const event = { type: 'chat-cleared', platform: 'twitch', channelId: '1' };
+    socket.serverSend({ v: PROTOCOL_VERSION, type: 'event', event, alert: { durationMs: 3000 } });
+    expect(h.onEvent).toHaveBeenCalledWith(event, { durationMs: 3000 });
   });
 
   it('keeps reconnecting with back-off so OBS survives an app restart', () => {

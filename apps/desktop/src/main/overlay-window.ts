@@ -13,6 +13,8 @@ export class OverlayWindow {
   constructor(
     private readonly url: string,
     private readonly onBoundsChanged: (bounds: Rect) => void,
+    /** Where the window goes the first time and after a reset. */
+    private readonly placement: () => Rect = OverlayWindow.defaultBounds,
   ) {}
 
   get isOpen(): boolean {
@@ -23,19 +25,26 @@ export class OverlayWindow {
     return this.#editing;
   }
 
+  /** Chat overlay: bottom-right corner of the primary display. */
   static defaultBounds(): Rect {
     const area = screen.getPrimaryDisplay().workArea;
     return { width: 420, height: 560, x: area.x + area.width - 440, y: area.y + area.height - 600 };
   }
 
-  /** Moves the overlay back to the bottom-right corner of the primary display. */
+  /** Event alert overlay: top-right corner of the primary display. */
+  static alertBounds(): Rect {
+    const area = screen.getPrimaryDisplay().workArea;
+    return { width: 420, height: 240, x: area.x + area.width - 440, y: area.y + 20 };
+  }
+
+  /** Moves the overlay back to its default place. */
   resetBounds(): void {
-    if (this.isOpen) this.#window!.setBounds(OverlayWindow.defaultBounds());
+    if (this.isOpen) this.#window!.setBounds(this.placement());
   }
 
   open(bounds?: Rect): void {
     if (this.isOpen) return;
-    const initial = bounds ?? OverlayWindow.defaultBounds();
+    const initial = bounds ?? this.placement();
 
     const window = new BrowserWindow({
       ...initial,

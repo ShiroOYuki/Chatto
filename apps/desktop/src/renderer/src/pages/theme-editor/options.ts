@@ -1,5 +1,5 @@
 import { FONT_STACKS } from '@chatto/chat-ui';
-import type { EnterAnimation, RoleKey } from '@chatto/core';
+import type { AttentionEffect, EnterAnimation, ExitAnimation, RoleKey } from '@chatto/core';
 
 /** Choice lists and labels used by the theme editor panels. */
 
@@ -18,6 +18,26 @@ export const ANIMATIONS: { value: EnterAnimation; label: string }[] = [
   { value: 'slide-left', label: '從左滑入' },
   { value: 'slide-right', label: '從右滑入' },
   { value: 'pop', label: '彈出' },
+  { value: 'bounce', label: '彈跳' },
+  { value: 'shake', label: '搖晃' },
+  { value: 'zoom', label: '放大淡入' },
+];
+
+export const EXIT_ANIMATIONS: { value: ExitAnimation; label: string }[] = [
+  { value: 'none', label: '無' },
+  { value: 'fade', label: '淡出' },
+  { value: 'slide-up', label: '向上滑出' },
+  { value: 'slide-left', label: '向左滑出' },
+  { value: 'slide-right', label: '向右滑出' },
+  { value: 'pop', label: '縮小' },
+  { value: 'zoom', label: '放大淡出' },
+];
+
+export const ATTENTION_EFFECTS: { value: AttentionEffect; label: string }[] = [
+  { value: 'none', label: '無' },
+  { value: 'glow', label: '發光' },
+  { value: 'pulse', label: '脈動' },
+  { value: 'shake', label: '搖晃' },
 ];
 
 export const WEIGHTS = [300, 400, 500, 600, 700, 800, 900].map((weight) => ({

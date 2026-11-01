@@ -15,6 +15,19 @@ describe('platform events', () => {
     }
   });
 
+  it('reads the size of events that have one, for alert thresholds', () => {
+    const amount = (key: string) => {
+      const sample = sampleEvent(key);
+      const item = sample.type === 'message' ? sample.message : sample.type === 'notice' ? sample.notice : null;
+      return item ? findEvent(key)?.amount?.read(item) : undefined;
+    };
+    expect(amount('twitch:cheer')).toBe(100);
+    expect(amount('twitch:resub')).toBe(6);
+    expect(amount('twitch:community-gift')).toBe(5);
+    expect(amount('twitch:raid')).toBe(42);
+    expect(findEvent('twitch:sub')?.amount).toBeUndefined();
+  });
+
   it('every sample belongs to a catalogued event', () => {
     for (const key of Object.keys(EVENT_SAMPLES)) expect(findEvent(key)).toBeDefined();
   });

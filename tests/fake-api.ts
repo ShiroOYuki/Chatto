@@ -1,5 +1,5 @@
 import { PRESET_THEMES } from '@chatto/chat-ui';
-import type { ChatEvent } from '@chatto/core';
+import { defaultAlertSettings, type ChatEvent, type SoundSetting } from '@chatto/core';
 import { vi } from 'vitest';
 import type { AppState, ChattoApi } from '../apps/desktop/src/shared/ipc';
 
@@ -12,9 +12,11 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
     auth: { status: 'signed-in', login: 'shiraine_ciel' },
     channel: { login: 'shiraine_ciel', state: 'connected' },
     overlay: { enabled: false, editing: false },
+    alertsOverlay: { enabled: false, editing: false },
+    alerts: defaultAlertSettings(),
     server: { port: 4820, embedUrl: 'http://127.0.0.1:4820/embed', overlayUrl: 'http://127.0.0.1:4820/overlay' },
     themes: PRESET_THEMES,
-    selectedThemes: { overlay: 'matcha-glass', embed: 'washi' },
+    selectedThemes: { overlay: 'matcha-glass', embed: 'washi', alerts: 'bubble' },
     ...patch,
   };
 }
@@ -24,6 +26,8 @@ export type FakeApi = { [K in keyof ChattoApi]: ReturnType<typeof vi.fn> & Chatt
   pushState(patch: Partial<AppState>): void;
   /** Delivers a chat event, like the main process does over IPC. */
   pushChat(event: ChatEvent): void;
+  /** Asks the renderer to play a reminder sound, like the main process does over IPC. */
+  pushAlertSound(sound: SoundSetting): void;
   state: AppState;
 };
 
@@ -34,6 +38,7 @@ export type FakeApi = { [K in keyof ChattoApi]: ReturnType<typeof vi.fn> & Chatt
 export function createFakeApi(initial: AppState = sampleState()): FakeApi {
   const stateListeners = new Set<(state: AppState) => void>();
   const chatListeners = new Set<(event: ChatEvent) => void>();
+  const soundListeners = new Set<(sound: SoundSetting) => void>();
   const resolved = () => vi.fn(async () => undefined);
   const fake = {
     state: initial,
@@ -45,6 +50,10 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     onChatEvent: vi.fn((listener: (event: ChatEvent) => void) => {
       chatListeners.add(listener);
       return () => chatListeners.delete(listener);
+    }),
+    onAlertSound: vi.fn((listener: (sound: SoundSetting) => void) => {
+      soundListeners.add(listener);
+      return () => soundListeners.delete(listener);
     }),
     windowMinimize: resolved(),
     windowToggleMaximize: resolved(),
@@ -59,6 +68,11 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     setOverlayEnabled: resolved(),
     setOverlayEditing: resolved(),
     resetOverlayBounds: resolved(),
+    setAlertSettings: resolved(),
+    setAlertsOverlayEnabled: resolved(),
+    setAlertsOverlayEditing: resolved(),
+    resetAlertsOverlayBounds: resolved(),
+    importSound: vi.fn(async () => null),
     selectTheme: resolved(),
     saveTheme: resolved(),
     deleteTheme: resolved(),
@@ -69,6 +83,9 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     },
     pushChat(event: ChatEvent) {
       chatListeners.forEach((listener) => listener(event));
+    },
+    pushAlertSound(sound: SoundSetting) {
+      soundListeners.forEach((listener) => listener(sound));
     },
   };
   return fake as unknown as FakeApi;

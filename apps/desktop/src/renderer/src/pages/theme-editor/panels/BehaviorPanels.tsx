@@ -1,6 +1,6 @@
 import { TagsField } from '../../../components/kit';
 import { FieldRow, NumberField, SelectRow } from '../fields';
-import { ANIMATIONS, BOT_SUGGESTIONS, PREFIX_SUGGESTIONS } from '../options';
+import { ANIMATIONS, EXIT_ANIMATIONS, BOT_SUGGESTIONS, PREFIX_SUGGESTIONS } from '../options';
 import type { PanelProps } from './shared';
 
 export function MotionPanel({ draft, set }: PanelProps) {
@@ -16,6 +16,13 @@ export function MotionPanel({ draft, set }: PanelProps) {
         step={10}
         unit="ms"
         onChange={set('animation', 'duration')}
+      />
+      <SelectRow
+        label="離場動畫"
+        hint="事件 Overlay 的卡片時間到時使用"
+        value={animation.exit}
+        options={EXIT_ANIMATIONS}
+        onChange={set('animation', 'exit')}
       />
     </>
   );

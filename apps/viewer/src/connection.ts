@@ -2,6 +2,7 @@ import {
   decodeServerFrame,
   encodeFrame,
   PROTOCOL_VERSION,
+  type AlertCue,
   type ChatEvent,
   type ChatTheme,
   type ViewerTarget,
@@ -9,7 +10,8 @@ import {
 
 export interface ViewerConnectionHandlers {
   onHello(theme: ChatTheme, backlog: ChatEvent[]): void;
-  onEvent(event: ChatEvent): void;
+  /** `alert` is set for the alert overlay: how long the card stays and what it plays. */
+  onEvent(event: ChatEvent, alert?: AlertCue): void;
   onTheme(theme: ChatTheme): void;
   onStatus(connected: boolean): void;
 }
@@ -35,7 +37,7 @@ export function connectToApp(url: string, target: ViewerTarget, handlers: Viewer
       const frame = decodeServerFrame(String(message.data));
       if (!frame) return;
       if (frame.type === 'hello') handlers.onHello(frame.theme, frame.backlog);
-      else if (frame.type === 'event') handlers.onEvent(frame.event);
+      else if (frame.type === 'event') handlers.onEvent(frame.event, frame.alert);
       else handlers.onTheme(frame.theme);
     });
     socket.addEventListener('close', () => {

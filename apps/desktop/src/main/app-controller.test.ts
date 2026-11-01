@@ -1,4 +1,5 @@
-import type { ChatEvent, ChatTheme } from '@chatto/core';
+import { defaultAlertSettings, type ChatEvent, type ChatTheme } from '@chatto/core';
+import { mockMessage, MOCK_USERS, sampleEvent } from '@chatto/chat-ui';
 import { PRESET_THEMES } from '@chatto/chat-ui/themes';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DeviceCodeInfo } from '../shared/ipc';
@@ -62,7 +63,9 @@ function fakeSettings(initial: Partial<Settings> = {}) {
     channelLogin: '',
     serverPort: 4820,
     overlay: { enabled: false },
-    selectedThemes: { overlay: 'matcha-glass', embed: 'matcha-glass' },
+    alertsOverlay: { enabled: false },
+    alerts: defaultAlertSettings(),
+    selectedThemes: { overlay: 'matcha-glass', embed: 'matcha-glass', alerts: 'matcha-glass' },
     customThemes: [],
     prefs: { uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false },
     ...initial,
@@ -87,22 +90,29 @@ function setup(initial?: Partial<Settings>) {
     url: (target: string) => `http://127.0.0.1:4820/${target}`,
     broadcastTheme: vi.fn(),
   };
-  let open = false;
-  const overlay = {
-    get isOpen() {
-      return open;
-    },
-    editing: false,
-    open: vi.fn(() => void (open = true)),
-    close: vi.fn(() => void (open = false)),
-    setEditing: vi.fn(),
-    resetBounds: vi.fn(),
+  const fakeWindow = () => {
+    let open = false;
+    return {
+      get isOpen() {
+        return open;
+      },
+      editing: false,
+      open: vi.fn(() => void (open = true)),
+      close: vi.fn(() => void (open = false)),
+      setEditing: vi.fn(),
+      resetBounds: vi.fn(),
+    };
   };
+  const overlay = fakeWindow();
+  const alertsOverlay = fakeWindow();
   controller.server = server as unknown as LocalServer;
   controller.overlay = overlay as unknown as OverlayWindow;
+  controller.alertsOverlay = alertsOverlay as unknown as OverlayWindow;
   const onChange = vi.fn();
   controller.onChange = onChange;
-  return { controller, settings, server, overlay, onChange };
+  const onAlertSound = vi.fn();
+  controller.onAlertSound = onAlertSound;
+  return { controller, settings, server, overlay, alertsOverlay, onChange, onAlertSound };
 }
 
 const customTheme = (id = 'my-theme'): ChatTheme => ({
@@ -131,7 +141,7 @@ describe('AppController themes', () => {
   });
 
   it('falls back to the first preset when the selected theme no longer exists', () => {
-    const { controller } = setup({ selectedThemes: { overlay: 'gone', embed: 'washi' } });
+    const { controller } = setup({ selectedThemes: { overlay: 'gone', embed: 'washi', alerts: 'washi' } });
     expect(controller.themeFor('overlay').id).toBe(PRESET_THEMES[0]!.id);
     expect(controller.themeFor('embed').id).toBe('washi');
   });
@@ -151,7 +161,7 @@ describe('AppController themes', () => {
 
   it('saves custom themes in place and live-updates outputs that use them', () => {
     const { controller, settings, server } = setup({
-      selectedThemes: { overlay: 'my-theme', embed: 'washi' },
+      selectedThemes: { overlay: 'my-theme', embed: 'washi', alerts: 'washi' },
     });
     controller.saveTheme(customTheme());
     controller.saveTheme({ ...customTheme(), name: '改名' });
@@ -165,11 +175,15 @@ describe('AppController themes', () => {
   it('resets outputs to the default theme when their theme is deleted', () => {
     const { controller, settings } = setup({
       customThemes: [customTheme()],
-      selectedThemes: { overlay: 'my-theme', embed: 'washi' },
+      selectedThemes: { overlay: 'my-theme', embed: 'washi', alerts: 'my-theme' },
     });
     controller.deleteTheme('my-theme');
     expect(settings.get().customThemes).toEqual([]);
-    expect(settings.get().selectedThemes).toEqual({ overlay: PRESET_THEMES[0]!.id, embed: 'washi' });
+    expect(settings.get().selectedThemes).toEqual({
+      overlay: PRESET_THEMES[0]!.id,
+      embed: 'washi',
+      alerts: PRESET_THEMES[0]!.id,
+    });
   });
 });
 
@@ -316,5 +330,91 @@ describe('AppController preferences', () => {
     controller.setPrefs({ appearance: 'dark' });
     expect(settings.get().prefs).toMatchObject({ appearance: 'dark', uiMode: 'full' });
     expect(nativeTheme.themeSource).toBe('dark');
+  });
+});
+
+describe('AppController alerts', () => {
+  const say = (text: string): ChatEvent => ({
+    type: 'message',
+    message: mockMessage(MOCK_USERS[1]!, [{ type: 'text', text }]),
+  });
+  const connected: ChatEvent = { type: 'connection', platform: 'twitch', channelId: '42', state: 'connected' };
+
+  it('marks the message that breaks a quiet spell for the desktop overlay only, and plays the reminder', async () => {
+    vi.useFakeTimers({ now: 0 });
+    try {
+      const { controller, onAlertSound } = setup();
+      await controller.init();
+      latestProvider().emit(connected);
+      vi.setSystemTime(10_000);
+      const early = say('早安');
+      latestProvider().emit(early);
+      vi.setSystemTime(10_000 + 130_000);
+      const late = say('有人在嗎');
+      latestProvider().emit(late);
+
+      const highlightsOf = (target: 'overlay' | 'embed', event: ChatEvent) => {
+        const routed = controller.route(target, event)?.event;
+        return routed?.type === 'message' ? routed.message.highlights : [];
+      };
+      expect(highlightsOf('overlay', early)).not.toContain('after-silence');
+      expect(highlightsOf('overlay', late)).toContain('after-silence');
+      expect(highlightsOf('embed', late)).not.toContain('after-silence');
+      expect(onAlertSound).toHaveBeenCalledTimes(1);
+      expect(onAlertSound).toHaveBeenCalledWith(defaultAlertSettings().silence.sound);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('sends the alert overlay only events that pass their rule, with a cue', () => {
+    const { controller } = setup();
+    expect(controller.route('alerts', say('hi'))).toBeNull();
+    expect(controller.route('alerts', connected)).toBeNull();
+    expect(controller.route('alerts', sampleEvent('twitch:raid'))).toMatchObject({ alert: { durationMs: 5000 } });
+    const deleted: ChatEvent = { type: 'message-deleted', platform: 'twitch', channelId: '42', messageId: 'x' };
+    expect(controller.route('alerts', deleted)).toEqual({ event: deleted });
+  });
+
+  it('leaves alerted events out of the chat overlay only when asked and the alert overlay is open', () => {
+    const { controller, settings } = setup();
+    const raid = sampleEvent('twitch:raid');
+    controller.setAlertSettings({
+      ...settings.get().alerts,
+      events: { ...settings.get().alerts.events, hideInChatOverlay: true },
+    });
+    expect(controller.route('overlay', raid)).not.toBeNull();
+    controller.setAlertsOverlayEnabled(true);
+    expect(controller.route('overlay', raid)).toBeNull();
+    expect(controller.route('embed', raid)).not.toBeNull();
+  });
+
+  it('clamps alert settings before saving them', () => {
+    const { controller, settings, onChange } = setup();
+    const alerts = defaultAlertSettings();
+    controller.setAlertSettings({
+      silence: { ...alerts.silence, thresholdSeconds: 5, sound: { ...alerts.silence.sound, volume: 3 } },
+      events: {
+        ...alerts.events,
+        durationSeconds: 0,
+        rules: { 'twitch:cheer': { enabled: true, minimum: -4, sound: alerts.silence.sound } },
+      },
+    });
+    const saved = settings.get().alerts;
+    expect(saved.silence.thresholdSeconds).toBe(30);
+    expect(saved.silence.sound.volume).toBe(1);
+    expect(saved.events.durationSeconds).toBe(1);
+    expect(saved.events.rules['twitch:cheer']!.minimum).toBe(0);
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it('opens the alert overlay and remembers it', async () => {
+    const { controller, settings, alertsOverlay } = setup();
+    controller.setAlertsOverlayEnabled(true);
+    expect(alertsOverlay.open).toHaveBeenCalled();
+    expect(settings.get().alertsOverlay.enabled).toBe(true);
+    expect(controller.state().alertsOverlay.enabled).toBe(true);
+    controller.resetAlertsOverlayBounds();
+    expect(alertsOverlay.resetBounds).toHaveBeenCalled();
   });
 });

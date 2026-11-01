@@ -2,7 +2,15 @@
  * Typed contract between the main process and the control panel renderer.
  * The preload script exposes {@link ChattoApi} as `window.chatto`.
  */
-import type { ChatEvent, ChatTheme, ConnectionState, ViewerTarget } from '@chatto/core';
+import type {
+  AlertSettings,
+  ChatEvent,
+  ChatTheme,
+  ConnectionState,
+  SoundRef,
+  SoundSetting,
+  ViewerTarget,
+} from '@chatto/core';
 
 export interface DeviceCodeInfo {
   userCode: string;
@@ -30,6 +38,9 @@ export interface AppState {
   auth: { status: 'signed-out' | 'pending' | 'signed-in'; login?: string; deviceCode?: DeviceCodeInfo; error?: string };
   channel: { login?: string; state: ConnectionState; detail?: string };
   overlay: { enabled: boolean; editing: boolean };
+  /** The event alert overlay window. */
+  alertsOverlay: { enabled: boolean; editing: boolean };
+  alerts: AlertSettings;
   server: { port: number; embedUrl: string; overlayUrl: string };
   themes: ChatTheme[];
   selectedThemes: Record<ViewerTarget, string>;
@@ -39,6 +50,8 @@ export interface ChattoApi {
   getState(): Promise<AppState>;
   onState(listener: (state: AppState) => void): () => void;
   onChatEvent(listener: (event: ChatEvent) => void): () => void;
+  /** A message broke a quiet spell and its reminder sound should play. */
+  onAlertSound(listener: (sound: SoundSetting) => void): () => void;
 
   windowMinimize(): Promise<void>;
   windowToggleMaximize(): Promise<void>;
@@ -58,6 +71,13 @@ export interface ChattoApi {
   setOverlayEditing(editing: boolean): Promise<void>;
   resetOverlayBounds(): Promise<void>;
 
+  setAlertSettings(settings: AlertSettings): Promise<void>;
+  setAlertsOverlayEnabled(enabled: boolean): Promise<void>;
+  setAlertsOverlayEditing(editing: boolean): Promise<void>;
+  resetAlertsOverlayBounds(): Promise<void>;
+  /** Lets the user pick an audio file and copies it into Chatto's sounds folder; null when cancelled. */
+  importSound(): Promise<SoundRef | null>;
+
   selectTheme(target: ViewerTarget, themeId: string): Promise<void>;
   saveTheme(theme: ChatTheme): Promise<void>;
   deleteTheme(themeId: string): Promise<void>;
@@ -70,6 +90,7 @@ export const IPC = {
   getState: 'app:get-state',
   state: 'app:state',
   chatEvent: 'chat:event',
+  alertSound: 'alert:sound',
   windowMinimize: 'window:minimize',
   windowToggleMaximize: 'window:toggle-maximize',
   windowClose: 'window:close',
@@ -83,6 +104,11 @@ export const IPC = {
   setOverlayEnabled: 'overlay:set-enabled',
   setOverlayEditing: 'overlay:set-editing',
   resetOverlayBounds: 'overlay:reset-bounds',
+  setAlertSettings: 'alerts:set-settings',
+  setAlertsOverlayEnabled: 'alerts-overlay:set-enabled',
+  setAlertsOverlayEditing: 'alerts-overlay:set-editing',
+  resetAlertsOverlayBounds: 'alerts-overlay:reset-bounds',
+  importSound: 'alerts:import-sound',
   selectTheme: 'theme:select',
   saveTheme: 'theme:save',
   deleteTheme: 'theme:delete',

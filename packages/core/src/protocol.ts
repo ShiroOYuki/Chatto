@@ -1,4 +1,5 @@
 import { SCHEMA_VERSION, type ChatEvent } from './message';
+import type { SoundSetting } from './alerts';
 import type { ChatTheme } from './theme';
 
 /**
@@ -9,8 +10,17 @@ import type { ChatTheme } from './theme';
 
 export const PROTOCOL_VERSION = SCHEMA_VERSION;
 
-/** Which output a viewer renders. */
-export type ViewerTarget = 'overlay' | 'embed';
+/** Which output a viewer renders: the desktop chat overlay, OBS, or the desktop event alert overlay. */
+export type ViewerTarget = 'overlay' | 'embed' | 'alerts';
+
+export const VIEWER_TARGETS: ViewerTarget[] = ['overlay', 'embed', 'alerts'];
+
+/** Sent with events to the alerts viewer: how long the card stays and what it plays. */
+export interface AlertCue {
+  durationMs: number;
+  /** Omitted when the event plays no sound. */
+  sound?: SoundSetting;
+}
 
 export type ServerFrame =
   | {
@@ -21,7 +31,7 @@ export type ServerFrame =
       /** Recent events so a freshly opened viewer is not empty. */
       backlog: ChatEvent[];
     }
-  | { v: typeof PROTOCOL_VERSION; type: 'event'; event: ChatEvent }
+  | { v: typeof PROTOCOL_VERSION; type: 'event'; event: ChatEvent; alert?: AlertCue }
   | { v: typeof PROTOCOL_VERSION; type: 'theme'; theme: ChatTheme };
 
 export type ClientFrame = { v: typeof PROTOCOL_VERSION; type: 'subscribe'; target: ViewerTarget };
@@ -47,7 +57,7 @@ export function decodeClientFrame(data: string): ClientFrame | null {
   try {
     const frame = JSON.parse(data) as Partial<ClientFrame>;
     if (frame?.v !== PROTOCOL_VERSION || frame.type !== 'subscribe') return null;
-    if (frame.target !== 'overlay' && frame.target !== 'embed') return null;
+    if (!VIEWER_TARGETS.includes(frame.target as ViewerTarget)) return null;
     return frame as ClientFrame;
   } catch {
     return null;

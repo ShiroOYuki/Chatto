@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
 import { join } from 'node:path';
 import { IPC, type AppState } from '../shared/ipc';
 import { AppController } from './app-controller';
@@ -127,6 +127,20 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.setOverlayEnabled, (_e, enabled: boolean) => controller.setOverlayEnabled(enabled));
   ipcMain.handle(IPC.setOverlayEditing, (_e, editing: boolean) => controller.setOverlayEditing(editing));
   ipcMain.handle(IPC.resetOverlayBounds, () => controller.resetOverlayBounds());
+  ipcMain.handle(IPC.setAlertSettings, (_e, next) => controller.setAlertSettings(next));
+  ipcMain.handle(IPC.setAlertsOverlayEnabled, (_e, enabled: boolean) => controller.setAlertsOverlayEnabled(enabled));
+  ipcMain.handle(IPC.setAlertsOverlayEditing, (_e, editing: boolean) => controller.setAlertsOverlayEditing(editing));
+  ipcMain.handle(IPC.resetAlertsOverlayBounds, () => controller.resetAlertsOverlayBounds());
+  ipcMain.handle(IPC.importSound, async () => {
+    const options = {
+      title: '選擇提示音',
+      properties: ['openFile' as const],
+      filters: [{ name: '音訊', extensions: ['mp3', 'ogg', 'wav'] }],
+    };
+    const result = mainWindow ? await dialog.showOpenDialog(mainWindow, options) : await dialog.showOpenDialog(options);
+    const file = result.filePaths[0];
+    return result.canceled || !file ? null : controller.importSound(file);
+  });
   ipcMain.handle(IPC.selectTheme, (_e, target, id: string) => controller.selectTheme(target, id));
   ipcMain.handle(IPC.saveTheme, (_e, theme) => controller.saveTheme(theme));
   ipcMain.handle(IPC.deleteTheme, (_e, id: string) => controller.deleteTheme(id));
@@ -140,12 +154,15 @@ async function bootstrap(): Promise<void> {
 
   const settings = new SettingsStore();
   const controller = new AppController(settings);
+  controller.soundsDir = join(app.getPath('userData'), 'sounds');
 
   controller.server = new LocalServer({
     port: settings.get().serverPort,
     viewerDir,
     hub: controller.hub,
     themeFor: (target) => controller.themeFor(target),
+    route: (target, event) => controller.route(target, event),
+    soundsDir: controller.soundsDir,
   });
   await controller.server.start();
 
@@ -154,6 +171,14 @@ async function bootstrap(): Promise<void> {
       draft.overlay.bounds = bounds;
     }),
   );
+  controller.alertsOverlay = new OverlayWindow(
+    controller.server.url('alerts'),
+    (bounds) =>
+      settings.update((draft) => {
+        draft.alertsOverlay.bounds = bounds;
+      }),
+    OverlayWindow.alertBounds,
+  );
 
   const send = (channel: string, payload: unknown) => {
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
@@ -161,6 +186,7 @@ async function bootstrap(): Promise<void> {
   controller.onChange = (state: AppState) => send(IPC.state, state);
   controller.isWindowMaximized = () => Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized());
   controller.hub.subscribe((event) => send(IPC.chatEvent, event));
+  controller.onAlertSound = (sound) => send(IPC.alertSound, sound);
 
   registerIpc(controller, settings);
   mainWindow = createMainWindow(settings, controller);

@@ -7,7 +7,7 @@ const livePreviews = (page: Page) => [
   page.locator('[aria-hidden="true"].flex.items-end'),
 ];
 
-const pages = ['overview', 'chat', 'themes', 'outputs', 'connections', 'settings'] as const;
+const pages = ['overview', 'chat', 'themes', 'outputs', 'alerts', 'connections', 'settings'] as const;
 
 for (const scheme of ['light', 'dark'] as const) {
   test.describe(`${scheme} mode`, () => {

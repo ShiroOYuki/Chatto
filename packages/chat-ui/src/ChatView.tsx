@@ -8,6 +8,8 @@ export interface ChatViewProps {
   theme: ChatTheme;
   items: FeedItem[];
   className?: string;
+  /** Plays the theme's exit animation on every row (alert cards whose time is up). */
+  leaving?: boolean;
 }
 
 /**
@@ -15,7 +17,7 @@ export interface ChatViewProps {
  * parameters (turned into CSS by {@link themeToCss}) and optional custom CSS.
  * Every part carries a stable `chatto-*` class; see docs/theming.md.
  */
-export function ChatView({ theme, items, className }: ChatViewProps) {
+export function ChatView({ theme, items, className, leaving }: ChatViewProps) {
   const id = useId();
   const scope = `.chatto-root[data-chatto-id="${id}"]`;
   const css = useMemo(
@@ -32,6 +34,7 @@ export function ChatView({ theme, items, className }: ChatViewProps) {
       data-base={theme.base}
       data-arrangement={theme.message.arrangement}
       data-direction={theme.list.direction}
+      data-leaving={leaving || undefined}
     >
       {css ? <style>{css}</style> : null}
       <ol className="chatto-list">

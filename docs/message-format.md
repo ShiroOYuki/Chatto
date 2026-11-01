@@ -27,7 +27,7 @@ viewer、主題、外掛唯一需要理解的資料流。
   fragments: MessageFragment[];
   text: string;            // = fragments 的 text 串接
   isAction: boolean;       // /me
-  highlights: ('first-message' | 'highlighted' | ...)[];
+  highlights: ('first-message' | 'highlighted' | 'after-silence' | ...)[];
   reply?: { parentMessageId, parentAuthor, parentText };
   cheerAmount?: number;
   eventType?: string;      // 這則訊息同時是平台事件時，例如 'cheer'、'highlighted'
@@ -55,17 +55,21 @@ viewer、主題、外掛唯一需要理解的資料流。
 | `link`    | `url`                                                                                                     |
 | `media`   | `mediaType: 'gif' \| 'image'`、`url`                                                                      |
 
+`after-silence` 不是平台提供的：桌面 App 在聊天室安靜一段時間後的第一則留言加上它，而且只送給桌面 Overlay（`overlay` target），OBS 收不到。渲染為 `data-highlight~="after-silence"`，樣式由主題的 `attention` 決定。
+
 `ImageSet` 至少有 `x1`，可另外提供 `x2`、`x4`。
 
 ## WebSocket 協定
 
 定義在 `packages/core/src/protocol.ts`，所有 frame 都帶 `v`（目前為 1）。
 
-- client → server：`{ v, type: 'subscribe', target: 'overlay' | 'embed' }`
+- client → server：`{ v, type: 'subscribe', target: 'overlay' | 'embed' | 'alerts' }`
 - server → client：
-  - `hello`：`theme` 與 `backlog`（最近事件）
-  - `event`：一個 `ChatEvent`
+  - `hello`：`theme` 與 `backlog`（最近事件；`alerts` 一律是空的）
+  - `event`：一個 `ChatEvent`；送給 `alerts` 時另有 `alert: { durationMs, sound? }`（`AlertCue`），告訴事件 Overlay 卡片停留多久、播什麼聲音
   - `theme`：主題變更
+- 每個 target 收到的事件可能不同，見 `docs/architecture.md` 的「輸出路由」。
+- HTTP `/sounds/<檔名>`：使用者自選的提示音。
 
 ## Twitch 對應
 
@@ -81,5 +85,6 @@ viewer、主題、外掛唯一需要理解的資料流。
 
 ## 變更紀錄
 
+- **v1.2**（2026-11-01）：新增 `alerts` target、`event` frame 的選填 `alert`、highlight `after-silence`（非破壞性）。
 - **v1.1**（2026-10-31）：新增選填欄位 `eventType`（非破壞性）。
 - **v1**（2026-10-31）：初版。

@@ -1,17 +1,18 @@
-import { Cable, Home, MessagesSquare, MonitorUp, Palette, Settings } from 'lucide-react';
+import { BellRing, Cable, Home, MessagesSquare, MonitorUp, Palette, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { useChatLog } from '../store';
 import { motion, RollingNumber, spring } from './motion';
 import { TeaCup, type TeaCupMood } from './TeaCup';
 
-export type PageId = 'overview' | 'chat' | 'themes' | 'outputs' | 'connections' | 'settings';
+export type PageId = 'overview' | 'chat' | 'themes' | 'outputs' | 'alerts' | 'connections' | 'settings';
 
 export const PAGES: { id: PageId; label: string; icon: ReactNode }[] = [
   { id: 'overview', label: '總覽', icon: <Home /> },
   { id: 'chat', label: '聊天室', icon: <MessagesSquare /> },
   { id: 'themes', label: '主題', icon: <Palette /> },
   { id: 'outputs', label: '輸出', icon: <MonitorUp /> },
+  { id: 'alerts', label: '提醒', icon: <BellRing /> },
   { id: 'connections', label: '連線', icon: <Cable /> },
   { id: 'settings', label: '設定', icon: <Settings /> },
 ];

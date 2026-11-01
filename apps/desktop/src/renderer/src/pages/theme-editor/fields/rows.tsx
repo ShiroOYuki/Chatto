@@ -118,17 +118,19 @@ export function ToggleRow({
 
 export function SelectRow<T extends string>({
   label,
+  hint,
   value,
   options,
   onChange,
 }: {
   label: string;
+  hint?: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
   return (
-    <FieldRow label={label}>
+    <FieldRow label={label} hint={hint}>
       <Select value={value} options={options} onChange={onChange} />
     </FieldRow>
   );

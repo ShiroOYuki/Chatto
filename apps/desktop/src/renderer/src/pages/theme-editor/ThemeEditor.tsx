@@ -7,6 +7,7 @@ import { Button, Tile } from '../../components/kit';
 import { PageTransition } from '../../components/motion';
 import { appendRule } from '../../lib/cssSelector';
 import { exportTheme } from '../themeIO';
+import { AttentionPanel } from './panels/AttentionPanel';
 import { BehaviorPanel, MotionPanel } from './panels/BehaviorPanels';
 import { CssPanel } from './panels/CssPanel';
 import { EventPanel, NoticePanel } from './panels/EventPanels';
@@ -70,6 +71,8 @@ export function ThemeEditor({
         return <NoticePanel draft={draft} setDraft={setDraft} />;
       case 'roles':
         return <RolesPanel draft={draft} setDraft={setDraft} />;
+      case 'attention':
+        return <AttentionPanel {...props} />;
       case 'motion':
         return <MotionPanel {...props} />;
       case 'behavior':

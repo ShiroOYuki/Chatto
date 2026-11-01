@@ -1,7 +1,8 @@
 import type { ChatEvent, ChatMessage, ChatNotice } from '@chatto/core';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AppState } from '../../shared/ipc';
 import { api } from './api';
+import { previewSound } from './services/alerts';
 
 export type LogEntry =
   | { kind: 'message'; id: string; at: number; message: ChatMessage; deleted: boolean }
@@ -47,6 +48,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     void api.getState().then(setState);
     return api.onState(setState);
   }, []);
+
+  // The quiet-spell reminder plays here, so it sounds even when no overlay window is open.
+  const port = useRef(4820);
+  port.current = state?.server.port ?? port.current;
+  useEffect(() => api.onAlertSound((sound) => previewSound(sound, port.current)), []);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 5000);

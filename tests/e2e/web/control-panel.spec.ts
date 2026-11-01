@@ -80,3 +80,22 @@ test('sign-in shows the device code', async ({ panel, page }) => {
   });
   await expect(page.getByText('MATCHA42')).toBeVisible();
 });
+
+test('alert settings save from the 提醒 page', async ({ panel, page }) => {
+  await panel.open('page=alerts');
+  const threshold = page.getByRole('textbox', { name: '安靜多久算沉寂' });
+  await threshold.fill('90');
+  await threshold.press('Enter');
+  await expect(threshold).toHaveValue('90');
+
+  const raid = page.locator('[data-event-rule="twitch:raid"]');
+  await raid.getByRole('switch', { name: '提醒揪團（Raid）' }).click();
+  await expect(raid.getByRole('switch', { name: '提醒揪團（Raid）' })).toHaveAttribute('aria-checked', 'false');
+  const minimum = raid.getByRole('textbox', { name: /最低觀眾人數/ });
+  await minimum.fill('20');
+  await minimum.blur();
+  await expect(minimum).toHaveValue('20');
+
+  await page.getByRole('switch', { name: '事件 Overlay' }).click();
+  await expect(page.getByRole('button', { name: '調整' }).last()).toBeEnabled();
+});

@@ -1,4 +1,13 @@
-import type { BoxStyle, ChatTheme, Corners, EventStyle, RoleKey, ShadowSpec, Sides } from '@chatto/core';
+import {
+  AFTER_SILENCE,
+  type BoxStyle,
+  type ChatTheme,
+  type Corners,
+  type EventStyle,
+  type RoleKey,
+  type ShadowSpec,
+  type Sides,
+} from '@chatto/core';
 
 /**
  * Turns theme parameters into CSS for the shared chat markup. This is the
@@ -112,6 +121,37 @@ function eventRules(context: EventContext, style: EventStyle, notice: string, me
   titleRules(context, style, message);
 }
 
+/**
+ * Columns normally clip their overflow to round the tag, which would cut off anything
+ * sticking out of the corner (stickers, labels). Instead the message stops clipping and
+ * the header and body round the message's outer corners themselves.
+ */
+function unclipColumns(rule: Rule, message: string, radii: EventContext['radii']) {
+  const [tl, tr, br, bl] = radii.message;
+  const [htl, htr, hbr, hbl] = radii.header;
+  const [btl, btr, bbr, bbl] = radii.body;
+  rule(message, ['overflow: visible']);
+  rule(`${message} .chatto-header`, [`border-radius: ${corners([Math.max(htl, tl), htr, hbr, Math.max(hbl, bl)])}`]);
+  rule(`${message} .chatto-body`, [`border-radius: ${corners([btl, Math.max(btr, tr), Math.max(bbr, br), bbl])}`]);
+}
+
+/** A small pill on an element's top-right corner (event stickers, the attention label). */
+const cornerPill = (background: string, color: string) => [
+  'display: block',
+  `background: ${background}`,
+  `color: ${color}`,
+  'font-size: 0.7em',
+  'font-weight: 700',
+  'line-height: 1.3',
+  'padding: 2px 8px',
+  'border-radius: 999px',
+  'white-space: nowrap',
+  'box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25)',
+  'z-index: 1',
+  '-webkit-text-stroke: 0',
+  'text-shadow: none',
+];
+
 /** Undoes a sticker title (set by the generic event style) for an event that keeps its title on a line. */
 const LINE_TITLE = [
   'position: static',
@@ -152,18 +192,7 @@ function titleRules(
     return;
   }
   const { background, color, rotate } = style.sticker;
-  const look = [
-    'display: block',
-    `background: ${background}`,
-    `color: ${color}`,
-    'font-size: 0.7em',
-    'line-height: 1.3',
-    'padding: 2px 8px',
-    'border-radius: 999px',
-    'white-space: nowrap',
-    'box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25)',
-    'z-index: 1',
-  ];
+  const look = cornerPill(background, color);
   const tilt = `rotate(${Math.round(rotate * 10) / 10}deg)`;
   if (onBody) {
     rule(`${message} .chatto-content`, ['display: grid', 'grid-template-columns: auto', 'justify-items: start']);
@@ -182,34 +211,59 @@ function titleRules(
     return;
   }
   rule(message, ['position: relative']);
-  if (columns) {
-    // Columns normally clip their overflow to round the tag; that would cut the sticker off,
-    // so the header and body round the message's outer corners themselves instead.
-    const [tl, tr, br, bl] = radii.message;
-    const [htl, htr, hbr, hbl] = radii.header;
-    const [btl, btr, bbr, bbl] = radii.body;
-    rule(message, ['overflow: visible']);
-    rule(`${message} .chatto-header`, [`border-radius: ${corners([Math.max(htl, tl), htr, hbr, Math.max(hbl, bl)])}`]);
-    rule(`${message} .chatto-body`, [`border-radius: ${corners([btl, Math.max(btr, tr), Math.max(bbr, br), bbl])}`]);
-  }
+  if (columns) unclipColumns(rule, message, radii);
   rule(title, [...look, 'position: absolute', 'top: 0', 'right: 8px', `transform: translateY(-55%) ${tilt}`]);
 }
 
-const ENTER_KEYFRAMES: Record<Exclude<ChatTheme['animation']['enter'], 'none'>, string> = {
+type Enter = Exclude<ChatTheme['animation']['enter'], 'none'>;
+type Exit = Exclude<ChatTheme['animation']['exit'], 'none'>;
+
+const ENTER_KEYFRAMES: Record<Enter, string> = {
   fade: 'from { opacity: 0; }',
   'slide-up': 'from { opacity: 0; transform: translateY(12px); }',
   'slide-left': 'from { opacity: 0; transform: translateX(-16px); }',
   'slide-right': 'from { opacity: 0; transform: translateX(16px); }',
   pop: 'from { opacity: 0; transform: scale(0.85); }',
+  bounce:
+    '0% { opacity: 0; transform: translateY(-24px) scale(0.9); } 55% { opacity: 1; transform: translateY(6px) scale(1.02); } 75% { transform: translateY(-3px); } 100% { transform: none; }',
+  shake:
+    '0% { opacity: 0; } 15% { opacity: 1; transform: translateX(-8px) rotate(-2deg); } 35% { transform: translateX(7px) rotate(1.5deg); } 55% { transform: translateX(-5px) rotate(-1deg); } 75% { transform: translateX(3px); } 100% { transform: none; }',
+  zoom: 'from { opacity: 0; transform: scale(1.35); filter: blur(4px); }',
 };
 
-const ENTER_EASING: Record<Exclude<ChatTheme['animation']['enter'], 'none'>, string> = {
+const ENTER_EASING: Record<Enter, string> = {
   fade: 'ease-out',
   'slide-up': 'cubic-bezier(0.2, 0.8, 0.2, 1)',
   'slide-left': 'cubic-bezier(0.2, 0.8, 0.2, 1)',
   'slide-right': 'cubic-bezier(0.2, 0.8, 0.2, 1)',
   pop: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+  bounce: 'ease-out',
+  shake: 'ease-out',
+  zoom: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
 };
+
+const EXIT_KEYFRAMES: Record<Exit, string> = {
+  fade: 'to { opacity: 0; }',
+  'slide-up': 'to { opacity: 0; transform: translateY(-12px); }',
+  'slide-left': 'to { opacity: 0; transform: translateX(-16px); }',
+  'slide-right': 'to { opacity: 0; transform: translateX(16px); }',
+  pop: 'to { opacity: 0; transform: scale(0.85); }',
+  zoom: 'to { opacity: 0; transform: scale(1.25); filter: blur(4px); }',
+};
+
+/** The colour comes from `--chatto-attention` on the element, so one keyframe set serves every theme. */
+const ATTENTION_KEYFRAMES: Record<Exclude<ChatTheme['attention']['effect'], 'none'>, string> = {
+  glow: '0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px var(--chatto-attention), 0 0 18px 4px var(--chatto-attention); }',
+  pulse:
+    '0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; } 50% { transform: scale(1.04); box-shadow: 0 0 0 2px var(--chatto-attention); }',
+  shake:
+    '0%, 100% { transform: none; } 20% { transform: translateX(-5px) rotate(-1deg); } 40% { transform: translateX(5px) rotate(1deg); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); }',
+};
+
+/** How long an alert card's exit animation runs, so the alerts viewer can wait for it, ms. */
+export function exitDurationMs(theme: ChatTheme): number {
+  return theme.base === 'styled' && theme.animation.exit !== 'none' ? theme.animation.duration : 0;
+}
 
 /**
  * @param scope selector of the chat root this CSS applies to,
@@ -441,13 +495,49 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root'): string {
     );
   }
 
-  // Enter animation.
-  if (animation.enter !== 'none' && animation.duration > 0) {
-    const name = `chatto-enter-${animation.enter}`;
-    rules.push(`@keyframes ${name} { ${ENTER_KEYFRAMES[animation.enter]} }`);
-    rules.push(
-      `@media (prefers-reduced-motion: no-preference) {\n${scope} .chatto-list > li {\n  animation: ${name} ${animation.duration}ms ${ENTER_EASING[animation.enter]} both;\n}\n}`,
+  // Motion: row enter animation, alert card exit animation, and the attention effect.
+  const motion: string[] = [];
+  const enterKind = animation.enter !== 'none' && animation.duration > 0 ? animation.enter : null;
+  const enter = enterKind ? `chatto-enter-${enterKind} ${animation.duration}ms ${ENTER_EASING[enterKind]} both` : null;
+  if (enterKind) {
+    rules.push(`@keyframes chatto-enter-${enterKind} { ${ENTER_KEYFRAMES[enterKind]} }`);
+    motion.push(`${scope} .chatto-list > li {\n  animation: ${enter};\n}`);
+  }
+  if (animation.exit !== 'none' && animation.duration > 0) {
+    rules.push(`@keyframes chatto-exit-${animation.exit} { ${EXIT_KEYFRAMES[animation.exit]} }`);
+    motion.push(
+      `${scope}[data-leaving] .chatto-list > li {\n  animation: chatto-exit-${animation.exit} ${animation.duration}ms ease-in forwards;\n}`,
     );
+  }
+
+  // A message that broke a quiet spell. Only the desktop overlay receives this highlight.
+  const { attention } = theme;
+  const calm = `.chatto-message[data-highlight~=${cssString(AFTER_SILENCE)}]`;
+  const surface = surfaceIsBody ? `${calm} .chatto-body` : calm;
+  if (attention.effect !== 'none' || attention.label) {
+    rule(surface, ['position: relative', `--chatto-attention: ${attention.color}`]);
+  }
+  if (attention.label) {
+    if (message.arrangement === 'columns') unclipColumns(rule, calm, radii);
+    rule(`${surface}::after`, [
+      `content: ${cssString(attention.label)}`,
+      ...cornerPill(attention.color, attention.labelColor),
+      'font-size: 0.65em',
+      'position: absolute',
+      'top: 0',
+      'right: 8px',
+      'transform: translateY(-55%) rotate(-4deg)',
+    ]);
+  }
+  if (attention.effect !== 'none' && attention.repeat > 0) {
+    rules.push(`@keyframes chatto-attention-${attention.effect} { ${ATTENTION_KEYFRAMES[attention.effect]} }`);
+    const effect = `chatto-attention-${attention.effect} 0.9s ease-in-out ${Math.round(attention.repeat)}`;
+    if (surfaceIsBody) motion.push(`${scope} ${surface} {\n  animation: ${effect};\n}`);
+    // On the row itself, keep the row's enter animation alongside the effect.
+    else motion.push(`${scope} .chatto-list > li${calm} {\n  animation: ${enter ? `${enter}, ${effect}` : effect};\n}`);
+  }
+  if (motion.length > 0) {
+    rules.push(`@media (prefers-reduced-motion: no-preference) {\n${motion.join('\n')}\n}`);
   }
 
   return rules.join('\n');

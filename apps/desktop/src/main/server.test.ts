@@ -1,12 +1,12 @@
-import { decodeServerFrame, encodeFrame, PROTOCOL_VERSION, type ServerFrame } from '@chatto/core';
-import { PRESET_THEMES, createMockMessage } from '@chatto/chat-ui';
+import { decodeServerFrame, encodeFrame, PROTOCOL_VERSION, type ServerFrame, type ViewerTarget } from '@chatto/core';
+import { PRESET_THEMES, createMockMessage, sampleEvent } from '@chatto/chat-ui';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import { ChatHub } from './chat-hub';
-import { LocalServer } from './server';
+import { LocalServer, type LocalServerOptions } from './server';
 
 let server: LocalServer | null = null;
 afterEach(async () => {
@@ -14,21 +14,21 @@ afterEach(async () => {
   server = null;
 });
 
-async function startServer() {
+async function startServer(extra: Partial<LocalServerOptions> = {}) {
   const viewerDir = mkdtempSync(join(tmpdir(), 'chatto-viewer-'));
   writeFileSync(join(viewerDir, 'index.html'), '<!doctype html><title>viewer</title>');
   mkdirSync(join(viewerDir, 'assets'));
   writeFileSync(join(viewerDir, 'assets', 'app.js'), 'console.log(1)');
   const hub = new ChatHub();
-  const themes = { overlay: PRESET_THEMES[0]!, embed: PRESET_THEMES[1]! };
+  const themes = { overlay: PRESET_THEMES[0]!, embed: PRESET_THEMES[1]!, alerts: PRESET_THEMES[2]! };
   // Port 0 lets the OS pick a free port; random fixed ports can land in Windows' reserved ranges (EACCES).
-  server = new LocalServer({ port: 0, viewerDir, hub, themeFor: (target) => themes[target] });
+  server = new LocalServer({ port: 0, viewerDir, hub, themeFor: (target) => themes[target], ...extra });
   await server.start();
   return { hub, port: server.port, server };
 }
 
 /** Opens a viewer socket, subscribes to a target and collects decoded frames. */
-async function subscribe(port: number, target: 'overlay' | 'embed') {
+async function subscribe(port: number, target: ViewerTarget) {
   const socket = new WebSocket(`ws://127.0.0.1:${port}/ws`);
   const frames: ServerFrame[] = [];
   socket.on('message', (data) => {
@@ -135,5 +135,44 @@ describe('LocalServer', () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(frames).toEqual([]);
     socket.close();
+  });
+
+  it('routes each event per output and starts alert viewers without a backlog', async () => {
+    const { hub, port } = await startServer({
+      route: (target, event) =>
+        target === 'alerts'
+          ? event.type === 'notice'
+            ? { event, alert: { durationMs: 1000 } }
+            : null
+          : target === 'embed' && event.type === 'notice'
+            ? null
+            : { event },
+    });
+    hub.publish(createMockMessage());
+    const alerts = await subscribe(port, 'alerts');
+    const embed = await subscribe(port, 'embed');
+    expect(alerts.frames[0]?.type === 'hello' && alerts.frames[0].backlog).toEqual([]);
+    expect(embed.frames[0]?.type === 'hello' && embed.frames[0].backlog).toHaveLength(1);
+
+    hub.publish(sampleEvent('twitch:sub'));
+    await vi.waitFor(() => expect(alerts.frames.at(-1)).toMatchObject({ type: 'event', alert: { durationMs: 1000 } }));
+    hub.publish(createMockMessage());
+    await vi.waitFor(() => expect(embed.frames).toHaveLength(2));
+    expect(embed.frames.some((frame) => frame.type === 'event' && frame.event.type === 'notice')).toBe(false);
+    expect(alerts.frames).toHaveLength(2);
+    alerts.socket.close();
+    embed.socket.close();
+  });
+
+  it('serves user sounds by safe name only', async () => {
+    const soundsDir = mkdtempSync(join(tmpdir(), 'chatto-sounds-'));
+    writeFileSync(join(soundsDir, 'ding-1.mp3'), 'ID3');
+    const { port } = await startServer({ soundsDir });
+    const ok = await fetch(`http://127.0.0.1:${port}/sounds/ding-1.mp3`);
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('content-type')).toBe('audio/mpeg');
+    expect((await fetch(`http://127.0.0.1:${port}/sounds/missing.mp3`)).status).toBe(404);
+    expect((await fetch(`http://127.0.0.1:${port}/sounds/..%2fsettings.json`)).status).toBe(404);
+    expect((await fetch(`http://127.0.0.1:${port}/sounds/notes.txt`)).status).toBe(404);
   });
 });

@@ -28,3 +28,8 @@ body[data-backdrop] {
     radial-gradient(circle at 20% 30%, #3b6d11 0, transparent 40%),
     radial-gradient(circle at 80% 70%, #0f6e56 0, transparent 45%), #1b2230;
 }
+
+/* Alert overlay: the card sits at the top of its window (placed in the top-right corner). */
+body[data-alerts] .chatto-root {
+  justify-content: flex-start !important;
+}

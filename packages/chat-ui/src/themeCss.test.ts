@@ -1,7 +1,7 @@
 import type { ChatTheme } from '@chatto/core';
 import { describe, expect, it } from 'vitest';
 import { FONT_STACKS } from './fontStacks';
-import { scopeCustomCss, themeToCss } from './themeCss';
+import { exitDurationMs, scopeCustomCss, themeToCss } from './themeCss';
 import { BASE_THEME, createTheme, getPresetTheme, normalizeTheme, PLAIN_PRESET, PRESET_THEMES } from './themes';
 
 describe('theme base', () => {
@@ -68,7 +68,7 @@ describe('theme base', () => {
     expect(css).toContain('content: "@"');
     expect(css).toContain('content: " » "');
     expect(css).toContain('[data-roles~="moderator"] .chatto-author');
-    expect(css).not.toContain('@keyframes');
+    expect(css).not.toContain('@keyframes chatto-enter');
   });
 
   it('escapes user text placed in CSS strings', () => {
@@ -204,6 +204,48 @@ describe('event title', () => {
     const cheer = '.s .chatto-message[data-event="twitch:cheer"]';
     expect(block(css, `${cheer} .chatto-event-title`)).toContain('transform: none');
     expect(block(css, `${cheer} .chatto-content`)).toContain('display: flex');
+  });
+});
+
+describe('motion', () => {
+  it('generates the livelier enter animations', () => {
+    for (const enter of ['bounce', 'shake', 'zoom'] as const) {
+      const css = themeToCss(createTheme('t', 't', { animation: { enter } }), '.s');
+      expect(css).toContain(`@keyframes chatto-enter-${enter}`);
+    }
+  });
+
+  it('plays the exit animation only while the root is leaving', () => {
+    const theme = createTheme('t', 't', { animation: { exit: 'zoom', duration: 300 } });
+    const css = themeToCss(theme, '.s');
+    expect(css).toContain('@keyframes chatto-exit-zoom');
+    expect(css).toContain(
+      '.s[data-leaving] .chatto-list > li {\n  animation: chatto-exit-zoom 300ms ease-in forwards;',
+    );
+    expect(exitDurationMs(theme)).toBe(300);
+    expect(exitDurationMs(createTheme('t', 't', { animation: { exit: 'none' } }))).toBe(0);
+  });
+});
+
+describe('attention after a quiet spell', () => {
+  const calm = '.chatto-message[data-highlight~="after-silence"]';
+
+  it('labels and lights up the bubble in stacked themes', () => {
+    const css = themeToCss(getPresetTheme('bubble')!, '.s');
+    expect(css).toContain(`.s ${calm} .chatto-body::after`);
+    expect(css).toContain('content: "新留言"');
+    expect(css).toContain(`.s ${calm} .chatto-body {\n  animation: chatto-attention-glow 0.9s ease-in-out 3;`);
+  });
+
+  it('keeps the row enter animation when the effect runs on the row', () => {
+    const css = themeToCss(getPresetTheme('matcha-glass')!, '.s');
+    expect(css).toContain(`.s .chatto-list > li${calm} {\n  animation: chatto-enter-slide-up 260ms`);
+    expect(css).toContain(', chatto-attention-glow 0.9s ease-in-out 3;');
+  });
+
+  it('can be turned off', () => {
+    const css = themeToCss(createTheme('t', 't', { attention: { effect: 'none', label: '' } }), '.s');
+    expect(css).not.toContain('after-silence');
   });
 });
 

@@ -10,7 +10,8 @@ export interface FeedState {
 
 export const emptyFeed: FeedState = { items: [] };
 
-function isHidden(message: ChatMessage, options: ChatThemeOptions): boolean {
+/** Whether a theme's display rules hide this message (bots, command prefixes). */
+export function isHidden(message: ChatMessage, options: ChatThemeOptions): boolean {
   if (options.hiddenUsers.some((login) => login.toLowerCase() === message.author.login)) return true;
   return options.hiddenPrefixes.some((prefix) => prefix && message.text.startsWith(prefix));
 }

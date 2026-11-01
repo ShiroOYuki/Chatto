@@ -1,4 +1,4 @@
-import type { ChatTheme, ViewerTarget } from '@chatto/core';
+import { defaultAlertSettings, type AlertSettings, type ChatTheme, type ViewerTarget } from '@chatto/core';
 import { DEFAULT_THEME_ID } from '@chatto/chat-ui/themes';
 import type { AppPrefs } from '../shared/ipc';
 import { app } from 'electron';
@@ -17,6 +17,9 @@ export interface Settings {
   channelLogin: string;
   serverPort: number;
   overlay: { enabled: boolean; bounds?: Rect };
+  /** The event alert overlay window. */
+  alertsOverlay: { enabled: boolean; bounds?: Rect };
+  alerts: AlertSettings;
   selectedThemes: Record<ViewerTarget, string>;
   customThemes: ChatTheme[];
   prefs: AppPrefs;
@@ -29,10 +32,24 @@ const defaults = (): Settings => ({
   channelLogin: '',
   serverPort: 4820,
   overlay: { enabled: false },
-  selectedThemes: { overlay: DEFAULT_THEME_ID, embed: DEFAULT_THEME_ID },
+  alertsOverlay: { enabled: false },
+  alerts: defaultAlertSettings(),
+  selectedThemes: { overlay: DEFAULT_THEME_ID, embed: DEFAULT_THEME_ID, alerts: DEFAULT_THEME_ID },
   customThemes: [],
   prefs: { uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false },
 });
+
+/** Fills alert settings saved by an older version with the current defaults. */
+function mergeAlerts(base: AlertSettings, raw?: Partial<AlertSettings>): AlertSettings {
+  return {
+    silence: {
+      ...base.silence,
+      ...raw?.silence,
+      sound: { ...base.silence.sound, ...raw?.silence?.sound },
+    },
+    events: { ...base.events, ...raw?.events, rules: { ...raw?.events?.rules } },
+  };
+}
 
 /** JSON settings in the user data folder, written atomically. */
 export class SettingsStore {
@@ -64,6 +81,8 @@ export class SettingsStore {
         ...raw,
         twitchClientId: raw.twitchClientId || base.twitchClientId,
         overlay: { ...base.overlay, ...raw.overlay },
+        alertsOverlay: { ...base.alertsOverlay, ...raw.alertsOverlay },
+        alerts: mergeAlerts(base.alerts, raw.alerts),
         selectedThemes: { ...base.selectedThemes, ...raw.selectedThemes },
         prefs: { ...base.prefs, ...raw.prefs },
       };

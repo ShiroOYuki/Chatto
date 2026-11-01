@@ -88,7 +88,8 @@ export const BASE_THEME: ChatTheme = {
   },
   events: {},
   roles: {},
-  animation: { enter: 'slide-up', duration: 260 },
+  animation: { enter: 'slide-up', duration: 260, exit: 'fade' },
+  attention: { effect: 'glow', color: '#FAC775', repeat: 3, label: '新留言', labelColor: '#412402' },
   options: {
     messageLifetime: 0,
     maxMessages: 50,
@@ -204,7 +205,8 @@ export const PLAIN_PRESET: ChatTheme = createTheme('plain', '空白（從零開�
     messageFrame: 'wrap',
     titlePlacement: 'line',
   },
-  animation: { enter: 'none', duration: 0 },
+  animation: { enter: 'none', duration: 0, exit: 'none' },
+  attention: { effect: 'none', label: '' },
 });
 
 export const PRESET_THEMES: ChatTheme[] = [
@@ -237,6 +239,7 @@ export const PRESET_THEMES: ChatTheme[] = [
     mention: { color: '#A32D2D' },
     reply: { color: '#5F5E5A' },
     timestamp: { color: '#5F5E5A' },
+    attention: { color: '#A32D2D', labelColor: '#FFFFFF' },
     notice: {
       box: { background: '#F6F0E2', radius: [2, 2, 2, 2], padding: [6, 12, 6, 12] },
       accentColor: '#A32D2D',
@@ -253,6 +256,7 @@ export const PRESET_THEMES: ChatTheme[] = [
     avatar: { show: true, size: 28 },
     mention: { color: '#D85A30' },
     reply: { color: '#F5C4B3' },
+    attention: { color: '#F0997B', labelColor: '#FFFFFF' },
     notice: {
       // The coral border sets events apart from chat bubbles, which share the same fill.
       box: {
@@ -310,6 +314,7 @@ export const PRESET_THEMES: ChatTheme[] = [
     timestamp: { show: true, color: '#888780', size: 1 },
     mention: { color: '#5DCAA5' },
     notice: { box: { padding: [2, 10, 2, 10] }, accentColor: '#5DCAA5', titleColor: '#5DCAA5' },
+    attention: { color: '#5DCAA5', labelColor: '#0A0E14' },
     animation: { enter: 'none' },
   }),
   preset('blank', 'Blank（自訂 CSS）', {

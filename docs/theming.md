@@ -46,7 +46,8 @@
 | `notice`    | **通用事件訊息**（所有平台事件共用）：`box`、`accentColor`、`accentWidth`（左側色條）、`titleColor`、`bodyColor`（空字串＝沿用）、`icon`（標題前文字）、`messageFrame`（聊天訊息事件的外框位置）、`titlePlacement`（聊天訊息事件的標題位置）、`sticker`（標題貼紙的 `background`、`color`、`rotate`） |
 | `events`    | 各平台事件的樣式，鍵為 `平台:事件`（例如 `twitch:cheer`），值為 `{ linked, style }`；見下方「平台事件」                                                                                                                                                                                               |
 | `roles`     | 依身分覆蓋：鍵為 viewer（一般觀眾：沒有 broadcaster、moderator、vip、subscriber、founder 身分）／broadcaster／moderator／vip／subscriber／first-message，值為 `nameColor`、`nameBackground`、`surfaceBackground`、`borderColor`，皆可省略                                                             |
-| `animation` | `enter`（none／fade／slide-up／slide-left／slide-right／pop）、`duration`（ms）                                                                                                                                                                                                                       |
+| `animation` | `enter`（none／fade／slide-up／slide-left／slide-right／pop／bounce／shake／zoom）、`duration`（ms）、`exit`（none／fade／slide-up／slide-left／slide-right／pop／zoom，事件 Overlay 的卡片離場時使用）                                                                                               |
+| `attention` | 沉寂後新留言（`data-highlight~="after-silence"`，只在桌面 Overlay）：`effect`（none／glow／pulse／shake）、`color`、`repeat`（次數）、`label`（右上角標籤，空字串＝不顯示）、`labelColor`                                                                                                             |
 | `options`   | 顯示規則：`messageLifetime`（秒，0 為永久）、`maxMessages`、`hiddenUsers`、`hiddenPrefixes`                                                                                                                                                                                                           |
 | `customCss` | 自訂 CSS                                                                                                                                                                                                                                                                                              |
 
@@ -83,6 +84,12 @@
   - `line`（預設）：內容區最上方獨立一行，顏色用 `titleColor`。
   - `sticker`：傾斜的小膠囊貼在訊息看得見的底色右上角，顏色、底色、角度由 `sticker` 決定。`stacked` 且內容框有填色時，標題和 `.chatto-body` 放在 `.chatto-content` 的同一個 grid 格子裡；其他排列用 `position: absolute` 貼在 `.chatto-message` 上（`columns` 會裁切溢出，所以貼在框內）。泡泡預設使用 `sticker`。
 - 產生的 CSS 先輸出通用規則，再為每個獨立樣式的事件輸出 `[data-event="key"]` 規則；事件規則排在身分樣式之後，所以事件外觀優先於作者身分。
+
+## 沉寂後新留言與事件 Overlay
+
+- `attention` 的效果和標籤套在訊息「看得見的底色」上（內容框有填色時是 `.chatto-body`，否則是 `.chatto-message`）。顏色以 CSS 變數 `--chatto-attention` 傳給 keyframes，自訂 CSS 也能改。效果在訊息列本身時，會和進場動畫一起播放，不會蓋掉它。
+- `columns` 排列加標籤時，和事件貼紙一樣改成不裁切，由名稱框與內容框各自補外側圓角。
+- 事件 Overlay（`/alerts`）用同一個 `ChatView`，一次只放一張卡片；時間到時在 `.chatto-root` 加上 `data-leaving`，播放 `animation.exit`，結束後才換下一張。`exitDurationMs(theme)` 回傳要等多久。
 
 ## 名稱顏色
 
@@ -154,6 +161,7 @@
 
 ## 版本與遷移
 
+- **v2 新增欄位**（2026-11-01，非破壞性）：`animation.exit`、`attention`；`animation.enter` 新增 bounce、shake、zoom。`normalizeTheme()` 會補齊預設。
 - **v2 新增欄位**（2026-11-01，非破壞性）：`notice.messageFrame`、`notice.titlePlacement`、`notice.sticker` 與各事件的同名欄位（預設 `wrap`、`line`，`normalizeTheme()` 會補齊）；`roles.viewer`（一般觀眾）。
 - **v2 新增欄位**（2026-10-31，非破壞性）：`notice.bodyColor`、`notice.icon`、`events`；`roles.highlighted` 移除，改由 `twitch:highlighted` 事件處理（`normalizeTheme()` 會補齊預設並移除舊鍵）。
 - **v2**（2026-10-31）：改為單一基底參數化。v1 的 `layout`、`palette`、`typography`、`shape` 由 `normalizeTheme()` 自動轉成 v2，舊的自訂主題與匯出檔都能直接載入。

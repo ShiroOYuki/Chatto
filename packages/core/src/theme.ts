@@ -50,7 +50,13 @@ export interface BoxStyle {
 }
 
 export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize';
-export type EnterAnimation = 'none' | 'fade' | 'slide-up' | 'slide-left' | 'slide-right' | 'pop';
+export type EnterAnimation =
+  'none' | 'fade' | 'slide-up' | 'slide-left' | 'slide-right' | 'pop' | 'bounce' | 'shake' | 'zoom';
+/** How an item leaves; used by alert cards when their time is up. */
+export type ExitAnimation = 'none' | 'fade' | 'slide-up' | 'slide-left' | 'slide-right' | 'pop' | 'zoom';
+
+/** How a message that broke a quiet spell draws attention on the desktop overlay. */
+export type AttentionEffect = 'none' | 'glow' | 'pulse' | 'shake';
 
 /**
  * How the parts of one message are arranged:
@@ -269,6 +275,22 @@ export interface ChatTheme {
     enter: EnterAnimation;
     /** ms */
     duration: number;
+    /** Used by alert cards; chat messages simply disappear. */
+    exit: ExitAnimation;
+  };
+
+  /**
+   * Look of a message that arrives after a quiet spell (highlight `after-silence`).
+   * Only the desktop overlay receives that highlight, so OBS never shows it.
+   */
+  attention: {
+    effect: AttentionEffect;
+    color: string;
+    /** How many times the effect plays. */
+    repeat: number;
+    /** Small tag on the message's corner; empty for none. */
+    label: string;
+    labelColor: string;
   };
 
   options: ChatThemeBehavior;

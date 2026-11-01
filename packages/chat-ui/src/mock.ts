@@ -1,4 +1,4 @@
-import type { ChatEvent, ChatMessage, ChatUser, MessageFragment } from '@chatto/core';
+import { AFTER_SILENCE, type ChatEvent, type ChatMessage, type ChatUser, type MessageFragment } from '@chatto/core';
 import { sampleEvent } from './eventSamples';
 import { EVENT_CATALOG } from './events';
 import { MOCK_USERS, mockEmote, mockMessage } from './mockData';
@@ -51,7 +51,8 @@ export function startMockStream(push: (event: ChatEvent) => void, intervalMs = 1
 /**
  * A fixed set of messages that together use every part of the markup:
  * each role, badges, a reply, mention, link, emotes, a /me action, a
- * first-time chatter and every catalogued platform event.
+ * first-time chatter, a message after a quiet spell and every catalogued
+ * platform event.
  */
 export function createSpecimenEvents(): ChatEvent[] {
   const [broadcaster, subscriber, moderator, viewer, vip] = MOCK_USERS as [
@@ -87,6 +88,7 @@ export function createSpecimenEvents(): ChatEvent[] {
     ]),
     mockMessage(viewer, [{ type: 'text', text: '倒了一杯茶' }], { isAction: true }),
     mockMessage(viewer, [{ type: 'text', text: '第一次來，大家好！' }], { highlights: ['first-message'] }),
+    mockMessage(subscriber, [{ type: 'text', text: '有人在嗎？' }], { highlights: [AFTER_SILENCE] }),
   ];
   return [
     ...messages.map((message): ChatEvent => ({ type: 'message', message })),

@@ -1,12 +1,16 @@
 import { createMockMessage, createMockNotice, PRESET_THEMES } from '@chatto/chat-ui';
-import type { ChatEvent } from '@chatto/core';
+import { defaultAlertSettings, type ChatEvent, type SoundSetting } from '@chatto/core';
 import type { AppState, ChattoApi } from '../../shared/ipc';
 
 declare global {
   interface Window {
     chatto?: ChattoApi;
     /** Test hooks of the browser mock API, only with `?e2e`. */
-    __chattoMock?: { emitChat(event: ChatEvent): void; setState(patch: Partial<AppState>): void };
+    __chattoMock?: {
+      emitChat(event: ChatEvent): void;
+      setState(patch: Partial<AppState>): void;
+      playAlertSound(sound: SoundSetting): void;
+    };
   }
 }
 
@@ -32,12 +36,15 @@ function createMockApi(): ChattoApi {
     auth: { status: 'signed-in', login: 'shiraine_ciel' },
     channel: { login: 'shiraine_ciel', state: 'connected' },
     overlay: { enabled: true, editing: false },
+    alertsOverlay: { enabled: false, editing: false },
+    alerts: defaultAlertSettings(),
     server: { port: 4820, embedUrl: 'http://127.0.0.1:4820/embed', overlayUrl: 'http://127.0.0.1:4820/overlay' },
     themes: PRESET_THEMES,
-    selectedThemes: { overlay: 'matcha-glass', embed: 'washi' },
+    selectedThemes: { overlay: 'matcha-glass', embed: 'washi', alerts: 'bubble' },
   };
   const stateListeners = new Set<(state: AppState) => void>();
   const chatListeners = new Set<(event: ChatEvent) => void>();
+  const soundListeners = new Set<(sound: SoundSetting) => void>();
   const set = (patch: Partial<AppState>) => {
     state = { ...state, ...patch };
     stateListeners.forEach((listener) => listener(state));
@@ -45,7 +52,11 @@ function createMockApi(): ChattoApi {
   const emitChat = (event: ChatEvent) => chatListeners.forEach((listener) => listener(event));
 
   if (params.has('e2e')) {
-    window.__chattoMock = { emitChat, setState: set };
+    window.__chattoMock = {
+      emitChat,
+      setState: set,
+      playAlertSound: (sound) => soundListeners.forEach((listener) => listener(sound)),
+    };
   }
 
   let sent: string[] = [];
@@ -66,6 +77,7 @@ function createMockApi(): ChattoApi {
     getState: async () => state,
     onState: (listener) => (stateListeners.add(listener), () => stateListeners.delete(listener)),
     onChatEvent: (listener) => (chatListeners.add(listener), () => chatListeners.delete(listener)),
+    onAlertSound: (listener) => (soundListeners.add(listener), () => soundListeners.delete(listener)),
     windowMinimize: async () => undefined,
     windowToggleMaximize: async () => set({ window: { maximized: !state.window.maximized } }),
     windowClose: async () => undefined,
@@ -91,6 +103,12 @@ function createMockApi(): ChattoApi {
     setOverlayEnabled: async (enabled) => set({ overlay: { ...state.overlay, enabled } }),
     setOverlayEditing: async (editing) => set({ overlay: { ...state.overlay, editing } }),
     resetOverlayBounds: async () => undefined,
+    setAlertSettings: async (alerts) => set({ alerts }),
+    setAlertsOverlayEnabled: async (enabled) => set({ alertsOverlay: { ...state.alertsOverlay, enabled } }),
+    setAlertsOverlayEditing: async (editing) => set({ alertsOverlay: { ...state.alertsOverlay, editing } }),
+    resetAlertsOverlayBounds: async () => undefined,
+    // The browser preview cannot copy files; pretend the user cancelled.
+    importSound: async () => null,
     selectTheme: async (target, themeId) => set({ selectedThemes: { ...state.selectedThemes, [target]: themeId } }),
     saveTheme: async (theme) => {
       const exists = state.themes.some((item) => item.id === theme.id);

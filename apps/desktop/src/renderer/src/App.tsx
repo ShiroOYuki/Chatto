@@ -7,6 +7,7 @@ import { TeaCup } from './components/TeaCup';
 import { TitleBar } from './components/TitleBar';
 import { Confetti, type ConfettiRef } from './components/ui/confetti';
 import { TooltipProvider } from './components/ui/tooltip';
+import { AlertsPage } from './pages/alerts/AlertsPage';
 import { ChatPage } from './pages/Chat';
 import { ConnectionsPage } from './pages/Connections';
 import { OutputsPage } from './pages/Outputs';
@@ -28,6 +29,8 @@ function Page({ id, state, onNavigate }: { id: PageId; state: AppState; onNaviga
       return <ThemesPage state={state} />;
     case 'outputs':
       return <OutputsPage state={state} />;
+    case 'alerts':
+      return <AlertsPage state={state} />;
     case 'connections':
       return <ConnectionsPage state={state} />;
     case 'settings':

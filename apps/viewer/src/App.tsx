@@ -9,10 +9,16 @@ import {
 } from '@chatto/chat-ui';
 import type { ChatTheme, ViewerTarget } from '@chatto/core';
 import { useEffect, useState } from 'react';
+import { AlertsApp } from './AlertsApp';
 import { connectToApp } from './connection';
 
 const params = new URLSearchParams(location.search);
-const target: ViewerTarget = location.pathname.includes('embed') ? 'embed' : 'overlay';
+const target: ViewerTarget = location.pathname.includes('alerts')
+  ? 'alerts'
+  : location.pathname.includes('embed')
+    ? 'embed'
+    : 'overlay';
+if (target === 'alerts') document.body.dataset.alerts = '';
 const isMock = params.has('mock');
 /** `?specimen` renders the fixed specimen set once, for screenshots and visual tests. */
 const isSpecimen = params.has('specimen');
@@ -27,6 +33,10 @@ if (params.has('backdrop')) document.body.dataset.backdrop = '';
  * fixed set covering every part (`&theme=<preset id>` picks a theme).
  */
 export function App() {
+  return target === 'alerts' ? <AlertsApp /> : <ChatApp />;
+}
+
+function ChatApp() {
   const [theme, setTheme] = useState<ChatTheme>(fallbackTheme);
   const feed = useChatFeed(theme.options);
   const { push, reset } = feed;

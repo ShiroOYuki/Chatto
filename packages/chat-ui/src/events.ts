@@ -27,6 +27,8 @@ export interface EventDefinition {
   category: EventCategory;
   /** Title line for message events; notices use their own system text. */
   title?: (message: ChatMessage) => string;
+  /** The event's size (bits, viewers, gifts …), used by alert thresholds. */
+  amount?: { label: string; read: (item: ChatMessage | ChatNotice) => number | undefined };
 }
 
 export interface PlatformEventGroup {
@@ -47,7 +49,7 @@ const twitch = (
   label: string,
   description: string,
   category: EventCategory,
-  title?: (message: ChatMessage) => string,
+  extra: Pick<EventDefinition, 'title' | 'amount'> = {},
 ): EventDefinition => ({
   key: eventKey('twitch', eventType),
   platform: 'twitch',
@@ -55,27 +57,40 @@ const twitch = (
   label,
   description,
   category,
-  title,
+  ...extra,
 });
+
+/** Reads a number from a notice's normalized `meta`. */
+const metaNumber =
+  (key: string) =>
+  (item: ChatMessage | ChatNotice): number | undefined => {
+    const value = 'meta' in item ? item.meta[key] : undefined;
+    return typeof value === 'number' ? value : undefined;
+  };
 
 export const EVENT_CATALOG: PlatformEventGroup[] = [
   {
     platform: 'twitch',
     label: 'Twitch',
     events: [
-      twitch(
-        'cheer',
-        '小奇點（Cheer）',
-        '附帶小奇點的聊天訊息',
-        'message',
-        (message) => `小奇點 ×${message.cheerAmount ?? 0}`,
-      ),
-      twitch('highlighted', '頻道點數強調訊息', '用頻道點數兌換「強調我的訊息」', 'message', () => '頻道點數強調訊息'),
+      twitch('cheer', '小奇點（Cheer）', '附帶小奇點的聊天訊息', 'message', {
+        title: (message) => `小奇點 ×${message.cheerAmount ?? 0}`,
+        amount: { label: '小奇點', read: (item) => ('cheerAmount' in item ? item.cheerAmount : undefined) },
+      }),
+      twitch('highlighted', '頻道點數強調訊息', '用頻道點數兌換「強調我的訊息」', 'message', {
+        title: () => '頻道點數強調訊息',
+      }),
       twitch('sub', '訂閱', '新訂閱', 'notice'),
-      twitch('resub', '續訂', '續訂並附上訊息', 'notice'),
+      twitch('resub', '續訂', '續訂並附上訊息', 'notice', {
+        amount: { label: '累計月數', read: metaNumber('months') },
+      }),
       twitch('sub-gift', '贈送訂閱', '送一份訂閱給特定觀眾', 'notice'),
-      twitch('community-gift', '大量贈訂', '一次送多份訂閱給聊天室', 'notice'),
-      twitch('raid', '揪團（Raid）', '其他實況主帶觀眾過來', 'notice'),
+      twitch('community-gift', '大量贈訂', '一次送多份訂閱給聊天室', 'notice', {
+        amount: { label: '贈訂份數', read: metaNumber('count') },
+      }),
+      twitch('raid', '揪團（Raid）', '其他實況主帶觀眾過來', 'notice', {
+        amount: { label: '觀眾人數', read: metaNumber('viewers') },
+      }),
       twitch('announcement', '公告', '管理員發布的公告', 'notice'),
       twitch('watch-streak', '觀看連勝', '觀眾分享連續觀看紀錄', 'notice'),
     ],
