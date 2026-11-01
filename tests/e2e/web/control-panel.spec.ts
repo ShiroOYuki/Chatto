@@ -89,10 +89,11 @@ test('alert settings save from the 提醒 page', async ({ panel, page }) => {
   await expect(threshold).toHaveValue('90');
 
   const raid = page.locator('[data-alert-rule="any:raid"]');
-  // Every event starts off.
-  await expect(raid.getByRole('switch', { name: '提醒揪團' })).toHaveAttribute('aria-checked', 'false');
-  await raid.getByRole('switch', { name: '提醒揪團' }).click();
+  // Every event shows by default, without a sound.
   await expect(raid.getByRole('switch', { name: '提醒揪團' })).toHaveAttribute('aria-checked', 'true');
+  await expect(raid.getByRole('switch', { name: '揪團的提示音' })).toHaveAttribute('aria-checked', 'false');
+  await raid.getByRole('switch', { name: '提醒揪團' }).click();
+  await expect(raid.getByRole('switch', { name: '提醒揪團' })).toHaveAttribute('aria-checked', 'false');
   const minimum = raid.getByRole('textbox', { name: '揪團的最低觀眾人數' });
   await minimum.fill('20');
   await minimum.blur();

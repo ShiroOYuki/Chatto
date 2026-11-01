@@ -61,11 +61,11 @@ export const defaultSound = (id: BuiltinSoundId = 'bubble', volume = 0.6): Sound
   volume,
 });
 
-/** Every event starts switched off; the streamer turns on the ones they want. */
+/** Every event shows a card by default, silently; the streamer turns on sounds they want. */
 export const defaultEventAlertRule = (): EventAlertRule => ({
-  enabled: false,
+  enabled: true,
   minimum: 0,
-  sound: defaultSound('bell'),
+  sound: { ...defaultSound('bell'), enabled: false },
 });
 
 export const defaultAlertSettings = (): AlertSettings => ({

@@ -88,7 +88,7 @@ describe('SettingsStore', () => {
     expect(alerts.silence.sound).toEqual({ enabled: false, sound: { kind: 'builtin', id: 'bubble' }, volume: 0.3 });
     expect(alerts.events.durationSeconds).toBe(5);
     expect(alerts.events.rules['twitch:raid']).toMatchObject({
-      enabled: false,
+      enabled: true,
       minimum: 5,
       sound: { sound: { id: 'bell' }, volume: 1 },
     });

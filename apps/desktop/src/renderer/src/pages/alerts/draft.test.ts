@@ -14,9 +14,9 @@ import {
 describe('alert settings drafts', () => {
   it('reads the default rule for events that have none yet and stores edits per event', () => {
     const base = defaultAlertSettings();
-    expect(ruleFor(base, 'twitch:raid').enabled).toBe(false);
+    expect(ruleFor(base, 'twitch:raid')).toMatchObject({ enabled: true, sound: { enabled: false } });
     const next = withRule(base, 'twitch:raid', { minimum: 10 });
-    expect(next.events.rules['twitch:raid']).toMatchObject({ enabled: false, minimum: 10 });
+    expect(next.events.rules['twitch:raid']).toMatchObject({ enabled: true, minimum: 10 });
     expect(base.events.rules).toEqual({});
   });
 

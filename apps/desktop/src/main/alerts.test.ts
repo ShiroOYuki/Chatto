@@ -59,11 +59,13 @@ describe('alertCue', () => {
     ...patch,
   });
 
-  it('alerts nothing until an event is switched on', () => {
-    expect(alertCue(sampleEvent('twitch:sub'), settings())).toBeNull();
-    const on = { ...defaultEventAlertRule(), enabled: true };
-    const cue = alertCue(sampleEvent('twitch:sub'), settings({ durationSeconds: 4, rules: { 'any:sub': on } }));
-    expect(cue).toMatchObject({ durationMs: 4000, sound: { enabled: true } });
+  it('shows every event by default, without a sound', () => {
+    const cue = alertCue(sampleEvent('twitch:sub'), settings({ durationSeconds: 4 }));
+    expect(cue).toEqual({ durationMs: 4000 });
+    const loud = { ...defaultEventAlertRule(), sound: { ...defaultEventAlertRule().sound, enabled: true } };
+    expect(alertCue(sampleEvent('twitch:sub'), settings({ rules: { 'any:sub': loud } }))?.sound).toMatchObject({
+      enabled: true,
+    });
   });
 
   it('never alerts plain chat or moderation events', () => {
