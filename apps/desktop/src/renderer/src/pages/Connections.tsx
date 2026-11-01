@@ -91,7 +91,12 @@ function TwitchCard({ state }: { state: AppState }) {
           ) : (
             <>
               <p className="text-sm text-ink-soft">Client ID 已設定。</p>
-              <Button className="mt-auto self-start" size="sm" onClick={() => setEditingClientId(true)}>
+              <Button
+                className="mt-auto self-start"
+                size="sm"
+                variant="raised"
+                onClick={() => setEditingClientId(true)}
+              >
                 更換
               </Button>
             </>
@@ -111,7 +116,7 @@ function TwitchCard({ state }: { state: AppState }) {
               </div>
               <div className="mt-auto flex gap-2">
                 {auth.deviceCode ? (
-                  <Button size="sm" onClick={() => twitch.openVerificationPage(state)}>
+                  <Button size="sm" variant="raised" onClick={() => twitch.openVerificationPage(state)}>
                     重新開啟授權頁
                   </Button>
                 ) : null}
@@ -131,7 +136,7 @@ function TwitchCard({ state }: { state: AppState }) {
                   <div className="text-xs text-ink-faint">權限：讀取聊天室</div>
                 </div>
               </div>
-              <Button className="mt-auto self-start" size="sm" variant="ghost" onClick={() => twitch.signOut()}>
+              <Button className="mt-auto self-start" size="sm" variant="raised" onClick={() => twitch.signOut()}>
                 <LogOut /> 登出
               </Button>
             </>
@@ -172,7 +177,7 @@ function TwitchCard({ state }: { state: AppState }) {
               />
             </Field>
             {connected ? (
-              <Button className="self-start" onClick={() => twitch.disconnect()}>
+              <Button className="self-start" variant="raised" onClick={() => twitch.disconnect()}>
                 中斷連線
               </Button>
             ) : (

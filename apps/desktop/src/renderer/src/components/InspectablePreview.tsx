@@ -11,16 +11,10 @@ import {
 import type { ChatTheme } from '@chatto/core';
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { inspectElement, queryInRoot, type InspectedElement } from '../lib/cssSelector';
+import { pillAtTop, type Box } from '../lib/matchPill';
 import { BACKDROPS, type Backdrop } from './ThemePreview';
 
 export type PreviewMode = 'specimen' | 'live';
-
-interface Box {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
 
 const sameBoxes = (a: Box[], b: Box[]) =>
   a.length === b.length &&
@@ -67,6 +61,8 @@ export function InspectablePreview({
   const hovered = useRef<{ element: Element; info: InspectedElement } | null>(null);
   const [hoverBox, setHoverBox] = useState<{ box: Box; info: InspectedElement } | null>(null);
   const [matches, setMatches] = useState<Box[]>([]);
+  const pill = useRef<HTMLDivElement>(null);
+  const [pillTop, setPillTop] = useState(false);
 
   const feed = useChatFeed(theme.options);
   const { push } = feed;
@@ -106,6 +102,17 @@ export function InspectablePreview({
         };
         const next = highlight ? queryInRoot(root, highlight).map(toBox) : [];
         setMatches((current) => (sameBoxes(current, next) ? current : next));
+        const view = scroller.current;
+        if (view && pill.current) {
+          setPillTop(
+            pillAtTop(
+              next,
+              view.scrollTop,
+              { w: view.clientWidth, h: view.clientHeight },
+              { w: pill.current.offsetWidth, h: pill.current.offsetHeight },
+            ),
+          );
+        }
         if (!inspect) hovered.current = null;
         const target = hovered.current;
         if (target && target.element.isConnected) {
@@ -190,7 +197,12 @@ export function InspectablePreview({
         </div>
       </div>
       {highlight ? (
-        <div className="pointer-events-none absolute right-2 bottom-2 rounded-full bg-ink/80 px-2.5 py-0.5 text-[11px] text-canvas">
+        <div
+          ref={pill}
+          className={`pointer-events-none absolute right-2 rounded-full bg-ink/80 px-2.5 py-0.5 text-[11px] text-canvas ${
+            pillTop ? 'top-2' : 'bottom-2'
+          }`}
+        >
           {matches.length > 0 ? `符合 ${matches.length} 個元素` : '目前預覽中沒有符合的元素'}
         </div>
       ) : null}

@@ -3,12 +3,17 @@ import { cn } from '@/lib/utils';
 import { motion, spring } from '../motion';
 import { Button as UiButton } from '../ui/button';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'raised' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 const BUTTON_VARIANT: Record<ButtonVariant, { variant: 'default' | 'secondary' | 'ghost'; className: string }> = {
   primary: { variant: 'default', className: '' },
   secondary: { variant: 'secondary', className: 'hover:bg-matcha-soft/60' },
+  // For buttons placed on a muted surface, where `secondary` would blend into the background.
+  raised: {
+    variant: 'secondary',
+    className: 'bg-tile shadow-sm ring-1 ring-line hover:bg-matcha-soft/60',
+  },
   ghost: { variant: 'ghost', className: 'text-ink-soft hover:bg-tile-muted' },
   danger: { variant: 'ghost', className: 'text-danger hover:bg-danger/10 hover:text-danger' },
 };

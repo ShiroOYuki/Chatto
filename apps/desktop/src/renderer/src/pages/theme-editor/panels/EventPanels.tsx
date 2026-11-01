@@ -1,9 +1,9 @@
 import { editEventStyle, linkEvent, resolveEventStyle, type EventDefinition } from '@chatto/chat-ui';
-import type { ChatTheme, EventStyle } from '@chatto/core';
+import type { ChatTheme, EventMessageFrame, EventStyle } from '@chatto/core';
 import { Link2 } from 'lucide-react';
 import { useMemo, type Dispatch, type SetStateAction } from 'react';
-import { Badge, Button } from '../../../components/kit';
-import { BoxEditor, ColorRow, NumberField, OptionalColorRow, TextRow } from '../fields';
+import { Badge, Button, Segmented } from '../../../components/kit';
+import { BoxEditor, ColorRow, FieldRow, NumberField, OptionalColorRow, TextRow } from '../fields';
 import { pathSetter, type PathSetter } from '../draft';
 import { PanelIntro, SubHeading } from './shared';
 
@@ -100,6 +100,17 @@ function EventStyleFields({
         <ColorRow label="色條顏色" value={style.accentColor} onChange={set('accentColor')} />
       ) : null}
       <SubHeading>事件外框</SubHeading>
+      <FieldRow label="聊天訊息事件" hint="小奇點、強調訊息。套在訊息框只換顏色，不多包一層。">
+        <Segmented
+          size="sm"
+          value={style.messageFrame}
+          onChange={(value: EventMessageFrame) => set('messageFrame')(value)}
+          options={[
+            { value: 'wrap', label: '包住整則' },
+            { value: 'surface', label: '套在訊息框' },
+          ]}
+        />
+      </FieldRow>
       <BoxEditor value={style.box} onChange={set('box')} />
     </>
   );
