@@ -4,7 +4,7 @@
 
 <h1 align="center">Chatto（チャット）</h1>
 
-<p align="center">把 Twitch 聊天室泡成一杯好看的茶：桌面透明 Overlay ＋ OBS 自訂聊天室。</p>
+<p align="center">可高度自訂的直播聊天室。</p>
 
 ---
 
