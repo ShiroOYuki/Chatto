@@ -16,6 +16,7 @@ const MIME: Record<string, string> = {
 };
 
 export interface LocalServerOptions {
+  /** 0 picks a free port; read it from `port` after `start()`. */
   port: number;
   /** Folder with the built viewer (apps/viewer/dist). */
   viewerDir: string;
@@ -35,12 +36,14 @@ export class LocalServer {
 
   constructor(private readonly options: LocalServerOptions) {}
 
+  /** The bound port once started (the requested one before that). */
   get port(): number {
-    return this.options.port;
+    const address = this.#http?.address();
+    return address && typeof address === 'object' ? address.port : this.options.port;
   }
 
   url(target: ViewerTarget): string {
-    return `http://127.0.0.1:${this.options.port}/${target}`;
+    return `http://127.0.0.1:${this.port}/${target}`;
   }
 
   async start(): Promise<void> {

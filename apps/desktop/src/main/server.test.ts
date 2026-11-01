@@ -20,11 +20,11 @@ async function startServer() {
   mkdirSync(join(viewerDir, 'assets'));
   writeFileSync(join(viewerDir, 'assets', 'app.js'), 'console.log(1)');
   const hub = new ChatHub();
-  const port = 40000 + Math.floor(Math.random() * 20000);
   const themes = { overlay: PRESET_THEMES[0]!, embed: PRESET_THEMES[1]! };
-  server = new LocalServer({ port, viewerDir, hub, themeFor: (target) => themes[target] });
+  // Port 0 lets the OS pick a free port; random fixed ports can land in Windows' reserved ranges (EACCES).
+  server = new LocalServer({ port: 0, viewerDir, hub, themeFor: (target) => themes[target] });
   await server.start();
-  return { hub, port, server };
+  return { hub, port: server.port, server };
 }
 
 /** Opens a viewer socket, subscribes to a target and collects decoded frames. */
@@ -84,6 +84,7 @@ describe('LocalServer', () => {
 
   it('builds viewer urls on loopback', async () => {
     const { server } = await startServer();
+    expect(server.port).toBeGreaterThan(0);
     expect(server.url('embed')).toBe(`http://127.0.0.1:${server.port}/embed`);
   });
 
