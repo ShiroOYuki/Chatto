@@ -1,13 +1,15 @@
 /**
  * Theme switcher from Kibo UI (https://www.kibo-ui.com/components/theme-switcher), MIT © shadcnblocks.
  * Adapted for Chatto: no SSR mount guard (Electron renders on the client),
- * a per-instance layoutId, and Traditional Chinese labels.
+ * a per-instance layoutId, Traditional Chinese labels, and an active indicator styled like the
+ * kit's Segmented control (raised tile island, same spring) so the two read as one family.
  */
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCallback, useId } from 'react';
 import { cn } from '@/lib/utils';
+import { spring } from '../../motion';
 
 const themes = [
   {
@@ -66,14 +68,12 @@ export const ThemeSwitcher = ({ value, onChange, defaultValue = 'system', classN
           >
             {isActive && (
               <motion.div
-                className="absolute inset-0 rounded-full bg-secondary"
+                className="absolute inset-0 rounded-full bg-tile shadow-sm"
                 layoutId={`theme-switcher-${layoutId}`}
-                transition={{ type: 'spring', duration: 0.5 }}
+                transition={spring}
               />
             )}
-            <Icon
-              className={cn('relative z-10 m-auto h-4 w-4', isActive ? 'text-foreground' : 'text-muted-foreground')}
-            />
+            <Icon className={cn('relative z-10 m-auto h-4 w-4', isActive ? 'text-ink' : 'text-ink-soft')} />
           </button>
         );
       })}
