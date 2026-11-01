@@ -73,7 +73,7 @@ function startMockAlerts(receive: (event: ChatEvent, cue?: AlertCue) => void): (
   let index = 0;
   const next = () => {
     const key = keys[index++ % keys.length]!;
-    receive(sampleEvent(key), { durationMs: 2500, sound: defaultSound('chime') });
+    receive(sampleEvent(key), { durationMs: 2500, sound: defaultSound('bell') });
   };
   next();
   const timer = setInterval(next, 3500);

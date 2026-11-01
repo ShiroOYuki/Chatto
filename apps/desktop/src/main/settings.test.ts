@@ -62,4 +62,35 @@ describe('SettingsStore', () => {
     expect(before.channelLogin).toBe('');
     expect(store.get().channelLogin).toBe('changed');
   });
+
+  it('repairs alert sounds that a newer version removed', () => {
+    writeFileSync(
+      join(userData.dir, 'settings.json'),
+      JSON.stringify({
+        alerts: {
+          silence: {
+            thresholdSeconds: 300,
+            sound: { enabled: false, sound: { kind: 'builtin', id: 'teacup' }, volume: 0.3 },
+          },
+          events: {
+            rules: {
+              'twitch:raid': {
+                minimum: 5,
+                sound: { enabled: true, sound: { kind: 'builtin', id: 'chime' }, volume: 1 },
+              },
+            },
+          },
+        },
+      }),
+    );
+    const { alerts } = new SettingsStore().get();
+    expect(alerts.silence).toMatchObject({ enabled: true, thresholdSeconds: 300 });
+    expect(alerts.silence.sound).toEqual({ enabled: false, sound: { kind: 'builtin', id: 'bubble' }, volume: 0.3 });
+    expect(alerts.events.durationSeconds).toBe(5);
+    expect(alerts.events.rules['twitch:raid']).toMatchObject({
+      enabled: true,
+      minimum: 5,
+      sound: { sound: { id: 'bell' }, volume: 1 },
+    });
+  });
 });

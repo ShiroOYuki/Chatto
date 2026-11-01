@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EVENT_CATALOG, eventKeyOf, findEvent } from './events';
+import { ALERT_CATEGORIES, alertRuleKey, EVENT_CATALOG, eventKeyOf, findEvent, platformOnlyEvents } from './events';
 import { EVENT_SAMPLES, sampleEvent } from './eventSamples';
 import { createSpecimenEvents } from './mock';
 import { themeToCss } from './themeCss';
@@ -26,6 +26,19 @@ describe('platform events', () => {
     expect(amount('twitch:community-gift')).toBe(5);
     expect(amount('twitch:raid')).toBe(42);
     expect(findEvent('twitch:sub')?.amount).toBeUndefined();
+  });
+
+  it('maps platform events onto the cross-platform alert categories', () => {
+    expect(alertRuleKey('twitch:cheer')).toBe('any:tip');
+    expect(alertRuleKey('twitch:sub-gift')).toBe('any:gift');
+    expect(alertRuleKey('twitch:community-gift')).toBe('any:gift');
+    expect(alertRuleKey('twitch:highlighted')).toBe('twitch:highlighted');
+    expect(alertRuleKey('youtube:unknown')).toBe('youtube:unknown');
+    const twitch = EVENT_CATALOG.find((group) => group.platform === 'twitch')!;
+    expect(platformOnlyEvents(twitch).map((event) => event.key)).toEqual(['twitch:highlighted', 'twitch:watch-streak']);
+    // Every category is used by at least one event.
+    const used = new Set(EVENT_CATALOG.flatMap((group) => group.events.map((event) => event.alertCategory)));
+    for (const category of ALERT_CATEGORIES) expect(used).toContain(category.key);
   });
 
   it('every sample belongs to a catalogued event', () => {

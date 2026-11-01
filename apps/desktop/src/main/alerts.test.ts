@@ -66,19 +66,29 @@ describe('alertCue', () => {
   it('follows the per-event switch, minimum and sound', () => {
     const rule = { enabled: true, minimum: 0, sound: { ...defaultAlertSettings().silence.sound, enabled: false } };
     expect(
-      alertCue(sampleEvent('twitch:raid'), settings({ rules: { 'twitch:raid': { ...rule, enabled: false } } })),
+      alertCue(sampleEvent('twitch:raid'), settings({ rules: { 'any:raid': { ...rule, enabled: false } } })),
     ).toBeNull();
     // The raid sample brings 42 viewers.
     expect(
-      alertCue(sampleEvent('twitch:raid'), settings({ rules: { 'twitch:raid': { ...rule, minimum: 50 } } })),
+      alertCue(sampleEvent('twitch:raid'), settings({ rules: { 'any:raid': { ...rule, minimum: 50 } } })),
     ).toBeNull();
-    const cue = alertCue(sampleEvent('twitch:raid'), settings({ rules: { 'twitch:raid': { ...rule, minimum: 40 } } }));
+    const cue = alertCue(sampleEvent('twitch:raid'), settings({ rules: { 'any:raid': { ...rule, minimum: 40 } } }));
     expect(cue).not.toBeNull();
     expect(cue?.sound).toBeUndefined();
   });
 
+  it('applies a category rule to every event in it', () => {
+    const off = { enabled: false, minimum: 0, sound: defaultAlertSettings().silence.sound };
+    const gifts = settings({ rules: { 'any:gift': off } });
+    expect(alertCue(sampleEvent('twitch:sub-gift'), gifts)).toBeNull();
+    expect(alertCue(sampleEvent('twitch:community-gift'), gifts)).toBeNull();
+    expect(alertCue(sampleEvent('twitch:sub'), gifts)).not.toBeNull();
+    // Platform-only events keep their own key.
+    expect(alertCue(sampleEvent('twitch:highlighted'), settings({ rules: { 'twitch:highlighted': off } }))).toBeNull();
+  });
+
   it('ignores the minimum for events without a size', () => {
     const rule = { enabled: true, minimum: 10, sound: defaultAlertSettings().silence.sound };
-    expect(alertCue(sampleEvent('twitch:sub'), settings({ rules: { 'twitch:sub': rule } }))).not.toBeNull();
+    expect(alertCue(sampleEvent('twitch:sub'), settings({ rules: { 'any:sub': rule } }))).not.toBeNull();
   });
 });

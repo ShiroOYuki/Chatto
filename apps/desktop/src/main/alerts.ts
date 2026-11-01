@@ -8,7 +8,7 @@ import {
   type EventAlertSettings,
   type SilenceAlertSettings,
 } from '@chatto/core';
-import { eventKeyOf, findEvent } from '@chatto/chat-ui/events';
+import { alertRuleKey, eventKeyOf, findEvent } from '@chatto/chat-ui/events';
 import { isHidden } from '@chatto/chat-ui/feed';
 
 /**
@@ -42,13 +42,15 @@ export function markAfterSilence(message: ChatMessage): ChatMessage {
 
 /**
  * Decides whether a platform event shows on the alert overlay, and how:
- * its rule must be on and its size (bits, viewers …) at least the rule's minimum.
+ * its rule (its cross-platform category's, or its own) must be on and its
+ * size (bits, viewers …) at least the rule's minimum.
  */
 export function alertCue(event: ChatEvent, settings: EventAlertSettings): AlertCue | null {
   const item = event.type === 'message' ? event.message : event.type === 'notice' ? event.notice : null;
   const key = item && eventKeyOf(item);
   if (!item || !key) return null;
-  const rule = settings.rules[key] ?? defaultEventAlertRule();
+  // Events in a cross-platform category share that category's rule.
+  const rule = settings.rules[alertRuleKey(key)] ?? defaultEventAlertRule();
   if (!rule.enabled) return null;
   const amount = findEvent(key)?.amount?.read(item);
   if (rule.minimum > 0 && amount !== undefined && amount < rule.minimum) return null;

@@ -30,6 +30,7 @@ docs/               architecture.md、message-format.md、theming.md
 資料流：`Provider → ChatHub（main process）→ 本機 WebSocket → viewer（overlay 視窗與 OBS）`；控制台透過 IPC 與 main 溝通。
 
 - 三個輸出 target：`overlay`（桌面聊天室）、`embed`（OBS）、`alerts`（桌面事件 Overlay）。每個 target 收到什麼由 `AppController.route()` 決定（見 `docs/architecture.md`「輸出路由」）；只給實況主看的東西（沉寂提醒標記、事件卡片）不得送到 `embed`。
+- 事件提醒規則分「通用」（跨平台分類 `ALERT_CATEGORIES`）與各平台專屬事件；新增平台事件時，能對應到通用分類就在 `EVENT_CATALOG` 填 `alertCategory`。
 - 提醒邏輯（沉寂偵測、事件規則）是 `apps/desktop/src/main/alerts.ts` 的純函式；內建提示音是從 soundcn 收進來的 CC0 音效（`packages/chat-ui/src/soundcn/`，由 `sounds.ts` 動態載入）；只能收 CC0 音效，並記到 `THIRD_PARTY_NOTICES.md`，不得使用 soundcn 的 Blizzard 音效。
 
 ### 核心原則

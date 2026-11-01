@@ -17,15 +17,12 @@ Fonts are distributed alongside the program as separate works; the OFL license t
 
 Built-in alert sounds are vendored from [soundcn](https://github.com/kapishdima/soundcn) into `packages/chat-ui/src/soundcn/`. soundcn's code is MIT (© 2026 KapishDima); every sound Chatto ships is CC0 1.0 (public domain) by [Kenney](https://kenney.nl). soundcn's Blizzard-licensed collection is not used.
 
-| Chatto name | soundcn sound            | Author | License |
-| ----------- | ------------------------ | ------ | ------- |
-| 茶杯輕敲    | `impact-glass-light-004` | Kenney | CC0     |
-| 和弦        | `two-tone-1`             | Kenney | CC0     |
-| 泡泡        | `notification-pop`       | Kenney | CC0     |
-| 鈴聲        | `impact-bell-heavy-004`  | Kenney | CC0     |
-| 撥弦        | `jingles-pizzi-10`       | Kenney | CC0     |
-| 金幣        | `coin-collect`           | Kenney | CC0     |
-| 升級        | `power-up-5`             | Kenney | CC0     |
+| Chatto name | soundcn sound      | Author | License |
+| ----------- | ------------------ | ------ | ------- |
+| 泡泡        | `notification-pop` | Kenney | CC0     |
+| 金幣        | `coin-collect`     | Kenney | CC0     |
+| 鈴聲        | `select-005`       | Kenney | CC0     |
+| 雷射        | `error-buzz`       | Kenney | CC0     |
 
 ## Libraries
 

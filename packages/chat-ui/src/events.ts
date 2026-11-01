@@ -29,6 +29,11 @@ export interface EventDefinition {
   title?: (message: ChatMessage) => string;
   /** The event's size (bits, viewers, gifts …), used by alert thresholds. */
   amount?: { label: string; read: (item: ChatMessage | ChatNotice) => number | undefined };
+  /**
+   * The cross-platform alert category this event belongs to (see {@link ALERT_CATEGORIES}).
+   * Events without one are platform-only and get their own alert rule.
+   */
+  alertCategory?: AlertCategoryKey;
 }
 
 export interface PlatformEventGroup {
@@ -49,7 +54,7 @@ const twitch = (
   label: string,
   description: string,
   category: EventCategory,
-  extra: Pick<EventDefinition, 'title' | 'amount'> = {},
+  extra: Pick<EventDefinition, 'title' | 'amount' | 'alertCategory'> = {},
 ): EventDefinition => ({
   key: eventKey('twitch', eventType),
   platform: 'twitch',
@@ -68,6 +73,32 @@ const metaNumber =
     return typeof value === 'number' ? value : undefined;
   };
 
+/**
+ * Cross-platform alert categories (the 通用 section of the alert rules).
+ * Each platform maps its events onto these with `alertCategory`, so one rule
+ * covers e.g. subscriptions on every platform. Keys are `any:<category>`.
+ */
+export const ALERT_CATEGORIES = [
+  { key: 'any:tip', label: '贊助', description: '小奇點等附帶金額的訊息', amountLabel: '數量' },
+  { key: 'any:sub', label: '訂閱', description: '新訂閱' },
+  { key: 'any:resub', label: '續訂', description: '續訂並分享', amountLabel: '累計月數' },
+  { key: 'any:gift', label: '贈送訂閱', description: '送訂閱給觀眾，含一次送多份', amountLabel: '贈訂份數' },
+  { key: 'any:raid', label: '揪團', description: '其他實況主帶觀眾過來', amountLabel: '觀眾人數' },
+  { key: 'any:announcement', label: '公告', description: '管理員發布的公告' },
+] as const satisfies readonly { key: string; label: string; description: string; amountLabel?: string }[];
+
+export type AlertCategoryKey = (typeof ALERT_CATEGORIES)[number]['key'];
+
+/** The alert rule key for an event: its cross-platform category, or its own key when it has none. */
+export function alertRuleKey(eventKey: string): string {
+  return findEvent(eventKey)?.alertCategory ?? eventKey;
+}
+
+/** Platform-only events, which have their own alert rules (the per-platform sections). */
+export function platformOnlyEvents(group: PlatformEventGroup): EventDefinition[] {
+  return group.events.filter((event) => !event.alertCategory);
+}
+
 export const EVENT_CATALOG: PlatformEventGroup[] = [
   {
     platform: 'twitch',
@@ -76,22 +107,29 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
       twitch('cheer', '小奇點（Cheer）', '附帶小奇點的聊天訊息', 'message', {
         title: (message) => `小奇點 ×${message.cheerAmount ?? 0}`,
         amount: { label: '小奇點', read: (item) => ('cheerAmount' in item ? item.cheerAmount : undefined) },
+        alertCategory: 'any:tip',
       }),
       twitch('highlighted', '頻道點數強調訊息', '用頻道點數兌換「強調我的訊息」', 'message', {
         title: () => '頻道點數強調訊息',
       }),
-      twitch('sub', '訂閱', '新訂閱', 'notice'),
+      twitch('sub', '訂閱', '新訂閱', 'notice', { alertCategory: 'any:sub' }),
       twitch('resub', '續訂', '續訂並附上訊息', 'notice', {
         amount: { label: '累計月數', read: metaNumber('months') },
+        alertCategory: 'any:resub',
       }),
-      twitch('sub-gift', '贈送訂閱', '送一份訂閱給特定觀眾', 'notice'),
+      twitch('sub-gift', '贈送訂閱', '送一份訂閱給特定觀眾', 'notice', {
+        amount: { label: '贈訂份數', read: () => 1 },
+        alertCategory: 'any:gift',
+      }),
       twitch('community-gift', '大量贈訂', '一次送多份訂閱給聊天室', 'notice', {
         amount: { label: '贈訂份數', read: metaNumber('count') },
+        alertCategory: 'any:gift',
       }),
       twitch('raid', '揪團（Raid）', '其他實況主帶觀眾過來', 'notice', {
         amount: { label: '觀眾人數', read: metaNumber('viewers') },
+        alertCategory: 'any:raid',
       }),
-      twitch('announcement', '公告', '管理員發布的公告', 'notice'),
+      twitch('announcement', '公告', '管理員發布的公告', 'notice', { alertCategory: 'any:announcement' }),
       twitch('watch-streak', '觀看連勝', '觀眾分享連續觀看紀錄', 'notice'),
     ],
   },

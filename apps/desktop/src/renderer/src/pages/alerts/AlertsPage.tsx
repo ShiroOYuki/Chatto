@@ -1,4 +1,4 @@
-import { EVENT_CATALOG } from '@chatto/chat-ui';
+import { ALERT_CATEGORIES, EVENT_CATALOG, platformOnlyEvents } from '@chatto/chat-ui';
 import { SILENCE_THRESHOLD, type AlertSettings } from '@chatto/core';
 import { Info, MessageCircleMore, Move, PartyPopper, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -32,7 +32,6 @@ export function AlertsPage({ state }: { state: AppState }) {
   const { port } = state.server;
   const save = (next: AlertSettings) => alerts.setSettings(next);
   const { enabled: overlayOn, editing } = state.alertsOverlay;
-  const events = EVENT_CATALOG.flatMap((group) => group.events);
 
   return (
     <div>
@@ -148,54 +147,99 @@ export function AlertsPage({ state }: { state: AppState }) {
         </Tile>
 
         <Tile title="要提醒的事件" className="col-span-2">
-          <div className="flex flex-col">
-            {events.map((event) => {
-              const rule = ruleFor(settings, event.key);
-              const update = (patch: Parameters<typeof withRule>[2]) => save(withRule(settings, event.key, patch));
-              return (
-                <div
-                  key={event.key}
-                  data-event-rule={event.key}
-                  className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.6fr)] items-center gap-6 border-b border-line py-3 last:border-b-0"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <Toggle
-                      checked={rule.enabled}
-                      label={`提醒${event.label}`}
-                      onChange={(enabled) => update({ enabled })}
-                    />
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{event.label}</div>
-                      <div className="truncate text-xs text-ink-faint">{event.description}</div>
-                    </div>
-                  </div>
-                  <div className="w-44">
-                    {event.amount ? (
-                      <span className="flex items-center gap-2 text-xs text-ink-faint">
-                        至少
-                        <NumberInput
-                          label={`${event.label}的最低${event.amount.label}`}
-                          value={rule.minimum}
-                          min={0}
-                          max={1_000_000}
-                          unit={event.amount.label}
-                          onChange={(minimum) => update({ minimum })}
-                        />
-                      </span>
-                    ) : null}
-                  </div>
-                  <SoundPicker
-                    label={`${event.label}的提示音`}
+          <RuleSection title="通用" hint="所有平台共用，例如訂閱不論來自哪個平台都照這裡提醒。">
+            {ALERT_CATEGORIES.map((category) => (
+              <RuleRow
+                key={category.key}
+                ruleKey={category.key}
+                label={category.label}
+                description={category.description}
+                amountLabel={'amountLabel' in category ? category.amountLabel : undefined}
+                settings={settings}
+                port={port}
+              />
+            ))}
+          </RuleSection>
+          {EVENT_CATALOG.map((group) => {
+            const events = platformOnlyEvents(group);
+            return events.length > 0 ? (
+              <RuleSection key={group.platform} title={group.label} hint={`${group.label} 才有的事件。`}>
+                {events.map((event) => (
+                  <RuleRow
+                    key={event.key}
+                    ruleKey={event.key}
+                    label={event.label}
+                    description={event.description}
+                    amountLabel={event.amount?.label}
+                    settings={settings}
                     port={port}
-                    value={rule.sound}
-                    onChange={(sound) => update({ sound })}
                   />
-                </div>
-              );
-            })}
-          </div>
+                ))}
+              </RuleSection>
+            ) : null;
+          })}
         </Tile>
       </Stagger>
+    </div>
+  );
+}
+
+function RuleSection({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
+  return (
+    <section className="mt-2 first:mt-0">
+      <h3 className="text-xs font-medium text-ink-soft">{title}</h3>
+      <p className="text-xs text-ink-faint">{hint}</p>
+      <div className="flex flex-col">{children}</div>
+    </section>
+  );
+}
+
+/** One alert rule: on/off, an optional minimum and its sound. */
+function RuleRow({
+  ruleKey,
+  label,
+  description,
+  amountLabel,
+  settings,
+  port,
+}: {
+  ruleKey: string;
+  label: string;
+  description: string;
+  amountLabel?: string;
+  settings: AlertSettings;
+  port: number;
+}) {
+  const rule = ruleFor(settings, ruleKey);
+  const update = (patch: Parameters<typeof withRule>[2]) => alerts.setSettings(withRule(settings, ruleKey, patch));
+  return (
+    <div
+      data-alert-rule={ruleKey}
+      className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.6fr)] items-center gap-6 border-b border-line py-3 last:border-b-0"
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <Toggle checked={rule.enabled} label={`提醒${label}`} onChange={(enabled) => update({ enabled })} />
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium">{label}</div>
+          <div className="truncate text-xs text-ink-faint">{description}</div>
+        </div>
+      </div>
+      <div className="w-44">
+        {amountLabel ? (
+          <span className="flex items-center gap-2 text-xs text-ink-faint">
+            至少
+            <NumberInput
+              label={`${label}的最低${amountLabel}`}
+              value={rule.minimum}
+              min={0}
+              max={1_000_000}
+              unit={amountLabel}
+              onChange={(minimum) => update({ minimum })}
+            />
+          </span>
+        ) : null}
+      </div>
+      <SoundPicker label={`${label}的提示音`} port={port} value={rule.sound} onChange={(sound) => update({ sound })} />
     </div>
   );
 }

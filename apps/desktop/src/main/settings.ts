@@ -1,4 +1,10 @@
-import { defaultAlertSettings, type AlertSettings, type ChatTheme, type ViewerTarget } from '@chatto/core';
+import {
+  defaultAlertSettings,
+  normalizeAlertSettings,
+  type AlertSettings,
+  type ChatTheme,
+  type ViewerTarget,
+} from '@chatto/core';
 import { DEFAULT_THEME_ID } from '@chatto/chat-ui/themes';
 import type { AppPrefs } from '../shared/ipc';
 import { app } from 'electron';
@@ -39,18 +45,6 @@ const defaults = (): Settings => ({
   prefs: { uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false },
 });
 
-/** Fills alert settings saved by an older version with the current defaults. */
-function mergeAlerts(base: AlertSettings, raw?: Partial<AlertSettings>): AlertSettings {
-  return {
-    silence: {
-      ...base.silence,
-      ...raw?.silence,
-      sound: { ...base.silence.sound, ...raw?.silence?.sound },
-    },
-    events: { ...base.events, ...raw?.events, rules: { ...raw?.events?.rules } },
-  };
-}
-
 /** JSON settings in the user data folder, written atomically. */
 export class SettingsStore {
   readonly path = join(app.getPath('userData'), 'settings.json');
@@ -82,7 +76,7 @@ export class SettingsStore {
         twitchClientId: raw.twitchClientId || base.twitchClientId,
         overlay: { ...base.overlay, ...raw.overlay },
         alertsOverlay: { ...base.alertsOverlay, ...raw.alertsOverlay },
-        alerts: mergeAlerts(base.alerts, raw.alerts),
+        alerts: normalizeAlertSettings(raw.alerts),
         selectedThemes: { ...base.selectedThemes, ...raw.selectedThemes },
         prefs: { ...base.prefs, ...raw.prefs },
       };

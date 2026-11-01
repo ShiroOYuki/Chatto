@@ -1,5 +1,5 @@
 import type { SoundSetting } from '@chatto/core';
-import { Play } from 'lucide-react';
+import { FolderOpen, Play } from 'lucide-react';
 import { alerts, previewSound } from '../../services/alerts';
 import { Button, Hint, Select, Slider, Toggle } from '../../components/kit';
 import { soundFromValue, soundOptions, soundValue } from './draft';
@@ -17,15 +17,24 @@ export function SoundPicker({
   /** Accessible name, e.g. 「小奇點的提示音」. */
   label: string;
 }) {
+  const pickFile = () =>
+    void alerts.importSound().then((imported) => imported && onChange({ ...value, sound: imported }));
   const choose = (next: string) => {
     const sound = soundFromValue(next, value.sound);
-    if (sound) return onChange({ ...value, sound });
-    void alerts.importSound().then((imported) => imported && onChange({ ...value, sound: imported }));
+    if (sound) onChange({ ...value, sound });
+    else pickFile();
   };
   return (
     <div className="flex items-center gap-3">
       <Toggle checked={value.enabled} label={label} onChange={(enabled) => onChange({ ...value, enabled })} />
       <Select className="w-36" value={soundValue(value.sound)} options={soundOptions(value.sound)} onChange={choose} />
+      {value.sound.kind === 'file' ? (
+        <Hint label="換一個檔案">
+          <Button size="sm" variant="ghost" aria-label={`換${label}的檔案`} onClick={pickFile}>
+            <FolderOpen />
+          </Button>
+        </Hint>
+      ) : null}
       <div className="min-w-28 flex-1">
         <Slider
           value={Math.round(value.volume * 100)}

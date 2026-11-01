@@ -1,4 +1,4 @@
-import type { BuiltinSoundId, SoundSetting } from '@chatto/core';
+import { normalizeSound, type BuiltinSoundId, type SoundSetting } from '@chatto/core';
 import type { SoundAsset } from './soundcn/types';
 
 /**
@@ -10,24 +10,18 @@ import type { SoundAsset } from './soundcn/types';
  */
 
 export const SOUND_LABELS: Record<BuiltinSoundId, string> = {
-  teacup: '茶杯輕敲',
-  chime: '和弦',
   bubble: '泡泡',
-  bell: '鈴聲',
-  pizzicato: '撥弦',
   coin: '金幣',
-  'level-up': '升級',
+  bell: '鈴聲',
+  laser: '雷射',
 };
 
 /** Which soundcn sound each built-in id plays. */
 export const BUILTIN_SOUND_ASSETS: Record<BuiltinSoundId, () => Promise<SoundAsset>> = {
-  teacup: () => import('./soundcn/impact-glass-light-004').then((m) => m.impactGlassLight004Sound),
-  chime: () => import('./soundcn/two-tone-1').then((m) => m.twoTone1Sound),
   bubble: () => import('./soundcn/notification-pop').then((m) => m.notificationPopSound),
-  bell: () => import('./soundcn/impact-bell-heavy-004').then((m) => m.impactBellHeavy004Sound),
-  pizzicato: () => import('./soundcn/jingles-pizzi-10').then((m) => m.jinglesPizzi10Sound),
   coin: () => import('./soundcn/coin-collect').then((m) => m.coinCollectSound),
-  'level-up': () => import('./soundcn/power-up-5').then((m) => m.powerUp5Sound),
+  bell: () => import('./soundcn/select-005').then((m) => m.select005Sound),
+  laser: () => import('./soundcn/error-buzz').then((m) => m.errorBuzzSound),
 };
 
 let context: AudioContext | null = null;
@@ -74,7 +68,8 @@ export async function playSound(setting: SoundSetting | undefined, fileUrl: (id:
   if (!setting?.enabled || setting.volume <= 0) return;
   const ctx = audio();
   if (!ctx) return;
-  const { sound } = setting;
+  // Settings from an older version may name a sound that no longer exists.
+  const { sound } = normalizeSound(setting, 'bubble');
   const decoded =
     sound.kind === 'builtin'
       ? await buffer(

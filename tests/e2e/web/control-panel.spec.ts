@@ -88,13 +88,14 @@ test('alert settings save from the 提醒 page', async ({ panel, page }) => {
   await threshold.press('Enter');
   await expect(threshold).toHaveValue('90');
 
-  const raid = page.locator('[data-event-rule="twitch:raid"]');
-  await raid.getByRole('switch', { name: '提醒揪團（Raid）' }).click();
-  await expect(raid.getByRole('switch', { name: '提醒揪團（Raid）' })).toHaveAttribute('aria-checked', 'false');
-  const minimum = raid.getByRole('textbox', { name: /最低觀眾人數/ });
+  const raid = page.locator('[data-alert-rule="any:raid"]');
+  await raid.getByRole('switch', { name: '提醒揪團' }).click();
+  await expect(raid.getByRole('switch', { name: '提醒揪團' })).toHaveAttribute('aria-checked', 'false');
+  const minimum = raid.getByRole('textbox', { name: '揪團的最低觀眾人數' });
   await minimum.fill('20');
   await minimum.blur();
   await expect(minimum).toHaveValue('20');
+  await expect(page.locator('[data-alert-rule="twitch:highlighted"]')).toBeVisible();
 
   await page.getByRole('switch', { name: '事件 Overlay' }).click();
   await expect(page.getByRole('button', { name: '調整' }).last()).toBeEnabled();

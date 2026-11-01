@@ -28,13 +28,15 @@ describe('alert settings drafts', () => {
     expect(next.silence.sound).toBe(base.silence.sound);
   });
 
-  it('lists built-in sounds, the chosen file and a file picker', () => {
+  it('offers 泡泡、金幣、鈴聲、雷射 and 自訂', () => {
+    const builtin = soundOptions({ kind: 'builtin', id: 'bell' });
+    expect(builtin.map((option) => option.label)).toEqual(['泡泡', '金幣', '鈴聲', '雷射', '自訂…']);
+    expect(builtin.at(-1)?.value).toBe(IMPORT_SOUND);
+
     const file = { kind: 'file' as const, id: 'a.mp3', name: '叮.mp3' };
-    const values = soundOptions(file).map((option) => option.value);
-    expect(values).toEqual([...BUILTIN_SOUNDS, 'file:a.mp3', IMPORT_SOUND]);
-    expect(soundOptions({ kind: 'builtin', id: 'bell' }).some((option) => option.value.startsWith('file:'))).toBe(
-      false,
-    );
+    const custom = soundOptions(file);
+    expect(custom.map((option) => option.value)).toEqual([...BUILTIN_SOUNDS, 'file:a.mp3']);
+    expect(custom.at(-1)?.label).toBe('自訂：叮.mp3');
     expect(soundFromValue('bell', file)).toEqual({ kind: 'builtin', id: 'bell' });
     expect(soundFromValue(soundValue(file), file)).toBe(file);
     expect(soundFromValue(IMPORT_SOUND, file)).toBeUndefined();
