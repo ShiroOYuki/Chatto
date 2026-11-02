@@ -24,7 +24,11 @@ let port: number;
 test.beforeEach(async () => {
   userData = mkdtempSync(join(tmpdir(), 'chatto-e2e-'));
   port = 41000 + Math.floor(Math.random() * 10000);
-  writeFileSync(join(userData, 'settings.json'), JSON.stringify({ serverPort: port, twitchClientId: '' }));
+  // A fixed language: a fresh profile would otherwise follow the machine's (English on CI runners).
+  writeFileSync(
+    join(userData, 'settings.json'),
+    JSON.stringify({ serverPort: port, twitchClientId: '', prefs: { locale: 'zh-TW' } }),
+  );
   app = await electron.launch({
     executablePath: electronPath,
     args: [appDir],
