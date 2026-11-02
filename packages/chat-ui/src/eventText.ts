@@ -1,4 +1,11 @@
-import { DEFAULT_LOCALE, type ChatMessage, type ChatNotice, type ChatTheme, type Locale } from '@chatto/core';
+import {
+  DEFAULT_LOCALE,
+  type ChatMessage,
+  type ChatNotice,
+  type ChatTheme,
+  type Locale,
+  type Localized,
+} from '@chatto/core';
 import { eventKeyOf, findEvent } from './events';
 
 /**
@@ -53,6 +60,34 @@ export function templateVariables(template: string): string[] {
 }
 
 // ---------- variables ----------
+
+/** What each template variable stands for, shown when picking variables in the editor. */
+export const TEMPLATE_VARIABLES: Record<string, Localized> = {
+  user: {
+    'zh-TW': '發出事件的人（匿名時為「匿名觀眾」）',
+    en: 'Who triggered the event ("An anonymous user" if hidden)',
+  },
+  amount: { 'zh-TW': '小奇點數量', en: 'Number of bits' },
+  tier: { 'zh-TW': '訂閱等級，例如 Tier 1、Prime', en: 'Sub tier, such as Tier 1 or Prime' },
+  months: { 'zh-TW': '累計訂閱月數', en: 'Total months subscribed' },
+  streak: { 'zh-TW': '連續訂閱月數（觀眾選擇不公開時沒有）', en: 'Months in a row (missing if the viewer hides it)' },
+  duration: {
+    'zh-TW': '一次買或送了幾個月（多於 1 個月時才有）',
+    en: 'Months bought or gifted at once (only when more than 1)',
+  },
+  recipient: { 'zh-TW': '收到贈訂的人', en: 'Who received the gift sub' },
+  gifter: { 'zh-TW': '當初送訂閱的人', en: 'Who gifted the sub originally' },
+  count: { 'zh-TW': '這次送出幾份訂閱', en: 'Subs gifted this time' },
+  totalGifts: {
+    'zh-TW': '送禮者在頻道累計送了幾份（匿名時沒有）',
+    en: 'Subs the gifter has given in the channel (missing if anonymous)',
+  },
+  viewers: { 'zh-TW': '揪團帶來的觀眾人數', en: 'Viewers the raid brings' },
+  raider: { 'zh-TW': '揪團的實況主', en: 'The streamer raiding' },
+  bitsTier: { 'zh-TW': '解鎖的小奇點徽章等級', en: 'The bits badge tier unlocked' },
+  charity: { 'zh-TW': '慈善單位名稱', en: 'The charity' },
+  donation: { 'zh-TW': '捐款金額（含貨幣）', en: 'The amount donated, with currency' },
+};
 
 const ANONYMOUS: Record<Locale, string> = { 'zh-TW': '匿名觀眾', en: 'An anonymous user' };
 const ANONYMOUS_GIFTER: Record<Locale, string> = { 'zh-TW': '匿名觀眾', en: 'an anonymous gifter' };

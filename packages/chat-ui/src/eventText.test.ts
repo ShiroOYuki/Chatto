@@ -6,6 +6,7 @@ import {
   noticeText,
   noticeVariables,
   renderTemplate,
+  TEMPLATE_VARIABLES,
   templateVariables,
 } from './eventText';
 import { EVENT_CATALOG } from './events';
@@ -95,6 +96,12 @@ describe('event text templates', () => {
         for (const variable of templateVariables(event.text[locale]))
           expect(event.variables, event.key).toContain(variable);
       }
+    }
+  });
+
+  it('describes every variable an event offers', () => {
+    for (const event of EVENT_CATALOG.flatMap((group) => group.events)) {
+      for (const variable of event.variables ?? []) expect(TEMPLATE_VARIABLES[variable], variable).toBeDefined();
     }
   });
 });

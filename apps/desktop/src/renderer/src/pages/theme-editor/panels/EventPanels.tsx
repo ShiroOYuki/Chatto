@@ -1,8 +1,14 @@
-import { editEventStyle, linkEvent, resolveEventStyle, type EventDefinition } from '@chatto/chat-ui';
+import {
+  editEventStyle,
+  linkEvent,
+  resolveEventStyle,
+  TEMPLATE_VARIABLES,
+  type EventDefinition,
+} from '@chatto/chat-ui';
 import type { ChatTheme, EventMessageFrame, EventStyle, EventTitlePlacement } from '@chatto/core';
 import { Link2 } from 'lucide-react';
-import { useMemo, type Dispatch, type SetStateAction } from 'react';
-import { Badge, Button, Segmented } from '../../../components/kit';
+import { useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
+import { Badge, Button, Hint, Segmented } from '../../../components/kit';
 import { Input } from '../../../components/ui/input';
 import { useChatLocale, useLocale, useMessages } from '../../../i18n';
 import { BoxEditor, ColorRow, FieldRow, NumberField, OptionalColorRow, TextRow } from '../fields';
@@ -85,21 +91,45 @@ function EventTextField({
 }) {
   const m = useMessages().editorPanels.event;
   const chatLocale = useChatLocale();
+  const locale = useLocale();
+  const input = useRef<HTMLInputElement>(null);
+  // Puts `{name}` where the caret is (at the end when the field was never focused), then keeps typing after it.
+  const insert = (name: string) => {
+    const field = input.current;
+    const token = `{${name}}`;
+    const start = field?.selectionStart ?? value.length;
+    const end = field?.selectionEnd ?? value.length;
+    onChange(value.slice(0, start) + token + value.slice(end));
+    requestAnimationFrame(() => {
+      field?.focus();
+      field?.setSelectionRange(start + token.length, start + token.length);
+    });
+  };
   return (
     <FieldRow label={m.text}>
       <Input
+        ref={input}
         value={value}
         aria-label={m.text}
         placeholder={event.text?.[chatLocale] ?? m.platformText}
         onChange={(change) => onChange(change.target.value)}
-        className="h-8 rounded-lg border-line bg-canvas px-2 text-sm shadow-none focus-visible:border-matcha focus-visible:ring-matcha/20 md:text-sm"
+        className="h-8 rounded-lg border-line bg-canvas px-2 text-sm shadow-none placeholder:text-ink-faint focus-visible:border-matcha focus-visible:ring-matcha/20 md:text-sm"
       />
       {event.variables?.length ? (
         <div className="mt-1.5 flex flex-wrap gap-1">
           {event.variables.map((name) => (
-            <code key={name} className="rounded-md bg-tile-muted px-1.5 py-0.5 font-mono text-[11px] text-ink-soft">
-              {`{${name}}`}
-            </code>
+            <Hint key={name} label={TEMPLATE_VARIABLES[name]?.[locale] ?? name} side="top">
+              <button
+                type="button"
+                aria-label={m.insertVariable(name)}
+                // Keep the caret in the field: a mousedown on the chip would blur it first.
+                onMouseDown={(click) => click.preventDefault()}
+                onClick={() => insert(name)}
+                className="rounded-md bg-tile-muted px-1.5 py-0.5 font-mono text-[11px] text-ink-soft transition-colors hover:bg-matcha-soft/60 hover:text-matcha-strong focus-visible:outline-2 focus-visible:outline-matcha"
+              >
+                {`{${name}}`}
+              </button>
+            </Hint>
           ))}
         </div>
       ) : null}
