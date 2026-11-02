@@ -1,5 +1,6 @@
 export * from './ChatView';
 export * from './feed';
+export * from './noticeGroups';
 export * from './useChatFeed';
 export * from './themes';
 export * from './themeCss';

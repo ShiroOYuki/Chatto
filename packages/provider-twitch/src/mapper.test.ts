@@ -1,6 +1,13 @@
-import { fragmentsToText } from '@chatto/core';
 import { describe, expect, it } from 'vitest';
-import { mapChatMessage, mapEventSubNotification, twitchNoticeEventType, type TwitchChatMessageEvent } from './mapper';
+import { fragmentsToText, noticeGroup } from '@chatto/core';
+import {
+  mapChatMessage,
+  mapEventSubNotification,
+  mapNotification,
+  twitchNoticeEventType,
+  type TwitchChatMessageEvent,
+  type TwitchNotificationEvent,
+} from './mapper';
 
 const base: TwitchChatMessageEvent = {
   broadcaster_user_id: '1',
@@ -56,6 +63,55 @@ describe('twitch mapper', () => {
     );
     expect(message.isAction).toBe(true);
     expect(message.text).toBe('waves');
+  });
+
+  it('ties a community gift and its gifted subs together', () => {
+    // Shapes from channel.chat.notification (EventSub v1), trimmed to what the mapper reads.
+    const notification = (patch: Partial<TwitchNotificationEvent>): TwitchNotificationEvent => ({
+      broadcaster_user_id: '1',
+      chatter_user_id: '3',
+      chatter_user_login: 'matchalatte',
+      chatter_user_name: 'MatchaLatte',
+      chatter_is_anonymous: false,
+      color: '#97C459',
+      badges: [],
+      system_message: '',
+      message_id: 'n',
+      message: { text: '', fragments: [] },
+      notice_type: 'sub',
+      ...patch,
+    });
+    const lead = mapNotification(
+      notification({
+        message_id: 'lead',
+        notice_type: 'community_sub_gift',
+        system_message: 'MatchaLatte is gifting 5 Tier 1 Subs to the community!',
+        community_sub_gift: { id: '42', total: 5 },
+      }),
+      () => undefined,
+    );
+    const gift = mapNotification(
+      notification({
+        message_id: 'gift-1',
+        notice_type: 'sub_gift',
+        system_message: 'MatchaLatte gifted a Tier 1 sub to okome_rice!',
+        sub_gift: { duration_months: 1, recipient_user_name: 'okome_rice', community_gift_id: '42' },
+      }),
+      () => undefined,
+    );
+    const direct = mapNotification(
+      notification({
+        notice_type: 'sub_gift',
+        sub_gift: { recipient_user_name: 'Mochi_Fan', community_gift_id: null },
+      }),
+      () => undefined,
+    );
+    expect(lead.meta).toMatchObject({ count: 5, groupId: '42', groupLead: true });
+    expect(noticeGroup(lead)).toEqual({ id: 'twitch:42', lead: true });
+    expect(gift.meta).toMatchObject({ groupId: '42', recipient: 'okome_rice' });
+    expect(noticeGroup(gift)).toEqual({ id: 'twitch:42', lead: false });
+    expect(noticeGroup(direct)).toBeNull();
+    expect(direct.meta.recipient).toBe('Mochi_Fan');
   });
 
   it('maps moderation events', () => {

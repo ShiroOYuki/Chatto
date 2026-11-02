@@ -1,4 +1,5 @@
 import {
+  noticeGroup,
   assetFileOf,
   assetSrc,
   SILENCE_THRESHOLD,
@@ -6,6 +7,7 @@ import {
   type AlertSettings,
   type ChatEvent,
   type ChatMessage,
+  type ChatNotice,
   type ChatTheme,
   type ConnectionState,
   type SoundRef,
@@ -45,6 +47,8 @@ export class AppController {
   #silence = new SilenceTracker();
   /** Messages (by `${platform}:${id}`) that broke a quiet spell, recent ones only. */
   #afterSilence = new Set<string>();
+  /** Batches (`noticeGroup` ids) whose lead notice already went out, recent ones only. */
+  #announcedGroups = new Set<string>();
 
   server!: LocalServer;
   overlay!: OverlayWindow;
@@ -236,7 +240,22 @@ export class AppController {
       if (event.state === 'connected') this.#silence.reset(Date.now());
     }
     if (event.type === 'message') this.#checkSilence(event.message);
+    if (event.type === 'notice') this.#trackGroup(event.notice);
     this.hub.publish(event);
+  }
+
+  #trackGroup(notice: ChatNotice): void {
+    const group = noticeGroup(notice);
+    if (!group?.lead) return;
+    this.#announcedGroups.add(group.id);
+    if (this.#announcedGroups.size > 100) this.#announcedGroups.delete(this.#announcedGroups.values().next().value!);
+  }
+
+  /** A gifted sub (or other batch member) whose batch already got its own alert card. */
+  #isAnnouncedMember(event: ChatEvent): boolean {
+    if (event.type !== 'notice') return false;
+    const group = noticeGroup(event.notice);
+    return group !== null && !group.lead && this.#announcedGroups.has(group.id);
   }
 
   #checkSilence(message: ChatMessage): void {
@@ -263,11 +282,19 @@ export class AppController {
     if (target === 'alerts') {
       if (event.type === 'connection') return null;
       if (event.type !== 'message' && event.type !== 'notice') return { event }; // moderation removes alerts too
+      // One card per batch: "gifted 5 subs" alerts once, its 5 gifted subs do not queue their own.
+      if (this.#isAnnouncedMember(event)) return null;
       const alert = alertCue(event, alerts.events);
       return alert ? { event, alert } : null;
     }
     if (target === 'overlay') {
-      if (alerts.events.hideInChatOverlay && this.alertsOverlay.isOpen && alertCue(event, alerts.events)) return null;
+      if (
+        alerts.events.hideInChatOverlay &&
+        this.alertsOverlay.isOpen &&
+        (alertCue(event, alerts.events) || this.#isAnnouncedMember(event))
+      ) {
+        return null;
+      }
       if (event.type === 'message' && this.#afterSilence.has(`${event.message.platform}:${event.message.id}`)) {
         return { event: { ...event, message: markAfterSilence(event.message) } };
       }

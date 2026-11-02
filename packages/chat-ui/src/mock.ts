@@ -1,7 +1,7 @@
 import { AFTER_SILENCE, type ChatEvent, type ChatMessage, type ChatUser, type MessageFragment } from '@chatto/core';
 import { sampleEvent } from './eventSamples';
 import { EVENT_CATALOG } from './events';
-import { MOCK_USERS, mockEmote, mockMessage } from './mockData';
+import { MOCK_USERS, mockEmote, mockMessage, mockNotice } from './mockData';
 
 /** Fake chat used by previews, the theme editor and `?mock=1` viewers. */
 
@@ -39,6 +39,36 @@ const allEvents = () => EVENT_CATALOG.flatMap((group) => group.events);
 /** A random platform event (notice or event message) from the catalog. */
 export function createMockNotice(): ChatEvent {
   return sampleEvent(pick(allEvents()).key);
+}
+
+let giftBatches = 0;
+
+/**
+ * A community gift as a platform sends it: the "gifted N subs" notice, then one
+ * notice per gifted sub, all sharing a `groupId`.
+ */
+export function createMockGiftBatch(count = 5): ChatEvent[] {
+  const groupId = `mock-gift-${++giftBatches}`;
+  const gifter = MOCK_USERS[4]!;
+  const lead = mockNotice({
+    eventType: 'community-gift',
+    kind: 'gift-subscription',
+    systemText: `${gifter.displayName} 送出 ${count} 份訂閱給聊天室`,
+    author: gifter,
+    meta: { count, groupId, groupLead: true },
+  });
+  const gifts = Array.from({ length: count }, (_, index) => {
+    const others = MOCK_USERS.filter((user) => user !== gifter);
+    const recipient = others[index % others.length]!.displayName;
+    return mockNotice({
+      eventType: 'sub-gift',
+      kind: 'gift-subscription',
+      systemText: `${gifter.displayName} 送了一份訂閱給 ${recipient}`,
+      author: gifter,
+      meta: { groupId, recipient },
+    });
+  });
+  return [lead, ...gifts].map((notice) => ({ type: 'notice', notice }));
 }
 
 /** Pushes a fake event every `intervalMs` until the returned stop function runs. */

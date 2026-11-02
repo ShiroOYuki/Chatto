@@ -1,4 +1,5 @@
-import type { ChatEvent, ChatMessage, ChatNotice } from '@chatto/core';
+import { groupNotice, type NoticeGroupAccess } from '@chatto/chat-ui';
+import { noticeGroup, type ChatEvent, type ChatMessage, type ChatNotice } from '@chatto/core';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AppState } from '../../shared/ipc';
 import { api } from './api';
@@ -6,7 +7,21 @@ import { previewSound } from './services/alerts';
 
 export type LogEntry =
   | { kind: 'message'; id: string; at: number; message: ChatMessage; deleted: boolean }
-  | { kind: 'notice'; id: string; at: number; notice: ChatNotice };
+  /** `members`: notices of the same batch merged into this one (e.g. each gifted sub of a community gift). */
+  | { kind: 'notice'; id: string; at: number; notice: ChatNotice; members: ChatNotice[] };
+
+const LOG_GROUPS: NoticeGroupAccess<LogEntry> = {
+  notice: (entry) => (entry.kind === 'notice' ? entry.notice : undefined),
+  members: (entry) => (entry.kind === 'notice' ? entry.members : []),
+  withMembers: (entry, members) => (entry.kind === 'notice' ? { ...entry, members } : entry),
+};
+
+/** Adds a notice to the log, merging a batch (a community gift and its gifted subs) into one entry. */
+export function logNotice(entries: LogEntry[], notice: ChatNotice, at: number): LogEntry[] {
+  const grouped = groupNotice(entries, notice, LOG_GROUPS);
+  if (grouped.merged) return grouped.entries;
+  return [...grouped.entries, { kind: 'notice' as const, id: notice.id, at, notice, members: grouped.members }];
+}
 
 export interface ChatStats {
   /** Messages in the last 60 seconds. */
@@ -75,12 +90,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               ].slice(-LOG_LIMIT),
             );
             break;
-          case 'notice':
-            setCounters((prev) => ({ ...prev, notices: prev.notices + 1 }));
-            setEntries((prev) =>
-              [...prev, { kind: 'notice' as const, id: event.notice.id, at, notice: event.notice }].slice(-LOG_LIMIT),
-            );
+          case 'notice': {
+            // A batch counts once: its lead, not each gifted sub.
+            const member = noticeGroup(event.notice)?.lead === false;
+            if (!member) setCounters((prev) => ({ ...prev, notices: prev.notices + 1 }));
+            setEntries((prev) => logNotice(prev, event.notice, at).slice(-LOG_LIMIT));
             break;
+          }
           case 'message-deleted':
             setCounters((prev) => ({ ...prev, deleted: prev.deleted + 1 }));
             setEntries((prev) =>

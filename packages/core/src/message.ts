@@ -130,8 +130,21 @@ export interface ChatNotice {
   /** Optional attached chat message (resub message, announcement body). */
   author?: ChatUser;
   fragments: MessageFragment[];
-  /** Extra platform-specific numbers (months, viewers, count), already normalized. */
+  /**
+   * Extra numbers and flags (months, viewers, count), already normalized.
+   * Shared keys every platform uses the same way:
+   * - `groupId`: events of one batch (e.g. a community gift and each gifted sub) share it;
+   * - `groupLead: true`: the umbrella event of that batch ("gifted 5 subs");
+   * - `recipient`: who received a gift.
+   */
   meta: Record<string, string | number | boolean>;
+}
+
+/** The batch a notice belongs to (see `ChatNotice.meta`), or null for a standalone notice. */
+export function noticeGroup(notice: ChatNotice): { id: string; lead: boolean } | null {
+  const id = notice.meta.groupId;
+  if (typeof id !== 'string' || !id) return null;
+  return { id: `${notice.platform}:${id}`, lead: notice.meta.groupLead === true };
 }
 
 /** Connection lifecycle of one provider/channel pair. */

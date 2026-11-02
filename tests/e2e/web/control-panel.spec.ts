@@ -1,4 +1,4 @@
-import { createMockNotice } from '@chatto/chat-ui';
+import { createMockGiftBatch, createMockNotice, sampleEvent } from '@chatto/chat-ui';
 import { fileURLToPath } from 'node:url';
 import { chatMessage, expect, test } from '../fixtures';
 
@@ -81,6 +81,26 @@ for (const [width, height] of [
     }
   });
 }
+
+test('recent activity scrolls and shows a community gift once', async ({ panel, page }) => {
+  await page.setViewportSize({ width: 1280, height: 820 });
+  await panel.open('page=overview');
+  await panel.emit(...Array.from({ length: 12 }, () => sampleEvent('twitch:raid')), ...createMockGiftBatch(5));
+
+  const list = page.getByTestId('recent-notices');
+  // The batch is one row at the top, listing who received the subs on request.
+  const gift = list.getByText('送出 5 份訂閱給聊天室');
+  await expect(gift).toHaveCount(1);
+  await expect(list.getByText(/送了一份訂閱給/)).toHaveCount(0);
+  await list.getByRole('button', { name: '收到的人（5）' }).click();
+  await expect(list.getByRole('listitem')).toHaveCount(5);
+
+  const scrolls = await list.evaluate((el) => el.scrollHeight > el.clientHeight);
+  expect(scrolls).toBe(true);
+  await list.hover();
+  await page.mouse.wheel(0, 2000);
+  await expect.poll(() => list.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+});
 
 test('compact mode fits the smallest window', async ({ panel, page }) => {
   await page.setViewportSize({ width: 960, height: 640 });

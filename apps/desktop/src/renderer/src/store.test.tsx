@@ -1,4 +1,4 @@
-import { MOCK_USERS, mockMessage, mockNotice } from '@chatto/chat-ui';
+import { createMockGiftBatch, MOCK_USERS, mockMessage, mockNotice } from '@chatto/chat-ui';
 import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { FakeApi } from '../../../../../tests/fake-api';
@@ -77,6 +77,20 @@ describe('StoreProvider', () => {
       rate: 3,
     });
     expect(log!.stats.history).toHaveLength(30);
+  });
+
+  it('logs a community gift as one entry with its gifted subs, counted once', () => {
+    render(
+      <StoreProvider>
+        <Probe />
+      </StoreProvider>,
+    );
+    const [lead, ...gifts] = createMockGiftBatch(5);
+    act(() => [lead!, ...gifts].forEach((event) => api.pushChat(event)));
+    expect(log!.entries).toHaveLength(1);
+    const entry = log!.entries[0]!;
+    expect(entry.kind === 'notice' && entry.members.map((member) => member.meta.recipient)).toHaveLength(5);
+    expect(log!.stats.noticeCount).toBe(1);
   });
 
   it('caps the log at 500 entries and can be cleared', () => {

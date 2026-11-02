@@ -1,5 +1,6 @@
 import type { ChatMessage, ChatNotice, MessageFragment, UserRole } from '@chatto/core';
-import { Gift, Megaphone, PartyPopper, Swords } from 'lucide-react';
+import { ChevronRight, Gift, Megaphone, PartyPopper, Swords } from 'lucide-react';
+import { useState } from 'react';
 import { motion } from './motion';
 import { Badge } from './kit';
 
@@ -107,8 +108,13 @@ const NOTICE_ICON = {
   'gift-subscription': Gift,
 } as const;
 
-export function NoticeLine({ notice }: { notice: ChatNotice }) {
+/** Who a merged notice's members went to (gift recipients), falling back to their own text. */
+const memberLabel = (member: ChatNotice) =>
+  typeof member.meta.recipient === 'string' ? member.meta.recipient : member.systemText;
+
+export function NoticeLine({ notice, members = [] }: { notice: ChatNotice; members?: ChatNotice[] }) {
   const Icon = NOTICE_ICON[notice.kind as keyof typeof NOTICE_ICON] ?? PartyPopper;
+  const [open, setOpen] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.94 }}
@@ -123,6 +129,28 @@ export function NoticeLine({ notice }: { notice: ChatNotice }) {
           <div className="text-ink-soft">
             <Fragments fragments={notice.fragments} />
           </div>
+        ) : null}
+        {members.length > 0 ? (
+          <>
+            <button
+              type="button"
+              aria-expanded={open}
+              onClick={() => setOpen(!open)}
+              className="mt-0.5 inline-flex items-center gap-0.5 text-xs text-matcha-strong hover:underline dark:text-matcha"
+            >
+              <ChevronRight className={`size-3.5 transition-transform ${open ? 'rotate-90' : ''}`} />
+              收到的人（{members.length}）
+            </button>
+            {open ? (
+              <ul className="mt-1 flex flex-wrap gap-1">
+                {members.map((member) => (
+                  <li key={member.id} className="rounded-full bg-tile px-2 py-0.5 text-xs text-ink-soft">
+                    {memberLabel(member)}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </>
         ) : null}
       </div>
       <time className="ml-auto shrink-0 font-mono text-[11px] text-ink-faint">{formatClock(notice.timestamp)}</time>

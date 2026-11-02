@@ -12,6 +12,7 @@
     "./themes": "./src/themes.ts",
     "./fonts": "./src/fonts.ts",
     "./feed": "./src/feed.ts",
+    "./noticeGroups": "./src/noticeGroups.ts",
     "./events": "./src/events.ts",
     "./reference": "./src/reference.ts"
   },

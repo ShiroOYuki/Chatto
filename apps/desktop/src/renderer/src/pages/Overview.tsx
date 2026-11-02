@@ -1,5 +1,5 @@
 import { ArrowRight, Eraser, MessageCircle, MonitorUp, Palette, Sparkles, Users } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { overlay } from '../services/overlay';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
@@ -9,7 +9,7 @@ import { RollingNumber, Stagger } from '../components/motion';
 import { TeaCup } from '../components/TeaCup';
 import { BorderBeam } from '../components/ui/border-beam';
 import { Button, CopyField, EmptyState, Sparkline, channelTone, StatusDot, Tile, Toggle } from '../components/kit';
-import { useChatLog } from '../store';
+import { useChatLog, type LogEntry } from '../store';
 
 const STATE_LABEL: Record<AppState['channel']['state'], string> = {
   idle: '尚未連線',
@@ -22,7 +22,8 @@ const STATE_LABEL: Record<AppState['channel']['state'], string> = {
 
 /** Enough to fill a 4K-tall tile; the rest is clipped. */
 const RECENT_MESSAGES = 60;
-const RECENT_NOTICES = 16;
+/** The activity list scrolls, so it keeps a longer history. */
+const RECENT_NOTICES = 100;
 
 function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   return (
@@ -38,10 +39,46 @@ function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: n
   );
 }
 
+/**
+ * Newest activity first, scrolling inside its tile. The bottom fades while
+ * there is more below, so a cut-off row reads as "scroll for more".
+ */
+function RecentNotices({ entries }: { entries: LogEntry[] }) {
+  const [moreBelow, setMoreBelow] = useState(false);
+  const list = useRef<HTMLDivElement>(null);
+  const measure = useCallback(() => {
+    const el = list.current;
+    if (el) setMoreBelow(el.scrollHeight - el.scrollTop - el.clientHeight > 4);
+  }, []);
+  useLayoutEffect(measure, [measure, entries]);
+  useEffect(() => {
+    const el = list.current;
+    if (!el) return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [measure]);
+
+  return (
+    <div
+      ref={list}
+      data-testid="recent-notices"
+      onScroll={measure}
+      className={`-mx-2 -mb-2 flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2 ${
+        moreBelow ? 'mask-b-from-[calc(100%-2rem)]' : ''
+      }`}
+    >
+      {entries.map((entry) =>
+        entry.kind === 'notice' ? <NoticeLine key={entry.id} notice={entry.notice} members={entry.members} /> : null,
+      )}
+    </div>
+  );
+}
+
 export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigate: (page: PageId) => void }) {
   const { entries, stats } = useChatLog();
   const connected = state.channel.state === 'connected';
-  // Render more than fits; the tiles clip what does not fit, so bigger windows show more.
+  // Render more than fits; the chat tile clips what does not fit, so bigger windows show more.
   const recentMessages = entries.filter((entry) => entry.kind === 'message').slice(-RECENT_MESSAGES);
   const recentNotices = entries
     .filter((entry) => entry.kind === 'notice')
@@ -166,14 +203,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         {recentNotices.length === 0 ? (
           <EmptyState mood="happy" title="還沒有新活動" hint="訂閱、揪團和公告會顯示在這裡。" />
         ) : (
-          <div
-            data-testid="recent-notices"
-            className="flex min-h-0 flex-1 flex-col overflow-hidden mask-b-from-[calc(100%-2rem)]"
-          >
-            {recentNotices.map((entry) =>
-              entry.kind === 'notice' ? <NoticeLine key={entry.id} notice={entry.notice} /> : null,
-            )}
-          </div>
+          <RecentNotices entries={recentNotices} />
         )}
       </Tile>
     </Stagger>

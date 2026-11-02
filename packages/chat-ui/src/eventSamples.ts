@@ -38,7 +38,10 @@ export const EVENT_SAMPLES: Record<string, () => ChatEvent> = {
       meta: { months: 6 },
     }),
   'twitch:sub-gift': () =>
-    notice('sub-gift', 'gift-subscription', '熊熊管理員 送了一份訂閱給 okome_rice', { author: mockUser(2) }),
+    notice('sub-gift', 'gift-subscription', '熊熊管理員 送了一份訂閱給 okome_rice', {
+      author: mockUser(2),
+      meta: { recipient: 'okome_rice' },
+    }),
   'twitch:community-gift': () =>
     notice('community-gift', 'gift-subscription', 'MatchaLatte 送出 5 份訂閱給聊天室', {
       author: mockUser(4),

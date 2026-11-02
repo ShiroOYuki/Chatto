@@ -36,6 +36,22 @@ viewer、主題、外掛唯一需要理解的資料流。
 
 `ChatNotice` 也有 `eventType?: string`（kebab-case，例如 `resub`、`community-gift`、`watch-streak`）。樣式鍵為 `${platform}:${eventType}`，例如 `twitch:cheer`；渲染器輸出為 `data-event` 屬性。各平台的事件清單見 `packages/chat-ui/src/events.ts`。
 
+### 同一批事件（`ChatNotice.meta`）
+
+有些平台把一個動作拆成好幾則通知，例如 Twitch 一次贈送 5 份訂閱：先送 1 則「送出 5 份訂閱給聊天室」，再送 5 則個別贈訂。平台無關的 `meta` 鍵把它們標成同一批：
+
+| 鍵          | 型別      | 說明                                             |
+| ----------- | --------- | ------------------------------------------------ |
+| `groupId`   | `string`  | 同一批事件共用（`noticeGroup()` 會加上平台前綴） |
+| `groupLead` | `boolean` | `true` 標在總事件上                              |
+| `recipient` | `string`  | 贈禮的收到者名稱                                 |
+
+所有畫面都把同一批合併成一則（`@chatto/chat-ui` 的 `groupNotice()`）：個別事件到達時總事件已在畫面上，就併進總事件、不另外顯示；個別事件先到時先單獨顯示，總事件到達後把它們收進來。
+
+- 桌面 Overlay、OBS：`reduceFeed()` 的 `FeedItem` 帶 `members`。
+- 控制台聊天紀錄：總事件可展開看收到的人；「訂閱與活動」統計只算一次。
+- 事件 Overlay：總事件已送出後，同一批的個別事件不再跳卡片、不再播音效（main 的 `route('alerts')`）。
+
 ### ChatUser
 
 `id`、`login`（小寫）、`displayName`、`color?`、`avatar?`、`badges: ChatBadge[]`、`roles: UserRole[]`。
@@ -83,7 +99,11 @@ viewer、主題、外掛唯一需要理解的資料流。
 
 事件類型：附帶小奇點的訊息 → `cheer`；`message_type: channel_points_highlighted` → `highlighted`；通知的 `notice_type` 轉成 kebab-case 並去掉 `shared_chat_` 前綴，`sub_gift` → `sub-gift`、`community_sub_gift` → `community-gift`（`twitchNoticeEventType()`）。
 
+同一批贈訂：`community_sub_gift.id` → `meta.groupId`＋`meta.groupLead`；`sub_gift.community_gift_id` → `meta.groupId`；`sub_gift.recipient_user_name` → `meta.recipient`。
+
 ## 變更紀錄
+
+- **v1.3**（2026-11-02）：`ChatNotice.meta` 新增 `groupId`、`groupLead`、`recipient`，同一批事件合併顯示（非破壞性）。
 
 - **v1.2**（2026-11-01）：新增 `alerts` target、`event` frame 的選填 `alert`、highlight `after-silence`（非破壞性）。
 - **v1.1**（2026-10-31）：新增選填欄位 `eventType`（非破壞性）。

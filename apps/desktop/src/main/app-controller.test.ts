@@ -6,7 +6,7 @@ import {
   type ChatEvent,
   type ChatTheme,
 } from '@chatto/core';
-import { mockMessage, MOCK_USERS, sampleEvent } from '@chatto/chat-ui';
+import { createMockGiftBatch, mockMessage, MOCK_USERS, sampleEvent } from '@chatto/chat-ui';
 import { DEFAULT_BOX_IMAGE, PRESET_THEMES } from '@chatto/chat-ui/themes';
 import { strToU8, zipSync } from 'fflate';
 import { mkdtempSync, writeFileSync } from 'node:fs';
@@ -528,6 +528,31 @@ describe('AppController alerts', () => {
     expect(controller.route('alerts', connected)).toBeNull();
     const deleted: ChatEvent = { type: 'message-deleted', platform: 'twitch', channelId: '42', messageId: 'x' };
     expect(controller.route('alerts', deleted)).toEqual({ event: deleted });
+  });
+
+  it('alerts a community gift once instead of once per gifted sub', async () => {
+    const { controller, settings } = setup();
+    await controller.init();
+    const [lead, ...gifts] = createMockGiftBatch(3);
+    const [, earlyGift] = createMockGiftBatch(1);
+    // A gifted sub whose batch has not been announced still alerts on its own.
+    latestProvider().emit(earlyGift!);
+    expect(controller.route('alerts', earlyGift!)).not.toBeNull();
+
+    latestProvider().emit(lead!);
+    expect(controller.route('alerts', lead!)?.alert).toBeDefined();
+    for (const gift of gifts) {
+      latestProvider().emit(gift);
+      expect(controller.route('alerts', gift)).toBeNull();
+      // OBS still receives them; its feed merges them into the lead.
+      expect(controller.route('embed', gift)).toEqual({ event: gift });
+    }
+
+    // With the chat overlay hiding alerted events, the gifted subs stay out of it too.
+    const { alerts } = settings.get();
+    controller.setAlertSettings({ ...alerts, events: { ...alerts.events, hideInChatOverlay: true } });
+    controller.setAlertsOverlayEnabled(true);
+    expect(controller.route('overlay', gifts[0]!)).toBeNull();
   });
 
   it('leaves alerted events out of the chat overlay only when asked and the alert overlay is open', () => {

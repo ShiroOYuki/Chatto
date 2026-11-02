@@ -63,8 +63,8 @@ export interface TwitchNotificationEvent {
   message: { text: string; fragments: TwitchFragment[] };
   notice_type: string;
   resub?: { cumulative_months?: number; streak_months?: number | null } | null;
-  sub_gift?: { duration_months?: number; recipient_user_name?: string } | null;
-  community_sub_gift?: { total?: number } | null;
+  sub_gift?: { duration_months?: number; recipient_user_name?: string; community_gift_id?: string | null } | null;
+  community_sub_gift?: { id?: string; total?: number } | null;
   raid?: { viewer_count?: number; user_name?: string } | null;
 }
 
@@ -240,6 +240,13 @@ export function mapNotification(event: TwitchNotificationEvent, lookup: BadgeLoo
   const meta: ChatNotice['meta'] = { noticeType: event.notice_type };
   if (event.resub?.cumulative_months) meta.months = event.resub.cumulative_months;
   if (event.community_sub_gift?.total) meta.count = event.community_sub_gift.total;
+  // A community gift is announced once, then once per gifted sub; the shared id ties them together.
+  if (event.community_sub_gift?.id) {
+    meta.groupId = event.community_sub_gift.id;
+    meta.groupLead = true;
+  }
+  if (event.sub_gift?.community_gift_id) meta.groupId = event.sub_gift.community_gift_id;
+  if (event.sub_gift?.recipient_user_name) meta.recipient = event.sub_gift.recipient_user_name;
   if (event.raid?.viewer_count) meta.viewers = event.raid.viewer_count;
 
   return {

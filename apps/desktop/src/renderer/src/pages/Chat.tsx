@@ -127,7 +127,7 @@ export function ChatPage() {
                   entry.kind === 'message' ? (
                     <ChatLine key={entry.id} message={entry.message} deleted={entry.deleted} />
                   ) : (
-                    <NoticeLine key={entry.id} notice={entry.notice} />
+                    <NoticeLine key={entry.id} notice={entry.notice} members={entry.members} />
                   ),
                 )
               )}

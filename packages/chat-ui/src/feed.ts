@@ -1,8 +1,16 @@
 import type { ChatEvent, ChatMessage, ChatNotice, ChatThemeOptions } from '@chatto/core';
+import { groupNotice, type NoticeGroupAccess } from './noticeGroups';
 
 export type FeedItem =
   | { kind: 'message'; key: string; receivedAt: number; message: ChatMessage }
-  | { kind: 'notice'; key: string; receivedAt: number; notice: ChatNotice };
+  /** `members`: notices of the same batch merged into this one (e.g. each gifted sub of a community gift). */
+  | { kind: 'notice'; key: string; receivedAt: number; notice: ChatNotice; members?: ChatNotice[] };
+
+const FEED_GROUPS: NoticeGroupAccess<FeedItem> = {
+  notice: (item) => (item.kind === 'notice' ? item.notice : undefined),
+  members: (item) => (item.kind === 'notice' ? (item.members ?? []) : []),
+  withMembers: (item, members) => (item.kind === 'notice' ? { ...item, members } : item),
+};
 
 export interface FeedState {
   items: FeedItem[];
@@ -33,13 +41,17 @@ export function reduceFeed(state: FeedState, event: ChatEvent, options: ChatThem
       return { items: [...state.items, item].slice(-options.maxMessages) };
     }
     case 'notice': {
+      // One batch (a community gift and its gifted subs) shows as a single notice.
+      const grouped = groupNotice(state.items, event.notice, FEED_GROUPS);
+      if (grouped.merged) return { items: grouped.entries };
       const item: FeedItem = {
         kind: 'notice',
         key: `${event.notice.platform}:${event.notice.id}`,
         receivedAt: now,
         notice: event.notice,
+        ...(grouped.members.length ? { members: grouped.members } : {}),
       };
-      return { items: [...state.items, item].slice(-options.maxMessages) };
+      return { items: [...grouped.entries, item].slice(-options.maxMessages) };
     }
     case 'message-deleted':
       return {
