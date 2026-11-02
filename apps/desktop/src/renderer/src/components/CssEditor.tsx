@@ -4,38 +4,43 @@ import { css, cssLanguage } from '@codemirror/lang-css';
 import { EditorState } from '@codemirror/state';
 import { EditorView, placeholder as placeholderText } from '@codemirror/view';
 import { basicSetup } from 'codemirror';
-import { useEffect, useRef } from 'react';
+import type { Locale } from '@chatto/core';
+import { useEffect, useMemo, useRef } from 'react';
+import { useLocale } from '../i18n';
 import { selectorAtCursor } from '../lib/cssSelector';
 
-const CHATTO_COMPLETIONS: Completion[] = [
+/** Chatto classes and data attributes, described in the interface language. */
+const completionsFor = (locale: Locale): Completion[] => [
   ...CLASS_REFERENCE.map((item) => ({
     label: item.selector,
     type: 'class',
-    detail: item.label,
-    info: item.description,
+    detail: item.label[locale],
+    info: item.description[locale],
     boost: 2,
   })),
   ...[...ATTRIBUTE_REFERENCE, ...EVENT_REFERENCE].map((item) => ({
     label: item.selector,
     type: 'property',
-    detail: item.label,
-    info: item.description,
+    detail: item.label[locale],
+    info: item.description[locale],
     boost: 1,
   })),
 ];
 
 /** Suggests Chatto classes and data attributes while typing selectors. */
-function chattoCompletions(context: CompletionContext) {
-  const word = context.matchBefore(/[.[][\w\-~="':]*$/);
-  if (!word || (word.from === word.to && !context.explicit)) return null;
-  // Skip declaration values (`color: …`); selectors and nested rules are fine.
-  const before = context.state.doc.sliceString(0, word.from);
-  const open = before.lastIndexOf('{');
-  if (open > before.lastIndexOf('}')) {
-    const declaration = before.slice(Math.max(open, before.lastIndexOf(';')) + 1);
-    if (declaration.includes(':')) return null;
-  }
-  return { from: word.from, options: CHATTO_COMPLETIONS, validFor: /^[.[][\w\-~="':]*$/ };
+function chattoCompletions(options: () => Completion[]) {
+  return (context: CompletionContext) => {
+    const word = context.matchBefore(/[.[][\w\-~="':]*$/);
+    if (!word || (word.from === word.to && !context.explicit)) return null;
+    // Skip declaration values (`color: …`); selectors and nested rules are fine.
+    const before = context.state.doc.sliceString(0, word.from);
+    const open = before.lastIndexOf('{');
+    if (open > before.lastIndexOf('}')) {
+      const declaration = before.slice(Math.max(open, before.lastIndexOf(';')) + 1);
+      if (declaration.includes(':')) return null;
+    }
+    return { from: word.from, options: options(), validFor: /^[.[][\w\-~="':]*$/ };
+  };
 }
 
 const editorTheme = EditorView.theme({
@@ -106,6 +111,11 @@ export function CssEditor({
   const view = useRef<EditorView | null>(null);
   const callbacks = useRef({ onChange, onSelectorChange });
   callbacks.current = { onChange, onSelectorChange };
+  // The editor is built once; completions read the current language through this ref.
+  const locale = useLocale();
+  const localized = useMemo(() => completionsFor(locale), [locale]);
+  const completions = useRef(localized);
+  completions.current = localized;
 
   useEffect(() => {
     if (!host.current) return;
@@ -118,7 +128,7 @@ export function CssEditor({
         extensions: [
           basicSetup,
           css(),
-          cssLanguage.data.of({ autocomplete: chattoCompletions }),
+          cssLanguage.data.of({ autocomplete: chattoCompletions(() => completions.current) }),
           autocompletion({ icons: false }),
           editorTheme,
           EditorView.lineWrapping,

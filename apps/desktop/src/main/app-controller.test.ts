@@ -80,7 +80,15 @@ function fakeSettings(initial: Partial<Settings> = {}) {
     alerts: defaultAlertSettings(),
     selectedThemes: { overlay: 'matcha-glass', embed: 'matcha-glass', alerts: 'matcha-glass' },
     customThemes: [],
-    prefs: { uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false, editorCommand: '' },
+    prefs: {
+      uiMode: 'full',
+      appearance: 'system',
+      closeToTray: true,
+      launchAtLogin: false,
+      editorCommand: '',
+      locale: 'zh-TW',
+      chatLocale: 'auto',
+    },
     ...initial,
   };
   return {
@@ -102,6 +110,7 @@ function setup(initial?: Partial<Settings>) {
     port: 4820,
     url: (target: string) => `http://127.0.0.1:4820/${target}`,
     broadcastTheme: vi.fn(),
+    broadcastLocale: vi.fn(),
   };
   const fakeWindow = () => {
     let open = false;
@@ -291,6 +300,8 @@ describe('AppController CSS files', () => {
         closeToTray: true,
         launchAtLogin: false,
         editorCommand: 'notepad++',
+        locale: 'zh-TW',
+        chatLocale: 'auto',
       },
     });
     await controller.openCssFile('my-theme');
@@ -466,6 +477,25 @@ describe('AppController Twitch', () => {
 });
 
 describe('AppController preferences', () => {
+  it('sends outputs the chat language and built-in themes in it', () => {
+    const { controller, server } = setup();
+    expect(controller.chatLocale()).toBe('zh-TW');
+    expect(controller.themeFor('overlay').attention.label).toBe('新留言');
+
+    controller.setPrefs({ locale: 'en' });
+    expect(server.broadcastLocale).toHaveBeenLastCalledWith('en');
+    expect(controller.themeFor('overlay').attention.label).toBe('New');
+    expect(server.broadcastTheme).toHaveBeenCalledWith('embed', expect.objectContaining({ name: 'Matcha Glass' }));
+
+    // A fixed chat language no longer follows the interface.
+    controller.setPrefs({ chatLocale: 'zh-TW' });
+    server.broadcastLocale.mockClear();
+    controller.setPrefs({ locale: 'zh-TW' });
+    controller.setPrefs({ locale: 'en' });
+    expect(server.broadcastLocale).not.toHaveBeenCalled();
+    expect(controller.chatLocale()).toBe('zh-TW');
+  });
+
   it('merges preference patches and applies the appearance', async () => {
     const { controller, settings } = setup();
     const { nativeTheme } = await import('electron');

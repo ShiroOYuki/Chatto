@@ -1,16 +1,19 @@
 import { assetFileOf, type ChatTheme } from '@chatto/core';
+import type { Messages } from '../i18n';
 
-export const ARRANGEMENT_LABEL: Record<string, string> = {
-  inline: '單行',
-  stacked: '上下',
-  columns: '分欄',
-};
+/** Words for theme lists (`useMessages().themes.labels`). */
+export type ThemeLabels = Messages['themes']['labels'];
+
+/** Name of a message arrangement, or the raw value when it is unknown. */
+export function arrangementLabel(arrangement: string, labels: ThemeLabels): string {
+  return arrangement === 'inline' || arrangement === 'stacked' || arrangement === 'columns'
+    ? labels[arrangement]
+    : arrangement;
+}
 
 /** Short description of a theme for lists: blank, or its arrangement. */
-export function describeTheme(theme: { base: string; message: { arrangement: string } }): string {
-  return theme.base === 'blank'
-    ? '空白 · 自訂 CSS'
-    : (ARRANGEMENT_LABEL[theme.message.arrangement] ?? theme.message.arrangement);
+export function describeTheme(theme: { base: string; message: { arrangement: string } }, labels: ThemeLabels): string {
+  return theme.base === 'blank' ? labels.blank : arrangementLabel(theme.message.arrangement, labels);
 }
 
 const filled = (color: string) => color && color !== 'transparent';

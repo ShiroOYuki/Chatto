@@ -8,6 +8,7 @@ import {
   ColorPickerOutput,
   ColorPickerSelection,
 } from './kibo-ui/color-picker';
+import { useMessages } from '../i18n';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 interface Rgba {
@@ -47,6 +48,7 @@ export function ColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const m = useMessages().editorFields.color;
   const parsed = parseColor(value);
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
@@ -57,7 +59,7 @@ export function ColorField({
         <PopoverTrigger asChild>
           <button
             type="button"
-            aria-label={`${label}：開啟調色盤`}
+            aria-label={m.openPicker(label)}
             className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-line transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-matcha focus-visible:outline-none"
             style={{ background: 'repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 10px 10px' }}
           >
@@ -111,7 +113,7 @@ export function ColorField({
             onChange(formatColor({ hex: parsed?.hex ?? '#000000', alpha: Number(event.target.value) / 100 }))
           }
           className="mt-1 h-1 w-full cursor-pointer accent-[var(--c-matcha)]"
-          aria-label={`${label} 不透明度`}
+          aria-label={m.opacity(label)}
         />
       </div>
     </div>

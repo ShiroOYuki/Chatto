@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatNotice, PlatformId } from '@chatto/core';
+import type { ChatMessage, ChatNotice, Localized, Locale, PlatformId } from '@chatto/core';
 
 /**
  * Platform event catalog. Every platform-specific event (Twitch cheers, subs,
@@ -22,13 +22,18 @@ export interface EventDefinition {
   key: string;
   platform: PlatformId;
   eventType: string;
-  label: string;
-  description: string;
+  label: Localized;
+  description: Localized;
   category: EventCategory;
-  /** Title line for message events; notices use their own system text. */
-  title?: (message: ChatMessage) => string;
+  /**
+   * Built-in text template (see `eventText.ts`): the whole line of a notice, or
+   * the title of an event message. Without one, the platform's own text shows.
+   */
+  text?: Localized;
+  /** Variables the template can use (shown in the editor). */
+  variables?: string[];
   /** The event's size (bits, viewers, gifts …), used by alert thresholds. */
-  amount?: { label: string; read: (item: ChatMessage | ChatNotice) => number | undefined };
+  amount?: { label: Localized; read: (item: ChatMessage | ChatNotice) => number | undefined };
   /**
    * The cross-platform alert category this event belongs to (see {@link ALERT_CATEGORIES}).
    * Events without one are platform-only and get their own alert rule.
@@ -42,6 +47,11 @@ export interface PlatformEventGroup {
   events: EventDefinition[];
 }
 
+/** Picks one language from localized text. */
+export const lt = (text: Localized, locale: Locale) => text[locale];
+
+const L = (zh: string, en: string): Localized => ({ 'zh-TW': zh, en });
+
 export const eventKey = (platform: PlatformId, eventType: string) => `${platform}:${eventType}`;
 
 /** The styling key of a message or notice, if it is an event. */
@@ -51,10 +61,10 @@ export function eventKeyOf(item: Pick<ChatMessage | ChatNotice, 'platform' | 'ev
 
 const twitch = (
   eventType: string,
-  label: string,
-  description: string,
+  label: Localized,
+  description: Localized,
   category: EventCategory,
-  extra: Pick<EventDefinition, 'title' | 'amount' | 'alertCategory'> = {},
+  extra: Pick<EventDefinition, 'text' | 'variables' | 'amount' | 'alertCategory'> = {},
 ): EventDefinition => ({
   key: eventKey('twitch', eventType),
   platform: 'twitch',
@@ -79,13 +89,37 @@ const metaNumber =
  * covers e.g. subscriptions on every platform. Keys are `any:<category>`.
  */
 export const ALERT_CATEGORIES = [
-  { key: 'any:tip', label: '贊助', description: '小奇點等附帶金額的訊息', amountLabel: '數量' },
-  { key: 'any:sub', label: '訂閱', description: '新訂閱' },
-  { key: 'any:resub', label: '續訂', description: '續訂並分享', amountLabel: '累計月數' },
-  { key: 'any:gift', label: '贈送訂閱', description: '送訂閱給觀眾，含一次送多份', amountLabel: '贈訂份數' },
-  { key: 'any:raid', label: '揪團', description: '其他實況主帶觀眾過來', amountLabel: '觀眾人數' },
-  { key: 'any:announcement', label: '公告', description: '管理員發布的公告' },
-] as const satisfies readonly { key: string; label: string; description: string; amountLabel?: string }[];
+  {
+    key: 'any:tip',
+    label: L('贊助', 'Tips'),
+    description: L('小奇點等附帶金額的訊息', 'Messages with bits or other money'),
+    amountLabel: L('數量', 'Amount'),
+  },
+  { key: 'any:sub', label: L('訂閱', 'Subscriptions'), description: L('新訂閱', 'New subscriptions') },
+  {
+    key: 'any:resub',
+    label: L('續訂', 'Resubscriptions'),
+    description: L('續訂並分享', 'Shared resubscriptions'),
+    amountLabel: L('累計月數', 'Total months'),
+  },
+  {
+    key: 'any:gift',
+    label: L('贈送訂閱', 'Gift subs'),
+    description: L('送訂閱給觀眾，含一次送多份', 'Subs gifted to viewers, one or many at once'),
+    amountLabel: L('贈訂份數', 'Gifted subs'),
+  },
+  {
+    key: 'any:raid',
+    label: L('揪團', 'Raids'),
+    description: L('其他實況主帶觀眾過來', 'Another streamer brings their viewers'),
+    amountLabel: L('觀眾人數', 'Viewers'),
+  },
+  {
+    key: 'any:announcement',
+    label: L('公告', 'Announcements'),
+    description: L('管理員發布的公告', 'Announcements by moderators'),
+  },
+] as const satisfies readonly { key: string; label: Localized; description: Localized; amountLabel?: Localized }[];
 
 export type AlertCategoryKey = (typeof ALERT_CATEGORIES)[number]['key'];
 
@@ -99,38 +133,163 @@ export function platformOnlyEvents(group: PlatformEventGroup): EventDefinition[]
   return group.events.filter((event) => !event.alertCategory);
 }
 
+const SUB_VARIABLES = ['user', 'tier', 'duration'];
+
 export const EVENT_CATALOG: PlatformEventGroup[] = [
   {
     platform: 'twitch',
     label: 'Twitch',
     events: [
-      twitch('cheer', '小奇點（Cheer）', '附帶小奇點的聊天訊息', 'message', {
-        title: (message) => `小奇點 ×${message.cheerAmount ?? 0}`,
-        amount: { label: '小奇點', read: (item) => ('cheerAmount' in item ? item.cheerAmount : undefined) },
+      twitch('cheer', L('小奇點（Cheer）', 'Cheer'), L('附帶小奇點的聊天訊息', 'A chat message with bits'), 'message', {
+        text: L('小奇點 ×{amount}', 'Cheer ×{amount}'),
+        variables: ['user', 'amount'],
+        amount: { label: L('小奇點', 'Bits'), read: (item) => ('cheerAmount' in item ? item.cheerAmount : undefined) },
         alertCategory: 'any:tip',
       }),
-      twitch('highlighted', '頻道點數強調訊息', '用頻道點數兌換「強調我的訊息」', 'message', {
-        title: () => '頻道點數強調訊息',
+      twitch(
+        'highlighted',
+        L('頻道點數強調訊息', 'Highlighted message'),
+        L('用頻道點數兌換「強調我的訊息」', 'Redeemed "Highlight My Message" with channel points'),
+        'message',
+        { text: L('頻道點數強調訊息', 'Highlighted message'), variables: ['user'] },
+      ),
+      twitch('sub', L('訂閱', 'Sub'), L('新訂閱', 'A new subscription'), 'notice', {
+        text: L(
+          '{user} 以 {tier} 訂閱了[，一次 {duration} 個月]',
+          '{user} subscribed at {tier}[ for {duration} months]',
+        ),
+        variables: SUB_VARIABLES,
+        alertCategory: 'any:sub',
       }),
-      twitch('sub', '訂閱', '新訂閱', 'notice', { alertCategory: 'any:sub' }),
-      twitch('resub', '續訂', '續訂並附上訊息', 'notice', {
-        amount: { label: '累計月數', read: metaNumber('months') },
+      twitch('resub', L('續訂', 'Resub'), L('續訂並附上訊息', 'A resubscription with a message'), 'notice', {
+        text: L(
+          '{user} 以 {tier} 續訂，累計 {months} 個月[，連續 {streak} 個月]',
+          "{user} resubscribed at {tier}. They've subscribed for {months} {months|month|months}[, currently on a {streak} month streak]!",
+        ),
+        variables: [...SUB_VARIABLES, 'months', 'streak', 'gifter'],
+        amount: { label: L('累計月數', 'Total months'), read: metaNumber('months') },
         alertCategory: 'any:resub',
       }),
-      twitch('sub-gift', '贈送訂閱', '送一份訂閱給特定觀眾', 'notice', {
-        amount: { label: '贈訂份數', read: () => 1 },
+      twitch('sub-gift', L('贈送訂閱', 'Gift sub'), L('送一份訂閱給特定觀眾', 'A sub gifted to one viewer'), 'notice', {
+        text: L(
+          '{user} 送了一份 {tier} 訂閱給 {recipient}[（{duration} 個月）]',
+          '{user} gifted a {tier} sub to {recipient}[ for {duration} months]!',
+        ),
+        variables: [...SUB_VARIABLES, 'recipient', 'totalGifts'],
+        amount: { label: L('贈訂份數', 'Gifted subs'), read: () => 1 },
         alertCategory: 'any:gift',
       }),
-      twitch('community-gift', '大量贈訂', '一次送多份訂閱給聊天室', 'notice', {
-        amount: { label: '贈訂份數', read: metaNumber('count') },
-        alertCategory: 'any:gift',
-      }),
-      twitch('raid', '揪團（Raid）', '其他實況主帶觀眾過來', 'notice', {
-        amount: { label: '觀眾人數', read: metaNumber('viewers') },
-        alertCategory: 'any:raid',
-      }),
-      twitch('announcement', '公告', '管理員發布的公告', 'notice', { alertCategory: 'any:announcement' }),
-      twitch('watch-streak', '觀看連勝', '觀眾分享連續觀看紀錄', 'notice'),
+      twitch(
+        'community-gift',
+        L('大量贈訂', 'Community gift'),
+        L('一次送多份訂閱給聊天室', 'Many subs gifted to the chat at once'),
+        'notice',
+        {
+          text: L(
+            '{user} 送出 {count} 份 {tier} 訂閱給聊天室[，累計已送 {totalGifts} 份]',
+            "{user} is gifting {count} {tier} {count|sub|subs} to the community[. They've gifted {totalGifts} in the channel]!",
+          ),
+          variables: ['user', 'tier', 'count', 'totalGifts'],
+          amount: { label: L('贈訂份數', 'Gifted subs'), read: metaNumber('count') },
+          alertCategory: 'any:gift',
+        },
+      ),
+      twitch(
+        'gift-paid-upgrade',
+        L('贈訂轉付費', 'Gift sub continued'),
+        L('收到贈訂的觀眾自己續訂', 'A viewer keeps the sub they were gifted'),
+        'notice',
+        {
+          text: L('{user} 繼續使用 {gifter} 送的訂閱', '{user} is continuing the gift sub they got from {gifter}!'),
+          variables: ['user', 'gifter'],
+          alertCategory: 'any:sub',
+        },
+      ),
+      twitch(
+        'prime-paid-upgrade',
+        L('Prime 轉付費', 'Prime upgrade'),
+        L('從 Prime 訂閱升級成付費訂閱', 'A Prime sub upgraded to a paid one'),
+        'notice',
+        {
+          text: L('{user} 從 Prime 升級成 {tier} 訂閱', '{user} upgraded their Prime sub to {tier}!'),
+          variables: ['user', 'tier'],
+          alertCategory: 'any:sub',
+        },
+      ),
+      twitch(
+        'pay-it-forward',
+        L('贈訂傳下去', 'Pay it forward'),
+        L('收到贈訂後也送一份給別人', 'A gifted viewer gifts a sub in return'),
+        'notice',
+        {
+          text: L('{user} 把 {gifter} 的贈訂傳下去', '{user} is paying forward the gift they got from {gifter}!'),
+          variables: ['user', 'gifter'],
+          amount: { label: L('贈訂份數', 'Gifted subs'), read: () => 1 },
+          alertCategory: 'any:gift',
+        },
+      ),
+      twitch(
+        'raid',
+        L('揪團（Raid）', 'Raid'),
+        L('其他實況主帶觀眾過來', 'Another streamer brings their viewers'),
+        'notice',
+        {
+          text: L(
+            '{raider} 帶著 {viewers} 位觀眾揪團過來了',
+            '{raider} is raiding with {viewers} {viewers|viewer|viewers}!',
+          ),
+          variables: ['raider', 'viewers'],
+          amount: { label: L('觀眾人數', 'Viewers'), read: metaNumber('viewers') },
+          alertCategory: 'any:raid',
+        },
+      ),
+      twitch(
+        'unraid',
+        L('取消揪團', 'Raid canceled'),
+        L('實況主取消了揪團', 'The streamer canceled a raid'),
+        'notice',
+        {
+          text: L('揪團已取消', 'The raid was canceled'),
+        },
+      ),
+      twitch(
+        'announcement',
+        L('公告', 'Announcement'),
+        L('管理員發布的公告', 'An announcement by a moderator'),
+        'notice',
+        {
+          text: L('公告', 'Announcement'),
+          variables: ['user'],
+          alertCategory: 'any:announcement',
+        },
+      ),
+      twitch(
+        'bits-badge-tier',
+        L('小奇點徽章', 'Bits badge'),
+        L('觀眾解鎖新的小奇點徽章', 'A viewer unlocked a new bits badge'),
+        'notice',
+        {
+          text: L('{user} 解鎖了 {bitsTier} 小奇點徽章', '{user} just earned a new {bitsTier} bits badge!'),
+          variables: ['user', 'bitsTier'],
+        },
+      ),
+      twitch(
+        'charity-donation',
+        L('慈善捐款', 'Charity donation'),
+        L('觀眾為慈善活動捐款', 'A viewer donated to a charity campaign'),
+        'notice',
+        {
+          text: L('{user} 捐了 {donation} 給 {charity}', '{user} donated {donation} to {charity}!'),
+          variables: ['user', 'donation', 'charity'],
+        },
+      ),
+      // Twitch documents no structured fields for watch streaks yet; the platform's text shows as is.
+      twitch(
+        'watch-streak',
+        L('觀看連勝', 'Watch streak'),
+        L('觀眾分享連續觀看紀錄', 'A viewer shares their watch streak'),
+        'notice',
+      ),
     ],
   },
 ];

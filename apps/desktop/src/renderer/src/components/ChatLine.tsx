@@ -1,15 +1,19 @@
+import { noticeText } from '@chatto/chat-ui';
 import type { ChatMessage, ChatNotice, MessageFragment, UserRole } from '@chatto/core';
 import { ChevronRight, Gift, Megaphone, PartyPopper, Swords } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from './motion';
 import { Badge } from './kit';
+import { useLocale, useMessages } from '../i18n';
 
-const ROLE_LABEL: Partial<Record<UserRole, { label: string; tone: 'matcha' | 'sakura' | 'neutral' }>> = {
-  broadcaster: { label: '實況主', tone: 'sakura' },
-  moderator: { label: '管理員', tone: 'matcha' },
-  vip: { label: 'VIP', tone: 'sakura' },
-  subscriber: { label: '訂閱', tone: 'neutral' },
+type LabelledRole = 'broadcaster' | 'moderator' | 'vip' | 'subscriber';
+const ROLE_TONE: Record<LabelledRole, 'matcha' | 'sakura' | 'neutral'> = {
+  broadcaster: 'sakura',
+  moderator: 'matcha',
+  vip: 'sakura',
+  subscriber: 'neutral',
 };
+const isLabelled = (role: UserRole): role is LabelledRole => role in ROLE_TONE;
 
 export function formatClock(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -66,7 +70,8 @@ export function ChatLine({
   deleted?: boolean;
   showTime?: boolean;
 }) {
-  const role = message.author.roles.map((item) => ROLE_LABEL[item]).find(Boolean);
+  const m = useMessages().chatLog;
+  const role = message.author.roles.find(isLabelled);
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -82,19 +87,19 @@ export function ChatLine({
       <div className="min-w-0 flex-1 leading-relaxed break-words">
         {role ? (
           <span className="mr-1.5 align-[1px]">
-            <Badge tone={role.tone}>{role.label}</Badge>
+            <Badge tone={ROLE_TONE[role]}>{m.roles[role]}</Badge>
           </span>
         ) : null}
         <span className="font-semibold" style={{ color: message.author.color }}>
           {message.author.displayName}
         </span>
-        <span className="text-ink-faint">：</span>
+        <span className="text-ink-faint">{m.separator}</span>
         <span className={deleted ? 'line-through' : ''}>
           <Fragments fragments={message.fragments} />
         </span>
         {deleted ? (
           <span className="ml-2 align-[1px]">
-            <Badge tone="danger">已刪除</Badge>
+            <Badge tone="danger">{m.deleted}</Badge>
           </span>
         ) : null}
       </div>
@@ -110,11 +115,13 @@ const NOTICE_ICON = {
 
 /** Who a merged notice's members went to (gift recipients), falling back to their own text. */
 const memberLabel = (member: ChatNotice) =>
-  typeof member.meta.recipient === 'string' ? member.meta.recipient : member.systemText;
+  typeof member.meta.recipient === 'string' ? member.meta.recipient : (member.author?.displayName ?? member.systemText);
 
 export function NoticeLine({ notice, members = [] }: { notice: ChatNotice; members?: ChatNotice[] }) {
   const Icon = NOTICE_ICON[notice.kind as keyof typeof NOTICE_ICON] ?? PartyPopper;
   const [open, setOpen] = useState(false);
+  const m = useMessages().chatLog;
+  const locale = useLocale();
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.94 }}
@@ -124,7 +131,7 @@ export function NoticeLine({ notice, members = [] }: { notice: ChatNotice; membe
     >
       <Icon className="mt-0.5 size-4 shrink-0 text-matcha" />
       <div className="min-w-0">
-        <div className="font-medium">{notice.systemText}</div>
+        <div className="font-medium">{noticeText(notice, locale)}</div>
         {notice.fragments.length > 0 ? (
           <div className="text-ink-soft">
             <Fragments fragments={notice.fragments} />
@@ -139,7 +146,7 @@ export function NoticeLine({ notice, members = [] }: { notice: ChatNotice; membe
               className="mt-0.5 inline-flex items-center gap-0.5 text-xs text-matcha-strong hover:underline dark:text-matcha"
             >
               <ChevronRight className={`size-3.5 transition-transform ${open ? 'rotate-90' : ''}`} />
-              收到的人（{members.length}）
+              {m.recipients(members.length)}
             </button>
             {open ? (
               <ul className="mt-1 flex flex-wrap gap-1">

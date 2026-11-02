@@ -1,20 +1,22 @@
 import { BellRing, Cable, Home, MessagesSquare, MonitorUp, Palette, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
+import { useMessages } from '../i18n';
 import { useChatLog } from '../store';
 import { motion, RollingNumber, spring } from './motion';
 import { TeaCup, type TeaCupMood } from './TeaCup';
 
 export type PageId = 'overview' | 'chat' | 'themes' | 'outputs' | 'alerts' | 'connections' | 'settings';
 
-export const PAGES: { id: PageId; label: string; icon: ReactNode }[] = [
-  { id: 'overview', label: '總覽', icon: <Home /> },
-  { id: 'chat', label: '聊天室', icon: <MessagesSquare /> },
-  { id: 'themes', label: '主題', icon: <Palette /> },
-  { id: 'outputs', label: '輸出', icon: <MonitorUp /> },
-  { id: 'alerts', label: '提醒', icon: <BellRing /> },
-  { id: 'connections', label: '連線', icon: <Cable /> },
-  { id: 'settings', label: '設定', icon: <Settings /> },
+/** Pages in sidebar order; their names live in `useMessages().shell.pages`. */
+export const PAGES: { id: PageId; icon: ReactNode }[] = [
+  { id: 'overview', icon: <Home /> },
+  { id: 'chat', icon: <MessagesSquare /> },
+  { id: 'themes', icon: <Palette /> },
+  { id: 'outputs', icon: <MonitorUp /> },
+  { id: 'alerts', icon: <BellRing /> },
+  { id: 'connections', icon: <Cable /> },
+  { id: 'settings', icon: <Settings /> },
 ];
 
 const SETTINGS = PAGES.find((item) => item.id === 'settings')!;
@@ -30,6 +32,7 @@ function NavItem({
   onClick: () => void;
   badge?: number;
 }) {
+  const label = useMessages().shell.pages[item.id];
   return (
     <motion.button
       type="button"
@@ -56,7 +59,7 @@ function NavItem({
       >
         {item.icon}
       </motion.span>
-      <span className="relative">{item.label}</span>
+      <span className="relative">{label}</span>
       {badge !== undefined ? (
         <span className="relative ml-auto rounded-full bg-matcha-soft/60 px-2 font-mono text-[11px] text-matcha-strong">
           <RollingNumber value={badge} />
@@ -72,13 +75,6 @@ export function moodFor(state: AppState, rate: number): TeaCupMood {
   return rate >= 30 ? 'busy' : 'happy';
 }
 
-const MOOD_LINE: Record<TeaCupMood, string> = {
-  sleepy: '還沒連上，先泡杯茶',
-  happy: '聊天室很溫暖',
-  busy: '大家好熱情，茶要續杯了',
-  worried: '連線好像出了點狀況',
-};
-
 export function Sidebar({
   state,
   page,
@@ -88,6 +84,7 @@ export function Sidebar({
   page: PageId;
   onNavigate: (page: PageId) => void;
 }) {
+  const m = useMessages().shell;
   const { stats } = useChatLog();
   const mood = moodFor(state, stats.rate);
 
@@ -108,7 +105,7 @@ export function Sidebar({
           <div className="rounded-full bg-tile-muted p-1">
             <TeaCup mood={mood} size={40} />
           </div>
-          <p className="text-xs leading-relaxed text-ink-soft">{MOOD_LINE[mood]}</p>
+          <p className="text-xs leading-relaxed text-ink-soft">{m.mood[mood]}</p>
         </div>
       </div>
 

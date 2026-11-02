@@ -1,5 +1,6 @@
 import { SCHEMA_VERSION, type ChatEvent } from './message';
 import type { SoundSetting } from './alerts';
+import { isLocale, type Locale } from './i18n';
 import type { ChatTheme } from './theme';
 
 /**
@@ -30,9 +31,13 @@ export type ServerFrame =
       theme: ChatTheme;
       /** Recent events so a freshly opened viewer is not empty. */
       backlog: ChatEvent[];
+      /** Language of event texts; older servers leave it out (viewers use the default). */
+      locale?: Locale;
     }
   | { v: typeof PROTOCOL_VERSION; type: 'event'; event: ChatEvent; alert?: AlertCue }
-  | { v: typeof PROTOCOL_VERSION; type: 'theme'; theme: ChatTheme };
+  | { v: typeof PROTOCOL_VERSION; type: 'theme'; theme: ChatTheme }
+  /** The chat language changed. */
+  | { v: typeof PROTOCOL_VERSION; type: 'locale'; locale: Locale };
 
 export type ClientFrame = { v: typeof PROTOCOL_VERSION; type: 'subscribe'; target: ViewerTarget };
 
@@ -47,6 +52,8 @@ export function decodeServerFrame(data: string): ServerFrame | null {
     if (frame.type === 'hello' || frame.type === 'event' || frame.type === 'theme') {
       return frame as ServerFrame;
     }
+    if (frame.type === 'locale')
+      return isLocale((frame as { locale?: unknown }).locale) ? (frame as ServerFrame) : null;
     return null;
   } catch {
     return null;

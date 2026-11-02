@@ -2,6 +2,7 @@ import type { SoundSetting } from '@chatto/core';
 import { FolderOpen, Play } from 'lucide-react';
 import { alerts, previewSound } from '../../services/alerts';
 import { Button, Hint, Select, Slider, Toggle } from '../../components/kit';
+import { useMessages } from '../../i18n';
 import { soundFromValue, soundOptions, soundValue } from './draft';
 
 /** On/off, which sound, volume and a preview button for one alert sound. */
@@ -14,9 +15,10 @@ export function SoundPicker({
   value: SoundSetting;
   onChange: (value: SoundSetting) => void;
   port: number;
-  /** Accessible name, e.g. 「小奇點的提示音」. */
+  /** Accessible name, e.g. "Bits sound". */
   label: string;
 }) {
+  const m = useMessages().alerts.sound;
   const pickFile = () =>
     void alerts.importSound().then((imported) => imported && onChange({ ...value, sound: imported }));
   const choose = (next: string) => {
@@ -27,10 +29,15 @@ export function SoundPicker({
   return (
     <div className="flex items-center gap-3">
       <Toggle checked={value.enabled} label={label} onChange={(enabled) => onChange({ ...value, enabled })} />
-      <Select className="w-36" value={soundValue(value.sound)} options={soundOptions(value.sound)} onChange={choose} />
+      <Select
+        className="w-36"
+        value={soundValue(value.sound)}
+        options={soundOptions(value.sound, m)}
+        onChange={choose}
+      />
       {value.sound.kind === 'file' ? (
-        <Hint label="換一個檔案">
-          <Button size="sm" variant="ghost" aria-label={`換${label}的檔案`} onClick={pickFile}>
+        <Hint label={m.changeFile}>
+          <Button size="sm" variant="ghost" aria-label={m.changeFileFor(label)} onClick={pickFile}>
             <FolderOpen />
           </Button>
         </Hint>
@@ -45,8 +52,8 @@ export function SoundPicker({
           onChange={(volume) => onChange({ ...value, volume: volume / 100 })}
         />
       </div>
-      <Hint label="試聽">
-        <Button size="sm" variant="ghost" aria-label={`試聽${label}`} onClick={() => previewSound(value, port)}>
+      <Hint label={m.preview}>
+        <Button size="sm" variant="ghost" aria-label={m.previewFor(label)} onClick={() => previewSound(value, port)}>
           <Play />
         </Button>
       </Hint>

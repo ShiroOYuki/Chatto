@@ -5,6 +5,8 @@
 import type {
   AlertSettings,
   ChatEvent,
+  ChatLocalePref,
+  Locale,
   ChatTheme,
   ConnectionState,
   SoundRef,
@@ -30,6 +32,10 @@ export interface AppPrefs {
   launchAtLogin: boolean;
   /** Command that opens a theme's CSS file; empty uses VSCode. Supports `{file}` and `{folder}`. */
   editorCommand: string;
+  /** Language of the control panel, tray menu and dialogs. */
+  locale: Locale;
+  /** Language of event texts on the overlays and OBS: `auto` follows `locale`. */
+  chatLocale: ChatLocalePref;
 }
 
 /** How a theme's CSS file was opened: the configured editor, the system default app, or not at all. */

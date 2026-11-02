@@ -5,6 +5,7 @@ import {
   type AlertCue,
   type ChatEvent,
   type ChatTheme,
+  type Locale,
   type ViewerTarget,
 } from '@chatto/core';
 import { createReadStream, existsSync, statSync } from 'node:fs';
@@ -45,6 +46,8 @@ export interface LocalServerOptions {
   viewerDir: string;
   hub: ChatHub;
   themeFor(target: ViewerTarget): ChatTheme;
+  /** Language of event texts on every output. */
+  locale?(): Locale;
   /** Adjusts or drops events per output; every output gets every event when omitted. */
   route?(target: ViewerTarget, event: ChatEvent): Routed;
   /** Folder with the user's alert sounds, served at `/sounds/<file>`. */
@@ -102,6 +105,7 @@ export class LocalServer {
             type: 'hello',
             target: frame.target,
             theme: this.options.themeFor(frame.target),
+            ...(this.options.locale ? { locale: this.options.locale() } : {}),
             backlog: this.#backlogFor(frame.target),
           }),
         );
@@ -127,6 +131,12 @@ export class LocalServer {
       // Bound to loopback only: nothing on the LAN can read the chat feed.
       this.#http!.listen(this.options.port, '127.0.0.1', () => resolve());
     });
+  }
+
+  /** Tells every viewer the chat language changed. */
+  broadcastLocale(locale: Locale): void {
+    const payload = encodeFrame({ v: PROTOCOL_VERSION, type: 'locale', locale });
+    for (const socket of this.#clients.keys()) socket.send(payload);
   }
 
   /** Pushes a changed theme to every viewer of that target. */

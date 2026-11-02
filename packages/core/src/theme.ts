@@ -317,6 +317,13 @@ export interface ChatTheme {
   /** Per-event overrides; a missing key means the event follows `notice`. */
   events: Partial<Record<string, EventOverride>>;
 
+  /**
+   * The theme's own event texts, keyed like `events` (e.g. `twitch:resub`), in the
+   * template syntax of docs/theming.md. Missing or empty entries use the built-in text
+   * in the chat language.
+   */
+  eventText: Partial<Record<string, string>>;
+
   roles: Partial<Record<RoleKey, RoleStyle>>;
 
   animation: {

@@ -7,7 +7,15 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
   return {
     appInfo: { version: '0.1.0', platform: 'test' },
     window: { maximized: false },
-    prefs: { uiMode: 'full', appearance: 'light', closeToTray: true, launchAtLogin: false, editorCommand: '' },
+    prefs: {
+      uiMode: 'full',
+      appearance: 'light',
+      closeToTray: true,
+      launchAtLogin: false,
+      editorCommand: '',
+      locale: 'zh-TW',
+      chatLocale: 'auto',
+    },
     clientIdConfigured: true,
     auth: { status: 'signed-in', login: 'shiraine_ciel' },
     channel: { login: 'shiraine_ciel', state: 'connected' },

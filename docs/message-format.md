@@ -36,6 +36,27 @@ viewer、主題、外掛唯一需要理解的資料流。
 
 `ChatNotice` 也有 `eventType?: string`（kebab-case，例如 `resub`、`community-gift`、`watch-streak`）。樣式鍵為 `${platform}:${eventType}`，例如 `twitch:cheer`；渲染器輸出為 `data-event` 屬性。各平台的事件清單見 `packages/chat-ui/src/events.ts`。
 
+### 事件欄位（`ChatNotice.meta`）
+
+provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件文字模板（見 `docs/theming.md`「事件文字」）用它們組句。平台送來的 `systemText` 保留原文，模板組不出來時顯示它。
+
+| 鍵                                | 型別                         | 用在                               | 說明                                   |
+| --------------------------------- | ---------------------------- | ---------------------------------- | -------------------------------------- |
+| `tier`                            | `string`                     | 訂閱、續訂、贈訂、Prime 轉付費     | `1`、`2`、`3`、`prime`                 |
+| `months`                          | `number`                     | 續訂                               | 累計月數                               |
+| `streakMonths`                    | `number`                     | 續訂                               | 連續月數；觀眾選擇不公開時沒有這個鍵   |
+| `durationMonths`                  | `number`                     | 訂閱、續訂、贈訂                   | 一次買或送了幾個月（大於 1 才有）      |
+| `recipient`                       | `string`                     | 贈訂                               | 收到者                                 |
+| `count`                           | `number`                     | 大量贈訂                           | 這次送了幾份                           |
+| `totalGifts`                      | `number`                     | 贈訂、大量贈訂                     | 送禮者在頻道累計送了幾份（匿名時沒有） |
+| `gifter`                          | `string`                     | 收到的贈訂續訂、贈訂轉付費、傳下去 | 當初送禮的人                           |
+| `gifterAnonymous`                 | `boolean`                    | 同上                               | 當初是匿名贈送                         |
+| `anonymous`                       | `boolean`                    | 任何通知                           | 發出事件的人匿名（`author` 為空）      |
+| `viewers`                         | `number`                     | 揪團                               | 觀眾人數                               |
+| `raider`                          | `string`                     | 揪團                               | 揪團的實況主                           |
+| `bitsTier`                        | `number`                     | 小奇點徽章                         | 解鎖的徽章等級                         |
+| `charity`、`donation`、`currency` | `string`、`number`、`string` | 慈善捐款                           | 慈善單位、金額（已換算小數）、貨幣代碼 |
+
 ### 同一批事件（`ChatNotice.meta`）
 
 有些平台把一個動作拆成好幾則通知，例如 Twitch 一次贈送 5 份訂閱：先送 1 則「送出 5 份訂閱給聊天室」，再送 5 則個別贈訂。平台無關的 `meta` 鍵把它們標成同一批：
@@ -81,11 +102,13 @@ viewer、主題、外掛唯一需要理解的資料流。
 
 - client → server：`{ v, type: 'subscribe', target: 'overlay' | 'embed' | 'alerts' }`
 - server → client：
-  - `hello`：`theme` 與 `backlog`（最近事件；`alerts` 一律是空的）
+  - `hello`：`theme`、`backlog`（最近事件；`alerts` 一律是空的）與 `locale`（聊天室語言，舊版 server 沒有這個欄位）
   - `event`：一個 `ChatEvent`；送給 `alerts` 時另有 `alert: { durationMs, sound? }`（`AlertCue`），告訴事件 Overlay 卡片停留多久、播什麼聲音
-  - `theme`：主題變更
+  - `theme`：主題變更（內建主題的文字已經換成聊天室語言）
+  - `locale`：聊天室語言變更（`zh-TW`、`en`）
 - 每個 target 收到的事件可能不同，見 `docs/architecture.md` 的「輸出路由」。
-- HTTP `/sounds/<檔名>`：使用者自選的提示音。
+- HTTP `/sounds/<檔名>`：使用者自選的提示音；`/theme-assets/<檔名>`：主題的外框圖片。
+- viewer 單獨預覽時可用 `?lang=en` 指定語言（`?mock=1`、`?specimen`）。
 
 ## Twitch 對應
 
@@ -99,9 +122,13 @@ viewer、主題、外掛唯一需要理解的資料流。
 
 事件類型：附帶小奇點的訊息 → `cheer`；`message_type: channel_points_highlighted` → `highlighted`；通知的 `notice_type` 轉成 kebab-case 並去掉 `shared_chat_` 前綴，`sub_gift` → `sub-gift`、`community_sub_gift` → `community-gift`（`twitchNoticeEventType()`）。
 
+事件欄位由 `noticeMeta()` 取出。payload 放在和 `notice_type` 同名的鍵下（共享聊天室是 `shared_chat_<type>`）：`sub_tier`（`1000` 等）→ `tier`、`is_prime` → `tier: 'prime'`、`resub.cumulative_months` → `months`、`resub.streak_months` → `streakMonths`、`duration_months` → `durationMonths`、`sub_gift.recipient_user_name` → `recipient`、`cumulative_total` → `totalGifts`、`gifter_user_name`／`gifter_is_anonymous` → `gifter`／`gifterAnonymous`、`raid.user_name`／`viewer_count` → `raider`／`viewers`、`bits_badge_tier.tier` → `bitsTier`、`charity_donation` → `charity`、`donation`、`currency`。觀看連勝（`watch_streak`）還沒有文件化的欄位，顯示平台原文。
+
 同一批贈訂：`community_sub_gift.id` → `meta.groupId`＋`meta.groupLead`；`sub_gift.community_gift_id` → `meta.groupId`；`sub_gift.recipient_user_name` → `meta.recipient`。
 
 ## 變更紀錄
+
+- **v1.4**（2026-11-02）：`ChatNotice.meta` 新增事件欄位（`tier`、`months`、`streakMonths` 等，見上表）；協定的 `hello` 加上 `locale`，新增 `locale` frame；新增 Twitch 事件 `gift-paid-upgrade`、`prime-paid-upgrade`、`pay-it-forward`、`unraid`、`bits-badge-tier`、`charity-donation`（非破壞性）。
 
 - **v1.3**（2026-11-02）：`ChatNotice.meta` 新增 `groupId`、`groupLead`、`recipient`，同一批事件合併顯示（非破壞性）。
 

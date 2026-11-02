@@ -21,4 +21,10 @@ describe('protocol', () => {
     expect(decodeServerFrame('{')).toBeNull();
     expect(decodeClientFrame('null')).toBeNull();
   });
+
+  it('carries the chat language and rejects unknown ones', () => {
+    const frame = { v: PROTOCOL_VERSION, type: 'locale', locale: 'en' } as const;
+    expect(decodeServerFrame(encodeFrame(frame))).toEqual(frame);
+    expect(decodeServerFrame(JSON.stringify({ ...frame, locale: 'xx' }))).toBeNull();
+  });
 });

@@ -3,6 +3,7 @@ import { Crosshair } from 'lucide-react';
 import { useState } from 'react';
 import { InspectablePreview, type PreviewMode } from '../../components/InspectablePreview';
 import { Hint, Segmented, Tile } from '../../components/kit';
+import { useMessages } from '../../i18n';
 import { BACKDROPS, type Backdrop } from '../../components/ThemePreview';
 import { buildSelector } from '../../lib/cssSelector';
 import { SelectorBuilder } from './SelectorBuilder';
@@ -21,6 +22,7 @@ export function PreviewPane({
   const [backdrop, setBackdrop] = useState<Backdrop>('game');
   const [previewMode, setPreviewMode] = useState<PreviewMode>('specimen');
   const { picked } = hl;
+  const m = useMessages().editor.preview;
 
   return (
     <Tile className="min-h-0 p-3!">
@@ -30,11 +32,11 @@ export function PreviewPane({
           value={previewMode}
           onChange={setPreviewMode}
           options={[
-            { value: 'specimen', label: '範例' },
-            { value: 'live', label: '即時' },
+            { value: 'specimen', label: m.sample },
+            { value: 'live', label: m.live },
           ]}
         />
-        <Hint label="檢查：滑過預覽顯示 class，點一下產生選擇器">
+        <Hint label={m.inspect}>
           <button
             type="button"
             aria-pressed={hl.inspect}
@@ -51,7 +53,7 @@ export function PreviewPane({
             <button
               key={key}
               type="button"
-              aria-label={`預覽背景 ${key}`}
+              aria-label={m.backdrop(key)}
               onClick={() => setBackdrop(key)}
               className={`size-6 rounded-full border-2 transition ${backdrop === key ? 'border-matcha' : 'border-line'}`}
               style={{ background: BACKDROPS[key] }}

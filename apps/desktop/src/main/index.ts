@@ -1,10 +1,11 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { ChatTheme } from '@chatto/core';
+import type { ChatTheme, Locale } from '@chatto/core';
 import { IPC, type AppState } from '../shared/ipc';
 import { AppController } from './app-controller';
 import { CssFiles } from './css-files';
+import { mainMessages } from './messages';
 import { OverlayWindow } from './overlay-window';
 import { LocalServer } from './server';
 import { SettingsStore, type Rect } from './settings';
@@ -91,17 +92,21 @@ function showMainWindow(): void {
   mainWindow.focus();
 }
 
-function createTray(): void {
+/** The tray menu in the interface language; rebuilt when the language changes. */
+function trayMenu(locale: Locale): Menu {
+  const m = mainMessages(locale).tray;
+  return Menu.buildFromTemplate([
+    { label: m.open, click: showMainWindow },
+    { type: 'separator' },
+    { label: m.quit, click: () => app.quit() },
+  ]);
+}
+
+function createTray(locale: Locale): void {
   const icon = nativeImage.createFromPath(join(resourcesDir, 'icon.png')).resize({ width: 16, height: 16 });
   tray = new Tray(icon);
   tray.setToolTip('Chatto');
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      { label: '開啟 Chatto', click: showMainWindow },
-      { type: 'separator' },
-      { label: '結束', click: () => app.quit() },
-    ]),
-  );
+  tray.setContextMenu(trayMenu(locale));
   tray.on('click', showMainWindow);
 }
 
@@ -137,10 +142,11 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.setAlertsOverlayEditing, (_e, editing: boolean) => controller.setAlertsOverlayEditing(editing));
   ipcMain.handle(IPC.resetAlertsOverlayBounds, () => controller.resetAlertsOverlayBounds());
   ipcMain.handle(IPC.importSound, async () => {
+    const m = controller.messages().dialogs;
     const options = {
-      title: '選擇提示音',
+      title: m.chooseSound,
       properties: ['openFile' as const],
-      filters: [{ name: '音訊', extensions: ['mp3', 'ogg', 'wav'] }],
+      filters: [{ name: m.audioFiles, extensions: ['mp3', 'ogg', 'wav'] }],
     };
     const result = mainWindow ? await dialog.showOpenDialog(mainWindow, options) : await dialog.showOpenDialog(options);
     const file = result.filePaths[0];
@@ -150,20 +156,22 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.saveTheme, (_e, theme) => controller.saveTheme(theme));
   ipcMain.handle(IPC.deleteTheme, (_e, id: string) => controller.deleteTheme(id));
   ipcMain.handle(IPC.importThemeAsset, async () => {
+    const m = controller.messages().dialogs;
     const options = {
-      title: '選擇外框圖片',
+      title: m.chooseFrameImage,
       properties: ['openFile' as const],
-      filters: [{ name: '圖片', extensions: ['png', 'webp', 'gif'] }],
+      filters: [{ name: m.imageFiles, extensions: ['png', 'webp', 'gif'] }],
     };
     const result = mainWindow ? await dialog.showOpenDialog(mainWindow, options) : await dialog.showOpenDialog(options);
     const file = result.filePaths[0];
     return result.canceled || !file ? null : controller.importThemeAsset(file);
   });
   ipcMain.handle(IPC.exportThemePackage, async (_e, theme: ChatTheme) => {
+    const m = controller.messages().dialogs;
     const options = {
-      title: '匯出主題包',
+      title: m.exportThemePackage,
       defaultPath: `chatto-theme-${theme.id}.${THEME_PACKAGE_EXTENSION}`,
-      filters: [{ name: 'Chatto 主題包', extensions: [THEME_PACKAGE_EXTENSION] }],
+      filters: [{ name: m.themePackageFiles, extensions: [THEME_PACKAGE_EXTENSION] }],
     };
     const result = mainWindow ? await dialog.showSaveDialog(mainWindow, options) : await dialog.showSaveDialog(options);
     if (result.canceled || !result.filePath) return false;
@@ -186,13 +194,15 @@ async function bootstrap(): Promise<void> {
   const settings = new SettingsStore();
   const controller = new AppController(settings);
   controller.soundsDir = join(app.getPath('userData'), 'sounds');
-  controller.assets = new ThemeAssets(join(app.getPath('userData'), 'theme-assets'));
+  controller.assets = new ThemeAssets(join(app.getPath('userData'), 'theme-assets'), () => controller.messages());
   // Safe here: no theme editor is open yet, so no unsaved theme can be using an image.
   controller.collectThemeAssets();
   controller.cssFiles = new CssFiles({
     dir: join(app.getPath('userData'), 'custom-css'),
     onExternalChange: (themeId, css) => controller.applyExternalCss(themeId, css),
     openWithSystem: async (path) => (await shell.openPath(path)) === '',
+    // Reference files are rewritten on every open, so they pick up a language change then.
+    locale: () => settings.get().prefs.locale,
   });
   controller.onCssFileChanged = (change) => send(IPC.cssFileChanged, change);
   controller.cssFiles.start();
@@ -202,6 +212,7 @@ async function bootstrap(): Promise<void> {
     viewerDir,
     hub: controller.hub,
     themeFor: (target) => controller.themeFor(target),
+    locale: () => controller.chatLocale(),
     route: (target, event) => controller.route(target, event),
     soundsDir: controller.soundsDir,
     assets: controller.assets,
@@ -229,7 +240,14 @@ async function bootstrap(): Promise<void> {
 
   registerIpc(controller, settings);
   mainWindow = createMainWindow(settings, controller);
-  createTray();
+  let trayLocale = settings.get().prefs.locale;
+  createTray(trayLocale);
+  // Called after every preference change; menus built once with text are rebuilt in the new language.
+  controller.onLocaleChange = (locale) => {
+    if (locale === trayLocale) return;
+    trayLocale = locale;
+    tray?.setContextMenu(trayMenu(locale));
+  };
   await controller.init();
 
   app.on('second-instance', showMainWindow);

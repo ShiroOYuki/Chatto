@@ -1,8 +1,10 @@
+import { DEFAULT_LOCALE, type Locale } from '@chatto/core';
 import { ATTRIBUTE_REFERENCE, CLASS_REFERENCE, EVENT_REFERENCE, VARIABLE_REFERENCE } from '@chatto/chat-ui/reference';
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
 import { join } from 'node:path';
 import type { CssFileOpenResult, EditorLaunch } from '../shared/ipc';
+import { mainMessages } from './messages';
 
 /** Opens the theme folder as a workspace so the editor picks up `.vscode/settings.json`. */
 export const DEFAULT_EDITOR_COMMAND = 'code "{folder}" "{file}"';
@@ -28,10 +30,10 @@ export function editorCommandLine(command: string, folder: string, file: string)
 }
 
 /** VSCode custom data (`css.customData`): describes the CSS variables Chatto sets. */
-export function cssCustomData(): object {
+export function cssCustomData(locale: Locale = DEFAULT_LOCALE): object {
   return {
     version: 1.1,
-    properties: VARIABLE_REFERENCE.map(({ name, description }) => ({ name, description })),
+    properties: VARIABLE_REFERENCE.map(({ name, description }) => ({ name, description: description[locale] })),
   };
 }
 
@@ -44,30 +46,26 @@ export function workspaceSettings(): object {
 }
 
 /** Every public selector as an empty rule with its description, for browsing and copying. */
-export function referenceCss(): string {
+export function referenceCss(locale: Locale = DEFAULT_LOCALE): string {
+  const m = mainMessages(locale).reference;
   const groups = [
-    { title: '元件', items: CLASS_REFERENCE, prefix: '' },
-    {
-      title: '條件（加在 .chatto-message 或 .chatto-notice 後面）',
-      items: ATTRIBUTE_REFERENCE,
-      prefix: '.chatto-message',
-    },
-    { title: '平台事件', items: EVENT_REFERENCE, prefix: '.chatto-message' },
+    { title: m.classes, items: CLASS_REFERENCE, prefix: '' },
+    { title: m.attributes, items: ATTRIBUTE_REFERENCE, prefix: '.chatto-message' },
+    { title: m.events, items: EVENT_REFERENCE, prefix: '.chatto-message' },
   ];
   const lines = [
     '/*',
-    ' * Chatto 自訂 CSS 參考，由 Chatto 自動產生，修改不會保留。',
-    ' * 每個主題的自訂 CSS 是這個資料夾裡的「主題 id.css」，存檔後 Chatto 會直接儲存主題。',
+    ...m.header.map((line) => ` * ${line}`),
     ' */',
     '',
-    '/* CSS 變數 */',
-    ...VARIABLE_REFERENCE.map(({ name, description }) => `/* ${name}：${description} */`),
+    `/* ${m.variables} */`,
+    ...VARIABLE_REFERENCE.map(({ name, description }) => `/* ${name}${m.separator}${description[locale]} */`),
   ];
   for (const group of groups) {
     lines.push('', `/* ── ${group.title} ── */`, '');
     for (const item of group.items) {
       const selector = item.selector.startsWith('.') ? item.selector : `${group.prefix}${item.selector}`;
-      lines.push(`/* ${item.label}：${item.description} */`, `${selector} {}`, '');
+      lines.push(`/* ${item.label[locale]}${m.separator}${item.description[locale]} */`, `${selector} {}`, '');
     }
   }
   return `${lines.join('\n').trimEnd()}\n`;
@@ -100,6 +98,8 @@ export interface CssFilesOptions {
   run?: (commandLine: string) => Promise<number | null>;
   /** Opens a file with the system's default app; resolves false when that fails. */
   openWithSystem: (path: string) => Promise<boolean>;
+  /** Language of the reference files (the interface language); Traditional Chinese by default. */
+  locale?: () => Locale;
 }
 
 /**
@@ -184,8 +184,9 @@ export class CssFiles {
   #writeWorkspace(): void {
     mkdirSync(join(this.dir, '.vscode'), { recursive: true });
     writeFileSync(join(this.dir, '.vscode', 'settings.json'), `${JSON.stringify(workspaceSettings(), null, 2)}\n`);
-    writeFileSync(join(this.dir, '.vscode', CUSTOM_DATA_FILE), `${JSON.stringify(cssCustomData(), null, 2)}\n`);
-    writeFileSync(join(this.dir, REFERENCE_FILE), referenceCss());
+    const locale = this.options.locale?.() ?? DEFAULT_LOCALE;
+    writeFileSync(join(this.dir, '.vscode', CUSTOM_DATA_FILE), `${JSON.stringify(cssCustomData(locale), null, 2)}\n`);
+    writeFileSync(join(this.dir, REFERENCE_FILE), referenceCss(locale));
   }
 
   #readBack(themeId: string): void {

@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { useMessages } from '../../../i18n';
 
 interface Hsva {
   h: number;
@@ -173,6 +174,7 @@ export type ColorPickerHueProps = ComponentProps<typeof Slider.Root>;
 
 export const ColorPickerHue = ({ className, ...props }: ColorPickerHueProps) => {
   const { h, setColor } = useColorPicker();
+  const m = useMessages().editorFields.color;
   return (
     <Slider.Root
       className={cn('relative flex h-4 w-full touch-none', className)}
@@ -185,7 +187,7 @@ export const ColorPickerHue = ({ className, ...props }: ColorPickerHueProps) => 
       <Slider.Track className="relative my-0.5 h-3 w-full grow rounded-full bg-[linear-gradient(90deg,#FF0000,#FFFF00,#00FF00,#00FFFF,#0000FF,#FF00FF,#FF0000)]">
         <Slider.Range className="absolute h-full" />
       </Slider.Track>
-      <Slider.Thumb className={thumbClass} aria-label="色相" />
+      <Slider.Thumb className={thumbClass} aria-label={m.hue} />
     </Slider.Root>
   );
 };
@@ -194,6 +196,7 @@ export type ColorPickerAlphaProps = ComponentProps<typeof Slider.Root>;
 
 export const ColorPickerAlpha = ({ className, ...props }: ColorPickerAlphaProps) => {
   const { h, s, v, a, setColor } = useColorPicker();
+  const m = useMessages().editorFields.color;
   const solid = toColor({ h, s, v, a: 100 }).rgb().string();
   return (
     <Slider.Root
@@ -211,7 +214,7 @@ export const ColorPickerAlpha = ({ className, ...props }: ColorPickerAlphaProps)
         <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, transparent, ${solid})` }} />
         <Slider.Range className="absolute h-full bg-transparent" />
       </Slider.Track>
-      <Slider.Thumb className={thumbClass} aria-label="不透明度" />
+      <Slider.Thumb className={thumbClass} aria-label={m.alpha} />
     </Slider.Root>
   );
 };
@@ -224,6 +227,7 @@ interface EyeDropperApi {
 
 export const ColorPickerEyeDropper = ({ className, ...props }: ColorPickerEyeDropperProps) => {
   const { setColor } = useColorPicker();
+  const m = useMessages().editorFields.color;
   const supported = typeof window !== 'undefined' && 'EyeDropper' in window;
   if (!supported) return null;
 
@@ -245,7 +249,7 @@ export const ColorPickerEyeDropper = ({ className, ...props }: ColorPickerEyeDro
       size="icon-sm"
       type="button"
       variant="outline"
-      aria-label="從螢幕取色"
+      aria-label={m.eyeDropper}
       {...props}
     >
       <PipetteIcon size={16} />

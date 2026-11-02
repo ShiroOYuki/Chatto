@@ -17,3 +17,11 @@ for (const theme of PRESET_THEMES) {
     await expect(page).toHaveScreenshot(`${theme.id}.png`, { fullPage: true });
   });
 }
+
+// Event texts in English (the chat language), on one theme.
+test('theme matcha-glass with English event texts', async ({ page }) => {
+  await page.goto(`${VIEWER_URL}/embed?specimen&backdrop&theme=matcha-glass&lang=en`);
+  await expect(page.locator('.chatto-root[data-theme-id="matcha-glass"]')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page).toHaveScreenshot('matcha-glass-en.png', { fullPage: true });
+});

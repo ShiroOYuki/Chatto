@@ -1,5 +1,7 @@
 import {
   defaultAlertSettings,
+  isLocale,
+  localeFromTag,
   normalizeAlertSettings,
   type AlertSettings,
   type ChatTheme,
@@ -42,8 +44,25 @@ const defaults = (): Settings => ({
   alerts: defaultAlertSettings(),
   selectedThemes: { overlay: DEFAULT_THEME_ID, embed: DEFAULT_THEME_ID, alerts: DEFAULT_THEME_ID },
   customThemes: [],
-  prefs: { uiMode: 'full', appearance: 'system', closeToTray: true, launchAtLogin: false, editorCommand: '' },
+  prefs: {
+    uiMode: 'full',
+    appearance: 'system',
+    closeToTray: true,
+    launchAtLogin: false,
+    editorCommand: '',
+    // First launch speaks the system language.
+    locale: localeFromTag(app.getLocale()),
+    chatLocale: 'auto',
+  },
 });
+
+/** Fills preferences saved by older versions and drops unknown languages. */
+export function normalizePrefs(raw: Partial<AppPrefs> | undefined, base: AppPrefs): AppPrefs {
+  const prefs = { ...base, ...raw };
+  if (!isLocale(prefs.locale)) prefs.locale = base.locale;
+  if (prefs.chatLocale !== 'auto' && !isLocale(prefs.chatLocale)) prefs.chatLocale = 'auto';
+  return prefs;
+}
 
 /** JSON settings in the user data folder, written atomically. */
 export class SettingsStore {
@@ -78,7 +97,7 @@ export class SettingsStore {
         alertsOverlay: { ...base.alertsOverlay, ...raw.alertsOverlay },
         alerts: normalizeAlertSettings(raw.alerts),
         selectedThemes: { ...base.selectedThemes, ...raw.selectedThemes },
-        prefs: { ...base.prefs, ...raw.prefs },
+        prefs: normalizePrefs(raw.prefs, base.prefs),
       };
     } catch {
       return defaults();

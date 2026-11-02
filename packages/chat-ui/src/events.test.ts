@@ -35,7 +35,13 @@ describe('platform events', () => {
     expect(alertRuleKey('twitch:highlighted')).toBe('twitch:highlighted');
     expect(alertRuleKey('youtube:unknown')).toBe('youtube:unknown');
     const twitch = EVENT_CATALOG.find((group) => group.platform === 'twitch')!;
-    expect(platformOnlyEvents(twitch).map((event) => event.key)).toEqual(['twitch:highlighted', 'twitch:watch-streak']);
+    expect(platformOnlyEvents(twitch).map((event) => event.key)).toEqual([
+      'twitch:highlighted',
+      'twitch:unraid',
+      'twitch:bits-badge-tier',
+      'twitch:charity-donation',
+      'twitch:watch-streak',
+    ]);
     // Every category is used by at least one event.
     const used = new Set(EVENT_CATALOG.flatMap((group) => group.events.map((event) => event.alertCategory)));
     for (const category of ALERT_CATEGORIES) expect(used).toContain(category.key);

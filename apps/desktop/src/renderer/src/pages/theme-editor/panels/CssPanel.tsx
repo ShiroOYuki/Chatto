@@ -1,41 +1,55 @@
 import { ATTRIBUTE_REFERENCE, CLASS_REFERENCE, EVENT_REFERENCE, type SelectorReference } from '@chatto/chat-ui';
 import { SquarePen } from 'lucide-react';
 import { CssEditor, type CursorRequest } from '../../../components/CssEditor';
+import type { ReactNode } from 'react';
 import { Button, Hint } from '../../../components/kit';
+import { useLocale, useMessages } from '../../../i18n';
 import type { ExternalCss } from '../useExternalCss';
 import { PanelIntro } from './shared';
 
-const REFERENCE_GROUPS: { label: string; items: SelectorReference[] }[] = [
-  { label: '元件', items: CLASS_REFERENCE },
-  { label: '條件', items: ATTRIBUTE_REFERENCE },
-  { label: '平台事件', items: EVENT_REFERENCE },
+const REFERENCE_GROUPS: { key: 'classes' | 'attributes' | 'events'; items: SelectorReference[] }[] = [
+  { key: 'classes', items: CLASS_REFERENCE },
+  { key: 'attributes', items: ATTRIBUTE_REFERENCE },
+  { key: 'events', items: EVENT_REFERENCE },
 ];
 
 const isAttribute = (item: SelectorReference) => item.selector.startsWith('[');
 
 const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path;
 
+/** Puts the file name where `{file}` stands in a status text. */
+function withFile(text: string, file: ReactNode): ReactNode {
+  const [before, after] = text.split('{file}');
+  return (
+    <>
+      {before}
+      {file}
+      {after}
+    </>
+  );
+}
+
 function ExternalStatus({ external, cssUnsaved }: { external: ExternalCss; cssUnsaved: boolean }) {
-  if (cssUnsaved) return <span className="text-xs text-ink-faint">先儲存這裡的 CSS 修改再開啟。</span>;
+  const m = useMessages().editorPanels.css;
+  if (cssUnsaved) return <span className="text-xs text-ink-faint">{m.saveFirst}</span>;
   if (external.error) {
     return (
       <span role="alert" className="text-xs text-danger" title={external.error}>
-        無法開啟檔案，請再試一次
+        {m.openFailed}
       </span>
     );
   }
   const { opened } = external;
-  if (!opened) return <span className="text-xs text-ink-faint">在外部存檔就會直接儲存並套用。</span>;
+  if (!opened) return <span className="text-xs text-ink-faint">{m.idle}</span>;
   const file = (
     <code className="font-mono text-ink-soft select-all" title={opened.path}>
       {opened.launched === 'none' ? opened.path : fileName(opened.path)}
     </code>
   );
+  const text = { editor: m.openedEditor, system: m.openedSystem, none: m.openedNone }[opened.launched];
   return (
     <span role="status" className="min-w-0 text-xs text-ink-faint">
-      {opened.launched === 'editor' ? <>已開啟 {file}，存檔即套用。</> : null}
-      {opened.launched === 'system' ? <>找不到編輯器指令，已用預設程式開啟 {file}，存檔即套用。</> : null}
-      {opened.launched === 'none' ? <>無法開啟編輯器，請手動開啟 {file}，存檔即套用。</> : null}
+      {withFile(text, file)}
     </span>
   );
 }
@@ -65,14 +79,11 @@ export function CssPanel({
   onHoverSelector: (selector: string | null) => void;
   onInsertRule: (selector: string) => void;
 }) {
+  const m = useMessages().editorPanels.css;
+  const locale = useLocale();
   return (
     <>
-      <PanelIntro>
-        {blank
-          ? '空白基底不會產生任何樣式，畫面完全由這裡的 CSS 決定。'
-          : '這裡的 CSS 會套在參數樣式之後，可以覆蓋任何設定。'}
-        游標所在規則符合的元素會在預覽中標示出來。
-      </PanelIntro>
+      <PanelIntro>{m.intro(blank)}</PanelIntro>
       <div className="flex items-center gap-3 pb-3">
         <Button
           size="sm"
@@ -93,12 +104,10 @@ export function CssPanel({
           placeholder={".chatto-message[data-roles~='moderator'] .chatto-author::before {\n  content: '🛡 ';\n}"}
         />
       </div>
-      <p className="pt-3 text-xs text-ink-faint">
-        滑過可在預覽中標示，點一下插入一條新規則。也可以開啟預覽的「檢查」直接點選元素。
-      </p>
+      <p className="pt-3 text-xs text-ink-faint">{m.referenceHelp}</p>
       {REFERENCE_GROUPS.map((group) => (
-        <div key={group.label} className="pt-2">
-          <div className="pb-1 text-[11px] font-medium text-ink-faint">{group.label}</div>
+        <div key={group.key} className="pt-2">
+          <div className="pb-1 text-[11px] font-medium text-ink-faint">{m.groups[group.key]}</div>
           <div className="flex flex-wrap gap-1.5">
             {group.items.map((item) => {
               // Attribute conditions apply to messages and notices alike, so outline both.
@@ -107,7 +116,7 @@ export function CssPanel({
                 : item.selector;
               const insert = isAttribute(item) ? `.chatto-message${item.selector}` : item.selector;
               return (
-                <Hint key={item.selector} label={`${item.label}：${item.description}`} side="top">
+                <Hint key={item.selector} label={m.reference(item.label[locale], item.description[locale])} side="top">
                   <button
                     type="button"
                     onMouseEnter={() => onHoverSelector(highlight)}

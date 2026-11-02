@@ -1,26 +1,28 @@
 import type { MessageArrangement } from '@chatto/core';
 import { Segmented } from '../../../components/kit';
+import { useMessages } from '../../../i18n';
 import { BoxEditor, FieldRow, NumberField } from '../fields';
 import { SubHeading, type PanelProps } from './shared';
 
 export function ListPanel({ draft, set }: PanelProps) {
   const { list } = draft;
+  const m = useMessages().editorPanels.list;
   return (
     <>
-      <FieldRow label="水平對齊">
+      <FieldRow label={m.align}>
         <Segmented
           size="sm"
           value={list.align}
           onChange={set('list', 'align')}
           options={[
-            { value: 'stretch', label: '填滿' },
-            { value: 'start', label: '靠左' },
-            { value: 'end', label: '靠右' },
+            { value: 'stretch', label: m.stretch },
+            { value: 'start', label: m.start },
+            { value: 'end', label: m.end },
           ]}
         />
       </FieldRow>
-      <NumberField label="訊息間距" value={list.gap} min={0} max={32} unit="px" onChange={set('list', 'gap')} />
-      <SubHeading>面板外框（包住所有訊息）</SubHeading>
+      <NumberField label={m.gap} value={list.gap} min={0} max={32} unit="px" onChange={set('list', 'gap')} />
+      <SubHeading>{m.box}</SubHeading>
       <BoxEditor value={list.box} onChange={set('list', 'box')} />
     </>
   );
@@ -28,23 +30,24 @@ export function ListPanel({ draft, set }: PanelProps) {
 
 export function MessagePanel({ draft, set }: PanelProps) {
   const { message } = draft;
+  const m = useMessages().editorPanels.message;
   return (
     <>
-      <FieldRow label="排列方式" hint="單行：名稱與內容同一行；上下：名稱在上；分欄：名稱固定在左欄。">
+      <FieldRow label={m.arrangement} hint={m.arrangementHint}>
         <Segmented
           size="sm"
           value={message.arrangement}
           onChange={(value: MessageArrangement) => set('message', 'arrangement')(value)}
           options={[
-            { value: 'inline', label: '單行' },
-            { value: 'stacked', label: '上下' },
-            { value: 'columns', label: '分欄' },
+            { value: 'inline', label: m.inline },
+            { value: 'stacked', label: m.stacked },
+            { value: 'columns', label: m.columns },
           ]}
         />
       </FieldRow>
       <NumberField
-        label="元件間距"
-        hint="頭像、名稱、內容之間"
+        label={m.gap}
+        hint={m.gapHint}
         value={message.gap}
         min={0}
         max={24}
@@ -52,8 +55,8 @@ export function MessagePanel({ draft, set }: PanelProps) {
         onChange={set('message', 'gap')}
       />
       <NumberField
-        label="最大寬度"
-        hint="0 為不限制"
+        label={m.maxWidth}
+        hint={m.maxWidthHint}
         value={message.maxWidth}
         min={0}
         max={800}
@@ -61,19 +64,19 @@ export function MessagePanel({ draft, set }: PanelProps) {
         unit="px"
         onChange={set('message', 'maxWidth')}
       />
-      <FieldRow label="頭像垂直對齊">
+      <FieldRow label={m.align}>
         <Segmented
           size="sm"
           value={message.align}
           onChange={set('message', 'align')}
           options={[
-            { value: 'start', label: '上' },
-            { value: 'center', label: '中' },
-            { value: 'end', label: '下' },
+            { value: 'start', label: m.top },
+            { value: 'center', label: m.middle },
+            { value: 'end', label: m.bottom },
           ]}
         />
       </FieldRow>
-      <SubHeading>訊息外框</SubHeading>
+      <SubHeading>{m.box}</SubHeading>
       <BoxEditor value={message.box} onChange={set('message', 'box')} />
     </>
   );

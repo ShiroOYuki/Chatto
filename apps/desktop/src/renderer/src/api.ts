@@ -34,6 +34,8 @@ function createMockApi(): ChattoApi {
       closeToTray: true,
       launchAtLogin: false,
       editorCommand: '',
+      locale: params.get('lang') === 'en' ? 'en' : 'zh-TW',
+      chatLocale: 'auto',
     },
     clientIdConfigured: true,
     auth: { status: 'signed-in', login: 'shiraine_ciel' },
@@ -128,7 +130,7 @@ function createMockApi(): ChattoApi {
     importThemeAsset: () => pickImageAsDataUrl(),
     exportThemePackage: async () => false,
     importThemePackage: async () => {
-      throw new Error('網頁預覽不支援主題包，請在桌面 App 匯入');
+      throw new Error('Theme packages are not supported in the web preview. Import them in the desktop app.');
     },
     // The browser preview has no files; report where the desktop app would put it.
     openCssFile: async (themeId) => ({

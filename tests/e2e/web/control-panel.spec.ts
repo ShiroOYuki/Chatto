@@ -89,9 +89,9 @@ test('recent activity scrolls and shows a community gift once', async ({ panel, 
 
   const list = page.getByTestId('recent-notices');
   // The batch is one row at the top, listing who received the subs on request.
-  const gift = list.getByText('送出 5 份訂閱給聊天室');
+  const gift = list.getByText('送出 5 份 Tier 1 訂閱給聊天室');
   await expect(gift).toHaveCount(1);
-  await expect(list.getByText(/送了一份訂閱給/)).toHaveCount(0);
+  await expect(list.getByText(/送了一份/)).toHaveCount(0);
   await list.getByRole('button', { name: '收到的人（5）' }).click();
   await expect(list.getByRole('listitem')).toHaveCount(5);
 
@@ -100,6 +100,31 @@ test('recent activity scrolls and shows a community gift once', async ({ panel, 
   await list.hover();
   await page.mouse.wheel(0, 2000);
   await expect.poll(() => list.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+});
+
+test('switching the interface to English, with chat texts following it', async ({ panel, page }) => {
+  await panel.open('page=settings');
+  await page.getByRole('combobox', { name: '介面語言' }).click();
+  await page.getByRole('option', { name: 'English' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+  await expect(panel.nav('Overview')).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Chat language' })).toHaveText(/Same as interface \(English\)/);
+
+  await panel.nav('Overview').click();
+  await panel.emit(sampleEvent('twitch:resub'));
+  await expect(page.getByTestId('recent-notices')).toContainText(
+    "Mochi_Fan resubscribed at Tier 1. They've subscribed for 6 months, currently on a 6 month streak!",
+  );
+});
+
+test("a theme's own event text shows in the editor preview", async ({ panel, page }) => {
+  await panel.open('page=themes');
+  await page.getByRole('button', { name: '複製並編輯' }).first().click();
+  await page.getByRole('button', { name: '續訂', exact: true }).click();
+  await page.getByRole('textbox', { name: '文字' }).fill('感謝 {user} 的 {months} 個月');
+  await expect(page.locator('.chatto-root [data-event="twitch:resub"] .chatto-notice-system')).toHaveText(
+    '感謝 Mochi_Fan 的 6 個月',
+  );
 });
 
 test('compact mode fits the smallest window', async ({ panel, page }) => {

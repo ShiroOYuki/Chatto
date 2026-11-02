@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import type { AppState } from '../../../../shared/ipc';
 import { Button, LoadingSpinner, Tile } from '../../components/kit';
+import { useMessages } from '../../i18n';
 import { twitch, twitchStatus } from '../../services/twitch';
 
 export function AccountTile({ state }: { state: AppState }) {
+  const messages = useMessages();
+  const m = messages.compact;
   const [clientId, setClientId] = useState('');
   const { auth } = state;
 
   if (!state.clientIdConfigured) {
     return (
-      <Tile title="Twitch 帳號">
-        <p className="mb-3 text-sm text-ink-soft">先填入你的 Twitch 應用程式 Client ID（類型選 Public）。</p>
+      <Tile title={m.twitchAccount}>
+        <p className="mb-3 text-sm text-ink-soft">{m.clientIdIntro}</p>
         <div className="mt-auto flex gap-2">
           <input
             className="h-9 min-w-0 flex-1 rounded-full border border-line bg-canvas px-4 text-sm outline-none focus:border-matcha"
@@ -19,7 +22,7 @@ export function AccountTile({ state }: { state: AppState }) {
             onChange={(event) => setClientId(event.target.value)}
           />
           <Button variant="primary" disabled={!clientId.trim()} onClick={() => twitch.setClientId(clientId)}>
-            儲存
+            {messages.common.save}
           </Button>
         </div>
       </Tile>
@@ -29,20 +32,20 @@ export function AccountTile({ state }: { state: AppState }) {
   if (auth.status === 'pending') {
     return (
       <Tile
-        title="Twitch 帳號"
+        title={m.twitchAccount}
         action={
           <Button variant="ghost" onClick={() => twitch.cancelSignIn()}>
-            取消
+            {messages.common.cancel}
           </Button>
         }
       >
-        <p className="text-sm text-ink-soft">在 Twitch 授權頁輸入這組代碼：</p>
+        <p className="text-sm text-ink-soft">{m.enterCode}</p>
         <div className="my-2 rounded-2xl bg-tile-muted py-3 text-center font-mono text-3xl font-semibold tracking-[0.2em] text-matcha-strong">
           {auth.deviceCode?.userCode ?? '······'}
         </div>
         {auth.deviceCode ? (
           <Button className="mt-auto" onClick={() => twitch.openVerificationPage(state)}>
-            重新開啟授權頁
+            {m.reopenAuth}
           </Button>
         ) : null}
       </Tile>
@@ -52,10 +55,10 @@ export function AccountTile({ state }: { state: AppState }) {
   if (auth.status === 'signed-in') {
     return (
       <Tile
-        title="Twitch 帳號"
+        title={m.twitchAccount}
         action={
           <Button variant="ghost" onClick={() => twitch.signOut()}>
-            登出
+            {m.signOut}
           </Button>
         }
       >
@@ -65,7 +68,7 @@ export function AccountTile({ state }: { state: AppState }) {
           </span>
           <div className="min-w-0">
             <div className="truncate font-medium">{auth.login}</div>
-            <div className="text-xs text-ink-faint">已登入</div>
+            <div className="text-xs text-ink-faint">{m.signedIn}</div>
           </div>
         </div>
       </Tile>
@@ -73,22 +76,23 @@ export function AccountTile({ state }: { state: AppState }) {
   }
 
   return (
-    <Tile title="Twitch 帳號">
-      <p className="text-sm text-ink-soft">登入後才能讀取聊天室，Chatto 只會要求讀取聊天的權限。</p>
+    <Tile title={m.twitchAccount}>
+      <p className="text-sm text-ink-soft">{m.signInIntro}</p>
       {auth.error ? <p className="mt-2 text-xs text-danger">{auth.error}</p> : null}
       <Button variant="primary" className="mt-auto" onClick={() => twitch.signIn()}>
-        用 Twitch 登入
+        {m.signIn}
       </Button>
     </Tile>
   );
 }
 
 export function ChannelTile({ state }: { state: AppState }) {
+  const m = useMessages().compact;
   const [login, setLogin] = useState(state.channel.login ?? '');
   const { signedIn, connected, busy } = twitchStatus(state);
 
   return (
-    <Tile title="聊天室頻道" className="col-span-2">
+    <Tile title={m.channel} className="col-span-2">
       <form
         className="flex gap-2"
         onSubmit={(event) => {
@@ -108,26 +112,22 @@ export function ChannelTile({ state }: { state: AppState }) {
         </div>
         {connected ? (
           <Button className="h-11" onClick={() => twitch.disconnect()}>
-            中斷
+            {m.disconnect}
           </Button>
         ) : (
           <Button type="submit" variant="primary" className="h-11" disabled={!signedIn || busy || !login.trim()}>
             {busy ? (
               <>
-                <LoadingSpinner /> 連線中…
+                <LoadingSpinner /> {m.connecting}
               </>
             ) : (
-              '連線'
+              m.connect
             )}
           </Button>
         )}
       </form>
       <p className={`mt-3 text-xs ${state.channel.state === 'error' ? 'text-danger' : 'text-ink-faint'}`}>
-        {state.channel.state === 'error'
-          ? state.channel.detail
-          : signedIn
-            ? '可以輸入自己或任何頻道的名稱。'
-            : '先登入 Twitch，再選擇要讀取的頻道。'}
+        {state.channel.state === 'error' ? state.channel.detail : signedIn ? m.channelHint : m.signInFirst}
       </p>
     </Tile>
   );

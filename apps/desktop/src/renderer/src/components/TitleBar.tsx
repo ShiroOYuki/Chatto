@@ -2,6 +2,7 @@ import { Coffee, Copy, Minus, PanelsTopLeft, Square, X, LayoutDashboard } from '
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { SUPPORT_LINKS } from '../../../shared/support';
+import { useLocale, useMessages } from '../i18n';
 import { appPrefs, appWindow, openExternal } from '../services/app';
 import { SwapIcon } from './motion';
 import { Hint, channelTone, StatusDot } from './kit';
@@ -42,13 +43,15 @@ function WindowButton({
 
 /** A quiet tea cup that opens the support links. */
 function SupportMenu() {
+  const m = useMessages().shell.titleBar;
+  const locale = useLocale();
   return (
     <DropdownMenu>
-      <Hint label="支持 Chatto">
+      <Hint label={m.support}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label="支持 Chatto"
+            aria-label={m.support}
             className="app-no-drag mr-1 grid size-7 place-items-center rounded-full text-ink-faint transition hover:bg-tile-muted hover:text-matcha-strong [&>svg]:size-3.5"
           >
             <Coffee />
@@ -56,11 +59,11 @@ function SupportMenu() {
         </DropdownMenuTrigger>
       </Hint>
       <DropdownMenuContent align="end" className="w-48 rounded-xl">
-        <DropdownMenuLabel className="text-xs font-normal text-ink-faint">請 Ciel 喝杯茶</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs font-normal text-ink-faint">{m.supportTitle}</DropdownMenuLabel>
         {SUPPORT_LINKS.map((link) => (
           <DropdownMenuItem key={link.id} onSelect={() => openExternal(link.url)}>
-            {link.label}
-            <span className="ml-auto text-xs text-ink-faint">{link.hint}</span>
+            {link.label[locale]}
+            <span className="ml-auto text-xs text-ink-faint">{link.hint[locale]}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -73,6 +76,7 @@ function SupportMenu() {
  * layout switch and integrated minimize / maximize / close buttons.
  */
 export function TitleBar({ state, title }: { state: AppState; title?: string }) {
+  const m = useMessages().shell.titleBar;
   const compact = state.prefs.uiMode === 'compact';
   const connected = state.channel.state === 'connected';
 
@@ -91,7 +95,7 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
 
       <div className="ml-4 flex items-center gap-2 text-xs text-ink-soft">
         <StatusDot tone={channelTone(state.channel.state, connected)} />
-        {connected ? (state.channel.login ?? '已連線') : '未連線'}
+        {connected ? (state.channel.login ?? m.connected) : m.notConnected}
       </div>
 
       <div className="ml-auto flex h-full items-center">
@@ -100,19 +104,22 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
           type="button"
           onClick={() => appPrefs.set({ uiMode: compact ? 'full' : 'compact' })}
           className="app-no-drag mr-2 inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs text-ink-soft transition hover:bg-tile-muted hover:text-ink [&>svg]:size-3.5"
-          title={compact ? '切換到完整模式' : '切換到精簡模式'}
+          title={compact ? m.switchToFull : m.switchToCompact}
         >
           <SwapIcon swapped={compact} from={<LayoutDashboard />} to={<PanelsTopLeft />} />
-          {compact ? '完整模式' : '精簡模式'}
+          {compact ? m.fullMode : m.compactMode}
         </button>
-        <WindowButton label="最小化" onClick={() => appWindow.minimize()}>
+        <WindowButton label={m.minimize} onClick={() => appWindow.minimize()}>
           <Minus />
         </WindowButton>
-        <WindowButton label={state.window.maximized ? '還原' : '最大化'} onClick={() => appWindow.toggleMaximize()}>
+        <WindowButton
+          label={state.window.maximized ? m.restore : m.maximize}
+          onClick={() => appWindow.toggleMaximize()}
+        >
           {state.window.maximized ? <Copy className="-scale-x-100" /> : <Square className="size-3.5!" />}
         </WindowButton>
         <WindowButton
-          label={state.prefs.closeToTray ? '關閉（縮到系統匣）' : '關閉'}
+          label={state.prefs.closeToTray ? m.closeToTray : m.close}
           onClick={() => appWindow.close()}
           danger
         >

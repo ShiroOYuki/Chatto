@@ -112,6 +112,20 @@ describe('LocalServer', () => {
     embed.socket.close();
   });
 
+  it('tells viewers the chat language on hello and when it changes', async () => {
+    const { port, server } = await startServer({ locale: () => 'en' });
+    const overlay = await subscribe(port, 'overlay');
+    const alerts = await subscribe(port, 'alerts');
+    expect(overlay.frames[0]).toMatchObject({ type: 'hello', locale: 'en' });
+
+    server.broadcastLocale('zh-TW');
+    for (const viewer of [overlay, alerts]) {
+      await vi.waitFor(() => expect(viewer.frames.at(-1)).toMatchObject({ type: 'locale', locale: 'zh-TW' }));
+    }
+    overlay.socket.close();
+    alerts.socket.close();
+  });
+
   it('forwards moderation events so viewers can remove messages', async () => {
     const { hub, port } = await startServer();
     const viewer = await subscribe(port, 'embed');

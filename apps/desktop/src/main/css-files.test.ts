@@ -46,6 +46,14 @@ describe('workspace files', () => {
     expect(css).toContain('--chatto-user-color');
   });
 
+  it('writes the reference in the interface language', () => {
+    expect(referenceCss()).toContain('/* CSS 變數 */');
+    const css = referenceCss('en');
+    expect(css).toContain('/* CSS variables */');
+    expect(css).not.toContain('[object Object]');
+    expect(css).not.toMatch(/[\u4e00-\u9fff]/);
+  });
+
   it('maps theme files to theme ids and skips everything else', () => {
     expect(themeIdOf('custom-a.css')).toBe('custom-a');
     expect(themeIdOf(REFERENCE_FILE)).toBeNull();

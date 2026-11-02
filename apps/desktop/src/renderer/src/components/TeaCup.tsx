@@ -1,7 +1,10 @@
+import { useMessages } from '../i18n';
+
 export type TeaCupMood = 'sleepy' | 'happy' | 'busy' | 'worried';
 
 /** Chatto's mascot. Its face reflects the connection state. */
 export function TeaCup({ mood = 'happy', size = 96 }: { mood?: TeaCupMood; size?: number }) {
+  const label = useMessages().shell.teaCup;
   const eyes =
     mood === 'sleepy' ? (
       <>
@@ -33,7 +36,7 @@ export function TeaCup({ mood = 'happy', size = 96 }: { mood?: TeaCupMood; size?
       height={size}
       className={mood === 'sleepy' ? 'text-matcha-strong' : 'wobble text-matcha-strong'}
       role="img"
-      aria-label="Chatto 茶杯"
+      aria-label={label}
     >
       {mood !== 'sleepy' ? (
         <g stroke="var(--c-ink-faint)" strokeWidth="2.5" fill="none" strokeLinecap="round">

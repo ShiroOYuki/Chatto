@@ -1,5 +1,8 @@
 import {
+  DEFAULT_LOCALE,
   isValidImageSrc,
+  type Locale,
+  type Localized,
   THEME_SCHEMA_VERSION,
   type BoxImage,
   type BoxImageRepeat,
@@ -171,6 +174,7 @@ export const BASE_THEME: ChatTheme = {
     sticker: { background: '#C0DD97', color: '#173404', rotate: 4 },
   },
   events: {},
+  eventText: {},
   roles: {},
   animation: { enter: 'slide-up', duration: 260, exit: 'fade' },
   attention: { effect: 'glow', color: '#FAC775', repeat: 3, label: '新留言', labelColor: '#412402' },
@@ -437,10 +441,43 @@ export function getPresetTheme(id: string): ChatTheme | undefined {
   return PRESET_THEMES.find((theme) => theme.id === id);
 }
 
-/** Creates an editable copy of a theme with a new id. */
-export function duplicateTheme(theme: ChatTheme, name: string): ChatTheme {
+// ---------- languages ----------
+
+/** Names of the built-in themes; the presets above carry the Traditional Chinese one. */
+const PRESET_NAMES: Partial<Record<string, Localized>> = {
+  'matcha-glass': { 'zh-TW': '抹茶玻璃', en: 'Matcha Glass' },
+  washi: { 'zh-TW': '和紙', en: 'Washi Paper' },
+  bubble: { 'zh-TW': '泡泡', en: 'Bubbles' },
+  outline: { 'zh-TW': '極簡描邊', en: 'Outline' },
+  noren: { 'zh-TW': '暖簾', en: 'Noren' },
+  terminal: { 'zh-TW': '終端機', en: 'Terminal' },
+  'tea-leaf': { 'zh-TW': '茶葉框', en: 'Tea Leaf Frame' },
+  blank: { 'zh-TW': 'Blank（自訂 CSS）', en: 'Blank (custom CSS)' },
+  plain: { 'zh-TW': '空白（從零開始）', en: 'Blank slate' },
+};
+
+/** Default text of the quiet-spell reminder label (`attention.label`). */
+export const ATTENTION_LABEL: Localized = { 'zh-TW': '新留言', en: 'New' };
+
+/**
+ * Built-in themes speak the given language: their name and default texts.
+ * Custom themes are left as written; their texts belong to the user.
+ */
+export function localizeTheme(theme: ChatTheme, locale: Locale): ChatTheme {
+  if (!theme.builtIn && theme.id !== PLAIN_PRESET.id) return theme;
+  const name = PRESET_NAMES[theme.id]?.[locale] ?? theme.name;
+  const label = theme.attention.label ? ATTENTION_LABEL[locale] : '';
+  if (name === theme.name && label === theme.attention.label) return theme;
+  return { ...theme, name, attention: { ...theme.attention, label } };
+}
+
+/**
+ * Creates an editable copy of a theme with a new id. A built-in theme is copied
+ * in the given language, so its texts stay as the user saw them.
+ */
+export function duplicateTheme(theme: ChatTheme, name: string, locale: Locale = DEFAULT_LOCALE): ChatTheme {
   return {
-    ...structuredClone(theme),
+    ...structuredClone(localizeTheme(theme, locale)),
     id: `custom-${Date.now().toString(36)}`,
     name,
     builtIn: false,
@@ -561,11 +598,16 @@ function normalizeSchema(raw: unknown): ChatTheme {
     };
   }
   // Frames from files may be partial or point at something Chatto will not load.
+  const eventText: ChatTheme['eventText'] = {};
+  for (const [key, template] of Object.entries(theme.eventText ?? {})) {
+    if (typeof template === 'string' && template.trim()) eventText[key] = template;
+  }
   return mapThemeImages(
     {
       ...theme,
       roles,
       events,
+      eventText,
       id: data.id ?? `custom-${Date.now().toString(36)}`,
       name: data.name ?? '未命名主題',
     },

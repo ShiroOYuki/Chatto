@@ -1,6 +1,6 @@
-import { SOUND_LABELS } from '@chatto/chat-ui';
 import {
   BUILTIN_SOUNDS,
+  type BuiltinSoundId,
   defaultEventAlertRule,
   type AlertSettings,
   type EventAlertRule,
@@ -9,7 +9,7 @@ import {
   type SoundRef,
 } from '@chatto/core';
 
-/** Pure updates of alert settings for the 提醒 page; main clamps values when saving. */
+/** Pure updates of alert settings for the Alerts page; main clamps values when saving. */
 
 export function ruleFor(settings: AlertSettings, key: string): EventAlertRule {
   return settings.events.rules[key] ?? defaultEventAlertRule();
@@ -28,19 +28,26 @@ export function withEvents(settings: AlertSettings, patch: Partial<Omit<EventAle
   return { ...settings, events: { ...settings.events, ...patch } };
 }
 
-/** Value of the 自訂 entry before a file is chosen: picking it opens the file picker. */
+/** Value of the custom entry before a file is chosen: picking it opens the file picker. */
 export const IMPORT_SOUND = 'import';
 
 /** Menu value for a sound: the built-in id, or `file:<id>`. */
 export const soundValue = (ref: SoundRef) => (ref.kind === 'builtin' ? ref.id : `file:${ref.id}`);
 
-/** Sound menu: the built-in sounds, then 自訂 (the chosen file, or a file picker when there is none). */
-export function soundOptions(current: SoundRef): { value: string; label: string }[] {
+/** Menu texts of the sound picker, in the interface language. */
+export interface SoundOptionLabels {
+  names: Record<BuiltinSoundId, string>;
+  custom: (name: string) => string;
+  pickFile: string;
+}
+
+/** Sound menu: the built-in sounds, then custom (the chosen file, or a file picker when there is none). */
+export function soundOptions(current: SoundRef, labels: SoundOptionLabels): { value: string; label: string }[] {
   return [
-    ...BUILTIN_SOUNDS.map((id) => ({ value: id as string, label: SOUND_LABELS[id] })),
+    ...BUILTIN_SOUNDS.map((id) => ({ value: id as string, label: labels.names[id] })),
     current.kind === 'file'
-      ? { value: soundValue(current), label: `自訂：${current.name}` }
-      : { value: IMPORT_SOUND, label: '自訂…' },
+      ? { value: soundValue(current), label: labels.custom(current.name) }
+      : { value: IMPORT_SOUND, label: labels.pickFile },
   ];
 }
 

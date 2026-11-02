@@ -1,6 +1,10 @@
 import { mapThemeImages, normalizeTheme, themeImageSources } from '@chatto/chat-ui';
 import { assetFileOf, type ChatTheme } from '@chatto/core';
+import type { Messages } from '../i18n';
 import { themes } from '../services/themes';
+
+/** Texts for imported themes and import errors (`useMessages().themes.io`). */
+export type ThemeIOMessages = Messages['themes']['io'];
 
 /** File extension of theme packages (a theme plus its frame images). */
 export const THEME_PACKAGE_EXTENSION = 'chattotheme';
@@ -31,11 +35,11 @@ export async function exportTheme(theme: ChatTheme): Promise<void> {
  * Prepares an imported theme for saving. Imported themes always get a fresh id
  * so they can never overwrite a built-in or an existing custom theme.
  */
-export function asImportedTheme(theme: ChatTheme): ChatTheme {
+export function asImportedTheme(theme: ChatTheme, m: ThemeIOMessages): ChatTheme {
   return {
     ...theme,
     id: `custom-${Date.now().toString(36)}`,
-    name: theme.name ? `${theme.name}（匯入）` : '匯入的主題',
+    name: theme.name ? m.importedName(theme.name) : m.untitledImport,
     builtIn: false,
     customCss: typeof theme.customCss === 'string' ? theme.customCss : '',
   };
@@ -45,34 +49,37 @@ export function asImportedTheme(theme: ChatTheme): ChatTheme {
  * Parses a theme JSON file. Plain JSON cannot carry images, so frames that
  * point at the asset folder are dropped; data URL frames are kept.
  */
-export function parseThemeFile(text: string): ChatTheme {
+export function parseThemeFile(text: string, m: ThemeIOMessages): ChatTheme {
   let theme: ChatTheme;
   try {
     theme = normalizeTheme(JSON.parse(text));
   } catch (error) {
     if (error instanceof SyntaxError) throw error;
-    throw new Error('不支援的主題檔案或版本');
+    throw new Error(m.unsupported);
   }
-  return asImportedTheme(mapThemeImages(theme, (image) => (assetFileOf(image.src) ? null : image)));
+  return asImportedTheme(
+    mapThemeImages(theme, (image) => (assetFileOf(image.src) ? null : image)),
+    m,
+  );
 }
 
 /** Lets the user pick a theme JSON or package and returns it, ready to save. */
-export function pickThemeFile(): Promise<ChatTheme> {
+export function pickThemeFile(m: ThemeIOMessages): Promise<ChatTheme> {
   return new Promise((resolve, reject) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = `application/json,.json,.${THEME_PACKAGE_EXTENSION}`;
     input.onchange = async () => {
       const file = input.files?.[0];
-      if (!file) return reject(new Error('沒有選擇檔案'));
+      if (!file) return reject(new Error(m.noFile));
       try {
         if (file.name.toLowerCase().endsWith(`.${THEME_PACKAGE_EXTENSION}`)) {
-          resolve(asImportedTheme(await themes.importPackage(new Uint8Array(await file.arrayBuffer()))));
+          resolve(asImportedTheme(await themes.importPackage(new Uint8Array(await file.arrayBuffer())), m));
         } else {
-          resolve(parseThemeFile(await file.text()));
+          resolve(parseThemeFile(await file.text(), m));
         }
       } catch (error) {
-        reject(error instanceof SyntaxError ? new Error('檔案不是有效的 JSON') : error);
+        reject(error instanceof SyntaxError ? new Error(m.invalidJson) : error);
       }
     };
     input.click();

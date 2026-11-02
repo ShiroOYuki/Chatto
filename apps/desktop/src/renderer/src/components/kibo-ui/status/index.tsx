@@ -1,11 +1,12 @@
 /**
  * Status from Kibo UI (https://www.kibo-ui.com/components/status), MIT © shadcnblocks.
  * Adapted for Chatto: matcha colour tokens, an `error` state, the ping only
- * while online, and Traditional Chinese default labels.
+ * while online, and default labels in the interface language.
  */
 import type { ComponentProps, HTMLAttributes } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useMessages } from '../../../i18n';
 
 export type StatusKind = 'online' | 'offline' | 'maintenance' | 'degraded' | 'error';
 
@@ -41,16 +42,19 @@ export const StatusIndicator = ({ className, ...props }: StatusIndicatorProps) =
 
 export type StatusLabelProps = HTMLAttributes<HTMLSpanElement>;
 
-export const StatusLabel = ({ className, children, ...props }: StatusLabelProps) => (
-  <span className={cn('text-muted-foreground', className)} {...props}>
-    {children ?? (
-      <>
-        <span className="hidden group-[.online]:block">已連線</span>
-        <span className="hidden group-[.offline]:block">未連線</span>
-        <span className="hidden group-[.maintenance]:block">維護中</span>
-        <span className="hidden group-[.degraded]:block">連線中</span>
-        <span className="hidden group-[.error]:block">發生錯誤</span>
-      </>
-    )}
-  </span>
-);
+export const StatusLabel = ({ className, children, ...props }: StatusLabelProps) => {
+  const m = useMessages().shell.status;
+  return (
+    <span className={cn('text-muted-foreground', className)} {...props}>
+      {children ?? (
+        <>
+          <span className="hidden group-[.online]:block">{m.online}</span>
+          <span className="hidden group-[.offline]:block">{m.offline}</span>
+          <span className="hidden group-[.maintenance]:block">{m.maintenance}</span>
+          <span className="hidden group-[.degraded]:block">{m.degraded}</span>
+          <span className="hidden group-[.error]:block">{m.error}</span>
+        </>
+      )}
+    </span>
+  );
+};

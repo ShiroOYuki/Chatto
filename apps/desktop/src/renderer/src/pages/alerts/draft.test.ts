@@ -1,5 +1,6 @@
 import { BUILTIN_SOUNDS, defaultAlertSettings } from '@chatto/core';
 import { describe, expect, it } from 'vitest';
+import alertMessages from '../../i18n/messages/alerts';
 import {
   IMPORT_SOUND,
   ruleFor,
@@ -28,17 +29,24 @@ describe('alert settings drafts', () => {
     expect(next.silence.sound).toBe(base.silence.sound);
   });
 
+  const labels = alertMessages['zh-TW'].sound;
+
   it('offers 泡泡、金幣、鈴聲、雷射 and 自訂', () => {
-    const builtin = soundOptions({ kind: 'builtin', id: 'bell' });
+    const builtin = soundOptions({ kind: 'builtin', id: 'bell' }, labels);
     expect(builtin.map((option) => option.label)).toEqual(['泡泡', '金幣', '鈴聲', '雷射', '自訂…']);
     expect(builtin.at(-1)?.value).toBe(IMPORT_SOUND);
 
     const file = { kind: 'file' as const, id: 'a.mp3', name: '叮.mp3' };
-    const custom = soundOptions(file);
+    const custom = soundOptions(file, labels);
     expect(custom.map((option) => option.value)).toEqual([...BUILTIN_SOUNDS, 'file:a.mp3']);
     expect(custom.at(-1)?.label).toBe('自訂：叮.mp3');
     expect(soundFromValue('bell', file)).toEqual({ kind: 'builtin', id: 'bell' });
     expect(soundFromValue(soundValue(file), file)).toBe(file);
     expect(soundFromValue(IMPORT_SOUND, file)).toBeUndefined();
+  });
+
+  it('names the sounds in English too', () => {
+    const options = soundOptions({ kind: 'file', id: 'a.mp3', name: 'ding.mp3' }, alertMessages.en.sound);
+    expect(options.map((option) => option.label)).toEqual(['Bubble', 'Coin', 'Bell', 'Laser', 'Custom: ding.mp3']);
   });
 });

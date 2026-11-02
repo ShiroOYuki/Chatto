@@ -2,6 +2,7 @@ import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { mainMessages } from './messages';
 import { MAX_ASSET_BYTES, sniffImage, ThemeAssets } from './theme-assets';
 
 const bytes = (text: string, prefix: number[] = []) => new Uint8Array([...prefix, ...Buffer.from(text)]);
@@ -32,6 +33,12 @@ describe('ThemeAssets', () => {
     const assets = store();
     expect(() => assets.add(bytes('<svg/>'))).toThrow('PNG');
     expect(() => assets.add(new Uint8Array(MAX_ASSET_BYTES + 1))).toThrow('2 MB');
+  });
+
+  it('reports errors in the interface language', () => {
+    expect(() => store().add(bytes('<svg/>'))).toThrow('只支援');
+    const english = new ThemeAssets(mkdtempSync(join(tmpdir(), 'chatto-assets-')), () => mainMessages('en'));
+    expect(() => english.add(bytes('<svg/>'))).toThrow('Only PNG, WebP and GIF images are supported');
   });
 
   it('only resolves asset names inside its folder', () => {

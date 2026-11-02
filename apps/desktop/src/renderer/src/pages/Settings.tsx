@@ -6,7 +6,9 @@ import { appPrefs, openExternal } from '../services/app';
 import { Stagger } from '../components/motion';
 import { ThemeSwitcher } from '../components/kibo-ui/theme-switcher';
 import { TeaCup } from '../components/TeaCup';
-import { Button, PageHeader, Segmented, TextInput, Tile, Toggle } from '../components/kit';
+import { Button, PageHeader, Segmented, Select, TextInput, Tile, Toggle } from '../components/kit';
+import { useLocale, useMessages } from '../i18n';
+import { LOCALE_NAMES, LOCALES, type ChatLocalePref } from '@chatto/core';
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
@@ -22,6 +24,7 @@ function Row({ title, hint, children }: { title: string; hint?: string; children
 
 /** Saved when the field loses focus or on Enter, not on every key. */
 function EditorCommandField({ value }: { value: string }) {
+  const m = useMessages().settings;
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
   const commit = () => {
@@ -29,7 +32,7 @@ function EditorCommandField({ value }: { value: string }) {
   };
   return (
     <TextInput
-      aria-label="外部 CSS 編輯器指令"
+      aria-label={m.editorCommandLabel}
       value={text}
       placeholder='code "{folder}" "{file}"'
       onChange={(event) => setText(event.target.value)}
@@ -44,20 +47,44 @@ function EditorCommandField({ value }: { value: string }) {
 
 export function SettingsPage({ state }: { state: AppState }) {
   const { prefs } = state;
+  const m = useMessages().settings;
+  const locale = useLocale();
+  const languages = LOCALES.map((locale) => ({ value: locale, label: LOCALE_NAMES[locale] }));
   return (
     <div className="max-w-3xl">
-      <PageHeader title="設定" />
+      <PageHeader title={m.title} />
 
       <Stagger className="flex flex-col gap-3">
-        <Tile title="外觀">
-          <Row title="主題色彩" hint="跟隨系統，或固定亮色／暗色。">
+        <Tile title={m.language}>
+          <Row title={m.interfaceLanguage} hint={m.interfaceLanguageHint}>
+            <Select
+              aria-label={m.interfaceLanguage}
+              className="w-48"
+              value={prefs.locale}
+              options={languages}
+              onChange={(locale) => appPrefs.set({ locale })}
+            />
+          </Row>
+          <Row title={m.chatLanguage} hint={m.chatLanguageHint}>
+            <Select<ChatLocalePref>
+              aria-label={m.chatLanguage}
+              className="w-60"
+              value={prefs.chatLocale}
+              options={[{ value: 'auto', label: m.followInterface(LOCALE_NAMES[prefs.locale]) }, ...languages]}
+              onChange={(chatLocale) => appPrefs.set({ chatLocale })}
+            />
+          </Row>
+        </Tile>
+
+        <Tile title={m.appearance}>
+          <Row title={m.colorScheme} hint={m.colorSchemeHint}>
             <ThemeSwitcher
               value={prefs.appearance}
               onChange={(appearance) => appPrefs.set({ appearance })}
               className="h-9 bg-tile-muted p-1.5 ring-0 [&_button]:size-6"
             />
           </Row>
-          <Row title="介面模式" hint="精簡模式把常用功能集中在一頁，適合開台時放在副螢幕。">
+          <Row title={m.uiMode} hint={m.uiModeHint}>
             <Segmented
               size="sm"
               value={prefs.uiMode}
@@ -67,7 +94,7 @@ export function SettingsPage({ state }: { state: AppState }) {
                   value: 'full',
                   label: (
                     <>
-                      <PanelsTopLeft /> 完整
+                      <PanelsTopLeft /> {m.uiModeFull}
                     </>
                   ),
                 },
@@ -75,7 +102,7 @@ export function SettingsPage({ state }: { state: AppState }) {
                   value: 'compact',
                   label: (
                     <>
-                      <LayoutDashboard /> 精簡
+                      <LayoutDashboard /> {m.uiModeCompact}
                     </>
                   ),
                 },
@@ -84,36 +111,36 @@ export function SettingsPage({ state }: { state: AppState }) {
           </Row>
         </Tile>
 
-        <Tile title="視窗與啟動">
-          <Row title="關閉時縮到系統匣" hint="Overlay 和 OBS 會繼續運作；從系統匣右鍵選「結束」才會完全關閉。">
+        <Tile title={m.windowAndStartup}>
+          <Row title={m.closeToTray} hint={m.closeToTrayHint}>
             <Toggle
               checked={prefs.closeToTray}
-              label="關閉時縮到系統匣"
+              label={m.closeToTray}
               onChange={(closeToTray) => appPrefs.set({ closeToTray })}
             />
           </Row>
-          <Row title="開機時自動啟動" hint="只在安裝版生效。">
+          <Row title={m.launchAtLogin} hint={m.launchAtLoginHint}>
             <Toggle
               checked={prefs.launchAtLogin}
-              label="開機時自動啟動"
+              label={m.launchAtLogin}
               onChange={(launchAtLogin) => appPrefs.set({ launchAtLogin })}
             />
           </Row>
         </Tile>
 
-        <Tile title="自訂 CSS">
-          <Row title="外部編輯器" hint="留空使用 VSCode。可用 {file}、{folder} 代入路徑。">
+        <Tile title={m.customCss}>
+          <Row title={m.externalEditor} hint={m.externalEditorHint}>
             <EditorCommandField value={prefs.editorCommand} />
           </Row>
         </Tile>
 
-        <Tile title="本機伺服器">
-          <Row title="連接埠" hint="只綁定 127.0.0.1，區網內其他裝置無法讀取。">
+        <Tile title={m.localServer}>
+          <Row title={m.port} hint={m.portHint}>
             <code className="rounded-lg bg-tile-muted px-3 py-1 font-mono text-sm">{state.server.port}</code>
           </Row>
         </Tile>
 
-        <Tile title="關於">
+        <Tile title={m.about}>
           <div className="flex items-center gap-4">
             <TeaCup mood="happy" size={64} />
             <div className="flex-1">
@@ -121,18 +148,18 @@ export function SettingsPage({ state }: { state: AppState }) {
               <div className="text-xs text-ink-faint">v{state.appInfo.version} · GPL-3.0-or-later · © 2026 Ciel</div>
             </div>
             <Button size="sm" variant="ghost" onClick={() => openExternal('https://www.gnu.org/licenses/gpl-3.0.html')}>
-              授權條款
+              {m.license}
             </Button>
           </div>
           <div className="mt-4 flex items-center justify-between gap-6 border-t border-line pt-4">
             <div>
-              <div className="text-sm font-medium">支持 Chatto</div>
-              <div className="mt-0.5 text-xs text-ink-faint">Chatto 免費開源。喜歡的話，請 Ciel 喝杯茶。</div>
+              <div className="text-sm font-medium">{m.support}</div>
+              <div className="mt-0.5 text-xs text-ink-faint">{m.supportHint}</div>
             </div>
             <div className="flex gap-2">
               {SUPPORT_LINKS.map((link) => (
-                <Button key={link.id} size="sm" onClick={() => openExternal(link.url)} title={link.hint}>
-                  {link.label}
+                <Button key={link.id} size="sm" onClick={() => openExternal(link.url)} title={link.hint[locale]}>
+                  {link.label[locale]}
                 </Button>
               ))}
             </div>

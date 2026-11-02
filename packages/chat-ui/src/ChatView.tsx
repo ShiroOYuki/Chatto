@@ -1,6 +1,15 @@
-import type { ChatMessage, ChatNotice, ChatTheme, ChatUser, MessageFragment } from '@chatto/core';
+import {
+  DEFAULT_LOCALE,
+  type ChatMessage,
+  type ChatNotice,
+  type ChatTheme,
+  type ChatUser,
+  type Locale,
+  type MessageFragment,
+} from '@chatto/core';
 import { useId, useMemo, type CSSProperties } from 'react';
-import { eventKeyOf, findEvent } from './events';
+import { eventTitle, noticeText } from './eventText';
+import { eventKeyOf } from './events';
 import type { FeedItem } from './feed';
 import { scopeCustomCss, themeToCss } from './themeCss';
 
@@ -15,6 +24,8 @@ export interface ChatViewProps {
    * local server can leave it out; the control panel points it at the server.
    */
   assetUrl?: (file: string) => string;
+  /** Language of event texts (the chat language); defaults to Traditional Chinese. */
+  locale?: Locale;
 }
 
 /**
@@ -22,7 +33,7 @@ export interface ChatViewProps {
  * parameters (turned into CSS by {@link themeToCss}) and optional custom CSS.
  * Every part carries a stable `chatto-*` class; see docs/theming.md.
  */
-export function ChatView({ theme, items, className, leaving, assetUrl }: ChatViewProps) {
+export function ChatView({ theme, items, className, leaving, assetUrl, locale = DEFAULT_LOCALE }: ChatViewProps) {
   const id = useId();
   const scope = `.chatto-root[data-chatto-id="${id}"]`;
   const css = useMemo(
@@ -45,9 +56,9 @@ export function ChatView({ theme, items, className, leaving, assetUrl }: ChatVie
       <ol className="chatto-list">
         {ordered.map((item) =>
           item.kind === 'message' ? (
-            <MessageRow key={item.key} message={item.message} theme={theme} />
+            <MessageRow key={item.key} message={item.message} theme={theme} locale={locale} />
           ) : (
-            <NoticeRow key={item.key} notice={item.notice} theme={theme} />
+            <NoticeRow key={item.key} notice={item.notice} theme={theme} locale={locale} />
           ),
         )}
       </ol>
@@ -55,10 +66,15 @@ export function ChatView({ theme, items, className, leaving, assetUrl }: ChatVie
   );
 }
 
-function MessageRow({ message, theme }: { message: ChatMessage; theme: ChatTheme }) {
+interface RowProps {
+  theme: ChatTheme;
+  locale: Locale;
+}
+
+function MessageRow({ message, theme, locale }: RowProps & { message: ChatMessage }) {
   const roles = message.author.roles.join(' ');
   const event = eventKeyOf(message);
-  const title = event ? (findEvent(event)?.title?.(message) ?? message.eventType) : undefined;
+  const title = eventTitle(message, locale, theme);
   return (
     <li
       className="chatto-message"
@@ -100,7 +116,7 @@ function MessageRow({ message, theme }: { message: ChatMessage; theme: ChatTheme
   );
 }
 
-function NoticeRow({ notice, theme }: { notice: ChatNotice; theme: ChatTheme }) {
+function NoticeRow({ notice, theme, locale }: RowProps & { notice: ChatNotice }) {
   return (
     <li
       className="chatto-notice"
@@ -108,7 +124,7 @@ function NoticeRow({ notice, theme }: { notice: ChatNotice; theme: ChatTheme }) 
       data-platform={notice.platform}
       data-event={eventKeyOf(notice)}
     >
-      <div className="chatto-notice-system">{notice.systemText}</div>
+      <div className="chatto-notice-system">{noticeText(notice, locale, theme)}</div>
       {notice.fragments.length > 0 ? (
         <div className="chatto-body">
           {notice.author && theme.badges.show ? <Badges user={notice.author} /> : null}

@@ -9,6 +9,7 @@ import {
 } from '@chatto/chat-ui';
 import type { ChatEvent, ChatTheme } from '@chatto/core';
 import { useEffect, useMemo } from 'react';
+import { useChatLocale, useOutputTheme } from '../i18n';
 import { useThemeAssetUrl } from '../services/themes';
 
 export type Backdrop = 'game' | 'dark' | 'light' | 'checker';
@@ -35,11 +36,16 @@ export function StaticThemePreview({ theme, backdrop = 'game' }: { theme: ChatTh
     const options = { ...theme.options, hiddenPrefixes: [], hiddenUsers: [], maxMessages: 5 };
     return SAMPLE_EVENTS.reduce((state, event) => reduceFeed(state, event, options, 0), emptyFeed).items;
   }, [theme]);
-  const quiet = useMemo(() => ({ ...theme, animation: { ...theme.animation, enter: 'none' as const } }), [theme]);
+  const outputTheme = useOutputTheme();
+  const quiet = useMemo(
+    () => ({ ...outputTheme(theme), animation: { ...theme.animation, enter: 'none' as const } }),
+    [theme, outputTheme],
+  );
   const assetUrl = useThemeAssetUrl();
+  const locale = useChatLocale();
   return (
     <div className="pointer-events-none h-full overflow-hidden p-3" style={{ background: BACKDROPS[backdrop] }}>
-      <ChatView theme={quiet} items={items} assetUrl={assetUrl} />
+      <ChatView theme={quiet} items={items} assetUrl={assetUrl} locale={locale} />
     </div>
   );
 }
@@ -50,9 +56,11 @@ export function LiveThemePreview({ theme, backdrop = 'game' }: { theme: ChatThem
   const { push } = feed;
   useEffect(() => startMockStream(push, 1500), [push]);
   const assetUrl = useThemeAssetUrl();
+  const outputTheme = useOutputTheme();
+  const locale = useChatLocale();
   return (
     <div className="h-full overflow-hidden p-3 transition-[background]" style={{ background: BACKDROPS[backdrop] }}>
-      <ChatView theme={theme} items={feed.items} assetUrl={assetUrl} />
+      <ChatView theme={outputTheme(theme)} items={feed.items} assetUrl={assetUrl} locale={locale} />
     </div>
   );
 }

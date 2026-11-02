@@ -23,7 +23,15 @@ describe('SettingsPage', () => {
   it('shows the current preferences', () => {
     renderPage(
       sampleState({
-        prefs: { uiMode: 'compact', appearance: 'dark', closeToTray: false, launchAtLogin: true, editorCommand: '' },
+        prefs: {
+          uiMode: 'compact',
+          appearance: 'dark',
+          closeToTray: false,
+          launchAtLogin: true,
+          editorCommand: '',
+          locale: 'zh-TW',
+          chatLocale: 'auto',
+        },
       }),
     );
     expect(screen.getByRole('switch', { name: '關閉時縮到系統匣' }).getAttribute('aria-checked')).toBe('false');

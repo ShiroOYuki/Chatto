@@ -1,27 +1,31 @@
 import { findEvent } from '@chatto/chat-ui';
+import type { Locale } from '@chatto/core';
 import { Braces, X } from 'lucide-react';
 import { describeInspected } from '../../components/InspectablePreview';
 import { Button } from '../../components/kit';
 import { motion, spring } from '../../components/motion';
+import { useLocale, useMessages, type Messages } from '../../i18n';
 import { buildSelector, type InspectedElement, type SelectorScope } from '../../lib/cssSelector';
-import { ROLE_NAMES } from './options';
+import { roleName } from './options';
 
-function scopeLabel(scope: SelectorScope, info: InspectedElement): string {
+function scopeLabel(scope: SelectorScope, info: InspectedElement, messages: Messages, locale: Locale): string {
+  const m = messages.editor.selector;
+  const names = messages.editorPanels;
   switch (scope.kind) {
     case 'all':
-      return info.part === 'chatto-root' || info.part === 'chatto-list' ? '整個聊天室' : '全部';
+      return info.part === 'chatto-root' || info.part === 'chatto-list' ? m.wholeChat : m.all;
     case 'role':
-      return `身分：${ROLE_NAMES[scope.role] ?? scope.role}`;
+      return m.role(roleName(names, scope.role));
     case 'highlight':
-      return ROLE_NAMES[scope.highlight] ?? scope.highlight;
+      return roleName(names, scope.highlight);
     case 'user':
-      return `使用者：${scope.user}`;
+      return m.user(scope.user);
     case 'event':
-      return `事件：${findEvent(scope.event)?.label ?? scope.event}`;
+      return m.event(findEvent(scope.event)?.label[locale] ?? scope.event);
     case 'platform':
-      return `平台：${scope.platform}`;
+      return m.platform(scope.platform);
     case 'badge':
-      return `徽章：${scope.badge}`;
+      return m.badge(scope.badge);
   }
 }
 
@@ -43,7 +47,10 @@ export function SelectorBuilder({
   onCancel: () => void;
   onInsert: () => void;
 }) {
-  const { title } = describeInspected(info);
+  const messages = useMessages();
+  const locale = useLocale();
+  const m = messages.editor.selector;
+  const { title } = describeInspected(info, messages, locale);
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -55,14 +62,14 @@ export function SelectorBuilder({
         <span className="min-w-0 flex-1 truncate font-mono text-xs font-medium">{title}</span>
         <button
           type="button"
-          aria-label="關閉"
+          aria-label={messages.common.close}
           onClick={onCancel}
           className="grid size-6 place-items-center rounded-full text-ink-faint hover:bg-tile-muted [&>svg]:size-3.5"
         >
           <X />
         </button>
       </div>
-      <div className="text-[11px] text-ink-faint">套用範圍</div>
+      <div className="text-[11px] text-ink-faint">{m.scope}</div>
       <div className="mt-1 flex max-h-44 flex-col gap-0.5 overflow-y-auto" onMouseLeave={() => onHover(null)}>
         {scopes.map((scope, index) => (
           <button
@@ -74,17 +81,17 @@ export function SelectorBuilder({
               index === selected ? 'bg-matcha-soft/50' : 'hover:bg-tile-muted'
             }`}
           >
-            <div className="text-xs">{scopeLabel(scope, info)}</div>
+            <div className="text-xs">{scopeLabel(scope, info, messages, locale)}</div>
             <div className="truncate font-mono text-[10px] text-ink-faint">{buildSelector(info, scope)}</div>
           </button>
         ))}
       </div>
       <div className="mt-2 flex justify-end gap-2">
         <Button size="sm" variant="ghost" onClick={onCancel}>
-          取消
+          {messages.common.cancel}
         </Button>
         <Button size="sm" variant="primary" onClick={onInsert}>
-          <Braces /> 插入到自訂 CSS
+          <Braces /> {m.insert}
         </Button>
       </div>
     </motion.div>

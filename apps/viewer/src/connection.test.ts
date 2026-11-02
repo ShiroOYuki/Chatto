@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeWebSocket } from '../../../tests/fake-websocket';
 import { connectToApp } from './connection';
 
-const handlers = () => ({ onHello: vi.fn(), onEvent: vi.fn(), onTheme: vi.fn(), onStatus: vi.fn() });
+const handlers = () => ({ onHello: vi.fn(), onEvent: vi.fn(), onTheme: vi.fn(), onLocale: vi.fn(), onStatus: vi.fn() });
 
 beforeEach(() => {
   FakeWebSocket.reset();
@@ -23,7 +23,7 @@ describe('connectToApp', () => {
     expect(JSON.parse(socket.sent[0]!)).toEqual({ v: PROTOCOL_VERSION, type: 'subscribe', target: 'embed' });
   });
 
-  it('routes hello, event and theme frames and ignores garbage', () => {
+  it('routes hello, event, theme and locale frames and ignores garbage', () => {
     const h = handlers();
     connectToApp('ws://x/ws', 'overlay', h);
     const socket = FakeWebSocket.latest();
@@ -31,13 +31,15 @@ describe('connectToApp', () => {
     const theme = PRESET_THEMES[0]!;
     const event = { type: 'chat-cleared', platform: 'twitch', channelId: '1' };
 
-    socket.serverSend({ v: PROTOCOL_VERSION, type: 'hello', target: 'overlay', theme, backlog: [event] });
+    socket.serverSend({ v: PROTOCOL_VERSION, type: 'hello', target: 'overlay', theme, backlog: [event], locale: 'en' });
     socket.serverSend({ v: PROTOCOL_VERSION, type: 'event', event });
     socket.serverSend({ v: PROTOCOL_VERSION, type: 'theme', theme });
+    socket.serverSend({ v: PROTOCOL_VERSION, type: 'locale', locale: 'zh-TW' });
     socket.serverSend('garbage');
     socket.serverSend({ v: 999, type: 'event', event });
 
-    expect(h.onHello).toHaveBeenCalledWith(theme, [event]);
+    expect(h.onHello).toHaveBeenCalledWith(theme, [event], 'en');
+    expect(h.onLocale).toHaveBeenCalledWith('zh-TW');
     expect(h.onEvent).toHaveBeenCalledTimes(1);
     expect(h.onEvent).toHaveBeenCalledWith(event, undefined);
     expect(h.onTheme).toHaveBeenCalledTimes(1);

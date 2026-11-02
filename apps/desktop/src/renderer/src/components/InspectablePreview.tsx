@@ -8,8 +8,9 @@ import {
   startMockStream,
   useChatFeed,
 } from '@chatto/chat-ui';
-import type { ChatTheme } from '@chatto/core';
+import type { ChatTheme, Locale } from '@chatto/core';
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useChatLocale, useLocale, useMessages, useOutputTheme, type Messages } from '../i18n';
 import { inspectElement, queryInRoot, type InspectedElement } from '../lib/cssSelector';
 import { pillAtTop, type Box } from '../lib/matchPill';
 import { useThemeAssetUrl } from '../services/themes';
@@ -21,19 +22,24 @@ const sameBoxes = (a: Box[], b: Box[]) =>
   a.length === b.length &&
   a.every((box, i) => box.x === b[i]!.x && box.y === b[i]!.y && box.w === b[i]!.w && box.h === b[i]!.h);
 
-/** Human label for an inspected element: its class plus the row it sits in. */
-export function describeInspected(info: InspectedElement): { title: string; detail: string } {
+/** Human label for an inspected element: its class plus the row it sits in, in the interface language. */
+export function describeInspected(
+  info: InspectedElement,
+  messages: Messages,
+  locale: Locale,
+): { title: string; detail: string } {
+  const m = messages.editor.inspector;
   const ref = describeClass(info.part);
   const detail = [
-    info.event ? (findEvent(info.event)?.label ?? info.event) : null,
+    info.event ? (findEvent(info.event)?.label[locale] ?? info.event) : null,
     ...info.roles,
     ...info.highlights,
     info.user,
-    info.badge ? `徽章 ${info.badge}` : null,
+    info.badge ? m.badge(info.badge) : null,
   ]
     .filter(Boolean)
     .join(' · ');
-  return { title: `.${info.part}${ref ? `　${ref.label}` : ''}`, detail };
+  return { title: m.title(info.part, ref?.label[locale]), detail };
 }
 
 /**
@@ -65,6 +71,10 @@ export function InspectablePreview({
   const pill = useRef<HTMLDivElement>(null);
   const [pillTop, setPillTop] = useState(false);
 
+  const messages = useMessages();
+  const locale = useLocale();
+  const chatLocale = useChatLocale();
+  const outputTheme = useOutputTheme();
   const feed = useChatFeed(theme.options);
   const { push } = feed;
   useEffect(() => (mode === 'live' ? startMockStream(push, 1500) : undefined), [mode, push]);
@@ -75,10 +85,10 @@ export function InspectablePreview({
     return createSpecimenEvents().reduce((state, event) => reduceFeed(state, event, options, 0), emptyFeed).items;
     // Built once: the specimen does not depend on styling.
   }, []);
-  const shownTheme = useMemo(
-    () => (mode === 'specimen' ? { ...theme, animation: { ...theme.animation, enter: 'none' as const } } : theme),
-    [mode, theme],
-  );
+  const shownTheme = useMemo(() => {
+    const output = outputTheme(theme);
+    return mode === 'specimen' ? { ...output, animation: { ...output.animation, enter: 'none' as const } } : output;
+  }, [mode, theme, outputTheme]);
 
   // Keep overlay boxes in sync with layout (theme edits, streaming, animations).
   useEffect(() => {
@@ -155,7 +165,7 @@ export function InspectablePreview({
     if (first && first !== root) first.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [highlight]);
 
-  const label = hoverBox ? describeInspected(hoverBox.info) : null;
+  const label = hoverBox ? describeInspected(hoverBox.info, messages, locale) : null;
 
   return (
     <div className="relative h-full overflow-hidden" style={{ background: BACKDROPS[backdrop] }}>
@@ -167,7 +177,12 @@ export function InspectablePreview({
         onClickCapture={onClick}
       >
         <div ref={content} className={`relative p-3 ${mode === 'live' ? 'h-full' : ''}`}>
-          <ChatView theme={shownTheme} items={mode === 'specimen' ? specimen : feed.items} assetUrl={assetUrl} />
+          <ChatView
+            theme={shownTheme}
+            items={mode === 'specimen' ? specimen : feed.items}
+            assetUrl={assetUrl}
+            locale={chatLocale}
+          />
           <div className="pointer-events-none absolute inset-0">
             {matches.map((box, index) => (
               <div
@@ -205,7 +220,7 @@ export function InspectablePreview({
             pillTop ? 'top-2' : 'bottom-2'
           }`}
         >
-          {matches.length > 0 ? `符合 ${matches.length} 個元素` : '目前預覽中沒有符合的元素'}
+          {matches.length > 0 ? messages.editor.preview.matches(matches.length) : messages.editor.preview.noMatches}
         </div>
       ) : null}
     </div>

@@ -13,6 +13,7 @@ import {
   TagsTrigger,
   TagsValue,
 } from '../kibo-ui/tags';
+import { useMessages } from '../../i18n';
 import { SwapIcon } from '../motion';
 import { Field as UiField, FieldDescription, FieldLabel } from '../ui/field';
 import { Input } from '../ui/input';
@@ -42,13 +43,14 @@ export function TextInput({ className = '', ...props }: InputHTMLAttributes<HTML
 }
 
 /** Kibo UI snippet: a read-only value with a copy button. */
-export function CopyField({ value, label = '網址' }: { value: string; label?: string }) {
+export function CopyField({ value, label }: { value: string; label?: string }) {
+  const m = useMessages().shell.kit;
   const [copied, setCopied] = useState(false);
   return (
     <Snippet value="value" className="rounded-2xl border-line bg-tile-muted">
       <SnippetHeader className="border-line bg-transparent py-1 pr-1 pl-3">
         {/* A plain label, not a tab: a lone TabsTrigger picks up the active-tab island and border. */}
-        <span className="text-xs text-ink-faint">{label}</span>
+        <span className="text-xs text-ink-faint">{label ?? m.url}</span>
         <SnippetCopyButton
           value={value}
           onCopy={() => {
@@ -59,7 +61,7 @@ export function CopyField({ value, label = '網址' }: { value: string; label?: 
         >
           <Button variant="primary" size="sm">
             <SwapIcon swapped={copied} from={<Copy />} to={<Check />} />
-            {copied ? '複製好了' : '複製'}
+            {copied ? m.copied : m.copy}
           </Button>
         </SnippetCopyButton>
       </SnippetHeader>
@@ -75,7 +77,7 @@ export function TagsField({
   value,
   onChange,
   suggestions = [],
-  placeholder = '新增…',
+  placeholder,
   normalize = (text: string) => text.trim(),
 }: {
   value: string[];
@@ -84,6 +86,7 @@ export function TagsField({
   placeholder?: string;
   normalize?: (text: string) => string;
 }) {
+  const m = useMessages().shell.kit;
   const [query, setQuery] = useState('');
   const typed = normalize(query);
   const add = (item: string) => {
@@ -95,7 +98,7 @@ export function TagsField({
   return (
     <Tags className="w-full">
       <TagsTrigger
-        placeholder={value.length ? '' : placeholder}
+        placeholder={value.length ? '' : (placeholder ?? m.addPlaceholder)}
         className="min-h-9 rounded-xl border-line bg-canvas px-2 py-1.5 shadow-none hover:bg-canvas"
       >
         {value.map((item) => (
@@ -109,18 +112,18 @@ export function TagsField({
         ))}
       </TagsTrigger>
       <TagsContent className="rounded-xl" align="start">
-        <TagsInput value={query} onValueChange={setQuery} placeholder="輸入後按 Enter 新增" />
+        <TagsInput value={query} onValueChange={setQuery} placeholder={m.tagsInput} />
         <TagsList>
-          <TagsEmpty>{typed ? null : '沒有建議'}</TagsEmpty>
+          <TagsEmpty>{typed ? null : m.noSuggestions}</TagsEmpty>
           {typed && !value.includes(typed) && !options.includes(typed) ? (
             <TagsGroup>
               <TagsItem value={`add:${typed}`} onSelect={() => add(typed)}>
-                新增「{typed}」
+                {m.addTag(typed)}
               </TagsItem>
             </TagsGroup>
           ) : null}
           {options.length ? (
-            <TagsGroup heading="建議">
+            <TagsGroup heading={m.suggestions}>
               {options.map((item) => (
                 <TagsItem key={item} value={item} onSelect={() => add(item)}>
                   <span className="font-mono">{item}</span>

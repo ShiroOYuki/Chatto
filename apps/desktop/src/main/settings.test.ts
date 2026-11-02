@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const userData = vi.hoisted(() => ({ dir: '' }));
-vi.mock('electron', () => ({ app: { getPath: () => userData.dir } }));
+const userData = vi.hoisted(() => ({ dir: '', locale: 'zh-TW' }));
+vi.mock('electron', () => ({ app: { getPath: () => userData.dir, getLocale: () => userData.locale } }));
 
 const { SettingsStore } = await import('./settings');
 
@@ -25,7 +25,22 @@ describe('SettingsStore', () => {
       closeToTray: true,
       launchAtLogin: false,
       editorCommand: '',
+      locale: 'zh-TW',
+      chatLocale: 'auto',
     });
+  });
+
+  it('starts in the system language and keeps a saved one', () => {
+    userData.locale = 'en-US';
+    expect(new SettingsStore().get().prefs.locale).toBe('en');
+    writeFileSync(
+      join(userData.dir, 'settings.json'),
+      JSON.stringify({ prefs: { locale: 'zh-TW', chatLocale: 'xx' } }),
+    );
+    const prefs = new SettingsStore().get().prefs;
+    expect(prefs.locale).toBe('zh-TW');
+    expect(prefs.chatLocale).toBe('auto');
+    userData.locale = 'zh-TW';
   });
 
   it('falls back to defaults when the file is corrupt', () => {

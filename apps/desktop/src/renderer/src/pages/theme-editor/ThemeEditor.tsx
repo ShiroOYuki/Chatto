@@ -2,6 +2,7 @@ import type { ChatTheme } from '@chatto/core';
 import { ArrowLeft, Check, Download, RotateCcw, Save } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useAppState } from '../../store';
+import { useLocale, useMessages } from '../../i18n';
 import { runAction } from '../../services/run';
 import { themes } from '../../services/themes';
 import type { CursorRequest } from '../../components/CssEditor';
@@ -42,7 +43,11 @@ export function ThemeEditor({
   const resolved = resolveSection(section, blank);
   const hl = usePreviewHighlight(resolved.active === 'css');
   const external = useExternalCss(draft.id, acceptSavedCss);
-  const editorLabel = useAppState()?.prefs.editorCommand.trim() ? '在外部編輯器開啟' : '在 VSCode 開啟';
+  const messages = useMessages();
+  const m = messages.editor;
+  const locale = useLocale();
+  const editorLabel = useAppState()?.prefs.editorCommand.trim() ? m.openInEditor : m.openInVSCode;
+  const sectionLabel = resolved.event ? resolved.event.label[locale] : m.sections[resolved.active as BaseSectionId];
 
   /** Inserts an empty rule into the custom CSS and puts the cursor inside it. */
   const insertRule = (selector: string) => {
@@ -101,30 +106,30 @@ export function ThemeEditor({
     <div className="flex h-full min-h-0 flex-col">
       <header className="mb-4 flex items-center gap-3">
         <Button variant="ghost" onClick={onClose}>
-          <ArrowLeft /> 主題
+          <ArrowLeft /> {m.back}
         </Button>
         <input
           value={draft.name}
           onChange={(event) => set('name')(event.target.value)}
           className="min-w-0 flex-1 rounded-xl bg-transparent px-2 py-1 text-2xl font-semibold tracking-tight outline-none hover:bg-tile-muted focus:bg-tile-muted"
-          aria-label="主題名稱"
+          aria-label={m.themeName}
         />
         {saveError ? (
           <span role="alert" className="text-xs text-danger" title={saveError}>
-            儲存失敗，請再試一次
+            {m.saveFailed}
           </span>
         ) : dirty ? (
-          <span className="text-xs text-ink-faint">尚未儲存</span>
+          <span className="text-xs text-ink-faint">{m.unsaved}</span>
         ) : null}
         <Button variant="ghost" disabled={!dirty} onClick={revert}>
-          <RotateCcw /> 復原
+          <RotateCcw /> {messages.common.revert}
         </Button>
         <Button onClick={() => runAction('exportTheme', exportTheme(draft))}>
-          <Download /> 匯出
+          <Download /> {messages.common.export}
         </Button>
         <Button variant="primary" disabled={saving || (!dirty && !justSaved)} onClick={() => void save()}>
           {justSaved ? <Check /> : <Save />}
-          {justSaved ? '已儲存' : '儲存'}
+          {justSaved ? messages.common.saved : messages.common.save}
         </Button>
       </header>
 
@@ -139,7 +144,7 @@ export function ThemeEditor({
 
         <Tile className="min-h-0 overflow-y-auto">
           <PageTransition id={resolved.active}>
-            <h2 className="mb-2 text-sm font-semibold">{resolved.label}</h2>
+            <h2 className="mb-2 text-sm font-semibold">{sectionLabel}</h2>
             {resolved.event ? (
               <EventPanel draft={draft} setDraft={setDraft} event={resolved.event} />
             ) : (

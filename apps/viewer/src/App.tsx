@@ -7,10 +7,11 @@ import {
   startMockStream,
   useChatFeed,
 } from '@chatto/chat-ui';
-import type { ChatTheme, ViewerTarget } from '@chatto/core';
+import type { ChatTheme, Locale, ViewerTarget } from '@chatto/core';
 import { useEffect, useState } from 'react';
 import { AlertsApp } from './AlertsApp';
 import { connectToApp } from './connection';
+import { initialLocale } from './locale';
 
 const params = new URLSearchParams(location.search);
 const target: ViewerTarget = location.pathname.includes('alerts')
@@ -38,6 +39,7 @@ export function App() {
 
 function ChatApp() {
   const [theme, setTheme] = useState<ChatTheme>(fallbackTheme);
+  const [locale, setLocale] = useState<Locale>(() => initialLocale(params));
   const feed = useChatFeed(theme.options);
   const { push, reset } = feed;
 
@@ -46,15 +48,17 @@ function ChatApp() {
     if (isMock) return startMockStream(push);
     const wsUrl = params.get('ws') ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
     return connectToApp(wsUrl, target, {
-      onHello: (nextTheme, backlog) => {
+      onHello: (nextTheme, backlog, nextLocale) => {
         setTheme(nextTheme);
+        if (nextLocale) setLocale(nextLocale);
         reset(backlog);
       },
       onEvent: push,
       onTheme: setTheme,
+      onLocale: setLocale,
       onStatus: () => undefined,
     });
   }, [push, reset]);
 
-  return <ChatView theme={theme} items={feed.items} />;
+  return <ChatView theme={theme} items={feed.items} locale={locale} />;
 }

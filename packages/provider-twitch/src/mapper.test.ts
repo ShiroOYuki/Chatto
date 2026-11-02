@@ -4,6 +4,7 @@ import {
   mapChatMessage,
   mapEventSubNotification,
   mapNotification,
+  noticeMeta,
   twitchNoticeEventType,
   type TwitchChatMessageEvent,
   type TwitchNotificationEvent,
@@ -112,6 +113,82 @@ describe('twitch mapper', () => {
     expect(noticeGroup(gift)).toEqual({ id: 'twitch:42', lead: false });
     expect(noticeGroup(direct)).toBeNull();
     expect(direct.meta.recipient).toBe('Mochi_Fan');
+  });
+
+  it('normalizes notice payloads into the shared meta keys', () => {
+    const meta = (notice_type: string, payload: Record<string, unknown>, anonymous = false) =>
+      noticeMeta({
+        broadcaster_user_id: '1',
+        chatter_user_id: '3',
+        chatter_user_login: 'mochi_fan',
+        chatter_user_name: 'Mochi_Fan',
+        chatter_is_anonymous: anonymous,
+        color: '',
+        badges: [],
+        system_message: '',
+        message_id: 'n',
+        message: { text: '', fragments: [] },
+        notice_type,
+        ...payload,
+      });
+    // Recorded shape from the EventSub reference (resub, viewer hid their streak).
+    expect(
+      meta('resub', {
+        resub: {
+          cumulative_months: 99,
+          duration_months: 0,
+          streak_months: null,
+          sub_tier: '1000',
+          is_prime: false,
+          is_gift: false,
+          gifter_is_anonymous: null,
+          gifter_user_name: null,
+        },
+      }),
+    ).toEqual({ noticeType: 'resub', tier: '1', months: 99 });
+    // Shared chat puts the same payload under a prefixed key.
+    expect(
+      meta('shared_chat_resub', {
+        resub: null,
+        shared_chat_resub: { cumulative_months: 3, streak_months: 3, sub_tier: '2000' },
+      }),
+    ).toMatchObject({ tier: '2', months: 3, streakMonths: 3 });
+    expect(meta('sub', { sub: { sub_tier: '1000', is_prime: true, duration_months: 6 } })).toMatchObject({
+      tier: 'prime',
+      durationMonths: 6,
+    });
+    expect(
+      meta('sub_gift', {
+        sub_gift: { sub_tier: '3000', recipient_user_name: 'okome_rice', duration_months: 1, cumulative_total: 12 },
+      }),
+    ).toMatchObject({ tier: '3', recipient: 'okome_rice', totalGifts: 12 });
+    expect(
+      meta('community_sub_gift', { community_sub_gift: { id: 'g', total: 5, sub_tier: '1000' } }, true),
+    ).toMatchObject({
+      tier: '1',
+      count: 5,
+      anonymous: true,
+    });
+    expect(
+      meta('gift_paid_upgrade', { gift_paid_upgrade: { gifter_is_anonymous: false, gifter_user_name: 'MatchaLatte' } }),
+    ).toMatchObject({
+      gifter: 'MatchaLatte',
+    });
+    expect(
+      meta('pay_it_forward', { pay_it_forward: { gifter_is_anonymous: true, gifter_user_name: null } }),
+    ).toMatchObject({
+      gifterAnonymous: true,
+    });
+    expect(meta('raid', { raid: { user_name: 'ShiroLive', viewer_count: 42 } })).toMatchObject({
+      raider: 'ShiroLive',
+      viewers: 42,
+    });
+    expect(meta('bits_badge_tier', { bits_badge_tier: { tier: 1000 } })).toMatchObject({ bitsTier: 1000 });
+    expect(
+      meta('charity_donation', {
+        charity_donation: { charity_name: '茶園基金會', amount: { value: 1250, decimal_places: 2, currency: 'USD' } },
+      }),
+    ).toMatchObject({ charity: '茶園基金會', donation: 12.5, currency: 'USD' });
   });
 
   it('maps moderation events', () => {

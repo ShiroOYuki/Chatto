@@ -9,16 +9,8 @@ import { RollingNumber, Stagger } from '../components/motion';
 import { TeaCup } from '../components/TeaCup';
 import { BorderBeam } from '../components/ui/border-beam';
 import { Button, CopyField, EmptyState, Sparkline, channelTone, StatusDot, Tile, Toggle } from '../components/kit';
+import { useMessages, useThemeName } from '../i18n';
 import { useChatLog, type LogEntry } from '../store';
-
-const STATE_LABEL: Record<AppState['channel']['state'], string> = {
-  idle: '尚未連線',
-  connecting: '連線中…',
-  connected: '直播聊天室已連線',
-  reconnecting: '重新連線中…',
-  error: '連線出了點問題',
-  closed: '已中斷',
-};
 
 /** Enough to fill a 4K-tall tile; the rest is clipped. */
 const RECENT_MESSAGES = 60;
@@ -76,6 +68,8 @@ function RecentNotices({ entries }: { entries: LogEntry[] }) {
 }
 
 export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigate: (page: PageId) => void }) {
+  const m = useMessages().overview;
+  const nameOf = useThemeName();
   const { entries, stats } = useChatLog();
   const connected = state.channel.state === 'connected';
   // Render more than fits; the chat tile clips what does not fit, so bigger windows show more.
@@ -84,8 +78,10 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
     .filter((entry) => entry.kind === 'notice')
     .slice(-RECENT_NOTICES)
     .reverse();
-  const themeName = (target: 'overlay' | 'embed') =>
-    state.themes.find((theme) => theme.id === state.selectedThemes[target])?.name ?? '—';
+  const themeName = (target: 'overlay' | 'embed') => {
+    const theme = state.themes.find((item) => item.id === state.selectedThemes[target]);
+    return theme ? nameOf(theme) : '—';
+  };
 
   return (
     // Fills the viewport: the stats rows keep their content height and the chat row takes the rest.
@@ -100,9 +96,9 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
           <div>
             <div className="flex items-center gap-2 text-sm opacity-90">
               <StatusDot tone={channelTone(state.channel.state, connected)} />
-              {STATE_LABEL[state.channel.state]}
+              {m.channelState[state.channel.state]}
             </div>
-            <div className="mt-1 text-xl font-semibold">{state.channel.login ?? '還沒選擇頻道'}</div>
+            <div className="mt-1 text-xl font-semibold">{state.channel.login ?? m.noChannel}</div>
           </div>
           <div className="rounded-full bg-[#f4f9ee] p-2">
             <TeaCup mood={moodFor(state, stats.rate)} size={64} />
@@ -111,61 +107,61 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         <div>
           <div className="flex items-baseline gap-2">
             <RollingNumber value={stats.rate} className="font-mono text-6xl font-semibold" />
-            <span className="text-sm opacity-80">則／分鐘</span>
+            <span className="text-sm opacity-80">{m.perMinute}</span>
           </div>
           <Sparkline
             values={stats.history}
             className="mt-3 h-14 [&>span]:bg-on-matcha/30! [&>span:last-child]:bg-on-matcha!"
           />
           <div className="mt-1 flex justify-between text-[11px] opacity-60">
-            <span>30 分鐘前</span>
-            <span>現在</span>
+            <span>{m.thirtyMinutesAgo}</span>
+            <span>{m.now}</span>
           </div>
         </div>
       </Tile>
 
-      <Stat icon={<MessageCircle />} label="本次訊息" value={stats.totalMessages} />
-      <Stat icon={<Users />} label="參與的聊天者" value={stats.uniqueChatters} />
-      <Stat icon={<Sparkles />} label="訂閱與活動" value={stats.noticeCount} />
-      <Stat icon={<Eraser />} label="已刪除訊息" value={stats.deletedCount} />
+      <Stat icon={<MessageCircle />} label={m.totalMessages} value={stats.totalMessages} />
+      <Stat icon={<Users />} label={m.chatters} value={stats.uniqueChatters} />
+      <Stat icon={<Sparkles />} label={m.notices} value={stats.noticeCount} />
+      <Stat icon={<Eraser />} label={m.deleted} value={stats.deletedCount} />
 
       {/* Outputs quick controls */}
       <Tile
-        title="輸出"
+        title={m.outputs}
         icon={<MonitorUp />}
         className="col-span-2"
         action={
           <Button size="sm" variant="ghost" onClick={() => onNavigate('outputs')}>
-            詳細設定 <ArrowRight />
+            {m.outputSettings} <ArrowRight />
           </Button>
         }
       >
         <div className="flex items-center justify-between rounded-2xl bg-tile-muted px-4 py-2.5">
           <div>
-            <div className="text-sm font-medium">桌面 Overlay</div>
-            <div className="text-xs text-ink-faint">{state.overlay.enabled ? '顯示中' : '已關閉'}</div>
+            <div className="text-sm font-medium">{m.desktopOverlay}</div>
+            <div className="text-xs text-ink-faint">{state.overlay.enabled ? m.overlayShown : m.overlayHidden}</div>
           </div>
-          <Toggle checked={state.overlay.enabled} label="桌面 Overlay" onChange={(v) => overlay.setEnabled(v)} />
+          <Toggle checked={state.overlay.enabled} label={m.desktopOverlay} onChange={(v) => overlay.setEnabled(v)} />
         </div>
         <div className="mt-2">
-          <CopyField label="OBS 瀏覽器來源" value={state.server.embedUrl} />
+          <CopyField label={m.obsSource} value={state.server.embedUrl} />
         </div>
       </Tile>
 
       <Tile
-        title="使用中的主題"
+        title={m.themesInUse}
         icon={<Palette />}
         className="col-span-2"
         action={
           <Button size="sm" variant="ghost" onClick={() => onNavigate('themes')}>
-            更換 <ArrowRight />
+            {m.changeTheme} <ArrowRight />
           </Button>
         }
       >
         <dl className="grid grid-cols-2 gap-2">
           {(['overlay', 'embed'] as const).map((target) => (
             <div key={target} className="rounded-2xl bg-tile-muted px-4 py-3">
-              <dt className="text-xs text-ink-faint">{target === 'overlay' ? '桌面 Overlay' : 'OBS'}</dt>
+              <dt className="text-xs text-ink-faint">{target === 'overlay' ? m.desktopOverlay : 'OBS'}</dt>
               <dd className="mt-0.5 truncate font-medium">{themeName(target)}</dd>
             </div>
           ))}
@@ -174,17 +170,17 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
 
       {/* Live chat */}
       <Tile
-        title="最新留言"
+        title={m.latestMessages}
         icon={<MessageCircle />}
         className="col-span-4 min-h-0 overflow-hidden"
         action={
           <Button size="sm" variant="ghost" onClick={() => onNavigate('chat')}>
-            開啟聊天室 <ArrowRight />
+            {m.openChat} <ArrowRight />
           </Button>
         }
       >
         {recentMessages.length === 0 ? (
-          <EmptyState title="還沒有人說話" hint="連上頻道後，新的留言會出現在這裡。" />
+          <EmptyState title={m.noMessages} hint={m.noMessagesHint} />
         ) : (
           <div
             data-testid="recent-messages"
@@ -199,9 +195,9 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         )}
       </Tile>
 
-      <Tile title="最近活動" icon={<Sparkles />} className="col-span-2 min-h-0 overflow-hidden">
+      <Tile title={m.recentActivity} icon={<Sparkles />} className="col-span-2 min-h-0 overflow-hidden">
         {recentNotices.length === 0 ? (
-          <EmptyState mood="happy" title="還沒有新活動" hint="訂閱、揪團和公告會顯示在這裡。" />
+          <EmptyState mood="happy" title={m.noActivity} hint={m.noActivityHint} />
         ) : (
           <RecentNotices entries={recentNotices} />
         )}

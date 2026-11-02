@@ -5,14 +5,17 @@ import {
   type AlertCue,
   type ChatEvent,
   type ChatTheme,
+  type Locale,
   type ViewerTarget,
 } from '@chatto/core';
 
 export interface ViewerConnectionHandlers {
-  onHello(theme: ChatTheme, backlog: ChatEvent[]): void;
+  onHello(theme: ChatTheme, backlog: ChatEvent[], locale?: Locale): void;
   /** `alert` is set for the alert overlay: how long the card stays and what it plays. */
   onEvent(event: ChatEvent, alert?: AlertCue): void;
   onTheme(theme: ChatTheme): void;
+  /** The chat language changed in the desktop app. */
+  onLocale(locale: Locale): void;
   onStatus(connected: boolean): void;
 }
 
@@ -36,9 +39,10 @@ export function connectToApp(url: string, target: ViewerTarget, handlers: Viewer
     socket.addEventListener('message', (message) => {
       const frame = decodeServerFrame(String(message.data));
       if (!frame) return;
-      if (frame.type === 'hello') handlers.onHello(frame.theme, frame.backlog);
+      if (frame.type === 'hello') handlers.onHello(frame.theme, frame.backlog, frame.locale);
       else if (frame.type === 'event') handlers.onEvent(frame.event, frame.alert);
-      else handlers.onTheme(frame.theme);
+      else if (frame.type === 'theme') handlers.onTheme(frame.theme);
+      else handlers.onLocale(frame.locale);
     });
     socket.addEventListener('close', () => {
       handlers.onStatus(false);

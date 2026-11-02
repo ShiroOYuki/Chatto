@@ -46,6 +46,7 @@
 | `reply`     | `show`、`color`                                                                                                                                                                                                                                                                                       |
 | `notice`    | **通用事件訊息**（所有平台事件共用）：`box`、`accentColor`、`accentWidth`（左側色條）、`titleColor`、`bodyColor`（空字串＝沿用）、`icon`（標題前文字）、`messageFrame`（聊天訊息事件的外框位置）、`titlePlacement`（聊天訊息事件的標題位置）、`sticker`（標題貼紙的 `background`、`color`、`rotate`） |
 | `events`    | 各平台事件的樣式，鍵為 `平台:事件`（例如 `twitch:cheer`），值為 `{ linked, style }`；見下方「平台事件」                                                                                                                                                                                               |
+| `eventText` | 自訂事件文字模板，鍵為 `平台:事件`；空的用內建文字。見下方「事件文字」                                                                                                                                                                                                                                |
 | `roles`     | 依身分覆蓋：鍵為 viewer（一般觀眾：沒有 broadcaster、moderator、vip、subscriber、founder 身分）／broadcaster／moderator／vip／subscriber／first-message，值為 `nameColor`、`nameBackground`、`surfaceBackground`、`borderColor`、`frame`（`BoxImage`，套在訊息看得見的底色上），皆可省略              |
 | `animation` | `enter`（none／fade／slide-up／slide-left／slide-right／pop／bounce／shake／zoom）、`duration`（ms）、`exit`（none／fade／slide-up／slide-left／slide-right／pop／zoom，事件 Overlay 的卡片離場時使用）                                                                                               |
 | `attention` | 沉寂後新留言（`data-highlight~="after-silence"`，只在桌面 Overlay）：`effect`（none／glow／pulse／shake）、`color`、`repeat`（次數）、`label`（右上角標籤，空字串＝不顯示）、`labelColor`                                                                                                             |
@@ -64,11 +65,11 @@
 
 ## 平台事件
 
-平台專屬事件（Twitch 的小奇點、訂閱、揪團…）一律以 `平台:事件` 識別，例如 `twitch:cheer`、`twitch:community-gift`。清單與中文名稱集中在 `packages/chat-ui/src/events.ts` 的 `EVENT_CATALOG`，編輯器的「Twitch 專屬元件」選單就是從這裡產生；新增平台時加一個群組即可，其他層不用改。
+平台專屬事件（Twitch 的小奇點、訂閱、揪團…）一律以 `平台:事件` 識別，例如 `twitch:cheer`、`twitch:community-gift`。清單、名稱（繁中與英文）與內建文字模板集中在 `packages/chat-ui/src/events.ts` 的 `EVENT_CATALOG`，編輯器的「Twitch 專屬元件」選單就是從這裡產生；新增平台時加一個群組即可，其他層不用改。
 
 事件分兩類：
 
-- **通知**（`.chatto-notice`）：訂閱、續訂、贈訂、大量贈訂、揪團、公告、觀看連勝。
+- **通知**（`.chatto-notice`）：訂閱、續訂、贈訂、大量贈訂、贈訂轉付費、Prime 轉付費、贈訂傳下去、揪團、取消揪團、公告、小奇點徽章、慈善捐款、觀看連勝。
 - **事件訊息**（`.chatto-message[data-event]`）：小奇點、頻道點數強調訊息。保留一般訊息的結構，另外在內容區最上方加上 `.chatto-event-title`。
 
 樣式規則：
@@ -85,6 +86,19 @@
   - `line`（預設）：內容區最上方獨立一行，顏色用 `titleColor`。
   - `sticker`：傾斜的小膠囊貼在訊息看得見的底色右上角，顏色、底色、角度由 `sticker` 決定。`stacked` 且內容框有填色時，標題和 `.chatto-body` 放在 `.chatto-content` 的同一個 grid 格子裡；其他排列用 `position: absolute` 貼在 `.chatto-message` 上（`columns` 會裁切溢出，所以貼在框內）。泡泡預設使用 `sticker`。
 - 產生的 CSS 先輸出通用規則，再為每個獨立樣式的事件輸出 `[data-event="key"]` 規則；事件規則排在身分樣式之後，所以事件外觀優先於作者身分。
+
+## 事件文字
+
+事件的文字（通知的整行文字、事件訊息的標題）由模板產生，語言是**聊天室語言**（設定頁「語言」，預設跟隨介面語言；控制台的預覽也用它）。每個事件在 `EVENT_CATALOG` 有內建模板（`text`，繁中與英文）與可用變數（`variables`）。
+
+- `theme.eventText[事件鍵]`：主題自己的模板，例如 `{ "twitch:resub": "感謝 {user} 的 {months} 個月訂閱" }`。留空或沒有這個鍵就用內建模板；自訂模板組不出來時也退回內建模板，再不行就顯示平台原文。編輯器在每個平台事件的區塊有「文字」欄位。
+- 模板語法（內建與自訂共用，`renderTemplate()`）：
+  - `{name}` 代入變數，數字依語言格式化（`12,345`）。
+  - `{name|單數|複數}` 依變數的數字選字，不輸出數字本身，例如 `{months} {months|month|months}`。
+  - `[ … ]` 裡的變數都有值才顯示，例如 `[，連續 {streak} 個月]`。
+  - 方括號外的變數沒有值時，整個模板視為失敗。
+- 可用變數：`user`（發出事件的人；匿名時為「匿名觀眾」）、`tier`（`Tier 1`、`Prime`）、`months`、`streak`、`duration`、`recipient`、`gifter`、`count`、`totalGifts`、`viewers`、`raider`、`bitsTier`、`charity`、`donation`（含貨幣）；事件訊息另有 `amount`（小奇點數量）。各事件能用哪些見 `EVENT_CATALOG` 的 `variables`，資料來源見 `docs/message-format.md`「事件欄位」。
+- 內建主題的名稱與預設文字（`attention.label`「新留言」）跟著語言（`localizeTheme()`）；自訂主題裡的文字照寫的顯示。複製內建主題時，複製當下語言的文字。
 
 ## 沉寂後新留言與事件 Overlay
 
@@ -195,6 +209,7 @@
 
 ## 版本與遷移
 
+- **v2 新增欄位**（2026-11-02，非破壞性）：`eventText`（自訂事件文字，預設 `{}`，`normalizeTheme()` 只保留非空字串）。
 - **v2 新增欄位**（2026-11-02，非破壞性）：`BoxStyle.image`（九宮格圖片外框，預設 `null`）、`roles.<身分>.frame`；新增主題包 `.chattotheme`。`normalizeTheme()` 會補齊預設並移除無效的圖片來源。
 - **v2 新增欄位**（2026-11-01，非破壞性）：`animation.exit`、`attention`；`animation.enter` 新增 bounce、shake、zoom。`normalizeTheme()` 會補齊預設。
 - **v2 新增欄位**（2026-11-01，非破壞性）：`notice.messageFrame`、`notice.titlePlacement`、`notice.sticker` 與各事件的同名欄位（預設 `wrap`、`line`，`normalizeTheme()` 會補齊）；`roles.viewer`（一般觀眾）。

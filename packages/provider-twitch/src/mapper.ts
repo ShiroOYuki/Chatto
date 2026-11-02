@@ -62,10 +62,43 @@ export interface TwitchNotificationEvent {
   message_id: string;
   message: { text: string; fragments: TwitchFragment[] };
   notice_type: string;
-  resub?: { cumulative_months?: number; streak_months?: number | null } | null;
-  sub_gift?: { duration_months?: number; recipient_user_name?: string; community_gift_id?: string | null } | null;
-  community_sub_gift?: { id?: string; total?: number } | null;
-  raid?: { viewer_count?: number; user_name?: string } | null;
+  /**
+   * The payload sits under a key named like `notice_type` (`resub`, or `shared_chat_resub`
+   * in shared chat); see Twitch's EventSub reference for channel.chat.notification.
+   */
+  [payload: string]: unknown;
+}
+
+type SubTier = '1000' | '2000' | '3000';
+interface GifterFields {
+  gifter_is_anonymous?: boolean | null;
+  gifter_user_name?: string | null;
+}
+/** The notice payloads Chatto reads, by notice type (without the `shared_chat_` prefix). */
+export interface TwitchNoticePayloads {
+  sub: { sub_tier?: SubTier; is_prime?: boolean; duration_months?: number };
+  resub: {
+    sub_tier?: SubTier;
+    is_prime?: boolean;
+    cumulative_months?: number;
+    duration_months?: number;
+    streak_months?: number | null;
+    is_gift?: boolean;
+  } & GifterFields;
+  sub_gift: {
+    sub_tier?: SubTier;
+    duration_months?: number;
+    cumulative_total?: number | null;
+    recipient_user_name?: string;
+    community_gift_id?: string | null;
+  };
+  community_sub_gift: { id?: string; total?: number; sub_tier?: SubTier; cumulative_total?: number | null };
+  gift_paid_upgrade: GifterFields;
+  prime_paid_upgrade: { sub_tier?: SubTier };
+  pay_it_forward: GifterFields;
+  raid: { user_name?: string; viewer_count?: number };
+  bits_badge_tier: { tier?: number };
+  charity_donation: { charity_name?: string; amount?: { value?: number; decimal_places?: number; currency?: string } };
 }
 
 export type BadgeLookup = (key: string) => ChatBadge | undefined;
@@ -234,20 +267,99 @@ const NOTICE_KIND: Record<string, NoticeKind> = {
   raid: 'raid',
   announcement: 'announcement',
   watch_streak: 'watch-streak',
+  prime_paid_upgrade: 'subscription',
+  gift_paid_upgrade: 'subscription',
+  pay_it_forward: 'gift-subscription',
 };
 
-export function mapNotification(event: TwitchNotificationEvent, lookup: BadgeLookup, now = Date.now()): ChatNotice {
+/** Twitch's `sub_tier` as the platform-neutral `meta.tier`: `1`, `2`, `3` or `prime`. */
+const tierOf = (payload: { sub_tier?: SubTier; is_prime?: boolean }) =>
+  payload.is_prime ? 'prime' : payload.sub_tier ? payload.sub_tier.charAt(0) : undefined;
+
+/**
+ * Structured fields of a notice, under the platform-neutral `meta` keys that
+ * event text templates use (see docs/message-format.md).
+ */
+export function noticeMeta(event: TwitchNotificationEvent): ChatNotice['meta'] {
+  const type = event.notice_type.replace(/^shared_chat_/, '');
+  const payload = (event[event.notice_type] ?? event[type] ?? {}) as Record<string, unknown>;
   const meta: ChatNotice['meta'] = { noticeType: event.notice_type };
-  if (event.resub?.cumulative_months) meta.months = event.resub.cumulative_months;
-  if (event.community_sub_gift?.total) meta.count = event.community_sub_gift.total;
-  // A community gift is announced once, then once per gifted sub; the shared id ties them together.
-  if (event.community_sub_gift?.id) {
-    meta.groupId = event.community_sub_gift.id;
-    meta.groupLead = true;
+  const set = (key: string, value: string | number | boolean | null | undefined) => {
+    if (value !== undefined && value !== null && value !== '') meta[key] = value;
+  };
+  if (event.chatter_is_anonymous) meta.anonymous = true;
+  const gifter = (fields: GifterFields) => {
+    if (fields.gifter_is_anonymous) meta.gifterAnonymous = true;
+    else set('gifter', fields.gifter_user_name);
+  };
+
+  switch (type) {
+    case 'sub': {
+      const sub = payload as TwitchNoticePayloads['sub'];
+      set('tier', tierOf(sub));
+      if ((sub.duration_months ?? 0) > 1) set('durationMonths', sub.duration_months);
+      break;
+    }
+    case 'resub': {
+      const resub = payload as TwitchNoticePayloads['resub'];
+      set('tier', tierOf(resub));
+      set('months', resub.cumulative_months);
+      set('streakMonths', resub.streak_months);
+      if ((resub.duration_months ?? 0) > 1) set('durationMonths', resub.duration_months);
+      if (resub.is_gift) gifter(resub);
+      break;
+    }
+    case 'sub_gift': {
+      const gift = payload as TwitchNoticePayloads['sub_gift'];
+      set('tier', tierOf(gift));
+      set('recipient', gift.recipient_user_name);
+      if ((gift.duration_months ?? 0) > 1) set('durationMonths', gift.duration_months);
+      set('totalGifts', gift.cumulative_total);
+      // A community gift is announced once, then once per gifted sub; the shared id ties them together.
+      set('groupId', gift.community_gift_id);
+      break;
+    }
+    case 'community_sub_gift': {
+      const gift = payload as TwitchNoticePayloads['community_sub_gift'];
+      set('tier', tierOf(gift));
+      set('count', gift.total);
+      set('totalGifts', gift.cumulative_total);
+      if (gift.id) {
+        meta.groupId = gift.id;
+        meta.groupLead = true;
+      }
+      break;
+    }
+    case 'gift_paid_upgrade':
+    case 'pay_it_forward':
+      gifter(payload as GifterFields);
+      break;
+    case 'prime_paid_upgrade':
+      set('tier', tierOf(payload as TwitchNoticePayloads['prime_paid_upgrade']));
+      break;
+    case 'raid': {
+      const raid = payload as TwitchNoticePayloads['raid'];
+      set('viewers', raid.viewer_count);
+      set('raider', raid.user_name);
+      break;
+    }
+    case 'bits_badge_tier':
+      set('bitsTier', (payload as TwitchNoticePayloads['bits_badge_tier']).tier);
+      break;
+    case 'charity_donation': {
+      const donation = payload as TwitchNoticePayloads['charity_donation'];
+      set('charity', donation.charity_name);
+      const amount = donation.amount;
+      if (amount?.value !== undefined) set('donation', amount.value / 10 ** (amount.decimal_places ?? 0));
+      set('currency', amount?.currency);
+      break;
+    }
   }
-  if (event.sub_gift?.community_gift_id) meta.groupId = event.sub_gift.community_gift_id;
-  if (event.sub_gift?.recipient_user_name) meta.recipient = event.sub_gift.recipient_user_name;
-  if (event.raid?.viewer_count) meta.viewers = event.raid.viewer_count;
+  return meta;
+}
+
+export function mapNotification(event: TwitchNotificationEvent, lookup: BadgeLookup, now = Date.now()): ChatNotice {
+  const meta = noticeMeta(event);
 
   return {
     id: event.message_id,

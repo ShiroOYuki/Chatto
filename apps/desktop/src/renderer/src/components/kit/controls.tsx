@@ -136,6 +136,7 @@ export function Select<T extends string>({
   onChange,
   className = '',
   placeholder,
+  'aria-label': ariaLabel,
 }: {
   /** An empty string shows the placeholder. */
   value: T | '';
@@ -143,10 +144,11 @@ export function Select<T extends string>({
   onChange: (value: T) => void;
   className?: string;
   placeholder?: string;
+  'aria-label'?: string;
 }) {
   return (
     <SelectRoot value={value} onValueChange={(next) => onChange(next as T)}>
-      <SelectTrigger className={`h-9 w-full rounded-xl bg-canvas shadow-none ${className}`}>
+      <SelectTrigger aria-label={ariaLabel} className={`h-9 w-full rounded-xl bg-canvas shadow-none ${className}`}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent position="popper" className="rounded-xl">

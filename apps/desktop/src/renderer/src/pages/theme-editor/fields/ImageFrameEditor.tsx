@@ -3,17 +3,13 @@ import { assetFileOf, type BoxImage, type BoxImageRepeat } from '@chatto/core';
 import { ImagePlus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '../../../components/kit';
+import { useMessages } from '../../../i18n';
 import { themes, useThemeAssetUrl } from '../../../services/themes';
 import { NumberField, SidesField } from './numbers';
 import { FieldRow, SelectRow, ToggleRow } from './rows';
 import { guessSlice, SliceEditor, type ImageSize } from './SliceEditor';
 
-const REPEATS: { value: BoxImageRepeat; label: string }[] = [
-  { value: 'stretch', label: '拉伸' },
-  { value: 'repeat', label: '重複' },
-  { value: 'round', label: '重複（整數）' },
-  { value: 'space', label: '重複（留間距）' },
-];
+const REPEATS: BoxImageRepeat[] = ['stretch', 'repeat', 'round', 'space'];
 
 /** The URL a frame image loads from in the control panel. */
 function useFrameUrl(src: string): string {
@@ -42,7 +38,7 @@ function useImageSize(url: string): ImageSize | null {
  * and drawn. `null` means no frame.
  */
 export function ImageFrameEditor({
-  label = '圖片外框',
+  label,
   value,
   onChange,
 }: {
@@ -50,6 +46,8 @@ export function ImageFrameEditor({
   value: BoxImage | null | undefined;
   onChange: (value: BoxImage | null) => void;
 }) {
+  const messages = useMessages();
+  const m = messages.editorFields.frame;
   const [error, setError] = useState<string | null>(null);
   // A freshly picked image gets its slice lines guessed once its size is known.
   const [guessFor, setGuessFor] = useState<string | null>(null);
@@ -67,14 +65,14 @@ export function ImageFrameEditor({
 
   return (
     <>
-      <FieldRow label={label} hint="九宮格：四角固定，四邊延伸">
+      <FieldRow label={label ?? m.label} hint={m.hint}>
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" onClick={() => void pick()}>
-            <ImagePlus /> {value ? '更換圖片' : '選擇圖片'}
+            <ImagePlus /> {value ? m.change : m.choose}
           </Button>
           {value ? (
             <Button size="sm" variant="danger" onClick={() => onChange(null)}>
-              <Trash2 /> 移除
+              <Trash2 /> {messages.common.remove}
             </Button>
           ) : null}
           {error ? (
@@ -103,6 +101,7 @@ function FrameSettings({
   guessFor: string | null;
   onGuessed: () => void;
 }) {
+  const m = useMessages().editorFields.frame;
   const url = useFrameUrl(value.src);
   const size = useImageSize(url);
   const set = (patch: Partial<BoxImage>) => onChange({ ...value, ...patch });
@@ -120,21 +119,21 @@ function FrameSettings({
         <>
           <SliceEditor url={url} size={size} slice={value.slice} onChange={(slice) => set({ slice })} />
           <p className="mt-1 mb-2 text-center text-[11px] text-ink-faint">
-            {size.width} × {size.height} px · 拖曳虛線調整切線，或聚焦後用方向鍵
+            {size.width} × {size.height} px · {m.sliceHelp}
           </p>
         </>
       ) : (
-        <p className="py-3 text-center text-xs text-ink-faint">載入圖片中…</p>
+        <p className="py-3 text-center text-xs text-ink-faint">{m.loading}</p>
       )}
       <SidesField
-        label="切線"
+        label={m.slice}
         value={value.slice}
         max={Math.max(40, size ? Math.max(size.width, size.height) : 0)}
         onChange={(slice) => set({ slice })}
       />
       <NumberField
-        label="縮放"
-        hint="高解析度圖片用 0.5"
+        label={m.scale}
+        hint={m.scaleHint}
         value={value.scale}
         min={0.25}
         max={4}
@@ -142,12 +141,15 @@ function FrameSettings({
         unit="×"
         onChange={(scale) => set({ scale })}
       />
-      <SelectRow label="邊緣" value={value.repeat} options={REPEATS} onChange={(repeat) => set({ repeat })} />
-      <ToggleRow label="填滿中間" value={value.fill} onChange={(fill) => set({ fill })} />
-      <SidesField label="外擴" value={value.outset} onChange={(outset) => set({ outset })} />
-      <p className="py-1.5 text-[11px] leading-relaxed text-ink-faint">
-        有圖片時框線設定不作用；圓角只影響背景，陰影會沿著圖片（連文字一起）投影。內距建議不小於外框寬度。
-      </p>
+      <SelectRow
+        label={m.edges}
+        value={value.repeat}
+        options={REPEATS.map((repeat) => ({ value: repeat, label: m.repeats[repeat] }))}
+        onChange={(repeat) => set({ repeat })}
+      />
+      <ToggleRow label={m.fill} value={value.fill} onChange={(fill) => set({ fill })} />
+      <SidesField label={m.outset} value={value.outset} onChange={(outset) => set({ outset })} />
+      <p className="py-1.5 text-[11px] leading-relaxed text-ink-faint">{m.note}</p>
     </div>
   );
 }

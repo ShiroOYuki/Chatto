@@ -7,6 +7,7 @@ import { alerts } from '../../services/alerts';
 import { themes } from '../../services/themes';
 import { Stagger } from '../../components/motion';
 import { Button, Field, Hint, PageHeader, Select, Tile, Toggle } from '../../components/kit';
+import { useLocale, useMessages, useThemeName } from '../../i18n';
 import { ruleFor, withEvents, withRule, withSilence } from './draft';
 import { NumberInput } from './NumberInput';
 import { SoundPicker } from './SoundPicker';
@@ -32,45 +33,51 @@ export function AlertsPage({ state }: { state: AppState }) {
   const { port } = state.server;
   const save = (next: AlertSettings) => alerts.setSettings(next);
   const { enabled: overlayOn, editing } = state.alertsOverlay;
+  const m = useMessages().alerts;
+  const themeName = useThemeName();
+  const locale = useLocale();
 
   return (
     <div>
-      <PageHeader title="提醒" description="只給自己看的提醒，觀眾和 OBS 畫面都看不到。" />
+      <PageHeader title={m.title} description={m.description} />
 
       <Stagger className="grid grid-cols-2 gap-3">
         <Tile
-          title="新留言提醒"
+          title={m.silence.title}
           icon={<MessageCircleMore />}
           action={
             <Toggle
               checked={settings.silence.enabled}
-              label="新留言提醒"
+              label={m.silence.title}
               onChange={(enabled) => save(withSilence(settings, { enabled }))}
             />
           }
         >
-          <p className="mb-2 text-sm text-ink-soft">聊天室安靜一段時間後，第一則新留言會響一聲並標示出來，不怕漏看。</p>
-          <Row title="安靜多久算沉寂" hint={`${SILENCE_THRESHOLD.min}～${SILENCE_THRESHOLD.max} 秒`}>
+          <p className="mb-2 text-sm text-ink-soft">{m.silence.intro}</p>
+          <Row
+            title={m.silence.threshold}
+            hint={m.silence.thresholdRange(SILENCE_THRESHOLD.min, SILENCE_THRESHOLD.max)}
+          >
             <NumberInput
-              label="安靜多久算沉寂"
+              label={m.silence.threshold}
               value={settings.silence.thresholdSeconds}
               min={SILENCE_THRESHOLD.min}
               max={SILENCE_THRESHOLD.max}
-              unit="秒"
+              unit={m.seconds}
               onChange={(thresholdSeconds) => save(withSilence(settings, { thresholdSeconds }))}
             />
           </Row>
-          <Row title="在桌面 Overlay 標示" hint="外觀在主題編輯器的「新留言提醒」調整。">
+          <Row title={m.silence.flash} hint={m.silence.flashHint}>
             <Toggle
               checked={settings.silence.flash}
-              label="在桌面 Overlay 標示"
+              label={m.silence.flash}
               onChange={(flash) => save(withSilence(settings, { flash }))}
             />
           </Row>
           <div className="pt-3">
-            <Field label="提示音">
+            <Field label={m.silence.sound}>
               <SoundPicker
-                label="新留言提示音"
+                label={m.silence.soundLabel}
                 port={port}
                 value={settings.silence.sound}
                 onChange={(sound) => save(withSilence(settings, { sound }))}
@@ -79,27 +86,25 @@ export function AlertsPage({ state }: { state: AppState }) {
           </div>
           <p className="mt-3 flex gap-2 text-xs text-ink-faint">
             <Info className="size-4 shrink-0" />
-            機器人、指令（例如 !uptime）和小奇點等事件不算留言。
+            {m.silence.notMessages}
           </p>
         </Tile>
 
         <Tile
-          title="事件 Overlay"
+          title={m.overlay.title}
           icon={<PartyPopper />}
-          action={<Toggle checked={overlayOn} label="事件 Overlay" onChange={(v) => alerts.setOverlayEnabled(v)} />}
+          action={<Toggle checked={overlayOn} label={m.overlay.title} onChange={(v) => alerts.setOverlayEnabled(v)} />}
         >
-          <p className="mb-2 text-sm text-ink-soft">
-            訂閱、小奇點、揪團等事件會在桌面右上角跳出卡片，一次一張，依序顯示。
-          </p>
+          <p className="mb-2 text-sm text-ink-soft">{m.overlay.intro}</p>
           <div className="grid grid-cols-2 gap-3 pb-1">
-            <Field label="主題">
+            <Field label={m.overlay.theme}>
               <Select
                 value={state.selectedThemes.alerts}
-                options={state.themes.map((theme) => ({ value: theme.id, label: theme.name }))}
+                options={state.themes.map((theme) => ({ value: theme.id, label: themeName(theme) }))}
                 onChange={(id) => themes.select('alerts', id)}
               />
             </Field>
-            <Field label="位置與大小">
+            <Field label={m.overlay.bounds}>
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
@@ -107,13 +112,13 @@ export function AlertsPage({ state }: { state: AppState }) {
                   disabled={!overlayOn}
                   onClick={() => alerts.setOverlayEditing(!editing)}
                 >
-                  <Move /> {editing ? '完成調整' : '調整'}
+                  <Move /> {editing ? m.overlay.doneAdjusting : m.overlay.adjust}
                 </Button>
-                <Hint label="移回右上角">
+                <Hint label={m.overlay.resetBounds}>
                   <Button
                     variant="ghost"
                     disabled={!overlayOn}
-                    aria-label="移回右上角"
+                    aria-label={m.overlay.resetBounds}
                     onClick={() => alerts.resetOverlayBounds()}
                   >
                     <RotateCcw />
@@ -124,37 +129,37 @@ export function AlertsPage({ state }: { state: AppState }) {
           </div>
           {editing ? (
             <p className="mt-2 rounded-xl bg-matcha-soft/40 px-3 py-2 text-xs text-matcha-strong">
-              直接拖曳事件 Overlay 移動位置、拖曳邊緣調整大小，完成後按「完成調整」。
+              {m.overlay.editingHint}
             </p>
           ) : null}
-          <Row title="每張卡片停留" hint="之後的事件會排隊等候。">
+          <Row title={m.overlay.duration} hint={m.overlay.durationHint}>
             <NumberInput
-              label="每張卡片停留"
+              label={m.overlay.duration}
               value={settings.events.durationSeconds}
               min={1}
               max={60}
-              unit="秒"
+              unit={m.seconds}
               onChange={(durationSeconds) => save(withEvents(settings, { durationSeconds }))}
             />
           </Row>
-          <Row title="桌面聊天室不重複顯示" hint="事件 Overlay 開著時，桌面聊天室 Overlay 略過這些事件。OBS 不受影響。">
+          <Row title={m.overlay.hideInChat} hint={m.overlay.hideInChatHint}>
             <Toggle
               checked={settings.events.hideInChatOverlay}
-              label="桌面聊天室不重複顯示"
+              label={m.overlay.hideInChat}
               onChange={(hideInChatOverlay) => save(withEvents(settings, { hideInChatOverlay }))}
             />
           </Row>
         </Tile>
 
-        <Tile title="要提醒的事件" className="col-span-2">
-          <RuleSection title="通用" hint="所有平台共用，例如訂閱不論來自哪個平台都照這裡提醒。">
+        <Tile title={m.rules.title} className="col-span-2">
+          <RuleSection title={m.rules.any} hint={m.rules.anyHint}>
             {ALERT_CATEGORIES.map((category) => (
               <RuleRow
                 key={category.key}
                 ruleKey={category.key}
-                label={category.label}
-                description={category.description}
-                amountLabel={'amountLabel' in category ? category.amountLabel : undefined}
+                label={category.label[locale]}
+                description={category.description[locale]}
+                amountLabel={'amountLabel' in category ? category.amountLabel[locale] : undefined}
                 settings={settings}
                 port={port}
               />
@@ -163,14 +168,14 @@ export function AlertsPage({ state }: { state: AppState }) {
           {EVENT_CATALOG.map((group) => {
             const events = platformOnlyEvents(group);
             return events.length > 0 ? (
-              <RuleSection key={group.platform} title={group.label} hint={`${group.label} 才有的事件。`}>
+              <RuleSection key={group.platform} title={group.label} hint={m.rules.platformOnly(group.label)}>
                 {events.map((event) => (
                   <RuleRow
                     key={event.key}
                     ruleKey={event.key}
-                    label={event.label}
-                    description={event.description}
-                    amountLabel={event.amount?.label}
+                    label={event.label[locale]}
+                    description={event.description[locale]}
+                    amountLabel={event.amount?.label[locale]}
                     settings={settings}
                     port={port}
                   />
@@ -210,6 +215,7 @@ function RuleRow({
   settings: AlertSettings;
   port: number;
 }) {
+  const m = useMessages().alerts.rules;
   const rule = ruleFor(settings, ruleKey);
   const update = (patch: Parameters<typeof withRule>[2]) => alerts.setSettings(withRule(settings, ruleKey, patch));
   return (
@@ -218,7 +224,7 @@ function RuleRow({
       className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.6fr)] items-center gap-6 border-b border-line py-3 last:border-b-0"
     >
       <div className="flex min-w-0 items-center gap-3">
-        <Toggle checked={rule.enabled} label={`提醒${label}`} onChange={(enabled) => update({ enabled })} />
+        <Toggle checked={rule.enabled} label={m.toggle(label)} onChange={(enabled) => update({ enabled })} />
         <div className="min-w-0">
           <div className="truncate text-sm font-medium">{label}</div>
           <div className="truncate text-xs text-ink-faint">{description}</div>
@@ -227,9 +233,9 @@ function RuleRow({
       <div className="w-44">
         {amountLabel ? (
           <span className="flex items-center gap-2 text-xs text-ink-faint">
-            至少
+            {m.atLeast}
             <NumberInput
-              label={`${label}的最低${amountLabel}`}
+              label={m.minimum(label, amountLabel)}
               value={rule.minimum}
               min={0}
               max={1_000_000}
@@ -239,7 +245,7 @@ function RuleRow({
           </span>
         ) : null}
       </div>
-      <SoundPicker label={`${label}的提示音`} port={port} value={rule.sound} onChange={(sound) => update({ sound })} />
+      <SoundPicker label={m.sound(label)} port={port} value={rule.sound} onChange={(sound) => update({ sound })} />
     </div>
   );
 }

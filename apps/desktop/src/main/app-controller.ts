@@ -1,4 +1,5 @@
 import {
+  chatLocaleOf,
   noticeGroup,
   assetFileOf,
   assetSrc,
@@ -8,13 +9,14 @@ import {
   type ChatEvent,
   type ChatMessage,
   type ChatNotice,
+  type Locale,
   type ChatTheme,
   type ConnectionState,
   type SoundRef,
   type SoundSetting,
   type ViewerTarget,
 } from '@chatto/core';
-import { PRESET_THEMES, getPresetTheme, mapThemeImages, normalizeTheme } from '@chatto/chat-ui/themes';
+import { PRESET_THEMES, getPresetTheme, localizeTheme, mapThemeImages, normalizeTheme } from '@chatto/chat-ui/themes';
 import { TwitchChatProvider } from '@chatto/provider-twitch';
 import { app, nativeTheme } from 'electron';
 import { randomUUID } from 'node:crypto';
@@ -26,7 +28,8 @@ import { ChatHub } from './chat-hub';
 import type { CssFiles } from './css-files';
 import type { LocalServer, Routed } from './server';
 import type { OverlayWindow } from './overlay-window';
-import type { SettingsStore } from './settings';
+import { mainMessages, type MainMessages } from './messages';
+import { normalizePrefs, type SettingsStore } from './settings';
 import { MAX_ASSET_BYTES, type ThemeAssets } from './theme-assets';
 import { packTheme, themeAssetFiles, unpackTheme } from './theme-package';
 import { SafeTokenStore } from './token-store';
@@ -65,6 +68,8 @@ export class AppController {
   onChange: (state: AppState) => void = () => undefined;
   /** Plays a reminder sound in the control panel (it runs even when no overlay is open). */
   onAlertSound: (sound: SoundSetting) => void = () => undefined;
+  /** Rebuilds native surfaces (tray menu) in the interface language; supplied by index.ts. */
+  onLocaleChange: (locale: Locale) => void = () => undefined;
   /** Supplied by index.ts, which owns the main window. */
   isWindowMaximized: () => boolean = () => false;
 
@@ -94,9 +99,22 @@ export class AppController {
     return [...PRESET_THEMES, ...custom];
   }
 
+  /** A target's theme as viewers get it: built-in themes speak the chat language. */
   themeFor(target: ViewerTarget): ChatTheme {
     const id = this.settings.get().selectedThemes[target];
-    return this.themes().find((theme) => theme.id === id) ?? PRESET_THEMES[0]!;
+    const theme = this.themes().find((item) => item.id === id) ?? PRESET_THEMES[0]!;
+    return localizeTheme(theme, this.chatLocale());
+  }
+
+  /** Main-process text (dialogs, tray, errors) in the interface language. */
+  messages(): MainMessages {
+    return mainMessages(this.settings.get().prefs.locale);
+  }
+
+  /** Language of event texts on the overlays and OBS. */
+  chatLocale(): Locale {
+    const { prefs } = this.settings.get();
+    return chatLocaleOf(prefs.chatLocale, prefs.locale);
   }
 
   state(): AppState {
@@ -129,10 +147,18 @@ export class AppController {
   // ---------- preferences ----------
 
   setPrefs(patch: Partial<AppPrefs>): void {
+    const before = this.chatLocale();
     const next = this.settings.update((draft) => {
-      draft.prefs = { ...draft.prefs, ...patch };
+      draft.prefs = normalizePrefs({ ...draft.prefs, ...patch }, draft.prefs);
     });
     this.#applyPrefs(next.prefs);
+    const locale = this.chatLocale();
+    if (locale !== before) {
+      // Event texts and built-in theme texts (the reminder label) follow the chat language.
+      this.server.broadcastLocale(locale);
+      for (const target of VIEWER_TARGETS) this.server.broadcastTheme(target, this.themeFor(target));
+    }
+    this.onLocaleChange(next.prefs.locale);
     this.#emit();
   }
 
@@ -440,7 +466,7 @@ export class AppController {
 
   /** Copies an image file into the asset folder; returns the `asset:` source for a frame. */
   importThemeAsset(file: string): string {
-    if (statSync(file).size > MAX_ASSET_BYTES) throw new Error('圖片超過 2 MB');
+    if (statSync(file).size > MAX_ASSET_BYTES) throw new Error(this.messages().errors.imageTooLarge);
     return assetSrc(this.assets.add(readFileSync(file)));
   }
 
@@ -454,7 +480,7 @@ export class AppController {
    * the control panel gives it a fresh id like any imported theme.
    */
   importThemePackage(bytes: Uint8Array): ChatTheme {
-    const { theme, assets } = unpackTheme(bytes);
+    const { theme, assets } = unpackTheme(bytes, this.messages());
     // Store by content: a renamed or tampered file ends up under its real hash or is rejected.
     const stored = new Map<string, string>();
     for (const [name, data] of assets) {

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Hint, Slider } from '../../../components/kit';
 import { Input } from '../../../components/ui/input';
+import { useMessages } from '../../../i18n';
 import { FieldRow } from './rows';
 
 function NumberInput({
@@ -98,6 +99,7 @@ function LinkedQuad<T extends [number, number, number, number]>({
   max: number;
   names: [string, string, string, string];
 }) {
+  const m = useMessages().editorFields;
   const allSame = value.every((item) => item === value[0]);
   const [linked, setLinked] = useState(allSame);
   // Sides changed elsewhere (e.g. dragging a slice line) can no longer be shown as one value.
@@ -107,10 +109,10 @@ function LinkedQuad<T extends [number, number, number, number]>({
   return (
     <FieldRow label={label}>
       <div className="flex items-center gap-2">
-        <Hint label={linked ? '分開調整四邊' : '四邊一起調整'}>
+        <Hint label={linked ? m.unlinkSides : m.linkSides}>
           <button
             type="button"
-            aria-label={linked ? '分開調整四邊' : '四邊一起調整'}
+            aria-label={linked ? m.unlinkSides : m.linkSides}
             onClick={() => setLinked(!linked)}
             className={`grid size-8 shrink-0 place-items-center rounded-lg border transition-colors [&_svg]:size-4 ${
               linked ? 'border-matcha bg-matcha-soft/40 text-matcha-strong' : 'border-line text-ink-soft'
@@ -156,7 +158,8 @@ function LinkedQuad<T extends [number, number, number, number]>({
 }
 
 export function SidesField(props: { label: string; value: Sides; onChange: (value: Sides) => void; max?: number }) {
-  return <LinkedQuad {...props} max={props.max ?? 40} names={['上', '右', '下', '左']} />;
+  const m = useMessages().editorFields;
+  return <LinkedQuad {...props} max={props.max ?? 40} names={m.sides} />;
 }
 
 export function CornersField(props: {
@@ -165,5 +168,6 @@ export function CornersField(props: {
   onChange: (value: Corners) => void;
   max?: number;
 }) {
-  return <LinkedQuad {...props} max={props.max ?? 40} names={['左上', '右上', '右下', '左下']} />;
+  const m = useMessages().editorFields;
+  return <LinkedQuad {...props} max={props.max ?? 40} names={m.corners} />;
 }

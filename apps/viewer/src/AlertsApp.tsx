@@ -7,10 +7,11 @@ import {
   PRESET_THEMES,
   sampleEvent,
 } from '@chatto/chat-ui';
-import { defaultSound, type AlertCue, type ChatEvent, type ChatTheme } from '@chatto/core';
+import { defaultSound, type AlertCue, type ChatEvent, type ChatTheme, type Locale } from '@chatto/core';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { emptyQueue, reduceAlerts } from './alertQueue';
 import { connectToApp } from './connection';
+import { initialLocale } from './locale';
 
 const params = new URLSearchParams(location.search);
 const isMock = params.has('mock');
@@ -28,6 +29,7 @@ const soundUrl = (id: string) => `/sounds/${encodeURIComponent(id)}`;
  */
 export function AlertsApp() {
   const [theme, setTheme] = useState<ChatTheme>(fallbackTheme);
+  const [locale, setLocale] = useState<Locale>(() => initialLocale(params));
   const [state, dispatch] = useReducer(reduceAlerts, emptyQueue);
   const optionsRef = useRef(theme.options);
   optionsRef.current = theme.options;
@@ -41,9 +43,13 @@ export function AlertsApp() {
     if (isMock) return startMockAlerts(receive);
     const wsUrl = params.get('ws') ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
     return connectToApp(wsUrl, 'alerts', {
-      onHello: (nextTheme) => setTheme(nextTheme),
+      onHello: (nextTheme, _backlog, nextLocale) => {
+        setTheme(nextTheme);
+        if (nextLocale) setLocale(nextLocale);
+      },
       onEvent: receive,
       onTheme: setTheme,
+      onLocale: setLocale,
       onStatus: () => undefined,
     });
   }, [receive]);
@@ -64,7 +70,7 @@ export function AlertsApp() {
     return () => clearTimeout(timer);
   }, [current, phase, theme]);
 
-  return <ChatView theme={theme} items={current ? [current.item] : []} leaving={phase === 'leave'} />;
+  return <ChatView theme={theme} items={current ? [current.item] : []} leaving={phase === 'leave'} locale={locale} />;
 }
 
 /** Cycles through every catalogued event so the alert look can be judged in a browser. */

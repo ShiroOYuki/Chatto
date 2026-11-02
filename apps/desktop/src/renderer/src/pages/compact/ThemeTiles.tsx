@@ -3,6 +3,7 @@ import type { ChatTheme, ViewerTarget } from '@chatto/core';
 import { useEffect } from 'react';
 import type { AppState } from '../../../../shared/ipc';
 import { Button, Tile } from '../../components/kit';
+import { useChatLocale, useMessages, useOutputTheme, useThemeName } from '../../i18n';
 import { themes, useThemeAssetUrl } from '../../services/themes';
 import { describeTheme, themeSwatch } from '../themeLabels';
 
@@ -17,10 +18,11 @@ export function ThemeTile({
   onTargetChange: (target: ViewerTarget) => void;
   onOpenThemes: () => void;
 }) {
+  const m = useMessages().compact;
   const selected = state.selectedThemes[target];
   return (
     <Tile
-      title="聊天室主題"
+      title={m.chatTheme}
       className="col-span-2 row-span-2 min-h-0"
       action={
         <div className="flex rounded-full bg-tile-muted p-1 text-xs">
@@ -31,7 +33,7 @@ export function ThemeTile({
               onClick={() => onTargetChange(item)}
               className={`rounded-full px-3 py-1 transition ${target === item ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft'}`}
             >
-              {item === 'overlay' ? '桌面 Overlay' : 'OBS'}
+              {item === 'overlay' ? m.desktopOverlay : 'OBS'}
             </button>
           ))}
         </div>
@@ -49,7 +51,7 @@ export function ThemeTile({
       </div>
       <div className="flex gap-2 pt-4">
         <Button className="flex-1" onClick={onOpenThemes}>
-          編輯與管理主題
+          {m.manageThemes}
         </Button>
       </div>
     </Tile>
@@ -58,6 +60,8 @@ export function ThemeTile({
 
 function ThemeChip({ theme, active, onSelect }: { theme: ChatTheme; active: boolean; onSelect: () => void }) {
   const assetUrl = useThemeAssetUrl();
+  const labels = useMessages().themes.labels;
+  const themeName = useThemeName();
   return (
     <button
       type="button"
@@ -72,8 +76,8 @@ function ThemeChip({ theme, active, onSelect }: { theme: ChatTheme; active: bool
         style={{ background: themeSwatch(theme, assetUrl) }}
       />
       <span className="min-w-0">
-        <span className="block truncate font-medium">{theme.name}</span>
-        <span className="block text-xs text-ink-faint">{describeTheme(theme)}</span>
+        <span className="block truncate font-medium">{themeName(theme)}</span>
+        <span className="block text-xs text-ink-faint">{describeTheme(theme, labels)}</span>
       </span>
     </button>
   );
@@ -85,12 +89,16 @@ export function PreviewTile({ state, target }: { state: AppState; target: Viewer
   const { push } = feed;
   useEffect(() => startMockStream(push, 1800), [push]);
   const assetUrl = useThemeAssetUrl();
+  const m = useMessages().compact;
+  const themeName = useThemeName();
+  const outputTheme = useOutputTheme();
+  const chatLocale = useChatLocale();
 
   return (
     <Tile
-      title="即時預覽"
+      title={m.livePreview}
       className="col-span-2 row-span-2 min-h-0"
-      action={<span className="text-xs text-ink-faint">{theme.name}</span>}
+      action={<span className="text-xs text-ink-faint">{themeName(theme)}</span>}
     >
       <div
         className="relative min-h-0 flex-1 overflow-hidden rounded-2xl p-3"
@@ -99,7 +107,7 @@ export function PreviewTile({ state, target }: { state: AppState; target: Viewer
             'radial-gradient(circle at 20% 25%, #3b6d11 0, transparent 45%), radial-gradient(circle at 85% 75%, #0f6e56 0, transparent 50%), #1b2230',
         }}
       >
-        <ChatView theme={theme} items={feed.items} assetUrl={assetUrl} />
+        <ChatView theme={outputTheme(theme)} items={feed.items} assetUrl={assetUrl} locale={chatLocale} />
       </div>
     </Tile>
   );

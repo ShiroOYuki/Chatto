@@ -3,6 +3,8 @@ import type { ChatTheme, EventMessageFrame, EventStyle, EventTitlePlacement } fr
 import { Link2 } from 'lucide-react';
 import { useMemo, type Dispatch, type SetStateAction } from 'react';
 import { Badge, Button, Segmented } from '../../../components/kit';
+import { Input } from '../../../components/ui/input';
+import { useChatLocale, useLocale, useMessages } from '../../../i18n';
 import { BoxEditor, ColorRow, FieldRow, NumberField, OptionalColorRow, TextRow } from '../fields';
 import { pathSetter, type PathSetter } from '../draft';
 import { PanelIntro, SubHeading } from './shared';
@@ -15,11 +17,10 @@ export function NoticePanel({ draft, setDraft }: { draft: ChatTheme; setDraft: S
     () => pathSetter<EventStyle>((apply) => setDraft((current) => ({ ...current, notice: apply(current.notice) }))),
     [setDraft],
   );
+  const m = useMessages().editorPanels.notice;
   return (
     <>
-      <PanelIntro>
-        所有平台事件（訂閱、揪團、小奇點…）共用的樣式。各事件預設跟隨這裡，個別調整後會改用自己的樣式。
-      </PanelIntro>
+      <PanelIntro>{m.intro}</PanelIntro>
       <EventStyleFields style={draft.notice} fallbackBody={draft.text.color} set={set} />
     </>
   );
@@ -41,24 +42,69 @@ export function EventPanel({
     () => pathSetter<EventStyle>((apply) => setDraft((current) => editEventStyle(current, key, apply))),
     [setDraft, key],
   );
+  const m = useMessages().editorPanels.event;
+  const locale = useLocale();
   const override = draft.events[key];
   const linked = !override || override.linked;
+  // An empty template drops the key so the built-in text shows again.
+  const setText = (text: string) =>
+    setDraft((current) => {
+      const eventText = { ...current.eventText };
+      if (text === '') delete eventText[key];
+      else eventText[key] = text;
+      return { ...current, eventText };
+    });
   return (
     <>
-      <PanelIntro>
-        {event.description}・{event.category === 'message' ? '保留聊天訊息結構，並加上事件標題與外框。' : '系統通知。'}
-      </PanelIntro>
+      <PanelIntro>{m.intro(event.description[locale], event.category === 'message')}</PanelIntro>
+      <EventTextField event={event} value={draft.eventText[key] ?? ''} onChange={setText} />
       <div className="mb-3 flex items-center gap-2 rounded-xl bg-tile-muted px-3 py-2">
-        <Badge tone={linked ? 'matcha' : 'sakura'}>{linked ? '跟隨通用事件訊息' : '獨立樣式'}</Badge>
-        <span className="min-w-0 flex-1 truncate text-xs text-ink-faint">
-          {linked ? '修改任一項會改為獨立樣式。' : '通用事件訊息的變更不會影響這裡。'}
-        </span>
+        <Badge tone={linked ? 'matcha' : 'sakura'}>{linked ? m.linked : m.own}</Badge>
+        <span className="min-w-0 flex-1 truncate text-xs text-ink-faint">{linked ? m.linkedHint : m.ownHint}</span>
         <Button size="sm" disabled={linked} onClick={() => setDraft((current) => linkEvent(current, key))}>
-          <Link2 /> 與通用事件訊息同步
+          <Link2 /> {m.relink}
         </Button>
       </div>
       <EventStyleFields style={resolveEventStyle(draft, key)} fallbackBody={draft.text.color} set={set} />
     </>
+  );
+}
+
+/**
+ * The event's own text template. The placeholder shows the built-in template in
+ * the chat language; events without one show the platform's own text.
+ */
+function EventTextField({
+  event,
+  value,
+  onChange,
+}: {
+  event: EventDefinition;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const m = useMessages().editorPanels.event;
+  const chatLocale = useChatLocale();
+  return (
+    <FieldRow label={m.text}>
+      <Input
+        value={value}
+        aria-label={m.text}
+        placeholder={event.text?.[chatLocale] ?? m.platformText}
+        onChange={(change) => onChange(change.target.value)}
+        className="h-8 rounded-lg border-line bg-canvas px-2 text-sm shadow-none focus-visible:border-matcha focus-visible:ring-matcha/20 md:text-sm"
+      />
+      {event.variables?.length ? (
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {event.variables.map((name) => (
+            <code key={name} className="rounded-md bg-tile-muted px-1.5 py-0.5 font-mono text-[11px] text-ink-soft">
+              {`{${name}}`}
+            </code>
+          ))}
+        </div>
+      ) : null}
+      <p className="mt-1 text-[11px] text-ink-faint">{m.textSyntax}</p>
+    </FieldRow>
   );
 }
 
@@ -72,33 +118,38 @@ function EventStyleFields({
   fallbackBody: string;
   set: PathSetter<EventStyle>;
 }) {
+  const m = useMessages().editorPanels.event;
   return (
     <>
-      <ColorRow label="標題顏色" value={style.titleColor} onChange={set('titleColor')} />
+      <ColorRow label={m.titleColor} value={style.titleColor} onChange={set('titleColor')} />
       <TextRow
-        label="標題圖示"
-        hint="顯示在標題前，可用 emoji"
+        label={m.icon}
+        hint={m.iconHint}
         value={style.icon}
         onChange={set('icon')}
-        placeholder="例如 ✨"
+        placeholder={m.iconPlaceholder}
       />
-      <FieldRow label="聊天訊息事件的標題" hint="小奇點、強調訊息。通知的標題固定在第一行。">
+      <FieldRow label={m.titlePlacement} hint={m.titlePlacementHint}>
         <Segmented
           size="sm"
           value={style.titlePlacement}
           onChange={(value: EventTitlePlacement) => set('titlePlacement')(value)}
           options={[
-            { value: 'line', label: '上方一行' },
-            { value: 'sticker', label: '角落貼紙' },
+            { value: 'line', label: m.line },
+            { value: 'sticker', label: m.sticker },
           ]}
         />
       </FieldRow>
       {style.titlePlacement === 'sticker' ? (
         <>
-          <ColorRow label="貼紙底色" value={style.sticker.background} onChange={set('sticker', 'background')} />
-          <ColorRow label="貼紙文字" value={style.sticker.color} onChange={set('sticker', 'color')} />
+          <ColorRow
+            label={m.stickerBackground}
+            value={style.sticker.background}
+            onChange={set('sticker', 'background')}
+          />
+          <ColorRow label={m.stickerColor} value={style.sticker.color} onChange={set('sticker', 'color')} />
           <NumberField
-            label="貼紙傾斜"
+            label={m.stickerRotate}
             value={style.sticker.rotate}
             min={-15}
             max={15}
@@ -108,13 +159,13 @@ function EventStyleFields({
         </>
       ) : null}
       <OptionalColorRow
-        label="內容顏色"
+        label={m.bodyColor}
         value={style.bodyColor || undefined}
         fallback={fallbackBody}
         onChange={(value) => set('bodyColor')(value ?? '')}
       />
       <NumberField
-        label="左側色條"
+        label={m.accentWidth}
         value={style.accentWidth}
         min={0}
         max={12}
@@ -122,17 +173,17 @@ function EventStyleFields({
         onChange={set('accentWidth')}
       />
       {style.accentWidth > 0 ? (
-        <ColorRow label="色條顏色" value={style.accentColor} onChange={set('accentColor')} />
+        <ColorRow label={m.accentColor} value={style.accentColor} onChange={set('accentColor')} />
       ) : null}
-      <SubHeading>事件外框</SubHeading>
-      <FieldRow label="聊天訊息事件" hint="小奇點、強調訊息。套在訊息框只換顏色，不多包一層。">
+      <SubHeading>{m.frame}</SubHeading>
+      <FieldRow label={m.messageFrame} hint={m.messageFrameHint}>
         <Segmented
           size="sm"
           value={style.messageFrame}
           onChange={(value: EventMessageFrame) => set('messageFrame')(value)}
           options={[
-            { value: 'wrap', label: '包住整則' },
-            { value: 'surface', label: '套在訊息框' },
+            { value: 'wrap', label: m.wrap },
+            { value: 'surface', label: m.surface },
           ]}
         />
       </FieldRow>

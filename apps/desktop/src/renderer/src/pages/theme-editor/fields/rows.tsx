@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { ColorField } from '../../../components/ColorField';
 import { Select, Toggle } from '../../../components/kit';
 import { Input } from '../../../components/ui/input';
+import { useMessages } from '../../../i18n';
 
 export function FieldRow({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
@@ -44,6 +45,7 @@ export function OptionalColorRow({
   onChange: (value: string | undefined) => void;
   fallback?: string;
 }) {
+  const m = useMessages().editorFields;
   return (
     <FieldRow label={label}>
       <div className="flex items-center gap-2">
@@ -59,7 +61,7 @@ export function OptionalColorRow({
           </div>
           {value === undefined ? (
             <span className="pointer-events-none absolute inset-0 grid place-items-center">
-              <span className="rounded-full bg-tile px-2.5 py-0.5 text-xs text-ink-soft shadow-sm">沿用主題</span>
+              <span className="rounded-full bg-tile px-2.5 py-0.5 text-xs text-ink-soft shadow-sm">{m.fromTheme}</span>
             </span>
           ) : null}
         </div>

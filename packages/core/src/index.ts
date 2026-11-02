@@ -4,3 +4,4 @@ export * from './theme';
 export * from './protocol';
 export * from './fragments';
 export * from './alerts';
+export * from './i18n';

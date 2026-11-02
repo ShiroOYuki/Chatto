@@ -55,7 +55,7 @@ export function createMockGiftBatch(count = 5): ChatEvent[] {
     kind: 'gift-subscription',
     systemText: `${gifter.displayName} 送出 ${count} 份訂閱給聊天室`,
     author: gifter,
-    meta: { count, groupId, groupLead: true },
+    meta: { tier: '1', count, groupId, groupLead: true },
   });
   const gifts = Array.from({ length: count }, (_, index) => {
     const others = MOCK_USERS.filter((user) => user !== gifter);
@@ -65,7 +65,7 @@ export function createMockGiftBatch(count = 5): ChatEvent[] {
       kind: 'gift-subscription',
       systemText: `${gifter.displayName} 送了一份訂閱給 ${recipient}`,
       author: gifter,
-      meta: { groupId, recipient },
+      meta: { tier: '1', groupId, recipient },
     });
   });
   return [lead, ...gifts].map((notice) => ({ type: 'notice', notice }));

@@ -3,6 +3,7 @@ import type { ChatTheme, ViewerTarget } from '@chatto/core';
 import { Copy, Download, Ellipsis, MonitorUp, Pencil, Plus, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
+import { useChatLocale, useMessages, useThemeName } from '../i18n';
 import { runAction } from '../services/run';
 import { themes } from '../services/themes';
 import { motion, riseIn, Stagger } from '../components/motion';
@@ -34,6 +35,10 @@ export function ThemesPage({ state }: { state: AppState }) {
   const [editing, setEditing] = useState<ChatTheme | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ChatTheme | null>(null);
+  const messages = useMessages();
+  const m = messages.themes;
+  const themeName = useThemeName();
+  const chatLocale = useChatLocale();
 
   if (editing) {
     return <ThemeEditor initial={editing} onClose={() => setEditing(null)} onSaved={(theme) => setEditing(theme)} />;
@@ -44,7 +49,7 @@ export function ThemesPage({ state }: { state: AppState }) {
 
   const duplicate = async (theme: ChatTheme) => {
     setError(null);
-    const copy = duplicateTheme(theme, `${theme.name} 副本`);
+    const copy = duplicateTheme(theme, m.copyOf(themeName(theme)), chatLocale);
     try {
       await themes.save(copy);
       setEditing(copy);
@@ -56,7 +61,7 @@ export function ThemesPage({ state }: { state: AppState }) {
   const importTheme = async () => {
     setError(null);
     try {
-      const theme = await pickThemeFile();
+      const theme = await pickThemeFile(m.io);
       await themes.save(theme);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
@@ -66,15 +71,15 @@ export function ThemesPage({ state }: { state: AppState }) {
   return (
     <div>
       <PageHeader
-        title="主題"
-        description="風格與配色可以自由組合。內建主題可以複製後再編輯，也能匯出成檔案分享。"
+        title={m.title}
+        description={m.description}
         action={
           <div className="flex gap-2">
             <Button onClick={() => void importTheme()}>
-              <Upload /> 匯入
+              <Upload /> {messages.common.import}
             </Button>
             <Button variant="primary" onClick={() => void duplicate(state.themes[0]!)}>
-              <Plus /> 新增主題
+              <Plus /> {m.newTheme}
             </Button>
           </div>
         }
@@ -107,9 +112,9 @@ export function ThemesPage({ state }: { state: AppState }) {
                   <div className="flex flex-1 flex-col gap-3 p-4">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <h3 className="truncate font-medium">{theme.name}</h3>
+                        <h3 className="truncate font-medium">{themeName(theme)}</h3>
                         <p className="flex flex-wrap items-center gap-1.5 text-xs text-ink-faint">
-                          {describeTheme(theme)} · {theme.builtIn ? '內建' : '自訂'}
+                          {describeTheme(theme, m.labels)} · {theme.builtIn ? m.builtIn : m.custom}
                           {targets.map((target) => (
                             <Badge key={target} tone="matcha">
                               {target === 'overlay' ? 'Overlay' : 'OBS'}
@@ -119,43 +124,48 @@ export function ThemesPage({ state }: { state: AppState }) {
                       </div>
                       <div className="flex">
                         {theme.builtIn ? (
-                          <Hint label="複製並編輯">
+                          <Hint label={m.duplicateAndEdit}>
                             <Button
                               size="sm"
                               variant="ghost"
-                              aria-label="複製並編輯"
+                              aria-label={m.duplicateAndEdit}
                               onClick={() => void duplicate(theme)}
                             >
                               <Copy />
                             </Button>
                           </Hint>
                         ) : (
-                          <Hint label="編輯">
-                            <Button size="sm" variant="ghost" aria-label="編輯" onClick={() => setEditing(theme)}>
+                          <Hint label={messages.common.edit}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              aria-label={messages.common.edit}
+                              onClick={() => setEditing(theme)}
+                            >
                               <Pencil />
                             </Button>
                           </Hint>
                         )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button size="sm" variant="ghost" aria-label="更多動作">
+                            <Button size="sm" variant="ghost" aria-label={m.moreActions}>
                               <Ellipsis />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44 rounded-xl">
                             <DropdownMenuItem onSelect={() => runAction('exportTheme', exportTheme(theme))}>
-                              <Download /> {needsPackage(theme) ? '匯出主題包' : '匯出 JSON'}
+                              <Download /> {needsPackage(theme) ? m.exportPackage : m.exportJson}
                             </DropdownMenuItem>
                             {!theme.builtIn ? (
                               <DropdownMenuItem onSelect={() => void duplicate(theme)}>
-                                <Copy /> 建立副本
+                                <Copy /> {m.duplicate}
                               </DropdownMenuItem>
                             ) : null}
                             {!theme.builtIn ? (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem variant="destructive" onSelect={() => setPendingDelete(theme)}>
-                                  <Trash2 /> 刪除主題
+                                  <Trash2 /> {m.deleteTheme}
                                 </DropdownMenuItem>
                               </>
                             ) : null}
@@ -190,19 +200,17 @@ export function ThemesPage({ state }: { state: AppState }) {
       <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <AlertDialogContent className="rounded-tile">
           <AlertDialogHeader>
-            <AlertDialogTitle>刪除「{pendingDelete?.name}」？</AlertDialogTitle>
-            <AlertDialogDescription>
-              刪除後無法復原。正在使用這個主題的 Overlay 或 OBS 會改回預設主題。
-            </AlertDialogDescription>
+            <AlertDialogTitle>{pendingDelete ? m.deleteTitle(themeName(pendingDelete)) : null}</AlertDialogTitle>
+            <AlertDialogDescription>{m.deleteDescription}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full">取消</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-full">{messages.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               className="rounded-full"
               onClick={() => pendingDelete && themes.remove(pendingDelete.id)}
             >
-              刪除
+              {messages.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

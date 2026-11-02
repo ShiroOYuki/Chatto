@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
 import { RollingNumber, Stagger } from '../components/motion';
 import { Button, EmptyState, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/kit';
+import { useMessages } from '../i18n';
 import { useChatLog } from '../store';
 
 type RoleFilter = 'all' | 'moderator' | 'subscriber' | 'vip';
@@ -15,6 +16,7 @@ const ROLE_MATCH: Record<Exclude<RoleFilter, 'all'>, UserRole[]> = {
 };
 
 export function ChatPage() {
+  const m = useMessages().chat;
   const { entries, stats, clear } = useChatLog();
   const [query, setQuery] = useState('');
   const [role, setRole] = useState<RoleFilter>('all');
@@ -62,10 +64,7 @@ export function ChatPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <PageHeader
-        title="聊天室"
-        description="完整的聊天紀錄。被刪除的訊息會在這裡標示出來，但不會出現在 Overlay 和 OBS。"
-      />
+      <PageHeader title={m.title} description={m.description} />
       <Stagger className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_280px] gap-3">
         <Tile className="min-h-0 p-0!">
           <div className="flex flex-wrap items-center gap-2 border-b border-line p-3">
@@ -74,7 +73,7 @@ export function ChatPage() {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="搜尋留言或名稱"
+                placeholder={m.searchPlaceholder}
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none"
               />
             </div>
@@ -83,27 +82,21 @@ export function ChatPage() {
               value={role}
               onChange={setRole}
               options={[
-                { value: 'all', label: '全部' },
-                { value: 'moderator', label: '管理員' },
-                { value: 'subscriber', label: '訂閱者' },
-                { value: 'vip', label: 'VIP' },
+                { value: 'all', label: m.roles.all },
+                { value: 'moderator', label: m.roles.moderator },
+                { value: 'subscriber', label: m.roles.subscriber },
+                { value: 'vip', label: m.roles.vip },
               ]}
             />
             <label className="flex items-center gap-2 text-xs whitespace-nowrap text-ink-soft">
-              <Toggle checked={showDeleted} onChange={setShowDeleted} label="顯示已刪除" />
-              已刪除
+              <Toggle checked={showDeleted} onChange={setShowDeleted} label={m.showDeleted} />
+              {m.deleted}
             </label>
             <Button size="sm" variant={paused ? 'primary' : 'secondary'} onClick={() => setPaused(!paused)}>
               {paused ? <Play /> : <Pause />}
-              {paused ? '繼續' : '暫停'}
+              {paused ? m.resume : m.pause}
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={clear}
-              title="清除這裡的紀錄（不影響直播畫面）"
-              aria-label="清除紀錄"
-            >
+            <Button size="sm" variant="ghost" onClick={clear} title={m.clearHint} aria-label={m.clear}>
               <Eraser />
             </Button>
           </div>
@@ -119,8 +112,8 @@ export function ChatPage() {
             >
               {visible.length === 0 ? (
                 <EmptyState
-                  title={entries.length === 0 ? '還沒有人說話' : '沒有符合的留言'}
-                  hint={entries.length === 0 ? '連上頻道後，留言會即時出現在這裡。' : '換個關鍵字或篩選條件試試看。'}
+                  title={entries.length === 0 ? m.noMessages : m.noMatches}
+                  hint={entries.length === 0 ? m.noMessagesHint : m.noMatchesHint}
                 />
               ) : (
                 visible.map((entry) =>
@@ -139,23 +132,23 @@ export function ChatPage() {
                 className="absolute bottom-3 left-1/2 -translate-x-1/2 shadow-md"
                 onClick={() => setAtBottom(true)}
               >
-                <ArrowDown /> 回到最新
+                <ArrowDown /> {m.jumpToLatest}
               </Button>
             ) : null}
           </div>
         </Tile>
 
         <div className="flex min-h-0 flex-col gap-3">
-          <Tile title="訊息速度">
+          <Tile title={m.rate}>
             <div className="flex items-baseline gap-1.5">
               <RollingNumber value={stats.rate} className="font-mono text-4xl font-semibold" />
-              <span className="text-xs text-ink-faint">則／分鐘</span>
+              <span className="text-xs text-ink-faint">{m.perMinute}</span>
             </div>
             <Sparkline values={stats.history} className="mt-3 h-12" />
           </Tile>
-          <Tile title="最活躍" icon={<Trophy />} className="flex-1">
+          <Tile title={m.topChatters} icon={<Trophy />} className="flex-1">
             {topChatters.length === 0 ? (
-              <p className="text-xs text-ink-faint">還沒有資料。</p>
+              <p className="text-xs text-ink-faint">{m.noData}</p>
             ) : (
               <ol className="flex flex-col gap-2">
                 {topChatters.map((chatter, index) => (

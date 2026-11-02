@@ -29,3 +29,15 @@ for (const scheme of ['light', 'dark'] as const) {
     });
   });
 }
+
+// The interface in English: the pages with the most text, light mode only.
+test.describe('English', () => {
+  test.use({ colorScheme: 'light' });
+  for (const id of ['overview', 'alerts', 'settings'] as const) {
+    test(`page ${id} in English`, async ({ panel, page }) => {
+      await panel.open(`page=${id}&lang=en`);
+      await page.evaluate(() => document.fonts.ready);
+      await expect(page).toHaveScreenshot(`${id}-en.png`, { mask: livePreviews(page) });
+    });
+  }
+});

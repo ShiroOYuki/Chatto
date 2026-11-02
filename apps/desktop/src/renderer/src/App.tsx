@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../../shared/ipc';
-import { PAGES, Sidebar, type PageId } from './components/Sidebar';
+import { Sidebar, type PageId } from './components/Sidebar';
 import { appPrefs } from './services/app';
 import { PageTransition } from './components/motion';
 import { TeaCup } from './components/TeaCup';
 import { TitleBar } from './components/TitleBar';
 import { Confetti, type ConfettiRef } from './components/ui/confetti';
+import { useMessages } from './i18n';
 import { TooltipProvider } from './components/ui/tooltip';
 import { AlertsPage } from './pages/alerts/AlertsPage';
 import { ChatPage } from './pages/Chat';
@@ -40,8 +41,9 @@ function Page({ id, state, onNavigate }: { id: PageId; state: AppState; onNaviga
 
 function Shell() {
   const state = useAppState();
+  const m = useMessages();
   const [page, setPageState] = useState<PageId>(initialPage);
-  // Re-selecting the current page (e.g. 主題 while editing) resets it to its start view.
+  // Re-selecting the current page (e.g. Themes while editing) resets it to its start view.
   const [visit, setVisit] = useState(0);
   const setPage = (next: PageId) => {
     setPageState(next);
@@ -88,7 +90,7 @@ function Shell() {
       <div className="grid h-full place-items-center text-ink-soft">
         <div className="flex flex-col items-center gap-3">
           <TeaCup mood="happy" size={72} />
-          泡茶中…
+          {m.common.loading}
         </div>
       </div>
     );
@@ -101,7 +103,7 @@ function Shell() {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex h-full flex-col">
-        <TitleBar state={state} title={compact ? '精簡模式' : PAGES.find((item) => item.id === page)?.label} />
+        <TitleBar state={state} title={compact ? m.shell.titleBar.compactMode : m.shell.pages[page]} />
         {compact ? (
           <div className="min-h-0 flex-1 overflow-y-auto">
             <CompactDashboard

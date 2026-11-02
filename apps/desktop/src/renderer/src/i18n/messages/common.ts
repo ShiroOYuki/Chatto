@@ -1,0 +1,43 @@
+import { defineMessages } from '../define';
+
+/** Words used across many screens. */
+export default defineMessages({
+  'zh-TW': {
+    save: '儲存',
+    saved: '已儲存',
+    cancel: '取消',
+    close: '關閉',
+    remove: '移除',
+    delete: '刪除',
+    edit: '編輯',
+    copy: '複製',
+    copied: '已複製',
+    reset: '重設',
+    revert: '復原',
+    export: '匯出',
+    import: '匯入',
+    on: '開',
+    off: '關',
+    none: '無',
+    loading: '泡茶中…',
+  },
+  en: {
+    save: 'Save',
+    saved: 'Saved',
+    cancel: 'Cancel',
+    close: 'Close',
+    remove: 'Remove',
+    delete: 'Delete',
+    edit: 'Edit',
+    copy: 'Copy',
+    copied: 'Copied',
+    reset: 'Reset',
+    revert: 'Revert',
+    export: 'Export',
+    import: 'Import',
+    on: 'On',
+    off: 'Off',
+    none: 'None',
+    loading: 'Brewing…',
+  },
+});

@@ -2,6 +2,7 @@ import { assetSrc, type BoxImage, type ChatTheme } from '@chatto/core';
 import { createTheme, DEFAULT_BOX_IMAGE } from '@chatto/chat-ui/themes';
 import { strToU8, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
+import { mainMessages } from './messages';
 import { MAX_ASSET_BYTES } from './theme-assets';
 import { packTheme, themeAssetFiles, unpackTheme } from './theme-package';
 
@@ -49,6 +50,7 @@ describe('theme packages', () => {
     expect(() => unpackTheme(strToU8('not a zip'))).toThrow('不是有效的主題包');
     expect(() => unpackTheme(zipSync({ 'other.json': strToU8('{}') }))).toThrow('theme.json');
     expect(() => unpackTheme(zipSync({ 'theme.json': strToU8('{oops') }))).toThrow('JSON');
+    expect(() => unpackTheme(strToU8('not a zip'), mainMessages('en'))).toThrow('Not a valid theme package');
   });
 
   it('refuses oversized entries', () => {

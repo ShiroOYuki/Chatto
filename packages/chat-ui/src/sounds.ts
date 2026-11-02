@@ -9,13 +9,6 @@ import type { SoundAsset } from './soundcn/types';
  * local server. Browser-only: callers run in the control panel or a viewer.
  */
 
-export const SOUND_LABELS: Record<BuiltinSoundId, string> = {
-  bubble: '泡泡',
-  coin: '金幣',
-  bell: '鈴聲',
-  laser: '雷射',
-};
-
 /** Which soundcn sound each built-in id plays. */
 export const BUILTIN_SOUND_ASSETS: Record<BuiltinSoundId, () => Promise<SoundAsset>> = {
   bubble: () => import('./soundcn/notification-pop').then((m) => m.notificationPopSound),

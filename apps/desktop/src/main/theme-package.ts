@@ -2,6 +2,7 @@ import { ASSET_FILE, assetFileOf } from '@chatto/core';
 import type { ChatTheme } from '@chatto/core';
 import { themeImageSources } from '@chatto/chat-ui/themes';
 import { strFromU8, strToU8, unzipSync, zipSync, type Unzipped } from 'fflate';
+import { mainMessages, type MainMessages } from './messages';
 import { MAX_ASSET_BYTES } from './theme-assets';
 
 /**
@@ -41,8 +42,11 @@ export interface UnpackedTheme {
   assets: Map<string, Uint8Array>;
 }
 
-/** Reads a theme package. Throws on anything that is not a well-formed package. */
-export function unpackTheme(bytes: Uint8Array): UnpackedTheme {
+/**
+ * Reads a theme package. Throws on anything that is not a well-formed package,
+ * with a message from `messages` (the interface language).
+ */
+export function unpackTheme(bytes: Uint8Array, messages: MainMessages = mainMessages()): UnpackedTheme {
   let entries: Unzipped;
   let count = 0;
   try {
@@ -56,15 +60,15 @@ export function unpackTheme(bytes: Uint8Array): UnpackedTheme {
       },
     });
   } catch {
-    throw new Error('不是有效的主題包');
+    throw new Error(messages.errors.invalidThemePackage);
   }
   const json = entries[THEME_ENTRY];
-  if (!json) throw new Error('主題包裡沒有 theme.json');
+  if (!json) throw new Error(messages.errors.missingThemeJson);
   let theme: unknown;
   try {
     theme = JSON.parse(strFromU8(json));
   } catch {
-    throw new Error('主題包裡的 theme.json 不是有效的 JSON');
+    throw new Error(messages.errors.invalidThemeJson);
   }
   const assets = new Map<string, Uint8Array>();
   for (const [name, data] of Object.entries(entries)) {

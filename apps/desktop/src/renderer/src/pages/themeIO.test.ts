@@ -1,5 +1,6 @@
 import { createTheme, DEFAULT_BOX_IMAGE } from '@chatto/chat-ui';
 import { describe, expect, it, vi } from 'vitest';
+import themeMessages from '../i18n/messages/themes';
 import { needsPackage, parseThemeFile } from './themeIO';
 
 vi.mock('../api', () => ({ api: {}, isMockApi: false }));
@@ -23,7 +24,7 @@ describe('theme files', () => {
       message: { box: { image: { ...DEFAULT_BOX_IMAGE, src: ASSET } } },
       body: { box: { image: { ...DEFAULT_BOX_IMAGE, src: DATA } } },
     });
-    const imported = parseThemeFile(JSON.stringify(theme));
+    const imported = parseThemeFile(JSON.stringify(theme), themeMessages['zh-TW'].io);
     expect(imported.id).not.toBe('mine');
     expect(imported.name).toBe('我的（匯入）');
     expect(imported.message.box.image).toBeNull();

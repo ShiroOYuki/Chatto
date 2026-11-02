@@ -1,5 +1,6 @@
 import type { Sides } from '@chatto/core';
 import { useRef, type KeyboardEvent, type PointerEvent } from 'react';
+import { useMessages } from '../../../i18n';
 
 export interface ImageSize {
   width: number;
@@ -7,12 +8,7 @@ export interface ImageSize {
 }
 
 type Edge = 0 | 1 | 2 | 3;
-const EDGES: { edge: Edge; label: string }[] = [
-  { edge: 0, label: '上切線' },
-  { edge: 1, label: '右切線' },
-  { edge: 2, label: '下切線' },
-  { edge: 3, label: '左切線' },
-];
+const EDGES: Edge[] = [0, 1, 2, 3];
 const vertical = (edge: Edge) => edge === 1 || edge === 3;
 
 /** Keeps each slice inside the image and opposite slices from crossing. */
@@ -46,6 +42,7 @@ export function SliceEditor({
   slice: Sides;
   onChange: (slice: Sides) => void;
 }) {
+  const m = useMessages().editorFields.frame;
   const frame = useRef<HTMLDivElement>(null);
   // Small pixel art is shown larger; big images shrink to fit the panel.
   const zoom = Math.min(4, 220 / size.width, 220 / size.height);
@@ -97,17 +94,17 @@ export function SliceEditor({
       <div ref={frame} className="relative" style={shown}>
         <img
           src={url}
-          alt="外框圖片"
+          alt={m.image}
           draggable={false}
           // Keep tiny pixel art crisp when it is blown up; smooth everything else.
           className={`block size-full select-none ${zoom >= 3 ? '[image-rendering:pixelated]' : ''}`}
         />
-        {EDGES.map(({ edge, label }) => (
+        {EDGES.map((edge) => (
           <div
             key={edge}
             role="slider"
             tabIndex={0}
-            aria-label={label}
+            aria-label={m.sliceLines[edge]}
             aria-orientation={vertical(edge) ? 'horizontal' : 'vertical'}
             aria-valuemin={0}
             aria-valuemax={vertical(edge) ? size.width : size.height}
