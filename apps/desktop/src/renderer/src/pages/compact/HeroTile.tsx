@@ -27,8 +27,8 @@ export function HeroTile({ state, rate }: { state: AppState; rate: number }) {
         <div className="flex items-center gap-2 text-sm opacity-90">
           <StatusDot tone={channelTone(state.channel.state, connected)} />
           {m.channelState[state.channel.state]}
-          {state.channel.login ? <span className="opacity-70">· {state.channel.login}</span> : null}
         </div>
+        {state.channel.login ? <div className="truncate pl-4 text-sm opacity-70">{state.channel.login}</div> : null}
         <div className="mt-3 flex items-baseline gap-2">
           <RollingNumber value={rate} className="font-mono text-5xl font-semibold" />
           <span className="text-sm opacity-80">{m.perMinute}</span>

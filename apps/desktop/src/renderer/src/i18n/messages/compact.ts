@@ -66,7 +66,7 @@ export default defineMessages({
     chatTheme: 'Chat theme',
     manageThemes: 'Edit and manage themes',
     livePreview: 'Live preview',
-    twitchAccount: 'Twitch account',
+    twitchAccount: 'Twitch',
     clientIdIntro: 'First enter the Client ID of your Twitch app (type: Public)',
     enterCode: 'Enter this code on the Twitch authorization page:',
     reopenAuth: 'Reopen authorization page',

@@ -2,6 +2,7 @@ import { EVENT_CATALOG } from '@chatto/chat-ui';
 import type { ChatTheme } from '@chatto/core';
 import { Zap } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Select } from '../../components/kit';
 import { motion, spring } from '../../components/motion';
 import { useLocale, useMessages } from '../../i18n';
 import { eventSectionId, type SectionDefinition, type SectionId } from './sections';
@@ -58,6 +59,37 @@ export function EditorNav({
         </div>
       ))}
     </nav>
+  );
+}
+
+/** The same menu as a dropdown, for windows too narrow for the side menu. */
+export function EditorNavSelect({
+  sections,
+  active,
+  draft,
+  onSelect,
+}: {
+  sections: SectionDefinition[];
+  active: SectionId;
+  draft: ChatTheme;
+  onSelect: (id: SectionId) => void;
+}) {
+  const m = useMessages().editor;
+  const locale = useLocale();
+  const eventGroups = draft.base === 'blank' ? [] : EVENT_CATALOG;
+  return (
+    <Select<SectionId>
+      aria-label={m.sectionPicker}
+      value={active}
+      onChange={onSelect}
+      groups={[
+        { options: sections.map((item) => ({ value: item.id, label: m.sections[item.id] })) },
+        ...eventGroups.map((group) => ({
+          label: m.platformEvents(group.label),
+          options: group.events.map((event) => ({ value: eventSectionId(event.key), label: event.label[locale] })),
+        })),
+      ]}
+    />
   );
 }
 

@@ -150,6 +150,25 @@ test('compact mode switches the alert overlay on and moves it', async ({ panel, 
   await expect(page.getByRole('button', { name: '完成調整' })).toBeVisible();
 });
 
+test('the theme editor swaps its side menu for a dropdown in the smallest window', async ({ panel, page }) => {
+  await page.setViewportSize({ width: 960, height: 640 });
+  await panel.open('page=themes');
+  await page
+    .getByRole('button', { name: /複製並編輯/ })
+    .first()
+    .click();
+  const picker = page.getByRole('combobox', { name: '編輯項目' });
+  await expect(picker).toBeVisible();
+  await expect(page.getByRole('button', { name: '基底與結構' })).toBeHidden();
+  await picker.click();
+  await page.getByRole('option', { name: '文字', exact: true }).click();
+  await expect(picker).toHaveText('文字');
+
+  await page.setViewportSize({ width: 1280, height: 820 });
+  await expect(picker).toBeHidden();
+  await expect(page.getByRole('button', { name: '文字', exact: true })).toBeVisible();
+});
+
 test('switching to compact mode and back', async ({ panel, page }) => {
   await panel.open('page=settings');
   await page.getByRole('tab', { name: /精簡/ }).click();

@@ -9,7 +9,15 @@ import {
   ChoiceboxItemTitle,
 } from '../kibo-ui/choicebox';
 import { motion, spring } from '../motion';
-import { Select as SelectRoot, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+  Select as SelectRoot,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import { Slider as SliderRoot } from '../ui/slider';
 import { Switch } from '../ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
@@ -129,10 +137,14 @@ export function ChoiceCards<T extends string>({
   );
 }
 
-/** Radix-based select (shadcn/ui), styled for Chatto. */
+export type SelectOption<T extends string> = { value: T; label: string };
+export type SelectOptionGroup<T extends string> = { label?: string; options: SelectOption<T>[] };
+
+/** Radix-based select (shadcn/ui), styled for Chatto. Pass `options`, or `groups` for labelled sections. */
 export function Select<T extends string>({
   value,
   options,
+  groups,
   onChange,
   className = '',
   placeholder,
@@ -140,22 +152,29 @@ export function Select<T extends string>({
 }: {
   /** An empty string shows the placeholder. */
   value: T | '';
-  options: { value: T; label: string }[];
+  options?: SelectOption<T>[];
+  groups?: SelectOptionGroup<T>[];
   onChange: (value: T) => void;
   className?: string;
   placeholder?: string;
   'aria-label'?: string;
 }) {
+  const sections = groups ?? [{ options: options ?? [] }];
   return (
     <SelectRoot value={value} onValueChange={(next) => onChange(next as T)}>
       <SelectTrigger aria-label={ariaLabel} className={`h-9 w-full rounded-xl bg-canvas shadow-none ${className}`}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent position="popper" className="rounded-xl">
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value} className="rounded-lg">
-            {option.label}
-          </SelectItem>
+      <SelectContent position="popper" className="max-h-(--radix-select-content-available-height) rounded-xl">
+        {sections.map((section, index) => (
+          <SelectGroup key={section.label ?? index}>
+            {section.label ? <SelectLabel className="text-xs text-ink-faint">{section.label}</SelectLabel> : null}
+            {section.options.map((option) => (
+              <SelectItem key={option.value} value={option.value} className="rounded-lg">
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         ))}
       </SelectContent>
     </SelectRoot>

@@ -25,6 +25,7 @@ export default defineMessages({
       css: '自訂 CSS',
     },
     platformEvents: (platform: string) => `${platform} 專屬元件`,
+    sectionPicker: '編輯項目',
     ownStyle: '獨立樣式',
     preview: {
       sample: '範例',
@@ -73,6 +74,7 @@ export default defineMessages({
       css: 'Custom CSS',
     },
     platformEvents: (platform: string) => `${platform} events`,
+    sectionPicker: 'Section to edit',
     ownStyle: 'Own style',
     preview: {
       sample: 'Sample',

@@ -19,7 +19,7 @@ import { AuthorPanel, BodyPanel, PartsPanel } from './panels/MessagePartPanels';
 import { RolesPanel } from './panels/RolesPanel';
 import { StructurePanel } from './panels/StructurePanel';
 import { TextPanel } from './panels/TextPanel';
-import { EditorNav } from './EditorNav';
+import { EditorNav, EditorNavSelect } from './EditorNav';
 import { PreviewPane } from './PreviewPane';
 import { resolveSection, type BaseSectionId, type SectionId } from './sections';
 import { usePreviewHighlight } from './usePreviewHighlight';
@@ -133,25 +133,38 @@ export function ThemeEditor({
         </Button>
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[168px_minmax(0,1fr)_minmax(300px,380px)] gap-3">
-        <EditorNav
-          sections={resolved.sections}
-          active={resolved.active}
-          draft={draft}
-          onSelect={setSection}
-          hoverProps={hl.hoverProps}
-        />
+      {/* Narrow windows swap the side menu for a dropdown so the panel keeps a usable width. */}
+      <div className="grid min-h-0 flex-1 grid-cols-[168px_minmax(0,1fr)_minmax(300px,380px)] gap-3 max-[1180px]:grid-cols-[minmax(0,1fr)_minmax(260px,40%)]">
+        <div className="flex min-h-0 flex-col max-[1180px]:hidden">
+          <EditorNav
+            sections={resolved.sections}
+            active={resolved.active}
+            draft={draft}
+            onSelect={setSection}
+            hoverProps={hl.hoverProps}
+          />
+        </div>
 
-        <Tile className="min-h-0 overflow-y-auto">
-          <PageTransition id={resolved.active}>
-            <h2 className="mb-2 text-sm font-semibold">{sectionLabel}</h2>
-            {resolved.event ? (
-              <EventPanel draft={draft} setDraft={setDraft} event={resolved.event} />
-            ) : (
-              panel(resolved.active as BaseSectionId)
-            )}
-          </PageTransition>
-        </Tile>
+        <div className="flex min-h-0 flex-col gap-3">
+          <div className="hidden max-[1180px]:block">
+            <EditorNavSelect
+              sections={resolved.sections}
+              active={resolved.active}
+              draft={draft}
+              onSelect={setSection}
+            />
+          </div>
+          <Tile className="min-h-0 flex-1 overflow-y-auto">
+            <PageTransition id={resolved.active}>
+              <h2 className="mb-2 text-sm font-semibold max-[1180px]:hidden">{sectionLabel}</h2>
+              {resolved.event ? (
+                <EventPanel draft={draft} setDraft={setDraft} event={resolved.event} />
+              ) : (
+                panel(resolved.active as BaseSectionId)
+              )}
+            </PageTransition>
+          </Tile>
+        </div>
 
         <PreviewPane theme={draft} highlight={hl} onInsertRule={insertRule} />
       </div>

@@ -18,8 +18,8 @@ const RECENT_NOTICES = 100;
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <Tile className="justify-between gap-3">
-      <div className="text-sm text-ink-soft">{label}</div>
+    <Tile className="justify-between gap-3 max-[1180px]:px-4">
+      <div className="text-sm leading-snug text-ink-soft">{label}</div>
       <RollingNumber value={value} className="font-mono text-3xl font-medium" />
     </Tile>
   );
@@ -83,15 +83,16 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
     <Stagger className="grid h-full min-h-[520px] grid-cols-6 grid-rows-[minmax(132px,auto)_auto_minmax(160px,1fr)] gap-3">
       {/* Hero */}
       <Tile className="relative col-span-2 row-span-2 justify-between overflow-hidden border-transparent! bg-matcha-strong! text-on-matcha">
-        <div className="flex items-start justify-between">
-          <div>
+        {/* In narrow windows the tea cup gives its room to the status and channel name; the sidebar still shows it. */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 text-sm opacity-90">
               <StatusDot tone={channelTone(state.channel.state, connected)} />
               {m.channelState[state.channel.state]}
             </div>
-            <div className="mt-1 text-xl font-semibold">{state.channel.login ?? m.noChannel}</div>
+            <div className="mt-1 truncate text-xl font-semibold">{state.channel.login ?? m.noChannel}</div>
           </div>
-          <div className="rounded-full bg-[#f4f9ee] p-2">
+          <div className="shrink-0 rounded-full bg-[#f4f9ee] p-2 max-[1180px]:hidden">
             <TeaCup mood={moodFor(state, stats.rate)} size={64} />
           </div>
         </div>
@@ -149,9 +150,9 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
           </Button>
         }
       >
-        <dl className="grid grid-cols-2 gap-2">
+        <dl className="grid grid-cols-2 gap-2 max-[1180px]:grid-cols-1">
           {(['overlay', 'embed'] as const).map((target) => (
-            <div key={target} className="rounded-xl bg-tile-muted px-4 py-3">
+            <div key={target} className="min-w-0 rounded-xl bg-tile-muted px-4 py-3 max-[1180px]:py-2.5">
               <dt className="text-xs text-ink-faint">{target === 'overlay' ? m.desktopOverlay : 'OBS'}</dt>
               <dd className="mt-0.5 truncate font-medium">{themeName(target)}</dd>
             </div>
