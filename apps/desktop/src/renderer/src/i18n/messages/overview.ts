@@ -29,10 +29,10 @@ export default defineMessages({
     latestMessages: '最新留言',
     openChat: '開啟聊天室',
     noMessages: '還沒有人說話',
-    noMessagesHint: '連上頻道後，新的留言會出現在這裡。',
+    noMessagesHint: '連上頻道後，新的留言會出現在這裡',
     recentActivity: '最近活動',
     noActivity: '還沒有新活動',
-    noActivityHint: '訂閱、揪團和公告會顯示在這裡。',
+    noActivityHint: '訂閱、揪團和公告會顯示在這裡',
   },
   en: {
     channelState: {
@@ -62,9 +62,9 @@ export default defineMessages({
     latestMessages: 'Latest messages',
     openChat: 'Open chat',
     noMessages: 'Nobody has spoken yet',
-    noMessagesHint: 'New messages show up here once a channel is connected.',
+    noMessagesHint: 'New messages show up here once a channel is connected',
     recentActivity: 'Recent activity',
     noActivity: 'No activity yet',
-    noActivityHint: 'Subs, raids and announcements show up here.',
+    noActivityHint: 'Subs, raids and announcements show up here',
   },
 });
