@@ -24,6 +24,15 @@ Built-in alert sounds are vendored from [soundcn](https://github.com/kapishdima/
 | 鈴聲        | `select-005`       | Kenney | CC0     |
 | 雷射        | `error-buzz`       | Kenney | CC0     |
 
+## OBS plugin
+
+The OBS plugin in `obs-plugin/` (shipped as `obs-chatto`) is part of Chatto and licensed under GPL-3.0-or-later.
+
+| Work                                                                   | Use                                                                        | License          |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------- | ---------------- |
+| [OBS Studio](https://github.com/obsproject/obs-studio) (libobs)        | The plugin links against libobs and runs inside OBS; not shipped by Chatto | GPL-2.0-or-later |
+| [obs-plugintemplate](https://github.com/obsproject/obs-plugintemplate) | CMake build scaffolding in `obs-plugin/cmake/` and `src/plugin-support.*`  | GPL-2.0-or-later |
+
 ## Libraries
 
 | Library                                                                                                                                                              | License    |

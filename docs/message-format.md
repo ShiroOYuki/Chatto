@@ -102,7 +102,7 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
 
 定義在 `packages/core/src/protocol.ts`，所有 frame 都帶 `v`（目前為 1）。
 
-- client → server：`{ v, type: 'subscribe', target: 'overlay' | 'embed' | 'alerts' }`
+- client → server：`{ v, type: 'subscribe', target: 'overlay' | 'embed' | 'alerts', themeId? }`。`themeId`（最長 128 字元）讓這個 viewer 改用指定的主題，embed 頁從 `?theme=<id>` 帶入；id 不存在或主題被刪掉時用該 target 選的主題。
 - server → client：
   - `hello`：`theme`、`backlog`（最近事件；`alerts` 一律是空的）與 `locale`（聊天室語言，舊版 server 沒有這個欄位）
   - `event`：一個 `ChatEvent`；送給 `alerts` 時另有 `alert: { durationMs, sound? }`（`AlertCue`），告訴事件 Overlay 卡片停留多久、播什麼聲音
@@ -110,6 +110,7 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
   - `locale`：聊天室語言變更（`zh-TW`、`en`）
 - 每個 target 收到的事件可能不同，見 `docs/architecture.md` 的「輸出路由」。
 - HTTP `/sounds/<檔名>`：使用者自選的提示音；`/theme-assets/<檔名>`：主題的外框圖片。
+- HTTP `GET /api/ping` → `{ app: 'chatto', version }`；`GET /api/themes` → `[{ id, name }]`（名稱用介面語言）。給 OBS 外掛用，其他方法回 405。
 - viewer 單獨預覽時可用 `?lang=en` 指定語言（`?mock=1`、`?specimen`）。
 
 ## Twitch 對應
@@ -129,6 +130,8 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
 同一批贈訂：`community_sub_gift.id` → `meta.groupId`＋`meta.groupLead`；`sub_gift.community_gift_id` → `meta.groupId`；`sub_gift.recipient_user_name` → `meta.recipient`。
 
 ## 變更紀錄
+
+- **v1.6**（2026-11-04）：`subscribe` 加上選填的 `themeId`；本機 server 新增 `/api/ping`、`/api/themes`（非破壞性）。
 
 - **v1.5**（2026-11-04）：`ChatNotice.meta` 新增觀看連勝的 `watchStreak`、`channelPoints`（非破壞性）。
 

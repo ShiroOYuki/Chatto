@@ -7,6 +7,7 @@
  (未來) YouTube ──────┼─► ChatProvider ──► ChatHub (main process) ──┬─► LocalServer :4820 (/ws)
  (未來) Kick ─────────┘    標準化 ChatEvent      backlog 50 則          │     ├─► Overlay 視窗（/overlay）
                                                                    │     ├─► OBS 瀏覽器來源（/embed）
+                                                                   │     │     或 OBS 外掛「Chatto 聊天室」（/embed?theme=）
                                                                    │     └─► 事件 Overlay 視窗（/alerts）
                                                                    └─► IPC ─► 控制台 renderer（統計、預覽）
 ```
@@ -14,6 +15,10 @@
 - **Provider** 負責連線、驗證、把平台 payload 轉成 `ChatEvent`。只有 provider 知道平台細節。
 - **ChatHub** 是唯一的事件匯流點，保留最近 50 則，讓新開的 viewer 不會空白。刪除與清除事件也會同步修正 backlog。
 - **LocalServer** 是只綁 `127.0.0.1` 的 HTTP 加 WebSocket 伺服器：HTTP 提供 viewer 靜態檔，`/ws` 推送事件與主題。
+  - 每個 viewer 訂閱時可以帶 `themeId`（embed 頁的 `?theme=<id>`），改用那個主題；id 不存在或主題被刪掉時，改回該 target 選的主題。主題選擇、儲存、刪除與聊天室語言變更都呼叫 `refreshThemes()`：重新算出每個 viewer 該用的主題，只重送有變的。
+  - `GET /api/ping`（`{ app: 'chatto', version }`）與 `GET /api/themes`（`[{ id, name }]`，介面語言）給 OBS 外掛用，不含 token 或聊天內容。
+- **OBS 外掛**（`obs-plugin/`，C++，Windows）：模組 `obs-chatto`，來源類型 `chatto_chat`（「Chatto 聊天室」）。每個來源內含一個私有的 obs-browser 來源，載入 `/embed?theme=<id>`；一條背景執行緒每 3 秒問一次 `/api/ping`（WinHTTP，所有來源共用），Chatto 沒在跑時改顯示外掛內附的 `waiting.html`。外掛不自己畫聊天室，主題與自訂 CSS 全由 embed 頁處理。建置用 obs-plugintemplate 的 CMake 架構，對 OBS 31.1.1 編譯（`npm run build:obs-plugin`，輸出到 `obs-plugin/release/obs-chatto`）。
+  - 安裝位置是 OBS 的共用外掛資料夾 `C:\ProgramData\obs-studio\plugins\obs-chatto`。控制台「輸出」頁（main `obs-plugin.ts` 的 `ObsPlugin`）與安裝檔（`apps/desktop/build/installer.nsh`）都能安裝；已安裝的檔案和這版 Chatto 附帶的不同時，就是「有新版本」。OBS 執行時會鎖住 DLL，要先關閉 OBS。
 - **Overlay 視窗** 是透明、無框、置頂、滑鼠穿透的 `BrowserWindow`，載入 `/overlay`。編輯模式下暫時接受滑鼠，讓使用者拖曳與縮放，位置會存進設定。
 - **事件 Overlay 視窗** 和 Overlay 視窗同一個類別（`OverlayWindow`），預設放在右上角，載入 `/alerts`，一次顯示一張事件卡片。
 - **輸出路由**：`AppController.route(target, event)` 決定每個輸出收到什麼，由 LocalServer 在推送與 backlog 時套用。
@@ -48,7 +53,8 @@ workspace package 直接提供 TypeScript 原始碼，由 Vite／electron-vite �
 - Twitch 使用 Device Code Flow 的 public client，不需要 client secret。
 - token 用 `safeStorage`（Windows DPAPI）加密存在 userData，只有 main process 讀得到。
 - 控制台與 Overlay 視窗都啟用 `sandbox` 與 `contextIsolation`；外部連結只允許 `https://`，並交給系統瀏覽器開啟。
-- 本機伺服器只綁 loopback，並限制靜態檔路徑不能跳出 viewer 資料夾。
+- 本機伺服器只綁 loopback，並限制靜態檔路徑不能跳出 viewer 資料夾。`/api/*` 只回主題 id、名稱與版本，而且不送 CORS 標頭，其他網頁讀不到。
+- OBS 外掛的 embed 頁不需要控制 OBS，內部 browser 來源的 `webpage_control_level` 設為 0。
 - 自訂 CSS 檔案的路徑由主題 id 產生，id 只接受 `[\w-]+`；外部編輯器指令只來自使用者自己的設定。
 
 ## 路線圖

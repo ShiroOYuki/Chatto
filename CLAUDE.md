@@ -24,6 +24,7 @@ packages/
 apps/
   viewer/           @chatto/viewer — /overlay 與 /embed 頁面，由桌面 App 的本機 server 提供；瀏覽器可用 ?mock=1 獨立預覽
   desktop/          @chatto/desktop — Electron（electron-vite）：main / preload / renderer（控制台）
+obs-plugin/         obs-chatto — OBS 外掛「Chatto 聊天室」來源（C++，CMake，Windows；不在 npm workspaces 裡）
 docs/               architecture.md、message-format.md、theming.md
 ```
 
@@ -31,6 +32,7 @@ docs/               architecture.md、message-format.md、theming.md
 
 - 三個輸出 target：`overlay`（桌面聊天室）、`embed`（OBS）、`alerts`（桌面事件 Overlay）。每個 target 收到什麼由 `AppController.route()` 決定（見 `docs/architecture.md`「輸出路由」）；只給實況主看的東西（沉寂提醒標記、事件卡片）不得送到 `embed`。
 - 事件提醒規則分「通用」（跨平台分類 `ALERT_CATEGORIES`）與各平台專屬事件；新增平台事件時，能對應到通用分類就在 `EVENT_CATALOG` 填 `alertCategory`。
+- OBS 外掛只是包住 embed 頁的私有 obs-browser 來源，不自己畫聊天室；它讀 `/api/ping`、`/api/themes`，用 `/embed?theme=<id>` 選主題（見 `docs/architecture.md`）。這兩個 API 和 `?theme=` 是外掛的公開介面，改動要相容。模組名 `obs-chatto`、來源類型 id `chatto_chat` 會存進使用者的場景，不能改名。
 - 提醒邏輯（沉寂偵測、事件規則）是 `apps/desktop/src/main/alerts.ts` 的純函式；內建提示音是從 soundcn 收進來的 CC0 音效（`packages/chat-ui/src/soundcn/`，由 `sounds.ts` 動態載入）；只能收 CC0 音效，並記到 `THIRD_PARTY_NOTICES.md`，不得使用 soundcn 的 Blizzard 音效。
 
 ### 核心原則
@@ -104,7 +106,8 @@ npm test             # Vitest 單元與元件測試
 npm run test:e2e     # Playwright 網頁 E2E
 npm run test:visual  # 視覺回歸
 npm run test:electron  # 建置後測試 Electron App
-npm run dist         # 打包 Windows 安裝檔
+npm run build:obs-plugin  # 建置 OBS 外掛到 obs-plugin/release（需要 VS 2022 Build Tools 的 C++ 與 Windows SDK）
+npm run dist         # 打包 Windows 安裝檔（會先建置 OBS 外掛）
 ```
 
 ## 開發與驗證

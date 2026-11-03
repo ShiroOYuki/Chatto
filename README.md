@@ -12,6 +12,7 @@
 
 - **桌面 Overlay**：透明、置頂、滑鼠可穿透的聊天室視窗，打遊戲時也看得到聊天。
 - **OBS 嵌入聊天室**：App 內建本機伺服器，OBS「瀏覽器來源」貼上網址就能用，背景自動透明。
+- **OBS 外掛**：安裝後在 OBS 新增「Chatto 聊天室」來源，不用貼網址，每個來源可以選自己的主題；Chatto 沒開時顯示等待畫面。可在安裝檔或「輸出」頁安裝。
 - **主題系統**：內建抹茶玻璃、和紙、泡泡、極簡描邊、暖簾、終端機六種風格；風格與配色分開，可自由組合、寫自訂 CSS、匯出／匯入 JSON。
 - **即時同步刪除**：被管理員刪除或封鎖的訊息會立刻從畫面消失。
 - **為多平台設計**：所有平台都轉換成同一份標準化聊天格式，之後加入 YouTube、Kick 不需改動畫面層。
@@ -42,17 +43,18 @@ npm run dev:web      # 控制台在瀏覽器執行（使用假資料）http://lo
 
 ## 指令
 
-| 指令                    | 說明                                                  |
-| ----------------------- | ----------------------------------------------------- |
-| `npm run dev`           | 建置 viewer 並啟動 Electron                           |
-| `npm run typecheck`     | 所有 workspace 型別檢查                               |
-| `npm test`              | Vitest 單元與元件測試                                 |
-| `npm run test:e2e`      | Playwright：控制台與 viewer 的網頁 E2E                |
-| `npm run test:visual`   | Playwright：主題與控制台的視覺回歸                    |
-| `npm run test:electron` | 建置後以 Playwright 測試 Electron App                 |
-| `npm run test:all`      | 型別檢查加上所有測試                                  |
-| `npm run build`         | 建置 viewer 與桌面 App                                |
-| `npm run dist`          | 打包 Windows 安裝檔（輸出到 `apps/desktop/release/`） |
+| 指令                       | 說明                                                                    |
+| -------------------------- | ----------------------------------------------------------------------- |
+| `npm run dev`              | 建置 viewer 並啟動 Electron                                             |
+| `npm run typecheck`        | 所有 workspace 型別檢查                                                 |
+| `npm test`                 | Vitest 單元與元件測試                                                   |
+| `npm run test:e2e`         | Playwright：控制台與 viewer 的網頁 E2E                                  |
+| `npm run test:visual`      | Playwright：主題與控制台的視覺回歸                                      |
+| `npm run test:electron`    | 建置後以 Playwright 測試 Electron App                                   |
+| `npm run test:all`         | 型別檢查加上所有測試                                                    |
+| `npm run build`            | 建置 viewer 與桌面 App                                                  |
+| `npm run build:obs-plugin` | 建置 OBS 外掛（需要 VS 2022 Build Tools 的 C++ 工作負載與 Windows SDK） |
+| `npm run dist`             | 打包 Windows 安裝檔（含 OBS 外掛，輸出到 `apps/desktop/release/`）      |
 
 測試的分層與寫法見 [`docs/testing.md`](docs/testing.md)。
 
@@ -64,6 +66,7 @@ packages/provider-twitch  Twitch：Device Code Flow、EventSub、Helix
 packages/chat-ui          可主題化的聊天渲染器與預設主題
 apps/viewer               /overlay 與 /embed 頁面
 apps/desktop              Electron 桌面 App（控制台、本機伺服器、Overlay 視窗）
+obs-plugin                OBS 外掛「Chatto 聊天室」（C++，CMake）
 docs/                     架構、訊息格式、主題文件
 ```
 
