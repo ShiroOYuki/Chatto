@@ -73,7 +73,7 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
 
 - 桌面 Overlay、OBS：`reduceFeed()` 的 `FeedItem` 帶 `members`。
 - 控制台聊天紀錄：總事件可展開看收到的人；「訂閱與活動」統計只算一次。
-- 事件 Overlay：總事件已送出後，同一批的個別事件不再跳卡片、不再播音效（main 的 `route('alerts')`）。
+- 事件 Overlay：總事件已送出後，同一批的個別事件不再跳卡片、不再播音效（main 的 `route('alerts')`）。個別事件比總事件先到時，先等 1.5 秒（viewer `alertQueue.ts` 的 `GROUP_WAIT_MS`）：總事件在這段時間內到了，就只跳總事件一張卡片；沒到才各自排隊。
 
 ### ChatUser
 

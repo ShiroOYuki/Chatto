@@ -9,7 +9,7 @@ import {
 } from '@chatto/chat-ui';
 import { defaultSound, type AlertCue, type ChatEvent, type ChatTheme, type Locale } from '@chatto/core';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { emptyQueue, reduceAlerts } from './alertQueue';
+import { emptyQueue, GROUP_WAIT_MS, reduceAlerts } from './alertQueue';
 import { connectToApp } from './connection';
 import { initialLocale } from './locale';
 
@@ -54,7 +54,33 @@ export function AlertsApp() {
     });
   }, [receive]);
 
-  const { current, phase } = state;
+  const { current, phase, held } = state;
+
+  // Held batch members get one release timer per batch, started when the first member arrives.
+  const releaseTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    const timers = releaseTimers.current;
+    const groups = new Set(held.map((entry) => entry.group));
+    for (const group of groups) {
+      if (timers.has(group)) continue;
+      timers.set(
+        group,
+        setTimeout(() => {
+          timers.delete(group);
+          dispatch({ type: 'release', group });
+        }, GROUP_WAIT_MS),
+      );
+    }
+    for (const [group, timer] of timers) {
+      if (groups.has(group)) continue;
+      clearTimeout(timer);
+      timers.delete(group);
+    }
+  }, [held]);
+  useEffect(() => {
+    const timers = releaseTimers.current;
+    return () => timers.forEach((timer) => clearTimeout(timer));
+  }, []);
 
   // Each card plays its sound as it appears.
   useEffect(() => {
