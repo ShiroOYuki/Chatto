@@ -1,0 +1,6 @@
+# Build output and downloaded OBS sources / dependencies
+/build_x64/
+/.deps/
+/release/
+*.lock.json
+/cmake/.CMakeBuildNumber

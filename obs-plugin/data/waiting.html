@@ -1,0 +1,82 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Shown by the Chatto Chat source while the Chatto app is not running. Viewers can see it. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Chatto</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+      }
+      body {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 24px;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', 'Microsoft JhengHei UI', 'Microsoft JhengHei', sans-serif;
+      }
+      .card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px 10px 12px;
+        border-radius: 999px;
+        background: rgba(30, 70, 50, 0.78);
+        border: 1px solid rgba(159, 225, 203, 0.35);
+        color: #eaf3de;
+        font-size: 15px;
+        line-height: 1.3;
+      }
+      .steam path {
+        animation: rise 2.4s ease-in-out infinite;
+      }
+      .steam path:nth-child(2) {
+        animation-delay: 0.4s;
+      }
+      .steam path:nth-child(3) {
+        animation-delay: 0.8s;
+      }
+      @keyframes rise {
+        0%,
+        100% {
+          opacity: 0.2;
+          transform: translateY(1px);
+        }
+        50% {
+          opacity: 0.9;
+          transform: translateY(-1px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+        <g class="steam" fill="none" stroke="#c0dd97" stroke-width="1.6" stroke-linecap="round">
+          <path d="M10 4c-1 1.5 1 2.5 0 4" />
+          <path d="M14.5 3c-1 1.5 1 2.5 0 4" />
+          <path d="M19 4c-1 1.5 1 2.5 0 4" />
+        </g>
+        <path d="M5 12h19v7a7 7 0 0 1-7 7h-5a7 7 0 0 1-7-7z" fill="#c0dd97" />
+        <path d="M24 14h1.5a3.5 3.5 0 0 1 0 7H23" fill="none" stroke="#c0dd97" stroke-width="2" />
+        <rect x="5" y="12" width="19" height="3" rx="1" fill="#639922" />
+        <circle cx="11.5" cy="19" r="1" fill="#27500a" />
+        <circle cx="17.5" cy="19" r="1" fill="#27500a" />
+      </svg>
+      <span id="text">Waiting for Chatto…</span>
+    </div>
+    <script>
+      // OBS gives the page its interface language.
+      if ((navigator.language || '').toLowerCase().startsWith('zh')) {
+        document.getElementById('text').textContent = '等待 Chatto 開啟…';
+        document.documentElement.lang = 'zh-Hant';
+      }
+    </script>
+  </body>
+</html>
