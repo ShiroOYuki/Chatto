@@ -26,7 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
-import { MagicCard } from '../components/ui/magic-card';
 import { ThemeEditor } from './theme-editor/ThemeEditor';
 import { exportTheme, needsPackage, pickThemeFile } from './themeIO';
 import { describeTheme } from './themeLabels';
@@ -94,17 +93,11 @@ export function ThemesPage({ state }: { state: AppState }) {
               key={theme.id}
               layout
               variants={riseIn}
-              whileHover={{ y: -3 }}
-              className={`rounded-tile ${targets.length ? 'ring-2 ring-matcha' : ''}`}
+              className={`overflow-hidden rounded-tile border bg-tile transition-colors ${
+                targets.length ? 'border-matcha' : 'border-line hover:border-ink-faint/40'
+              }`}
             >
-              {/* Magic UI spotlight card: a matcha glow follows the pointer. */}
-              <MagicCard
-                className="h-full rounded-tile"
-                gradientSize={240}
-                gradientColor="rgba(151, 196, 89, 0.16)"
-                gradientFrom="#97c459"
-                gradientTo="#f4c0d1"
-              >
+              <div>
                 <div className="flex h-full flex-col">
                   <div className="relative h-44 overflow-hidden rounded-t-tile">
                     <StaticThemePreview theme={theme} />
@@ -191,7 +184,7 @@ export function ThemesPage({ state }: { state: AppState }) {
                     </div>
                   </div>
                 </div>
-              </MagicCard>
+              </div>
             </motion.article>
           );
         })}
@@ -204,10 +197,10 @@ export function ThemesPage({ state }: { state: AppState }) {
             <AlertDialogDescription>{m.deleteDescription}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full">{messages.common.cancel}</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl">{messages.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              className="rounded-full"
+              className="rounded-xl"
               onClick={() => pendingDelete && themes.remove(pendingDelete.id)}
             >
               {messages.common.delete}

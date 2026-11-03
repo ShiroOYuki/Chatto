@@ -61,7 +61,7 @@ export function PreviewPane({
           ))}
         </div>
       </div>
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl">
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl">
         <InspectablePreview
           theme={theme}
           backdrop={backdrop}

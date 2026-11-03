@@ -100,7 +100,7 @@ export function Sidebar({
         />
       ))}
 
-      <div className="mt-auto rounded-2xl border border-line bg-tile p-3">
+      <div className="mt-auto rounded-xl border border-line bg-tile p-3">
         <div className="flex items-center gap-3">
           <div className="rounded-full bg-tile-muted p-1">
             <TeaCup mood={mood} size={40} />

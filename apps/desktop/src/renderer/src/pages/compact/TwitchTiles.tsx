@@ -16,7 +16,7 @@ export function AccountTile({ state }: { state: AppState }) {
         <p className="mb-3 text-sm text-ink-soft">{m.clientIdIntro}</p>
         <div className="mt-auto flex gap-2">
           <input
-            className="h-9 min-w-0 flex-1 rounded-full border border-line bg-canvas px-4 text-sm outline-none focus:border-matcha"
+            className="h-9 min-w-0 flex-1 rounded-xl border border-line bg-canvas px-4 text-sm outline-none focus:border-matcha"
             placeholder="Client ID"
             value={clientId}
             onChange={(event) => setClientId(event.target.value)}
@@ -40,7 +40,7 @@ export function AccountTile({ state }: { state: AppState }) {
         }
       >
         <p className="text-sm text-ink-soft">{m.enterCode}</p>
-        <div className="my-2 rounded-2xl bg-tile-muted py-3 text-center font-mono text-3xl font-semibold tracking-[0.2em] text-matcha-strong">
+        <div className="my-2 rounded-xl bg-tile-muted py-3 text-center font-mono text-3xl font-semibold tracking-[0.2em] text-matcha-strong">
           {auth.deviceCode?.userCode ?? '······'}
         </div>
         {auth.deviceCode ? (
@@ -100,7 +100,7 @@ export function ChannelTile({ state }: { state: AppState }) {
           twitch.connect(login);
         }}
       >
-        <div className="flex h-11 min-w-0 flex-1 items-center rounded-full border border-line bg-canvas pl-4 focus-within:border-matcha">
+        <div className="flex h-11 min-w-0 flex-1 items-center rounded-xl border border-line bg-canvas pl-4 focus-within:border-matcha">
           <span className="text-sm text-ink-faint">twitch.tv/</span>
           <input
             className="h-full min-w-0 flex-1 bg-transparent pr-4 text-sm outline-none"

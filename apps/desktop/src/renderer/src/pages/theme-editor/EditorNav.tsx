@@ -39,9 +39,7 @@ export function EditorNav({
       ))}
       {eventGroups.map((group) => (
         <div key={group.platform} className="mt-3 flex flex-col gap-0.5">
-          <div className="px-3 pb-1 text-[11px] font-medium tracking-wide text-ink-faint">
-            {m.platformEvents(group.label)}
-          </div>
+          <div className="px-3 pb-1 text-xs font-medium text-ink-faint">{m.platformEvents(group.label)}</div>
           {group.events.map((event) => {
             const id = eventSectionId(event.key);
             const own = draft.events[event.key]?.linked === false;

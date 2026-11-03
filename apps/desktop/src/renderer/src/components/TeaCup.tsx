@@ -30,14 +30,7 @@ export function TeaCup({ mood = 'happy', size = 96 }: { mood?: TeaCupMood; size?
     );
 
   return (
-    <svg
-      viewBox="0 0 96 96"
-      width={size}
-      height={size}
-      className={mood === 'sleepy' ? 'text-matcha-strong' : 'wobble text-matcha-strong'}
-      role="img"
-      aria-label={label}
-    >
+    <svg viewBox="0 0 96 96" width={size} height={size} className="text-matcha-strong" role="img" aria-label={label}>
       {mood !== 'sleepy' ? (
         <g stroke="var(--c-ink-faint)" strokeWidth="2.5" fill="none" strokeLinecap="round">
           <path className="steam" d="M36 22q-3-5 0-10" />

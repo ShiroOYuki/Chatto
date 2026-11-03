@@ -25,13 +25,13 @@ export function ThemeTile({
       title={m.chatTheme}
       className="col-span-2 row-span-2 min-h-0"
       action={
-        <div className="flex rounded-full bg-tile-muted p-1 text-xs">
+        <div className="flex rounded-xl bg-tile-muted p-1 text-xs">
           {(['overlay', 'embed'] as const).map((item) => (
             <button
               key={item}
               type="button"
               onClick={() => onTargetChange(item)}
-              className={`rounded-full px-3 py-1 transition ${target === item ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft'}`}
+              className={`rounded-lg px-3 py-1 transition-colors ${target === item ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft'}`}
             >
               {item === 'overlay' ? m.desktopOverlay : 'OBS'}
             </button>
@@ -67,7 +67,7 @@ function ThemeChip({ theme, active, onSelect }: { theme: ChatTheme; active: bool
       type="button"
       onClick={onSelect}
       aria-pressed={active}
-      className={`flex items-center gap-2 rounded-2xl border p-2 text-left text-sm transition ${
+      className={`flex items-center gap-2 rounded-xl border p-2 text-left text-sm transition-colors ${
         active ? 'border-matcha bg-matcha-soft/40' : 'border-line hover:bg-tile-muted'
       }`}
     >
@@ -101,7 +101,7 @@ export function PreviewTile({ state, target }: { state: AppState; target: Viewer
       action={<span className="text-xs text-ink-faint">{themeName(theme)}</span>}
     >
       <div
-        className="relative min-h-0 flex-1 overflow-hidden rounded-2xl p-3"
+        className="relative min-h-0 flex-1 overflow-hidden rounded-xl p-3"
         style={{
           background:
             'radial-gradient(circle at 20% 25%, #3b6d11 0, transparent 45%), radial-gradient(circle at 85% 75%, #0f6e56 0, transparent 50%), #1b2230',

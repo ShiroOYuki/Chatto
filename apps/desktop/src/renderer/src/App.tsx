@@ -63,7 +63,7 @@ function Shell() {
     return () => media.removeEventListener('change', apply);
   }, [state?.prefs.appearance]);
 
-  // A small celebration the first time the chat connects in this session.
+  // A small puff of tea leaves from the title bar's status dot the first time chat connects.
   const confettiRef = useRef<ConfettiRef>(null);
   const celebrated = useRef(false);
   const channelState = state?.channel.state;
@@ -73,13 +73,19 @@ function Shell() {
     // Fire after the page settles; the timer also survives React StrictMode's remount.
     const timer = setTimeout(() => {
       celebrated.current = true;
+      const dot = document.querySelector('[data-channel-status]')?.getBoundingClientRect();
       void confettiRef.current?.fire({
-        particleCount: 90,
-        spread: 75,
-        startVelocity: 38,
-        origin: { x: 0.5, y: 0.35 },
-        colors: ['#c0dd97', '#97c459', '#6b9b2e', '#f4c0d1', '#fac775'],
-        scalar: 0.9,
+        particleCount: 22,
+        angle: 300,
+        spread: 50,
+        startVelocity: 14,
+        gravity: 0.7,
+        ticks: 110,
+        origin: dot
+          ? { x: (dot.left + 6) / window.innerWidth, y: (dot.top + dot.height / 2) / window.innerHeight }
+          : { x: 0.2, y: 0.03 },
+        colors: ['#c0dd97', '#97c459', '#6b9b2e'],
+        scalar: 0.7,
       });
     }, 350);
     return () => clearTimeout(timer);

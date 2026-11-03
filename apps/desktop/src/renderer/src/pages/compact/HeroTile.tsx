@@ -3,7 +3,6 @@ import { channelTone, StatusDot, Tile } from '../../components/kit';
 import { RollingNumber } from '../../components/motion';
 import { useMessages } from '../../i18n';
 import { TeaCup, type TeaCupMood } from '../../components/TeaCup';
-import { BorderBeam } from '../../components/ui/border-beam';
 
 function moodFor(state: AppState, rate: number): TeaCupMood {
   if (state.channel.state === 'error') return 'worried';
@@ -16,7 +15,6 @@ export function HeroTile({ state, rate }: { state: AppState; rate: number }) {
   const connected = state.channel.state === 'connected';
   return (
     <Tile className="relative row-span-2 min-h-min justify-between overflow-hidden bg-matcha-strong! text-on-matcha border-transparent!">
-      {connected ? <BorderBeam size={140} duration={7} borderWidth={2} colorFrom="#f4f9ee" colorTo="#c0dd97" /> : null}
       <div className="flex items-center gap-2 text-lg font-medium">
         Chatto <span className="text-sm opacity-70">チャット</span>
       </div>

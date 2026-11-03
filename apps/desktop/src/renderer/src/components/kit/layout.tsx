@@ -57,9 +57,7 @@ export function PageHeader({
 export function EmptyState({ mood = 'sleepy', title, hint }: { mood?: TeaCupMood; title: string; hint?: string }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10 text-center">
-      <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}>
-        <TeaCup mood={mood} size={64} />
-      </motion.div>
+      <TeaCup mood={mood} size={64} />
       <p className="text-sm font-medium text-ink-soft">{title}</p>
       {hint ? <p className="max-w-xs text-xs text-ink-faint">{hint}</p> : null}
     </div>

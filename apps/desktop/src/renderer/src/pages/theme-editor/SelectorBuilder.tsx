@@ -56,7 +56,7 @@ export function SelectorBuilder({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={spring}
-      className="absolute inset-x-2 bottom-2 z-20 rounded-2xl border border-line bg-tile p-3 shadow-xl"
+      className="absolute inset-x-2 bottom-2 z-20 rounded-xl border border-line bg-tile p-3 shadow-xl"
     >
       <div className="mb-2 flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate font-mono text-xs font-medium">{title}</span>

@@ -107,10 +107,10 @@ export function SwapIcon({ swapped, from, to }: { swapped: boolean; from: ReactN
         <motion.span
           key={swapped ? 'to' : 'from'}
           className="grid place-items-center"
-          initial={{ opacity: 0, scale: 0.4, rotate: -45 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          exit={{ opacity: 0, scale: 0.4, rotate: 45 }}
-          transition={spring}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }}
         >
           {swapped ? to : from}
         </motion.span>

@@ -30,7 +30,7 @@ export function EmbedTile({ state }: { state: AppState }) {
   };
   return (
     <Tile title={m.obsSource} className="col-span-2">
-      <div className="flex items-center gap-2 rounded-2xl bg-tile-muted p-2 pl-4">
+      <div className="flex items-center gap-2 rounded-xl bg-tile-muted p-2 pl-4">
         <code className="min-w-0 flex-1 truncate font-mono text-sm text-matcha-strong">{state.server.embedUrl}</code>
         <Button variant="primary" onClick={() => void copy()}>
           {copied ? m.copiedUrl : m.copyUrl}

@@ -23,7 +23,7 @@ const BUTTON_SIZE: Record<ButtonSize, { size: 'sm' | 'default' | 'lg'; className
   lg: { size: 'lg', className: 'h-11' },
 };
 
-/** shadcn/ui button with Chatto variants and a small spring on hover/tap. */
+/** shadcn/ui button with Chatto variants; hover only changes color, a press scales down slightly. */
 export function Button({
   variant = 'secondary',
   size = 'md',
@@ -37,15 +37,15 @@ export function Button({
       asChild
       variant={v.variant}
       size={z.size}
-      className={cn('gap-1.5 rounded-full', v.className, z.className, className)}
+      className={cn(
+        'gap-1.5 rounded-xl transition-[color,background-color,box-shadow,transform]',
+        size === 'sm' && 'rounded-[10px]',
+        v.className,
+        z.className,
+        className,
+      )}
     >
-      <motion.button
-        type="button"
-        whileHover={{ y: -1 }}
-        whileTap={{ scale: 0.94, y: 0 }}
-        transition={spring}
-        {...props}
-      />
+      <motion.button type="button" whileTap={{ scale: 0.97 }} transition={spring} {...props} />
     </UiButton>
   );
 }

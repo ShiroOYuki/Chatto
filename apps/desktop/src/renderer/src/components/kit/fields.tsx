@@ -47,7 +47,7 @@ export function CopyField({ value, label }: { value: string; label?: string }) {
   const m = useMessages().shell.kit;
   const [copied, setCopied] = useState(false);
   return (
-    <Snippet value="value" className="rounded-2xl border-line bg-tile-muted">
+    <Snippet value="value" className="rounded-xl border-line bg-tile-muted">
       <SnippetHeader className="border-line bg-transparent py-1 pr-1 pl-3">
         {/* A plain label, not a tab: a lone TabsTrigger picks up the active-tab island and border. */}
         <span className="text-xs text-ink-faint">{label ?? m.url}</span>

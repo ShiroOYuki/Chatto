@@ -68,7 +68,7 @@ export function ChatPage() {
       <Stagger className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_280px] gap-3">
         <Tile className="min-h-0 p-0!">
           <div className="flex flex-wrap items-center gap-2 border-b border-line p-3">
-            <div className="flex h-9 min-w-40 flex-1 items-center gap-2 rounded-full border border-line bg-canvas px-3 focus-within:border-matcha">
+            <div className="flex h-9 min-w-40 flex-1 items-center gap-2 rounded-xl border border-line bg-canvas px-3 focus-within:border-matcha">
               <Search className="size-4 text-ink-faint" />
               <input
                 value={query}

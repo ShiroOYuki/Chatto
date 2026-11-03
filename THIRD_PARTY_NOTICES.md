@@ -35,17 +35,18 @@ Built-in alert sounds are vendored from [soundcn](https://github.com/kapishdima/
 | [Electron](https://www.electronjs.org)                                                                                                                               | MIT        |
 | [ws](https://github.com/websockets/ws)                                                                                                                               | MIT        |
 | [shadcn/ui](https://ui.shadcn.com) (components copied into `components/ui`)                                                                                          | MIT        |
-| [Magic UI](https://magicui.design) (`magic-card`, `border-beam`, `confetti`, copied into `components/ui`)                                                            | MIT        |
+| [Magic UI](https://magicui.design) (`confetti`, copied into `components/ui`)                                                                                         | MIT        |
 | [Radix UI](https://www.radix-ui.com) (`radix-ui`)                                                                                                                    | MIT        |
 | [Kibo UI](https://www.kibo-ui.com) (color picker, status, pill, snippet, theme switcher, spinner, choicebox, tags; adapted copies in `components/kibo-ui/`)          | MIT        |
 | [cmdk](https://cmdk.paco.me), [@radix-ui/react-use-controllable-state](https://www.radix-ui.com)                                                                     | MIT        |
 | [color](https://github.com/Qix-/color) (with `color-convert`, `color-string`, `color-name`)                                                                          | MIT        |
 | [CodeMirror 6](https://codemirror.net) (`codemirror`, `@codemirror/*`, `@lezer/*`, `style-mod`, `w3c-keyname`, `crelt`)                                              | MIT        |
 | [canvas-confetti](https://github.com/catdad/canvas-confetti)                                                                                                         | ISC        |
+| [Simple Icons](https://simpleicons.org) (Twitch, YouTube and Kick glyphs in `pages/Connections.tsx`; brand marks remain their owners' trademarks)                    | CC0-1.0    |
 | [fflate](https://github.com/101arrowz/fflate) (theme packages)                                                                                                       | MIT        |
 | [class-variance-authority](https://cva.style)                                                                                                                        | Apache-2.0 |
 | [clsx](https://github.com/lukeed/clsx), [tailwind-merge](https://github.com/dcastil/tailwind-merge), [tw-animate-css](https://github.com/Wombosvideo/tw-animate-css) | MIT        |
 
 The 茶葉框 frame image (`packages/chat-ui/src/frames/teaLeafFrame.ts`) was made for Chatto and is covered by Chatto's own license.
 
-Animations are Chatto's own implementation on top of Motion, plus the MIT-licensed shadcn/ui and Magic UI components listed above (Magic Card was adapted to read Chatto's theme instead of next-themes). Animate UI and React Bits are intentionally not used: their MIT + Commons Clause license is not compatible with GPL-3.0.
+Animations are Chatto's own implementation on top of Motion, plus the MIT-licensed shadcn/ui and Magic UI components listed above. Animate UI and React Bits are intentionally not used: their MIT + Commons Clause license is not compatible with GPL-3.0.

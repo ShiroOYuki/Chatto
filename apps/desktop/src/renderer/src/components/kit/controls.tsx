@@ -51,7 +51,7 @@ export function Segmented<T extends string>({
   const group = useId();
   return (
     <Tabs value={value} onValueChange={(next) => onChange(next as T)} className="inline-flex">
-      <TabsList className={cn('h-auto rounded-full bg-tile-muted p-1', size === 'sm' ? 'text-xs' : 'text-sm')}>
+      <TabsList className={cn('h-auto rounded-xl bg-tile-muted p-1', size === 'sm' ? 'text-xs' : 'text-sm')}>
         {options.map((option) => {
           const active = value === option.value;
           return (
@@ -59,7 +59,7 @@ export function Segmented<T extends string>({
               key={option.value}
               value={option.value}
               className={cn(
-                'relative h-auto flex-none rounded-full border-0 font-normal text-ink-soft hover:text-ink [&_svg]:size-3.5',
+                'relative h-auto flex-none rounded-lg border-0 font-normal text-ink-soft hover:text-ink [&_svg]:size-3.5',
                 'data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-ink data-[state=active]:shadow-none',
                 'dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-ink',
                 size === 'sm' ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm',
@@ -69,7 +69,7 @@ export function Segmented<T extends string>({
                 <motion.span
                   layoutId={`segmented-${group}`}
                   transition={spring}
-                  className="absolute inset-0 rounded-full bg-tile shadow-sm"
+                  className="absolute inset-0 rounded-lg bg-tile shadow-sm"
                 />
               ) : null}
               <span className="relative inline-flex items-center gap-1.5">{option.label}</span>

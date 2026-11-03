@@ -52,7 +52,7 @@ function SupportMenu() {
           <button
             type="button"
             aria-label={m.support}
-            className="app-no-drag mr-1 grid size-7 place-items-center rounded-full text-ink-faint transition hover:bg-tile-muted hover:text-matcha-strong [&>svg]:size-3.5"
+            className="app-no-drag mr-1 grid size-7 place-items-center rounded-full text-ink-faint transition-colors hover:bg-tile-muted hover:text-matcha-strong [&>svg]:size-3.5"
           >
             <Coffee />
           </button>
@@ -93,7 +93,7 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
         ) : null}
       </div>
 
-      <div className="ml-4 flex items-center gap-2 text-xs text-ink-soft">
+      <div data-channel-status className="ml-4 flex items-center gap-2 text-xs text-ink-soft">
         <StatusDot tone={channelTone(state.channel.state, connected)} />
         {connected ? (state.channel.login ?? m.connected) : m.notConnected}
       </div>
@@ -103,7 +103,7 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
         <button
           type="button"
           onClick={() => appPrefs.set({ uiMode: compact ? 'full' : 'compact' })}
-          className="app-no-drag mr-2 inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs text-ink-soft transition hover:bg-tile-muted hover:text-ink [&>svg]:size-3.5"
+          className="app-no-drag mr-2 inline-flex h-7 items-center gap-1.5 rounded-lg px-3 text-xs text-ink-soft transition-colors hover:bg-tile-muted hover:text-ink [&>svg]:size-3.5"
           title={compact ? m.switchToFull : m.switchToCompact}
         >
           <SwapIcon swapped={compact} from={<LayoutDashboard />} to={<PanelsTopLeft />} />

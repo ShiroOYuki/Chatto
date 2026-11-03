@@ -1,5 +1,5 @@
-import { ArrowRight, Eraser, MessageCircle, MonitorUp, Palette, Sparkles, Users } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { ArrowRight, Gift, MessageCircle, MonitorUp, Palette } from 'lucide-react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { overlay } from '../services/overlay';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
@@ -7,7 +7,6 @@ import type { PageId } from '../components/Sidebar';
 import { moodFor } from '../components/Sidebar';
 import { RollingNumber, Stagger } from '../components/motion';
 import { TeaCup } from '../components/TeaCup';
-import { BorderBeam } from '../components/ui/border-beam';
 import { Button, CopyField, EmptyState, Sparkline, channelTone, StatusDot, Tile, Toggle } from '../components/kit';
 import { useMessages, useThemeName } from '../i18n';
 import { useChatLog, type LogEntry } from '../store';
@@ -17,16 +16,11 @@ const RECENT_MESSAGES = 60;
 /** The activity list scrolls, so it keeps a longer history. */
 const RECENT_NOTICES = 100;
 
-function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+function Stat({ label, value }: { label: string; value: number }) {
   return (
     <Tile className="justify-between gap-3">
-      <span className="grid size-9 place-items-center rounded-xl bg-tile-muted text-matcha [&>svg]:size-[18px]">
-        {icon}
-      </span>
-      <div>
-        <RollingNumber value={value} className="font-mono text-3xl font-semibold" />
-        <div className="text-xs text-ink-faint">{label}</div>
-      </div>
+      <div className="text-sm text-ink-soft">{label}</div>
+      <RollingNumber value={value} className="font-mono text-3xl font-medium" />
     </Tile>
   );
 }
@@ -89,9 +83,6 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
     <Stagger className="grid h-full min-h-[520px] grid-cols-6 grid-rows-[minmax(132px,auto)_auto_minmax(160px,1fr)] gap-3">
       {/* Hero */}
       <Tile className="relative col-span-2 row-span-2 justify-between overflow-hidden border-transparent! bg-matcha-strong! text-on-matcha">
-        {connected ? (
-          <BorderBeam size={140} duration={7} borderWidth={2} colorFrom="#f4f9ee" colorTo="#c0dd97" />
-        ) : null}
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 text-sm opacity-90">
@@ -120,10 +111,10 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         </div>
       </Tile>
 
-      <Stat icon={<MessageCircle />} label={m.totalMessages} value={stats.totalMessages} />
-      <Stat icon={<Users />} label={m.chatters} value={stats.uniqueChatters} />
-      <Stat icon={<Sparkles />} label={m.notices} value={stats.noticeCount} />
-      <Stat icon={<Eraser />} label={m.deleted} value={stats.deletedCount} />
+      <Stat label={m.totalMessages} value={stats.totalMessages} />
+      <Stat label={m.chatters} value={stats.uniqueChatters} />
+      <Stat label={m.notices} value={stats.noticeCount} />
+      <Stat label={m.deleted} value={stats.deletedCount} />
 
       {/* Outputs quick controls */}
       <Tile
@@ -136,7 +127,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
           </Button>
         }
       >
-        <div className="flex items-center justify-between rounded-2xl bg-tile-muted px-4 py-2.5">
+        <div className="flex items-center justify-between rounded-xl bg-tile-muted px-4 py-2.5">
           <div>
             <div className="text-sm font-medium">{m.desktopOverlay}</div>
             <div className="text-xs text-ink-faint">{state.overlay.enabled ? m.overlayShown : m.overlayHidden}</div>
@@ -160,7 +151,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
       >
         <dl className="grid grid-cols-2 gap-2">
           {(['overlay', 'embed'] as const).map((target) => (
-            <div key={target} className="rounded-2xl bg-tile-muted px-4 py-3">
+            <div key={target} className="rounded-xl bg-tile-muted px-4 py-3">
               <dt className="text-xs text-ink-faint">{target === 'overlay' ? m.desktopOverlay : 'OBS'}</dt>
               <dd className="mt-0.5 truncate font-medium">{themeName(target)}</dd>
             </div>
@@ -195,7 +186,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         )}
       </Tile>
 
-      <Tile title={m.recentActivity} icon={<Sparkles />} className="col-span-2 min-h-0 overflow-hidden">
+      <Tile title={m.recentActivity} icon={<Gift />} className="col-span-2 min-h-0 overflow-hidden">
         {recentNotices.length === 0 ? (
           <EmptyState mood="happy" title={m.noActivity} hint={m.noActivityHint} />
         ) : (

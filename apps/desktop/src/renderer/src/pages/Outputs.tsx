@@ -41,7 +41,7 @@ export function OutputsPage({ state }: { state: AppState }) {
           action={<Toggle checked={enabled} label={m.desktopOverlay} onChange={(v) => overlay.setEnabled(v)} />}
         >
           <p className="text-sm text-ink-soft">{m.overlayIntro}</p>
-          <div className="my-4 h-64 overflow-hidden rounded-2xl">
+          <div className="my-4 h-64 overflow-hidden rounded-xl">
             <LiveThemePreview theme={themeOf(state, 'overlay')} />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -80,7 +80,7 @@ export function OutputsPage({ state }: { state: AppState }) {
 
         <Tile title={m.obsSource} icon={<Tv />} action={<Badge tone="matcha">{m.autoTransparent}</Badge>}>
           <p className="text-sm text-ink-soft">{m.obsIntro}</p>
-          <div className="my-4 h-64 overflow-hidden rounded-2xl">
+          <div className="my-4 h-64 overflow-hidden rounded-xl">
             <LiveThemePreview theme={themeOf(state, 'embed')} backdrop="checker" />
           </div>
           <ThemeSelect state={state} target="embed" />

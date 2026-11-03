@@ -9,7 +9,7 @@ import {
   MessageSquare,
   Shapes,
   SlidersHorizontal,
-  Sparkles,
+  Wand,
   Type,
   UserRound,
   UsersRound,
@@ -79,7 +79,7 @@ export const SECTIONS: SectionDefinition[] = [
     styledOnly: true,
     selector: '.chatto-message[data-highlight~="after-silence"]',
   },
-  { id: 'motion', icon: <Sparkles />, styledOnly: true },
+  { id: 'motion', icon: <Wand />, styledOnly: true },
   { id: 'behavior', icon: <SlidersHorizontal /> },
   { id: 'css', icon: <Braces /> },
 ];

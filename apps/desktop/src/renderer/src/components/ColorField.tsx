@@ -60,13 +60,13 @@ export function ColorField({
           <button
             type="button"
             aria-label={m.openPicker(label)}
-            className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-line transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-matcha focus-visible:outline-none"
+            className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-line transition-colors hover:border-ink-faint focus-visible:ring-2 focus-visible:ring-matcha focus-visible:outline-none"
             style={{ background: 'repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 10px 10px' }}
           >
             <span className="absolute inset-0" style={{ background: value }} />
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" side="left" className="w-64 rounded-2xl border-line bg-tile p-3">
+        <PopoverContent align="start" side="left" className="w-64 rounded-xl border-line bg-tile p-3">
           <ColorPicker
             className="gap-3"
             value={parsed ? value : '#000000'}

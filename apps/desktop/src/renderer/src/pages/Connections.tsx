@@ -1,5 +1,5 @@
 import { ExternalLink, KeyRound, LogOut, Plug, PlugZap } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { useMessages } from '../i18n';
 import { twitch, twitchStatus } from '../services/twitch';
@@ -16,13 +16,32 @@ import {
   Tile,
 } from '../components/kit';
 
-function PlatformMark({ color, children }: { color: string; children: ReactNode }) {
+/** Platform glyphs from Simple Icons (CC0 1.0), drawn on a 24×24 grid. */
+const PLATFORMS = {
+  twitch: {
+    color: '#9146FF',
+    ink: '#ffffff',
+    path: 'M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z',
+  },
+  youtube: {
+    color: '#FF0000',
+    ink: '#ffffff',
+    path: 'M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z',
+  },
+  kick: {
+    color: '#53FC19',
+    ink: '#0b0e0f',
+    path: 'M1.333 0h8v5.333H12V2.667h2.667V0h8v8H20v2.667h-2.667v2.666H20V16h2.667v8h-8v-2.667H12v-2.666H9.333V24h-8Z',
+  },
+} as const;
+
+function PlatformMark({ platform }: { platform: keyof typeof PLATFORMS }) {
+  const { color, ink, path } = PLATFORMS[platform];
   return (
-    <span
-      className="grid size-10 place-items-center rounded-2xl text-sm font-bold text-white"
-      style={{ background: color }}
-    >
-      {children}
+    <span className="grid size-10 shrink-0 place-items-center rounded-xl" style={{ background: color }}>
+      <svg viewBox="0 0 24 24" className="size-5" fill={ink} aria-hidden="true">
+        <path d={path} />
+      </svg>
     </span>
   );
 }
@@ -39,7 +58,7 @@ function TwitchCard({ state }: { state: AppState }) {
   return (
     <Tile className="col-span-2 gap-5">
       <header className="flex items-center gap-3">
-        <PlatformMark color="#9146FF">Tw</PlatformMark>
+        <PlatformMark platform="twitch" />
         <div className="flex-1">
           <h2 className="font-semibold">Twitch</h2>
           <p className="flex items-center gap-2 text-xs text-ink-soft">
@@ -53,7 +72,7 @@ function TwitchCard({ state }: { state: AppState }) {
 
       <div className="grid grid-cols-3 gap-4">
         {/* Step 1: client id */}
-        <section className="flex flex-col gap-3 rounded-2xl bg-tile-muted p-4">
+        <section className="flex flex-col gap-3 rounded-xl bg-tile-muted p-4">
           <h3 className="flex items-center gap-2 text-sm font-medium">
             <KeyRound className="size-4 text-matcha" /> {m.stepApp}
           </h3>
@@ -98,7 +117,7 @@ function TwitchCard({ state }: { state: AppState }) {
         </section>
 
         {/* Step 2: account */}
-        <section className="flex flex-col gap-3 rounded-2xl bg-tile-muted p-4">
+        <section className="flex flex-col gap-3 rounded-xl bg-tile-muted p-4">
           <h3 className="flex items-center gap-2 text-sm font-medium">
             <Plug className="size-4 text-matcha" /> {m.stepAccount}
           </h3>
@@ -151,7 +170,7 @@ function TwitchCard({ state }: { state: AppState }) {
         </section>
 
         {/* Step 3: channel */}
-        <section className="flex flex-col gap-3 rounded-2xl bg-tile-muted p-4">
+        <section className="flex flex-col gap-3 rounded-xl bg-tile-muted p-4">
           <h3 className="flex items-center gap-2 text-sm font-medium">
             <PlugZap className="size-4 text-matcha" /> {m.stepChannel}
           </h3>
@@ -198,11 +217,11 @@ function TwitchCard({ state }: { state: AppState }) {
   );
 }
 
-function ComingSoon({ name, color, mark }: { name: string; color: string; mark: string }) {
+function ComingSoon({ name, platform }: { name: string; platform: keyof typeof PLATFORMS }) {
   const m = useMessages().connections;
   return (
     <Tile className="flex-row! items-center gap-3 opacity-70">
-      <PlatformMark color={color}>{mark}</PlatformMark>
+      <PlatformMark platform={platform} />
       <div className="flex-1">
         <h2 className="font-semibold">{name}</h2>
         <p className="text-xs text-ink-faint">{m.comingSoon}</p>
@@ -219,8 +238,8 @@ export function ConnectionsPage({ state }: { state: AppState }) {
       <PageHeader title={m.title} description={m.description} />
       <Stagger className="grid grid-cols-2 gap-3">
         <TwitchCard state={state} />
-        <ComingSoon name="YouTube" color="#E62117" mark="YT" />
-        <ComingSoon name="Kick" color="#2D9D3A" mark="K" />
+        <ComingSoon name="YouTube" platform="youtube" />
+        <ComingSoon name="Kick" platform="kick" />
       </Stagger>
     </div>
   );
