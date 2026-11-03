@@ -1,5 +1,12 @@
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
+
+// Component tests are written against Traditional Chinese text. Components
+// rendered without app state fall back to DEFAULT_LOCALE (English), so pin it.
+vi.mock('@chatto/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@chatto/core')>()),
+  DEFAULT_LOCALE: 'zh-TW',
+}));
 
 // Browser APIs jsdom does not implement but Radix, Motion and the app touch.
 if (!window.matchMedia) {

@@ -5,7 +5,7 @@
  */
 export const LOCALES = ['zh-TW', 'en'] as const;
 export type Locale = (typeof LOCALES)[number];
-export const DEFAULT_LOCALE: Locale = 'zh-TW';
+export const DEFAULT_LOCALE: Locale = 'en';
 
 /** Names of each language in itself, for language pickers. */
 export const LOCALE_NAMES: Record<Locale, string> = { 'zh-TW': '繁體中文', en: 'English' };

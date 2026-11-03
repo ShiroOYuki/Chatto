@@ -47,14 +47,14 @@ describe('theme packages', () => {
   });
 
   it('rejects files that are not packages', () => {
-    expect(() => unpackTheme(strToU8('not a zip'))).toThrow('不是有效的主題包');
+    expect(() => unpackTheme(strToU8('not a zip'))).toThrow('Not a valid theme package');
     expect(() => unpackTheme(zipSync({ 'other.json': strToU8('{}') }))).toThrow('theme.json');
     expect(() => unpackTheme(zipSync({ 'theme.json': strToU8('{oops') }))).toThrow('JSON');
-    expect(() => unpackTheme(strToU8('not a zip'), mainMessages('en'))).toThrow('Not a valid theme package');
+    expect(() => unpackTheme(strToU8('not a zip'), mainMessages('zh-TW'))).toThrow('不是有效的主題包');
   });
 
   it('refuses oversized entries', () => {
     const big = zipSync({ 'theme.json': strToU8('{}'), [`assets/${A}`]: new Uint8Array(MAX_ASSET_BYTES + 1) });
-    expect(() => unpackTheme(big)).toThrow('不是有效的主題包');
+    expect(() => unpackTheme(big)).toThrow('Not a valid theme package');
   });
 });

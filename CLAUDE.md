@@ -76,7 +76,7 @@ docs/               architecture.md、message-format.md、theming.md
 
 ## 多語系
 
-- 支援繁體中文（`zh-TW`，預設）與英文（`en`），清單在 `@chatto/core` 的 `LOCALES`。兩個設定：`prefs.locale`（介面：控制台、系統匣、對話框、main 丟給畫面的錯誤）與 `prefs.chatLocale`（`auto` 跟隨介面，或指定語言：桌面 Overlay、OBS、事件 Overlay 的事件文字）。聊天室語言由 WebSocket 的 `hello.locale` 與 `locale` frame 傳給 viewer。
+- 支援繁體中文（`zh-TW`）與英文（`en`，預設），首次啟動依系統語言：中文系統用繁中，其他用英文，清單在 `@chatto/core` 的 `LOCALES`。兩個設定：`prefs.locale`（介面：控制台、系統匣、對話框、main 丟給畫面的錯誤）與 `prefs.chatLocale`（`auto` 跟隨介面，或指定語言：桌面 Overlay、OBS、事件 Overlay 的事件文字）。聊天室語言由 WebSocket 的 `hello.locale` 與 `locale` frame 傳給 viewer。
 - **不得在元件裡寫死介面文字。** 控制台文字放在 `apps/desktop/src/renderer/src/i18n/messages/<namespace>.ts`，用 `defineMessages()` 同時寫繁中與英文（英文的結構由型別檢查必須和繁中一致），元件用 `useMessages().<namespace>`；main process 的文字在 `apps/desktop/src/main/messages.ts`。新增 namespace 要在 `i18n/index.ts` 註冊。
 - 主題名稱用 `useThemeName()`；控制台裡的聊天預覽要傳 `locale={useChatLocale()}`，主題經過 `useOutputTheme()`，才會和 OBS 看到的一樣。
 - 事件文字不翻譯平台原文，而是用 `ChatNotice.meta` 的結構化欄位套模板（`@chatto/chat-ui` 的 `eventText.ts`、`EVENT_CATALOG` 的 `text`／`variables`）；組不出來時顯示 `systemText`。新增平台事件時要寫兩種語言的模板，provider 要把需要的欄位放進 `meta`，並更新 `docs/message-format.md`「事件欄位」。主題的 `eventText` 可覆寫模板。

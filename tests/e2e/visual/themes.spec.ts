@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 for (const theme of PRESET_THEMES) {
   test(`theme ${theme.id}`, async ({ page }) => {
     // `backdrop` paints a checkerboard behind the transparent page, like the editor preview.
-    await page.goto(`${VIEWER_URL}/embed?specimen&backdrop&theme=${theme.id}`);
+    await page.goto(`${VIEWER_URL}/embed?specimen&backdrop&theme=${theme.id}&lang=zh-TW`);
     await expect(page.locator(`.chatto-root[data-theme-id="${theme.id}"]`)).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await expect(page).toHaveScreenshot(`${theme.id}.png`, { fullPage: true });

@@ -7,7 +7,7 @@ describe('locales', () => {
     expect(localeFromTag('zh-Hant-HK')).toBe('zh-TW');
     expect(localeFromTag('en-US')).toBe('en');
     expect(localeFromTag('ja')).toBe('en');
-    expect(localeFromTag(undefined)).toBe('zh-TW');
+    expect(localeFromTag(undefined)).toBe('en');
   });
 
   it('follows the interface language unless the chat language is fixed', () => {

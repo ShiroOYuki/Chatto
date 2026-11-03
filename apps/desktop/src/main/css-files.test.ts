@@ -47,8 +47,8 @@ describe('workspace files', () => {
   });
 
   it('writes the reference in the interface language', () => {
-    expect(referenceCss()).toContain('/* CSS 變數 */');
-    const css = referenceCss('en');
+    expect(referenceCss('zh-TW')).toContain('/* CSS 變數 */');
+    const css = referenceCss();
     expect(css).toContain('/* CSS variables */');
     expect(css).not.toContain('[object Object]');
     expect(css).not.toMatch(/[\u4e00-\u9fff]/);

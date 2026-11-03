@@ -36,9 +36,9 @@ describe('ThemeAssets', () => {
   });
 
   it('reports errors in the interface language', () => {
-    expect(() => store().add(bytes('<svg/>'))).toThrow('只支援');
-    const english = new ThemeAssets(mkdtempSync(join(tmpdir(), 'chatto-assets-')), () => mainMessages('en'));
-    expect(() => english.add(bytes('<svg/>'))).toThrow('Only PNG, WebP and GIF images are supported');
+    expect(() => store().add(bytes('<svg/>'))).toThrow('Only PNG, WebP and GIF images are supported');
+    const chinese = new ThemeAssets(mkdtempSync(join(tmpdir(), 'chatto-assets-')), () => mainMessages('zh-TW'));
+    expect(() => chinese.add(bytes('<svg/>'))).toThrow('只支援');
   });
 
   it('only resolves asset names inside its folder', () => {
