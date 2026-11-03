@@ -1,13 +1,13 @@
 import { ALERT_CATEGORIES, EVENT_CATALOG, platformOnlyEvents } from '@chatto/chat-ui';
 import { SILENCE_THRESHOLD, type AlertSettings } from '@chatto/core';
-import { Info, MessageCircleMore, Move, PartyPopper, RotateCcw } from 'lucide-react';
+import { ArrowRight, Info, MessageCircleMore, PartyPopper } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../../shared/ipc';
 import { alerts } from '../../services/alerts';
-import { themes } from '../../services/themes';
+import type { PageId } from '../../components/Sidebar';
 import { Stagger } from '../../components/motion';
-import { Button, Field, Hint, PageHeader, Select, Tile, Toggle } from '../../components/kit';
-import { useLocale, useMessages, useThemeName } from '../../i18n';
+import { Button, Field, PageHeader, Tile, Toggle } from '../../components/kit';
+import { useLocale, useMessages } from '../../i18n';
 import { ruleFor, withEvents, withRule, withSilence } from './draft';
 import { NumberInput } from './NumberInput';
 import { SoundPicker } from './SoundPicker';
@@ -26,15 +26,15 @@ function Row({ title, hint, children }: { title: ReactNode; hint?: ReactNode; ch
 
 /**
  * Streamer-only reminders: a nudge when chat speaks up after a quiet spell,
- * and the event alert overlay with per-event rules and sounds.
+ * and the event alert overlay with per-event rules and sounds. The overlay's
+ * switch, theme and position live on the Outputs page with the other outputs.
  */
-export function AlertsPage({ state }: { state: AppState }) {
+export function AlertsPage({ state, onNavigate }: { state: AppState; onNavigate: (page: PageId) => void }) {
   const settings = state.alerts;
   const { port } = state.server;
   const save = (next: AlertSettings) => alerts.setSettings(next);
-  const { enabled: overlayOn, editing } = state.alertsOverlay;
+  const overlayOn = state.alertsOverlay.enabled;
   const m = useMessages().alerts;
-  const themeName = useThemeName();
   const locale = useLocale();
 
   return (
@@ -93,45 +93,19 @@ export function AlertsPage({ state }: { state: AppState }) {
         <Tile
           title={m.overlay.title}
           icon={<PartyPopper />}
-          action={<Toggle checked={overlayOn} label={m.overlay.title} onChange={(v) => alerts.setOverlayEnabled(v)} />}
+          action={
+            <Button size="sm" variant="ghost" onClick={() => onNavigate('outputs')}>
+              {m.overlay.outputSettings} <ArrowRight />
+            </Button>
+          }
         >
           <p className="mb-2 text-sm text-ink-soft">{m.overlay.intro}</p>
-          <div className="grid grid-cols-2 gap-3 pb-1">
-            <Field label={m.overlay.theme}>
-              <Select
-                value={state.selectedThemes.alerts}
-                options={state.themes.map((theme) => ({ value: theme.id, label: themeName(theme) }))}
-                onChange={(id) => themes.select('alerts', id)}
-              />
-            </Field>
-            <Field label={m.overlay.bounds}>
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1"
-                  variant={editing ? 'primary' : 'secondary'}
-                  disabled={!overlayOn}
-                  onClick={() => alerts.setOverlayEditing(!editing)}
-                >
-                  <Move /> {editing ? m.overlay.doneAdjusting : m.overlay.adjust}
-                </Button>
-                <Hint label={m.overlay.resetBounds}>
-                  <Button
-                    variant="ghost"
-                    disabled={!overlayOn}
-                    aria-label={m.overlay.resetBounds}
-                    onClick={() => alerts.resetOverlayBounds()}
-                  >
-                    <RotateCcw />
-                  </Button>
-                </Hint>
-              </div>
-            </Field>
-          </div>
-          {editing ? (
-            <p className="mt-2 rounded-xl bg-matcha-soft/40 px-3 py-2 text-xs text-matcha-strong">
-              {m.overlay.editingHint}
+          {overlayOn ? null : (
+            <p className="mb-1 flex gap-2 text-xs text-ink-faint">
+              <Info className="size-4 shrink-0" />
+              {m.overlay.off}
             </p>
-          ) : null}
+          )}
           <Row title={m.overlay.duration} hint={m.overlay.durationHint}>
             <NumberInput
               label={m.overlay.duration}

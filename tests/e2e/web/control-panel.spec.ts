@@ -219,6 +219,10 @@ test('alert settings save from the 提醒 page', async ({ panel, page }) => {
   await expect(minimum).toHaveValue('20');
   await expect(page.locator('[data-alert-rule="twitch:highlighted"]')).toBeVisible();
 
+  // The overlay itself is switched on with the other outputs.
+  await expect(page.getByRole('switch', { name: '事件 Overlay' })).toHaveCount(0);
+  await page.getByRole('button', { name: '開關與位置' }).click();
+  await expect(page.getByRole('heading', { name: '輸出', level: 1 })).toBeVisible();
   await page.getByRole('switch', { name: '事件 Overlay' }).click();
   await expect(page.getByRole('button', { name: '調整' }).last()).toBeEnabled();
 });

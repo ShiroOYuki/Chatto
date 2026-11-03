@@ -1,6 +1,6 @@
 import { defineMessages } from '../define';
 
-/** The outputs page: desktop overlay and OBS browser source. */
+/** The outputs page: desktop overlay, OBS browser source and the alert overlay. */
 export default defineMessages({
   'zh-TW': {
     title: '輸出',
@@ -24,6 +24,11 @@ export default defineMessages({
       '貼上上面的網址，建議寬 420、高 600',
       '勾選「場景啟用時重新整理瀏覽器」更穩定',
     ],
+    alertsOverlay: '事件 Overlay',
+    alertsIntro: '訂閱、小奇點、揪團等事件在桌面右上角跳出卡片，只有你看得到',
+    resetAlertsPosition: '移回右上角',
+    alertsAdjustingHint: '直接拖曳事件 Overlay 移動位置、拖曳邊緣調整大小，完成後按「完成調整」',
+    alertRules: '提醒規則',
   },
   en: {
     title: 'Outputs',
@@ -48,5 +53,11 @@ export default defineMessages({
       'Paste the URL above. 420 wide by 600 tall works well.',
       'Check “Refresh browser when scene becomes active” for more stability',
     ],
+    alertsOverlay: 'Alert overlay',
+    alertsIntro: 'Subs, bits, raids and other events pop up as cards in the top-right corner, just for you',
+    resetAlertsPosition: 'Move back to top right',
+    alertsAdjustingHint:
+      'Drag the alert overlay to move it and drag its edges to resize. Click “Finish adjusting” when you’re done.',
+    alertRules: 'Alert rules',
   },
 });

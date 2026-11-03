@@ -29,9 +29,9 @@ function Page({ id, state, onNavigate }: { id: PageId; state: AppState; onNaviga
     case 'themes':
       return <ThemesPage state={state} />;
     case 'outputs':
-      return <OutputsPage state={state} />;
+      return <OutputsPage state={state} onNavigate={onNavigate} />;
     case 'alerts':
-      return <AlertsPage state={state} />;
+      return <AlertsPage state={state} onNavigate={onNavigate} />;
     case 'connections':
       return <ConnectionsPage state={state} />;
     case 'settings':
