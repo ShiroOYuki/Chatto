@@ -283,12 +283,18 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
           variables: ['user', 'donation', 'charity'],
         },
       ),
-      // Twitch documents no structured fields for watch streaks yet; the platform's text shows as is.
       twitch(
         'watch-streak',
         L('觀看連勝', 'Watch streak'),
         L('觀眾分享連續觀看紀錄', 'A viewer shares their watch streak'),
         'notice',
+        {
+          text: L(
+            '{user} 已連續觀看 {watchStreak} 場直播',
+            '{user} watched {watchStreak} consecutive {watchStreak|stream|streams} and sparked a watch streak!',
+          ),
+          variables: ['user', 'watchStreak', 'channelPoints'],
+        },
       ),
     ],
   },

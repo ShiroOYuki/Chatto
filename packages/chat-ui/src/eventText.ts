@@ -87,6 +87,8 @@ export const TEMPLATE_VARIABLES: Record<string, Localized> = {
   bitsTier: { 'zh-TW': '解鎖的小奇點徽章等級', en: 'The bits badge tier unlocked' },
   charity: { 'zh-TW': '慈善單位名稱', en: 'The charity' },
   donation: { 'zh-TW': '捐款金額（含貨幣）', en: 'The amount donated, with currency' },
+  watchStreak: { 'zh-TW': '連續觀看的直播場數', en: 'Streams watched in a row' },
+  channelPoints: { 'zh-TW': '觀看連勝獲得的忠誠點數', en: 'Channel Points awarded for the watch streak' },
 };
 
 const ANONYMOUS: Record<Locale, string> = { 'zh-TW': '匿名觀眾', en: 'An anonymous user' };
@@ -121,6 +123,8 @@ export function noticeVariables(notice: ChatNotice, locale: Locale): TemplateVar
     raider: text(meta.raider) ?? notice.author?.displayName,
     bitsTier: count(meta.bitsTier),
     charity: text(meta.charity),
+    watchStreak: count(meta.watchStreak),
+    channelPoints: count(meta.channelPoints),
     donation:
       donation === undefined
         ? undefined

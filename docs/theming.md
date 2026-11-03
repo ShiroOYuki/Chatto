@@ -97,7 +97,7 @@
   - `{name|單數|複數}` 依變數的數字選字，不輸出數字本身，例如 `{months} {months|month|months}`。
   - `[ … ]` 裡的變數都有值才顯示，例如 `[，連續 {streak} 個月]`。
   - 方括號外的變數沒有值時，整個模板視為失敗。
-- 可用變數：`user`（發出事件的人；匿名時為「匿名觀眾」）、`tier`（`Tier 1`、`Prime`）、`months`、`streak`、`duration`、`recipient`、`gifter`、`count`、`totalGifts`、`viewers`、`raider`、`bitsTier`、`charity`、`donation`（含貨幣）；事件訊息另有 `amount`（小奇點數量）。各事件能用哪些見 `EVENT_CATALOG` 的 `variables`，資料來源見 `docs/message-format.md`「事件欄位」。
+- 可用變數：`user`（發出事件的人；匿名時為「匿名觀眾」）、`tier`（`Tier 1`、`Prime`）、`months`、`streak`、`duration`、`recipient`、`gifter`、`count`、`totalGifts`、`viewers`、`raider`、`bitsTier`、`charity`、`donation`（含貨幣）、`watchStreak`（連續觀看場數）、`channelPoints`（觀看連勝獲得的忠誠點數）；事件訊息另有 `amount`（小奇點數量）。各事件能用哪些見 `EVENT_CATALOG` 的 `variables`，資料來源見 `docs/message-format.md`「事件欄位」。
 - 內建主題的名稱與預設文字（`attention.label`「新留言」）跟著語言（`localizeTheme()`）；自訂主題裡的文字照寫的顯示。複製內建主題時，複製當下語言的文字。
 
 ## 沉寂後新留言與事件 Overlay

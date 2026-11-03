@@ -99,6 +99,7 @@ export interface TwitchNoticePayloads {
   raid: { user_name?: string; viewer_count?: number };
   bits_badge_tier: { tier?: number };
   charity_donation: { charity_name?: string; amount?: { value?: number; decimal_places?: number; currency?: string } };
+  watch_streak: { streak_count?: number; channel_points_awarded?: number };
 }
 
 export type BadgeLookup = (key: string) => ChatBadge | undefined;
@@ -352,6 +353,12 @@ export function noticeMeta(event: TwitchNotificationEvent): ChatNotice['meta'] {
       const amount = donation.amount;
       if (amount?.value !== undefined) set('donation', amount.value / 10 ** (amount.decimal_places ?? 0));
       set('currency', amount?.currency);
+      break;
+    }
+    case 'watch_streak': {
+      const streak = payload as TwitchNoticePayloads['watch_streak'];
+      set('watchStreak', streak.streak_count);
+      set('channelPoints', streak.channel_points_awarded);
       break;
     }
   }

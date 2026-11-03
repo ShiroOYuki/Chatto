@@ -47,6 +47,12 @@ describe('event text templates', () => {
     expect(noticeText(hidden, 'en')).toBe("Mochi_Fan resubscribed at Prime. They've subscribed for 1 month!");
   });
 
+  it('fills the watch streak from its stream count', () => {
+    const streak = notice('watch-streak', { watchStreak: 100, channelPoints: 350 });
+    expect(noticeText(streak, 'zh-TW')).toBe('Mochi_Fan 已連續觀看 100 場直播');
+    expect(noticeText(streak, 'en')).toBe('Mochi_Fan watched 100 consecutive streams and sparked a watch streak!');
+  });
+
   it("falls back to the platform's text when fields are missing or the event has no template", () => {
     expect(noticeText(notice('resub', {}), 'zh-TW')).toBe('original text');
     expect(noticeText(notice('watch-streak', {}), 'zh-TW')).toBe('original text');

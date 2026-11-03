@@ -56,6 +56,8 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
 | `raider`                          | `string`                     | 揪團                               | 揪團的實況主                           |
 | `bitsTier`                        | `number`                     | 小奇點徽章                         | 解鎖的徽章等級                         |
 | `charity`、`donation`、`currency` | `string`、`number`、`string` | 慈善捐款                           | 慈善單位、金額（已換算小數）、貨幣代碼 |
+| `watchStreak`                     | `number`                     | 觀看連勝                           | 連續觀看的直播場數                     |
+| `channelPoints`                   | `number`                     | 觀看連勝                           | 這次里程碑獲得的忠誠點數               |
 
 ### 同一批事件（`ChatNotice.meta`）
 
@@ -122,11 +124,13 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
 
 事件類型：附帶小奇點的訊息 → `cheer`；`message_type: channel_points_highlighted` → `highlighted`；通知的 `notice_type` 轉成 kebab-case 並去掉 `shared_chat_` 前綴，`sub_gift` → `sub-gift`、`community_sub_gift` → `community-gift`（`twitchNoticeEventType()`）。
 
-事件欄位由 `noticeMeta()` 取出。payload 放在和 `notice_type` 同名的鍵下（共享聊天室是 `shared_chat_<type>`）：`sub_tier`（`1000` 等）→ `tier`、`is_prime` → `tier: 'prime'`、`resub.cumulative_months` → `months`、`resub.streak_months` → `streakMonths`、`duration_months` → `durationMonths`、`sub_gift.recipient_user_name` → `recipient`、`cumulative_total` → `totalGifts`、`gifter_user_name`／`gifter_is_anonymous` → `gifter`／`gifterAnonymous`、`raid.user_name`／`viewer_count` → `raider`／`viewers`、`bits_badge_tier.tier` → `bitsTier`、`charity_donation` → `charity`、`donation`、`currency`。觀看連勝（`watch_streak`）還沒有文件化的欄位，顯示平台原文。
+事件欄位由 `noticeMeta()` 取出。payload 放在和 `notice_type` 同名的鍵下（共享聊天室是 `shared_chat_<type>`）：`sub_tier`（`1000` 等）→ `tier`、`is_prime` → `tier: 'prime'`、`resub.cumulative_months` → `months`、`resub.streak_months` → `streakMonths`、`duration_months` → `durationMonths`、`sub_gift.recipient_user_name` → `recipient`、`cumulative_total` → `totalGifts`、`gifter_user_name`／`gifter_is_anonymous` → `gifter`／`gifterAnonymous`、`raid.user_name`／`viewer_count` → `raider`／`viewers`、`bits_badge_tier.tier` → `bitsTier`、`charity_donation` → `charity`、`donation`、`currency`、`watch_streak.streak_count`／`channel_points_awarded` → `watchStreak`／`channelPoints`。
 
 同一批贈訂：`community_sub_gift.id` → `meta.groupId`＋`meta.groupLead`；`sub_gift.community_gift_id` → `meta.groupId`；`sub_gift.recipient_user_name` → `meta.recipient`。
 
 ## 變更紀錄
+
+- **v1.5**（2026-11-04）：`ChatNotice.meta` 新增觀看連勝的 `watchStreak`、`channelPoints`（非破壞性）。
 
 - **v1.4**（2026-11-02）：`ChatNotice.meta` 新增事件欄位（`tier`、`months`、`streakMonths` 等，見上表）；協定的 `hello` 加上 `locale`，新增 `locale` frame；新增 Twitch 事件 `gift-paid-upgrade`、`prime-paid-upgrade`、`pay-it-forward`、`unraid`、`bits-badge-tier`、`charity-donation`（非破壞性）。
 

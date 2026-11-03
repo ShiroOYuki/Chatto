@@ -85,6 +85,7 @@ export const EVENT_SAMPLES: Record<string, () => ChatEvent> = {
     notice('watch-streak', 'watch-streak', 'okome_rice 已連續觀看 10 場直播', {
       author: mockUser(3),
       fragments: [{ type: 'text', text: '全勤！' }],
+      meta: { watchStreak: 10, channelPoints: 350 },
     }),
 };
 

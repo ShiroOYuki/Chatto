@@ -1,4 +1,4 @@
-import { findEvent, PRESET_THEMES } from '@chatto/chat-ui';
+import { findEvent, PRESET_THEMES, type EventDefinition } from '@chatto/chat-ui';
 import type { ChatTheme } from '@chatto/core';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -9,11 +9,11 @@ import { EventPanel } from './EventPanels';
 
 const initial: ChatTheme = { ...structuredClone(PRESET_THEMES[0]!), id: 'custom-a', builtIn: false, eventText: {} };
 
-function Harness({ eventKey }: { eventKey: string }) {
+function Harness({ eventKey, event = findEvent(eventKey)! }: { eventKey: string; event?: EventDefinition }) {
   const [draft, setDraft] = useState<ChatTheme>(initial);
   return (
     <TooltipProvider>
-      <EventPanel draft={draft} setDraft={setDraft} event={findEvent(eventKey)!} />
+      <EventPanel draft={draft} setDraft={setDraft} event={event} />
       <output data-testid="text">{JSON.stringify(draft.eventText)}</output>
     </TooltipProvider>
   );
@@ -40,7 +40,9 @@ describe('event text field', () => {
   });
 
   it('says the platform text is used for events without a built-in template', () => {
-    render(<Harness eventKey="twitch:watch-streak" />);
+    // Every catalogued event has a template today, so strip one to cover a future platform's event.
+    const event = { ...findEvent('twitch:watch-streak')!, text: undefined };
+    render(<Harness eventKey="twitch:watch-streak" event={event} />);
     expect((screen.getByRole('textbox', { name: '文字' }) as HTMLInputElement).placeholder).toBe('使用平台原文');
   });
 

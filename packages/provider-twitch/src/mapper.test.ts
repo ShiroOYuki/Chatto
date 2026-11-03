@@ -189,6 +189,10 @@ describe('twitch mapper', () => {
         charity_donation: { charity_name: '茶園基金會', amount: { value: 1250, decimal_places: 2, currency: 'USD' } },
       }),
     ).toMatchObject({ charity: '茶園基金會', donation: 12.5, currency: 'USD' });
+    expect(meta('watch_streak', { watch_streak: { streak_count: 100, channel_points_awarded: 350 } })).toMatchObject({
+      watchStreak: 100,
+      channelPoints: 350,
+    });
   });
 
   it('maps moderation events', () => {
