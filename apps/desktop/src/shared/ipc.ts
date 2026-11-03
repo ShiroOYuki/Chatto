@@ -117,7 +117,29 @@ export interface ChattoApi {
   onCssFileChanged(listener: (change: CssFileChange) => void): () => void;
 
   openExternal(url: string): Promise<void>;
+
+  /** The bundled OBS plugin ("Chatto Chat" source) in OBS's plugin folder. */
+  getObsPluginStatus(): Promise<ObsPluginStatus>;
+  installObsPlugin(): Promise<ObsPluginResult>;
+  uninstallObsPlugin(): Promise<ObsPluginResult>;
 }
+
+/**
+ * - `unavailable`: this build ships no plugin (a dev build that did not build it).
+ * - `outdated`: installed, but not the files this Chatto version ships.
+ */
+export type ObsPluginState = 'not-installed' | 'installed' | 'outdated' | 'unavailable';
+
+export interface ObsPluginStatus {
+  state: ObsPluginState;
+  /** OBS has been installed or run on this computer. */
+  obsFound: boolean;
+}
+
+export type ObsPluginResult =
+  | { ok: true; status: ObsPluginStatus }
+  /** `obs-running`: OBS holds the plugin open, so it must be closed first. */
+  | { ok: false; reason: 'obs-running' | 'failed'; status: ObsPluginStatus };
 
 /** IPC channel names, kept in one place so main and preload cannot drift. */
 export const IPC = {
@@ -152,4 +174,7 @@ export const IPC = {
   openCssFile: 'css-file:open',
   cssFileChanged: 'css-file:changed',
   openExternal: 'app:open-external',
+  getObsPluginStatus: 'obs-plugin:status',
+  installObsPlugin: 'obs-plugin:install',
+  uninstallObsPlugin: 'obs-plugin:uninstall',
 } as const;

@@ -8,6 +8,7 @@ import { themes } from '../services/themes';
 import type { PageId } from '../components/Sidebar';
 import { Stagger } from '../components/motion';
 import { LiveThemePreview } from '../components/ThemePreview';
+import { ObsPluginPanel } from './outputs/ObsPluginPanel';
 import { Badge, Button, CopyField, Field, Hint, PageHeader, Select, Tile, Toggle } from '../components/kit';
 
 function ThemeSelect({ state, target }: { state: AppState; target: ViewerTarget }) {
@@ -145,7 +146,11 @@ export function OutputsPage({ state, onNavigate }: { state: AppState; onNavigate
             <LiveThemePreview theme={themeOf(state, 'embed')} backdrop="checker" />
           </div>
           <ThemeSelect state={state} target="embed" />
-          <div className="mt-3">
+          <div className="mt-4">
+            <ObsPluginPanel />
+          </div>
+          <h3 className="mt-5 text-sm font-medium text-ink-soft">{m.manualSource}</h3>
+          <div className="mt-2">
             <Field label={m.sourceUrl}>
               <CopyField label={m.obsSource} value={state.server.embedUrl} />
             </Field>

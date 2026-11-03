@@ -13,6 +13,12 @@ extraResources:
     to: viewer
   - from: resources
     to: resources
+  # The OBS plugin (built by `npm run build:obs-plugin`), installed into OBS from the Outputs page or the installer.
+  - from: ../../obs-plugin/release/obs-chatto
+    to: obs-plugin/obs-chatto
+    filter:
+      - '**/*'
+      - '!**/*.pdb'
 win:
   target:
     - nsis

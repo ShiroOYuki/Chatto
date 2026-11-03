@@ -1,6 +1,6 @@
 import { createMockMessage, createMockNotice, PRESET_THEMES } from '@chatto/chat-ui';
 import { defaultAlertSettings, type ChatEvent, type SoundSetting } from '@chatto/core';
-import type { AppState, ChattoApi, CssFileChange } from '../../shared/ipc';
+import type { AppState, ChattoApi, CssFileChange, ObsPluginStatus } from '../../shared/ipc';
 
 declare global {
   interface Window {
@@ -66,6 +66,7 @@ function createMockApi(): ChattoApi {
     };
   }
 
+  let obsPluginStatus: ObsPluginStatus = { state: 'not-installed', obsFound: true };
   let sent: string[] = [];
   if (!params.has('e2e'))
     setInterval(() => {
@@ -139,6 +140,16 @@ function createMockApi(): ChattoApi {
     }),
     onCssFileChanged: (listener) => (cssFileListeners.add(listener), () => cssFileListeners.delete(listener)),
     openExternal: async (url) => void window.open(url, '_blank'),
+    // The browser preview cannot touch OBS; the plugin is only pretended to be installed.
+    getObsPluginStatus: async () => obsPluginStatus,
+    installObsPlugin: async () => {
+      obsPluginStatus = { ...obsPluginStatus, state: 'installed' };
+      return { ok: true, status: obsPluginStatus };
+    },
+    uninstallObsPlugin: async () => {
+      obsPluginStatus = { ...obsPluginStatus, state: 'not-installed' };
+      return { ok: true, status: obsPluginStatus };
+    },
   };
 }
 

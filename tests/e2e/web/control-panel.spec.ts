@@ -169,6 +169,18 @@ test('the theme editor swaps its side menu for a dropdown in the smallest window
   await expect(page.getByRole('button', { name: '文字', exact: true })).toBeVisible();
 });
 
+test('the OBS tile installs and removes the OBS plugin', async ({ panel, page }) => {
+  await panel.open('page=outputs');
+  const plugin = page.getByRole('region', { name: 'OBS 外掛' });
+  await expect(plugin.getByText('未安裝')).toBeVisible();
+  await plugin.getByRole('button', { name: '安裝外掛' }).click();
+  await expect(plugin.getByText('已安裝')).toBeVisible();
+  await expect(plugin.getByText('開啟 OBS 後，在來源新增「Chatto 聊天室」')).toBeVisible();
+  await expect(plugin.getByRole('button', { name: '安裝外掛' })).toHaveCount(0);
+  await plugin.getByRole('button', { name: '移除' }).click();
+  await expect(plugin.getByText('未安裝')).toBeVisible();
+});
+
 test('switching to compact mode and back', async ({ panel, page }) => {
   await panel.open('page=settings');
   await page.getByRole('tab', { name: /精簡/ }).click();

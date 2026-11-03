@@ -39,6 +39,9 @@ const api: ChattoApi = {
   openCssFile: (themeId) => ipcRenderer.invoke(IPC.openCssFile, themeId),
   onCssFileChanged: (listener) => listen(IPC.cssFileChanged, listener),
   openExternal: (url) => ipcRenderer.invoke(IPC.openExternal, url),
+  getObsPluginStatus: () => ipcRenderer.invoke(IPC.getObsPluginStatus),
+  installObsPlugin: () => ipcRenderer.invoke(IPC.installObsPlugin),
+  uninstallObsPlugin: () => ipcRenderer.invoke(IPC.uninstallObsPlugin),
 };
 
 contextBridge.exposeInMainWorld('chatto', api);

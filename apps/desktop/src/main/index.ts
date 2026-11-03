@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
+import { execFile } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ChatTheme, Locale } from '@chatto/core';
@@ -6,6 +7,7 @@ import { IPC, type AppState } from '../shared/ipc';
 import { AppController } from './app-controller';
 import { CssFiles } from './css-files';
 import { mainMessages } from './messages';
+import { OBS_PLUGIN_NAME, ObsPlugin } from './obs-plugin';
 import { OverlayWindow } from './overlay-window';
 import { LocalServer } from './server';
 import { SettingsStore, type Rect } from './settings';
@@ -181,7 +183,28 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.importThemePackage, (_e, bytes: Uint8Array) => controller.importThemePackage(bytes));
   ipcMain.handle(IPC.openCssFile, (_e, id: string) => controller.openCssFile(id));
   ipcMain.handle(IPC.openExternal, (_e, url: string) => openExternal(url));
+  ipcMain.handle(IPC.getObsPluginStatus, () => obsPlugin.status());
+  ipcMain.handle(IPC.installObsPlugin, () => obsPlugin.install());
+  ipcMain.handle(IPC.uninstallObsPlugin, () => obsPlugin.uninstall());
 }
+
+/** The OBS plugin as this build ships it: packaged with the app, or the local CMake install in development. */
+const obsPlugin = new ObsPlugin({
+  bundledDir: isDev
+    ? join(__dirname, '../../../../obs-plugin/release', OBS_PLUGIN_NAME)
+    : join(process.resourcesPath, 'obs-plugin', OBS_PLUGIN_NAME),
+  pluginsDir: join(process.env.ProgramData ?? 'C:\\ProgramData', 'obs-studio', 'plugins'),
+  obsDirs: [
+    join(process.env.ProgramData ?? 'C:\\ProgramData', 'obs-studio'),
+    join(app.getPath('appData'), 'obs-studio'),
+  ],
+  isObsRunning: () =>
+    new Promise((resolve) =>
+      execFile('tasklist', ['/FI', 'IMAGENAME eq obs64.exe', '/FO', 'CSV', '/NH'], (error, stdout) =>
+        resolve(!error && stdout.toLowerCase().includes('obs64.exe')),
+      ),
+    ),
+});
 
 async function bootstrap(): Promise<void> {
   await app.whenReady();

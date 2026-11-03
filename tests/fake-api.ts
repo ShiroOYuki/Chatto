@@ -98,6 +98,15 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
       return () => cssFileListeners.delete(listener);
     }),
     openExternal: resolved(),
+    getObsPluginStatus: vi.fn(async () => ({ state: 'not-installed' as const, obsFound: true })),
+    installObsPlugin: vi.fn(async () => ({
+      ok: true as const,
+      status: { state: 'installed' as const, obsFound: true },
+    })),
+    uninstallObsPlugin: vi.fn(async () => ({
+      ok: true as const,
+      status: { state: 'not-installed' as const, obsFound: true },
+    })),
     pushState(patch: Partial<AppState>) {
       fake.state = { ...fake.state, ...patch };
       stateListeners.forEach((listener) => listener(fake.state));
