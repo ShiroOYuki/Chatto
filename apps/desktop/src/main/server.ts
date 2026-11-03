@@ -9,7 +9,7 @@ import {
   type ViewerTarget,
 } from '@chatto/core';
 import { createReadStream, existsSync, statSync } from 'node:fs';
-import { createServer, type Server } from 'node:http';
+import { createServer, type Server, type ServerResponse } from 'node:http';
 import { extname, join, normalize, sep } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { ChatHub } from './chat-hub';
@@ -39,13 +39,39 @@ export const THEME_ASSET_PATH = '/theme-assets/';
 /** Names of user sound files in the sounds folder. */
 export const SOUND_FILE = /^[\w-]+\.(mp3|ogg|wav)$/;
 
+/** A theme as `/api/themes` lists it: nothing beyond what a picker shows. */
+export interface ThemeSummary {
+  id: string;
+  name: string;
+}
+
+/** `/api/ping` identifies the server, so the OBS plugin does not mistake another app on the port for Chatto. */
+export const PING_APP = 'chatto';
+
+/** One connected viewer. */
+interface Client {
+  target: ViewerTarget;
+  /** The theme the viewer asked for, while it exists. */
+  themeId?: string;
+  /** The theme last sent, as JSON, so unchanged themes are not resent. */
+  sentTheme: string;
+}
+
 export interface LocalServerOptions {
   /** 0 picks a free port; read it from `port` after `start()`. */
   port: number;
   /** Folder with the built viewer (apps/viewer/dist). */
   viewerDir: string;
   hub: ChatHub;
-  themeFor(target: ViewerTarget): ChatTheme;
+  /**
+   * The theme a viewer renders: `themeId` when the viewer asked for one that
+   * exists, otherwise the target's selected theme.
+   */
+  themeFor(target: ViewerTarget, themeId?: string): ChatTheme;
+  /** Themes listed at `/api/themes` for the OBS plugin's theme picker. */
+  themeList?(): ThemeSummary[];
+  /** Reported at `/api/ping`. */
+  appVersion?: string;
   /** Language of event texts on every output. */
   locale?(): Locale;
   /** Adjusts or drops events per output; every output gets every event when omitted. */
@@ -63,7 +89,7 @@ export interface LocalServerOptions {
 export class LocalServer {
   #http: Server | null = null;
   #wss: WebSocketServer | null = null;
-  #clients = new Map<WebSocket, ViewerTarget>();
+  #clients = new Map<WebSocket, Client>();
   #unsubscribe: (() => void) | null = null;
 
   constructor(private readonly options: LocalServerOptions) {}
@@ -81,6 +107,10 @@ export class LocalServer {
   async start(): Promise<void> {
     this.#http = createServer((request, response) => {
       const pathname = decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname);
+      if (pathname.startsWith('/api/')) {
+        this.#api(pathname, request.method ?? 'GET', response);
+        return;
+      }
       const file = this.#resolve(pathname);
       if (!file) {
         response.writeHead(404).end('Not found');
@@ -98,13 +128,19 @@ export class LocalServer {
       socket.on('message', (data) => {
         const frame = decodeClientFrame(String(data));
         if (!frame) return;
-        this.#clients.set(socket, frame.target);
+        const theme = this.options.themeFor(frame.target, frame.themeId);
+        this.#clients.set(socket, {
+          target: frame.target,
+          // An unknown id is dropped: the viewer follows the target's theme from then on.
+          ...(frame.themeId && theme.id === frame.themeId ? { themeId: frame.themeId } : {}),
+          sentTheme: JSON.stringify(theme),
+        });
         socket.send(
           encodeFrame({
             v: PROTOCOL_VERSION,
             type: 'hello',
             target: frame.target,
-            theme: this.options.themeFor(frame.target),
+            theme,
             ...(this.options.locale ? { locale: this.options.locale() } : {}),
             backlog: this.#backlogFor(frame.target),
           }),
@@ -116,7 +152,7 @@ export class LocalServer {
     this.#unsubscribe = this.options.hub.subscribe((event) => {
       // Encode once per target: outputs may receive different versions of the same event.
       const payloads = new Map<ViewerTarget, string | null>();
-      for (const [socket, target] of this.#clients) {
+      for (const [socket, { target }] of this.#clients) {
         if (!payloads.has(target)) {
           const routed = this.#route(target, event);
           payloads.set(target, routed && encodeFrame({ v: PROTOCOL_VERSION, type: 'event', ...routed }));
@@ -139,11 +175,19 @@ export class LocalServer {
     for (const socket of this.#clients.keys()) socket.send(payload);
   }
 
-  /** Pushes a changed theme to every viewer of that target. */
-  broadcastTheme(target: ViewerTarget, theme: ChatTheme): void {
-    const payload = encodeFrame({ v: PROTOCOL_VERSION, type: 'theme', theme });
-    for (const [socket, clientTarget] of this.#clients) {
-      if (clientTarget === target) socket.send(payload);
+  /**
+   * Sends every viewer its theme again if it changed: call after a theme is
+   * selected, saved or deleted, or the chat language changes. A viewer whose
+   * own theme was deleted falls back to its target's theme.
+   */
+  refreshThemes(): void {
+    for (const [socket, client] of this.#clients) {
+      const theme = this.options.themeFor(client.target, client.themeId);
+      if (client.themeId && theme.id !== client.themeId) delete client.themeId;
+      const json = JSON.stringify(theme);
+      if (json === client.sentTheme) continue;
+      client.sentTheme = json;
+      socket.send(encodeFrame({ v: PROTOCOL_VERSION, type: 'theme', theme }));
     }
   }
 
@@ -154,7 +198,19 @@ export class LocalServer {
     await new Promise<void>((resolve) => (this.#http ? this.#http.close(() => resolve()) : resolve()));
   }
 
-  /** Maps a URL path to a file inside viewerDir; unknown routes get the SPA index. */
+  /** The small JSON API the OBS plugin reads. Nothing here carries a token or chat content. */
+  #api(pathname: string, method: string, response: ServerResponse): void {
+    const json = (status: number, body: unknown): void => {
+      response
+        .writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
+        .end(JSON.stringify(body));
+    };
+    if (method !== 'GET') return json(405, { error: 'method not allowed' });
+    if (pathname === '/api/ping') return json(200, { app: PING_APP, version: this.options.appVersion ?? '' });
+    if (pathname === '/api/themes') return json(200, this.options.themeList?.() ?? []);
+    json(404, { error: 'not found' });
+  }
+
   #route(target: ViewerTarget, event: ChatEvent): Routed {
     return this.options.route ? this.options.route(target, event) : { event };
   }

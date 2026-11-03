@@ -23,15 +23,17 @@ if (target === 'alerts') document.body.dataset.alerts = '';
 const isMock = params.has('mock');
 /** `?specimen` renders the fixed specimen set once, for screenshots and visual tests. */
 const isSpecimen = params.has('specimen');
-const presetFromQuery = params.get('theme');
-const fallbackTheme = getPresetTheme(presetFromQuery ?? DEFAULT_THEME_ID) ?? PRESET_THEMES[0]!;
+const themeFromQuery = params.get('theme');
+const fallbackTheme = getPresetTheme(themeFromQuery ?? DEFAULT_THEME_ID) ?? PRESET_THEMES[0]!;
 
 if (params.has('backdrop')) document.body.dataset.backdrop = '';
 
 /**
- * Viewer page. Online it mirrors the desktop app over WebSocket; with
- * `?mock=1` it runs standalone with fake chat, or with `?specimen` it shows a
- * fixed set covering every part (`&theme=<preset id>` picks a theme).
+ * Viewer page. Online it mirrors the desktop app over WebSocket; `?theme=<id>`
+ * asks for that theme instead of the one selected for this output (each OBS
+ * source can have its own). With `?mock=1` it runs standalone with fake chat,
+ * or with `?specimen` it shows a fixed set covering every part; there
+ * `&theme=<preset id>` picks a built-in theme.
  */
 export function App() {
   return target === 'alerts' ? <AlertsApp /> : <ChatApp />;
@@ -47,17 +49,22 @@ function ChatApp() {
     if (isSpecimen) return reset(createSpecimenEvents());
     if (isMock) return startMockStream(push);
     const wsUrl = params.get('ws') ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
-    return connectToApp(wsUrl, target, {
-      onHello: (nextTheme, backlog, nextLocale) => {
-        setTheme(nextTheme);
-        if (nextLocale) setLocale(nextLocale);
-        reset(backlog);
+    return connectToApp(
+      wsUrl,
+      target,
+      {
+        onHello: (nextTheme, backlog, nextLocale) => {
+          setTheme(nextTheme);
+          if (nextLocale) setLocale(nextLocale);
+          reset(backlog);
+        },
+        onEvent: push,
+        onTheme: setTheme,
+        onLocale: setLocale,
+        onStatus: () => undefined,
       },
-      onEvent: push,
-      onTheme: setTheme,
-      onLocale: setLocale,
-      onStatus: () => undefined,
-    });
+      themeFromQuery ?? undefined,
+    );
   }, [push, reset]);
 
   return <ChatView theme={theme} items={feed.items} locale={locale} />;

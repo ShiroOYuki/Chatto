@@ -109,7 +109,7 @@ function setup(initial?: Partial<Settings>) {
   const server = {
     port: 4820,
     url: (target: string) => `http://127.0.0.1:4820/${target}`,
-    broadcastTheme: vi.fn(),
+    refreshThemes: vi.fn(),
     broadcastLocale: vi.fn(),
   };
   const fakeWindow = () => {
@@ -168,12 +168,28 @@ describe('AppController themes', () => {
     expect(controller.themeFor('embed').id).toBe('washi');
   });
 
-  it('selects a theme, persists it and pushes it to that target only', () => {
+  it('selects a theme, persists it and pushes it to the outputs', () => {
     const { controller, settings, server } = setup();
     controller.selectTheme('embed', 'washi');
     expect(settings.get().selectedThemes.embed).toBe('washi');
-    expect(server.broadcastTheme).toHaveBeenCalledWith('embed', expect.objectContaining({ id: 'washi' }));
+    expect(controller.themeFor('embed').id).toBe('washi');
+    expect(server.refreshThemes).toHaveBeenCalledOnce();
     expect(() => controller.selectTheme('overlay', 'nope')).toThrow(/Unknown theme/);
+  });
+
+  it("gives an OBS source its own theme, or the target's when that theme is gone", () => {
+    const { controller } = setup({ customThemes: [customTheme()] });
+    expect(controller.themeFor('embed', 'my-theme').id).toBe('my-theme');
+    expect(controller.themeFor('embed', 'gone').id).toBe(controller.themeFor('embed').id);
+  });
+
+  it('lists theme ids and names in the interface language for the OBS plugin', () => {
+    const { controller } = setup({ customThemes: [customTheme()] });
+    controller.setPrefs({ locale: 'en' });
+    const list = controller.themeSummaries();
+    expect(list).toContainEqual({ id: 'washi', name: 'Washi Paper' });
+    expect(list).toContainEqual({ id: 'my-theme', name: customTheme().name });
+    expect(Object.keys(list[0]!)).toEqual(['id', 'name']);
   });
 
   it('refuses to overwrite a built-in theme', () => {
@@ -190,8 +206,8 @@ describe('AppController themes', () => {
 
     expect(settings.get().customThemes).toHaveLength(1);
     expect(settings.get().customThemes[0]).toMatchObject({ id: 'my-theme', name: '改名', builtIn: false });
-    expect(server.broadcastTheme).toHaveBeenCalledWith('overlay', expect.objectContaining({ name: '改名' }));
-    expect(server.broadcastTheme).not.toHaveBeenCalledWith('embed', expect.anything());
+    expect(controller.themeFor('overlay').name).toBe('改名');
+    expect(server.refreshThemes).toHaveBeenCalledTimes(2);
   });
 
   it('resets outputs to the default theme when their theme is deleted', () => {
@@ -316,10 +332,8 @@ describe('AppController CSS files', () => {
     });
     controller.applyExternalCss('my-theme', '.chatto-author { color: red; }');
     expect(settings.get().customThemes[0]!.customCss).toBe('.chatto-author { color: red; }');
-    expect(server.broadcastTheme).toHaveBeenCalledWith(
-      'embed',
-      expect.objectContaining({ customCss: '.chatto-author { color: red; }' }),
-    );
+    expect(controller.themeFor('embed').customCss).toBe('.chatto-author { color: red; }');
+    expect(server.refreshThemes).toHaveBeenCalled();
     expect(onCssFileChanged).toHaveBeenCalledWith({ themeId: 'my-theme', css: '.chatto-author { color: red; }' });
   });
 
@@ -327,7 +341,7 @@ describe('AppController CSS files', () => {
     const { controller, server, onCssFileChanged } = withCssFiles({ customThemes: [customTheme()] });
     controller.applyExternalCss('gone', 'x');
     controller.applyExternalCss('my-theme', customTheme().customCss);
-    expect(server.broadcastTheme).not.toHaveBeenCalled();
+    expect(server.refreshThemes).not.toHaveBeenCalled();
     expect(onCssFileChanged).not.toHaveBeenCalled();
   });
 
@@ -485,7 +499,8 @@ describe('AppController preferences', () => {
     controller.setPrefs({ locale: 'en' });
     expect(server.broadcastLocale).toHaveBeenLastCalledWith('en');
     expect(controller.themeFor('overlay').attention.label).toBe('New');
-    expect(server.broadcastTheme).toHaveBeenCalledWith('embed', expect.objectContaining({ name: 'Matcha Glass' }));
+    expect(controller.themeFor('embed').name).toBe('Matcha Glass');
+    expect(server.refreshThemes).toHaveBeenCalled();
 
     // A fixed chat language no longer follows the interface.
     controller.setPrefs({ chatLocale: 'zh-TW' });

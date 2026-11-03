@@ -23,6 +23,18 @@ describe('connectToApp', () => {
     expect(JSON.parse(socket.sent[0]!)).toEqual({ v: PROTOCOL_VERSION, type: 'subscribe', target: 'embed' });
   });
 
+  it('asks for its own theme when given one', () => {
+    connectToApp('ws://127.0.0.1:4820/ws', 'embed', handlers(), 'washi');
+    const socket = FakeWebSocket.latest();
+    socket.serverOpen();
+    expect(JSON.parse(socket.sent[0]!)).toEqual({
+      v: PROTOCOL_VERSION,
+      type: 'subscribe',
+      target: 'embed',
+      themeId: 'washi',
+    });
+  });
+
   it('routes hello, event, theme and locale frames and ignores garbage', () => {
     const h = handlers();
     connectToApp('ws://x/ws', 'overlay', h);

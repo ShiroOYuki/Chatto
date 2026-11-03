@@ -39,7 +39,19 @@ export type ServerFrame =
   /** The chat language changed. */
   | { v: typeof PROTOCOL_VERSION; type: 'locale'; locale: Locale };
 
-export type ClientFrame = { v: typeof PROTOCOL_VERSION; type: 'subscribe'; target: ViewerTarget };
+export type ClientFrame = {
+  v: typeof PROTOCOL_VERSION;
+  type: 'subscribe';
+  target: ViewerTarget;
+  /**
+   * Renders this theme instead of the target's selected one (an OBS source
+   * with its own theme). Unknown ids fall back to the selected theme.
+   */
+  themeId?: string;
+};
+
+/** Longest theme id a viewer may ask for; ids are short slugs or UUIDs. */
+const MAX_THEME_ID = 128;
 
 export function encodeFrame(frame: ServerFrame | ClientFrame): string {
   return JSON.stringify(frame);
@@ -65,6 +77,10 @@ export function decodeClientFrame(data: string): ClientFrame | null {
     const frame = JSON.parse(data) as Partial<ClientFrame>;
     if (frame?.v !== PROTOCOL_VERSION || frame.type !== 'subscribe') return null;
     if (!VIEWER_TARGETS.includes(frame.target as ViewerTarget)) return null;
+    const { themeId } = frame;
+    if (themeId !== undefined && (typeof themeId !== 'string' || !themeId || themeId.length > MAX_THEME_ID)) {
+      return null;
+    }
     return frame as ClientFrame;
   } catch {
     return null;

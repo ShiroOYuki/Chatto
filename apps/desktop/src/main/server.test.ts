@@ -1,4 +1,11 @@
-import { decodeServerFrame, encodeFrame, PROTOCOL_VERSION, type ServerFrame, type ViewerTarget } from '@chatto/core';
+import {
+  decodeServerFrame,
+  encodeFrame,
+  PROTOCOL_VERSION,
+  type ChatTheme,
+  type ServerFrame,
+  type ViewerTarget,
+} from '@chatto/core';
 import { PRESET_THEMES, createMockMessage, sampleEvent } from '@chatto/chat-ui';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -21,15 +28,23 @@ async function startServer(extra: Partial<LocalServerOptions> = {}) {
   mkdirSync(join(viewerDir, 'assets'));
   writeFileSync(join(viewerDir, 'assets', 'app.js'), 'console.log(1)');
   const hub = new ChatHub();
-  const themes = { overlay: PRESET_THEMES[0]!, embed: PRESET_THEMES[1]!, alerts: PRESET_THEMES[2]! };
+  // Mutable so tests can change what each target uses, then call refreshThemes().
+  const selected: Record<ViewerTarget, ChatTheme> = {
+    overlay: PRESET_THEMES[0]!,
+    embed: PRESET_THEMES[1]!,
+    alerts: PRESET_THEMES[2]!,
+  };
+  const library = [...PRESET_THEMES];
+  const themeFor = (target: ViewerTarget, themeId?: string) =>
+    library.find((theme) => theme.id === themeId) ?? selected[target];
   // Port 0 lets the OS pick a free port; random fixed ports can land in Windows' reserved ranges (EACCES).
-  server = new LocalServer({ port: 0, viewerDir, hub, themeFor: (target) => themes[target], ...extra });
+  server = new LocalServer({ port: 0, viewerDir, hub, themeFor, ...extra });
   await server.start();
-  return { hub, port: server.port, server };
+  return { hub, port: server.port, server, selected, library };
 }
 
-/** Opens a viewer socket, subscribes to a target and collects decoded frames. */
-async function subscribe(port: number, target: ViewerTarget) {
+/** Opens a viewer socket, subscribes to a target (optionally with its own theme) and collects decoded frames. */
+async function subscribe(port: number, target: ViewerTarget, themeId?: string) {
   const socket = new WebSocket(`ws://127.0.0.1:${port}/ws`);
   const frames: ServerFrame[] = [];
   socket.on('message', (data) => {
@@ -37,7 +52,7 @@ async function subscribe(port: number, target: ViewerTarget) {
     if (frame) frames.push(frame);
   });
   await new Promise<void>((resolve) => socket.on('open', () => resolve()));
-  socket.send(encodeFrame({ v: PROTOCOL_VERSION, type: 'subscribe', target }));
+  socket.send(encodeFrame({ v: PROTOCOL_VERSION, type: 'subscribe', target, ...(themeId ? { themeId } : {}) }));
   await vi.waitFor(() => expect(frames[0]?.type).toBe('hello'));
   return { socket, frames };
 }
@@ -99,17 +114,74 @@ describe('LocalServer', () => {
     embed.socket.close();
   });
 
-  it('pushes theme changes only to viewers of that target', async () => {
-    const { port, server } = await startServer();
+  it('pushes a changed theme only to the viewers whose theme changed', async () => {
+    const { port, server, selected } = await startServer();
     const overlay = await subscribe(port, 'overlay');
     const embed = await subscribe(port, 'embed');
 
-    server.broadcastTheme('embed', PRESET_THEMES[2]!);
+    selected.embed = PRESET_THEMES[2]!;
+    server.refreshThemes();
 
-    await vi.waitFor(() => expect(embed.frames.at(-1)?.type).toBe('theme'));
+    await vi.waitFor(() =>
+      expect(embed.frames.at(-1)).toMatchObject({ type: 'theme', theme: { id: PRESET_THEMES[2]!.id } }),
+    );
     expect(overlay.frames.some((frame) => frame.type === 'theme')).toBe(false);
+    // Nothing changed since: no frame is resent.
+    server.refreshThemes();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(embed.frames.filter((frame) => frame.type === 'theme')).toHaveLength(1);
     overlay.socket.close();
     embed.socket.close();
+  });
+
+  it('gives a viewer its own theme, kept when the target theme changes', async () => {
+    const { port, server, selected, library } = await startServer();
+    const own = await subscribe(port, 'embed', PRESET_THEMES[3]!.id);
+    const plain = await subscribe(port, 'embed');
+    expect(own.frames[0]).toMatchObject({ type: 'hello', theme: { id: PRESET_THEMES[3]!.id } });
+    expect(plain.frames[0]).toMatchObject({ type: 'hello', theme: { id: PRESET_THEMES[1]!.id } });
+
+    selected.embed = PRESET_THEMES[2]!;
+    server.refreshThemes();
+    await vi.waitFor(() => expect(plain.frames.at(-1)?.type).toBe('theme'));
+    expect(own.frames.some((frame) => frame.type === 'theme')).toBe(false);
+
+    // Its theme is deleted: it falls back to the target's theme and stays there.
+    library.splice(3, 1);
+    server.refreshThemes();
+    await vi.waitFor(() =>
+      expect(own.frames.at(-1)).toMatchObject({ type: 'theme', theme: { id: PRESET_THEMES[2]!.id } }),
+    );
+    library.splice(3, 0, PRESET_THEMES[3]!);
+    selected.embed = PRESET_THEMES[0]!;
+    server.refreshThemes();
+    await vi.waitFor(() =>
+      expect(own.frames.at(-1)).toMatchObject({ type: 'theme', theme: { id: PRESET_THEMES[0]!.id } }),
+    );
+    own.socket.close();
+    plain.socket.close();
+  });
+
+  it('falls back to the target theme for an unknown theme id', async () => {
+    const { port } = await startServer();
+    const viewer = await subscribe(port, 'embed', 'no-such-theme');
+    expect(viewer.frames[0]).toMatchObject({ type: 'hello', theme: { id: PRESET_THEMES[1]!.id } });
+    viewer.socket.close();
+  });
+
+  it('answers the OBS plugin API with JSON and nothing else', async () => {
+    const { port } = await startServer({
+      appVersion: '1.2.3',
+      themeList: () => [{ id: 'washi', name: 'Washi Paper' }],
+    });
+    const ping = await fetch(`http://127.0.0.1:${port}/api/ping`);
+    expect(ping.headers.get('content-type')).toContain('application/json');
+    expect(await ping.json()).toEqual({ app: 'chatto', version: '1.2.3' });
+    expect(await (await fetch(`http://127.0.0.1:${port}/api/themes`)).json()).toEqual([
+      { id: 'washi', name: 'Washi Paper' },
+    ]);
+    expect((await fetch(`http://127.0.0.1:${port}/api/nope`)).status).toBe(404);
+    expect((await fetch(`http://127.0.0.1:${port}/api/ping`, { method: 'POST' })).status).toBe(405);
   });
 
   it('tells viewers the chat language on hello and when it changes', async () => {

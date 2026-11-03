@@ -22,6 +22,14 @@ describe('protocol', () => {
     expect(decodeClientFrame('null')).toBeNull();
   });
 
+  it('lets a viewer ask for its own theme, by a plain string id only', () => {
+    const subscribe = { v: PROTOCOL_VERSION, type: 'subscribe', target: 'embed', themeId: 'washi' } as const;
+    expect(decodeClientFrame(encodeFrame(subscribe))).toEqual(subscribe);
+    for (const themeId of ['', 42, 'x'.repeat(129)]) {
+      expect(decodeClientFrame(JSON.stringify({ ...subscribe, themeId }))).toBeNull();
+    }
+  });
+
   it('carries the chat language and rejects unknown ones', () => {
     const frame = { v: PROTOCOL_VERSION, type: 'locale', locale: 'en' } as const;
     expect(decodeServerFrame(encodeFrame(frame))).toEqual(frame);

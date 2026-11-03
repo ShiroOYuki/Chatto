@@ -26,7 +26,7 @@ import type { AppPrefs, AppState, CssFileChange, CssFileOpenResult, DeviceCodeIn
 import { alertCue, markAfterSilence, SilenceTracker } from './alerts';
 import { ChatHub } from './chat-hub';
 import type { CssFiles } from './css-files';
-import type { LocalServer, Routed } from './server';
+import type { LocalServer, Routed, ThemeSummary } from './server';
 import type { OverlayWindow } from './overlay-window';
 import { mainMessages, type MainMessages } from './messages';
 import { normalizePrefs, type SettingsStore } from './settings';
@@ -99,11 +99,25 @@ export class AppController {
     return [...PRESET_THEMES, ...custom];
   }
 
-  /** A target's theme as viewers get it: built-in themes speak the chat language. */
-  themeFor(target: ViewerTarget): ChatTheme {
+  /**
+   * The theme a viewer gets: `themeId` when given and it exists (an OBS source
+   * with its own theme), otherwise the target's selected theme. Built-in
+   * themes speak the chat language.
+   */
+  themeFor(target: ViewerTarget, themeId?: string): ChatTheme {
+    const themes = this.themes();
     const id = this.settings.get().selectedThemes[target];
-    const theme = this.themes().find((item) => item.id === id) ?? PRESET_THEMES[0]!;
+    const theme =
+      (themeId ? themes.find((item) => item.id === themeId) : undefined) ??
+      themes.find((item) => item.id === id) ??
+      PRESET_THEMES[0]!;
     return localizeTheme(theme, this.chatLocale());
+  }
+
+  /** Every theme's id and name in the interface language, for the OBS plugin's theme picker. */
+  themeSummaries(): ThemeSummary[] {
+    const locale = this.settings.get().prefs.locale;
+    return this.themes().map((theme) => ({ id: theme.id, name: localizeTheme(theme, locale).name }));
   }
 
   /** Main-process text (dialogs, tray, errors) in the interface language. */
@@ -159,7 +173,7 @@ export class AppController {
     if (locale !== before) {
       // Event texts and built-in theme texts (the reminder label) follow the chat language.
       this.server.broadcastLocale(locale);
-      for (const target of VIEWER_TARGETS) this.server.broadcastTheme(target, this.themeFor(target));
+      this.server.refreshThemes();
     }
     this.onLocaleChange(next.prefs.locale);
     this.#emit();
@@ -425,7 +439,7 @@ export class AppController {
     this.settings.update((draft) => {
       draft.selectedThemes[target] = themeId;
     });
-    this.server.broadcastTheme(target, this.themeFor(target));
+    this.server.refreshThemes();
     this.#emit();
   }
 
@@ -438,9 +452,8 @@ export class AppController {
       if (index >= 0) draft.customThemes[index] = stored;
       else draft.customThemes.push(stored);
     });
-    for (const target of VIEWER_TARGETS) {
-      if (this.settings.get().selectedThemes[target] === theme.id) this.server.broadcastTheme(target, theme);
-    }
+    // Outputs and OBS sources that use this theme update live.
+    this.server.refreshThemes();
     this.cssFiles?.write(theme.id, theme.customCss);
     this.#emit();
   }
@@ -514,6 +527,7 @@ export class AppController {
         if (draft.selectedThemes[target] === themeId) draft.selectedThemes[target] = PRESET_THEMES[0]!.id;
       }
     });
+    this.server.refreshThemes();
     this.#emit();
   }
 }

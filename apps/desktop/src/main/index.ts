@@ -201,7 +201,7 @@ async function bootstrap(): Promise<void> {
     dir: join(app.getPath('userData'), 'custom-css'),
     onExternalChange: (themeId, css) => controller.applyExternalCss(themeId, css),
     openWithSystem: async (path) => (await shell.openPath(path)) === '',
-    // Reference files are rewritten on every open, so they pick up a language change then.
+    // Reference files follow the interface language (rewritten on open and on a language change).
     locale: () => settings.get().prefs.locale,
   });
   controller.onCssFileChanged = (change) => send(IPC.cssFileChanged, change);
@@ -211,7 +211,9 @@ async function bootstrap(): Promise<void> {
     port: settings.get().serverPort,
     viewerDir,
     hub: controller.hub,
-    themeFor: (target) => controller.themeFor(target),
+    themeFor: (target, themeId) => controller.themeFor(target, themeId),
+    themeList: () => controller.themeSummaries(),
+    appVersion: app.getVersion(),
     locale: () => controller.chatLocale(),
     route: (target, event) => controller.route(target, event),
     soundsDir: controller.soundsDir,

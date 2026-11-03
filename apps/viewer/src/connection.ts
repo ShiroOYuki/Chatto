@@ -23,7 +23,13 @@ export interface ViewerConnectionHandlers {
  * Connects to the desktop app's local WebSocket and keeps reconnecting, so an
  * OBS source survives the app restarting.
  */
-export function connectToApp(url: string, target: ViewerTarget, handlers: ViewerConnectionHandlers): () => void {
+export function connectToApp(
+  url: string,
+  target: ViewerTarget,
+  handlers: ViewerConnectionHandlers,
+  /** A theme of this viewer's own instead of the target's selected one. */
+  themeId?: string,
+): () => void {
   let socket: WebSocket | null = null;
   let retry: ReturnType<typeof setTimeout> | null = null;
   let attempt = 0;
@@ -34,7 +40,7 @@ export function connectToApp(url: string, target: ViewerTarget, handlers: Viewer
     socket.addEventListener('open', () => {
       attempt = 0;
       handlers.onStatus(true);
-      socket?.send(encodeFrame({ v: PROTOCOL_VERSION, type: 'subscribe', target }));
+      socket?.send(encodeFrame({ v: PROTOCOL_VERSION, type: 'subscribe', target, ...(themeId ? { themeId } : {}) }));
     });
     socket.addEventListener('message', (message) => {
       const frame = decodeServerFrame(String(message.data));
