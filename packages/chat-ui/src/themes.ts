@@ -297,11 +297,14 @@ export const PLAIN_PRESET: ChatTheme = createTheme('plain', '空白（從零開�
   attention: { effect: 'none', label: '' },
 });
 
-/** The built-in nine-slice frame: 32 px slices of a 96 px image, shown at half size. */
+/**
+ * The built-in nine-slice frame, shown at half size: 20 px corners top and bottom,
+ * 24 px left and right, so the leaves stay readable. The frame itself is the padding.
+ */
 const TEA_LEAF_IMAGE: BoxImage = {
   ...DEFAULT_BOX_IMAGE,
   src: TEA_LEAF_FRAME,
-  slice: [32, 32, 32, 32],
+  slice: [40, 48, 40, 48],
   scale: 0.5,
 };
 
@@ -416,11 +419,11 @@ export const PRESET_THEMES: ChatTheme[] = [
   preset('tea-leaf', '茶葉框', {
     text: { color: '#EAF3DE', mutedColor: '#C0DD97', accentColor: '#F4C0D1' },
     list: { gap: 4 },
-    message: { box: { padding: [0, 4, 0, 4], image: TEA_LEAF_IMAGE } },
+    message: { box: { padding: [0, 0, 0, 0], image: TEA_LEAF_IMAGE } },
     author: { color: '#C0DD97' },
     mention: { color: '#F4C0D1' },
     notice: {
-      box: { padding: [0, 4, 0, 4], image: TEA_LEAF_IMAGE },
+      box: { padding: [0, 0, 0, 0], image: TEA_LEAF_IMAGE },
       accentWidth: 0,
       accentColor: '#F4C0D1',
       titleColor: '#F4C0D1',
