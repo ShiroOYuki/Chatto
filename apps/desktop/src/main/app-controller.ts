@@ -148,10 +148,13 @@ export class AppController {
 
   setPrefs(patch: Partial<AppPrefs>): void {
     const before = this.chatLocale();
+    const uiBefore = this.settings.get().prefs.locale;
     const next = this.settings.update((draft) => {
       draft.prefs = normalizePrefs({ ...draft.prefs, ...patch }, draft.prefs);
     });
     this.#applyPrefs(next.prefs);
+    // The editor reference files are written in the interface language.
+    if (next.prefs.locale !== uiBefore) this.cssFiles?.refreshReference();
     const locale = this.chatLocale();
     if (locale !== before) {
       // Event texts and built-in theme texts (the reminder label) follow the chat language.

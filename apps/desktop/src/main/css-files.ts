@@ -167,6 +167,15 @@ export class CssFiles {
     if (existsSync(this.pathFor(themeId))) this.#write(themeId, css);
   }
 
+  /**
+   * Rewrites the editor reference files in the current interface language, if
+   * they were written before (a theme was opened in an editor); call after the
+   * interface language changes.
+   */
+  refreshReference(): void {
+    if (existsSync(join(this.dir, REFERENCE_FILE))) this.#writeWorkspace();
+  }
+
   /** Deletes a theme's file, e.g. when the theme itself is deleted. */
   remove(themeId: string): void {
     clearTimeout(this.#timers.get(themeId));

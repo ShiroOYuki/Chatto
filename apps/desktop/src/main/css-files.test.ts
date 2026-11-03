@@ -75,6 +75,23 @@ describe('CssFiles', () => {
     expect(openWithSystem).not.toHaveBeenCalled();
   });
 
+  it('rewrites the reference in the new interface language, but only once it exists', async () => {
+    let locale: 'zh-TW' | 'en' = 'zh-TW';
+    const localized = new CssFiles({ dir, onExternalChange, run, openWithSystem, locale: () => locale });
+    locale = 'en';
+    localized.refreshReference();
+    expect(existsSync(join(dir, REFERENCE_FILE))).toBe(false);
+
+    locale = 'zh-TW';
+    await localized.open('custom-a', '', '');
+    expect(readFileSync(join(dir, REFERENCE_FILE), 'utf8')).toContain('/* CSS 變數 */');
+    locale = 'en';
+    localized.refreshReference();
+    expect(readFileSync(join(dir, REFERENCE_FILE), 'utf8')).toContain('/* CSS variables */');
+    expect(readFileSync(join(dir, '.vscode', 'chatto.css-data.json'), 'utf8')).not.toMatch(/[一-鿿]/);
+    localized.stop();
+  });
+
   it('treats an editor that keeps running as opened', async () => {
     run.mockResolvedValueOnce(null);
     expect((await files.open('custom-a', '', '')).launched).toBe('editor');
