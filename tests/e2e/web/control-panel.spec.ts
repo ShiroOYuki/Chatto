@@ -138,6 +138,18 @@ test('compact mode fits the smallest window', async ({ panel, page }) => {
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
+test('compact mode switches the alert overlay on and moves it', async ({ panel, page }) => {
+  await panel.open('compact');
+  const alertsSwitch = page.getByRole('switch', { name: '事件 Overlay' });
+  const adjust = page.getByRole('button', { name: '調整事件提醒的位置' });
+  await expect(alertsSwitch).toHaveAttribute('aria-checked', 'false');
+  await expect(adjust).toBeDisabled();
+  await alertsSwitch.click();
+  await expect(alertsSwitch).toHaveAttribute('aria-checked', 'true');
+  await adjust.click();
+  await expect(page.getByRole('button', { name: '完成調整' })).toBeVisible();
+});
+
 test('switching to compact mode and back', async ({ panel, page }) => {
   await panel.open('page=settings');
   await page.getByRole('tab', { name: /精簡/ }).click();

@@ -1,21 +1,74 @@
+import { Check, Move } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../../shared/ipc';
 import { Button, Tile, Toggle } from '../../components/kit';
 import { useMessages } from '../../i18n';
+import { alerts } from '../../services/alerts';
 import { overlay } from '../../services/overlay';
+
+/** One desktop window: name, position button and on/off switch on a single line. */
+function WindowRow({
+  label,
+  switchLabel,
+  adjustLabel,
+  enabled,
+  editing,
+  onToggle,
+  onEdit,
+}: {
+  label: string;
+  switchLabel: string;
+  adjustLabel: string;
+  enabled: boolean;
+  editing: boolean;
+  onToggle: (enabled: boolean) => void;
+  onEdit: (editing: boolean) => void;
+}) {
+  const m = useMessages().compact;
+  const editLabel = editing ? m.finishAdjusting : adjustLabel;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="min-w-0 flex-1 truncate text-sm">{label}</span>
+      <Button
+        size="sm"
+        variant={editing ? 'primary' : 'ghost'}
+        className="size-8 px-0"
+        disabled={!enabled}
+        aria-label={editLabel}
+        title={editLabel}
+        onClick={() => onEdit(!editing)}
+      >
+        {editing ? <Check /> : <Move />}
+      </Button>
+      <Toggle checked={enabled} label={switchLabel} onChange={onToggle} />
+    </div>
+  );
+}
 
 export function OverlayTile({ state }: { state: AppState }) {
   const m = useMessages().compact;
-  const { enabled, editing } = state.overlay;
   return (
-    <Tile
-      title={m.desktopOverlay}
-      action={<Toggle checked={enabled} label={m.desktopOverlay} onChange={(v) => overlay.setEnabled(v)} />}
-    >
-      <p className="text-sm text-ink-soft">{m.overlayIntro}</p>
-      <Button className="mt-auto" disabled={!enabled} onClick={() => overlay.setEditing(!editing)}>
-        {editing ? m.finishAdjusting : m.adjustPosition}
-      </Button>
+    <Tile title={m.desktopOverlay}>
+      <div className="flex flex-col gap-2">
+        <WindowRow
+          label={m.chatWindow}
+          switchLabel={m.desktopOverlay}
+          adjustLabel={m.adjustChatPosition}
+          enabled={state.overlay.enabled}
+          editing={state.overlay.editing}
+          onToggle={(v) => overlay.setEnabled(v)}
+          onEdit={(next) => overlay.setEditing(next)}
+        />
+        <WindowRow
+          label={m.alertsWindow}
+          switchLabel={m.alertsOverlay}
+          adjustLabel={m.adjustAlertsPosition}
+          enabled={state.alertsOverlay.enabled}
+          editing={state.alertsOverlay.editing}
+          onToggle={(v) => alerts.setOverlayEnabled(v)}
+          onEdit={(next) => alerts.setOverlayEditing(next)}
+        />
+      </div>
     </Tile>
   );
 }
