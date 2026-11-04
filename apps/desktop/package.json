@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "dist": "electron-builder --win --config electron-builder.yml",
+    "dist": "electron-builder --win --config electron-builder.yml --publish never",
     "typecheck": "tsc -p tsconfig.json",
     "dev:web": "vite --config vite.web.config.ts"
   },

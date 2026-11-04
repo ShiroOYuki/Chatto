@@ -32,7 +32,15 @@ npm run dev                                       # 啟動桌面 App
 1. 到 [Twitch Developer Console](https://dev.twitch.tv/console/apps) 建立應用程式。
 2. **Client Type 選 Public**（Chatto 使用 Device Code Flow，不需要也不會存放 client secret）。
 3. OAuth Redirect URL 可填 `http://localhost`（Device Code Flow 不會用到）。
-4. 把 Client ID 填進 App，或寫在 `apps/desktop/.env`。
+4. 寫在 `apps/desktop/.env` 的 `MAIN_VITE_TWITCH_CLIENT_ID`，建置時會內建進 App，使用者不用自己設定；沒有內建值時，使用者在 App 的連線頁填入。
+
+內建 Client ID 時，使用者仍可在連線頁的「進階設定」或設定頁的「進階」改用自己的 Client ID，也能改回內建。Client ID 是公開資訊，可以放進安裝檔；Chatto 不使用 client secret。
+
+### 發佈
+
+推送版本 tag（例如 `v0.1.0`，要和 `apps/desktop/package.json` 的版本一致）會觸發 `.github/workflows/release.yml`：建置 OBS 外掛與安裝檔，並建立草稿 Release 附上安裝檔，確認後在 GitHub 上發佈。
+
+內建的 Client ID 來自 repository variable `TWITCH_CLIENT_ID`（Settings → Secrets and variables → Actions → Variables）。它是公開值，所以用 variable 而不是 secret。
 
 ### 只預覽畫面
 

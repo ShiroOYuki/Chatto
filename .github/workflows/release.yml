@@ -1,0 +1,62 @@
+name: Release
+
+# Pushing a tag such as v0.1.0 builds the installer and drafts a GitHub Release for it.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build the installer and draft a release
+    # windows-2025 ships Visual Studio 2026, which the OBS plugin's CI preset uses.
+    runs-on: windows-2025
+    env:
+      TAG: ${{ github.ref_name }}
+      # Public, not a secret: it ends up inside the installer anyway.
+      TWITCH_CLIENT_ID: ${{ vars.TWITCH_CLIENT_ID }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check the tag and the Client ID
+        run: |
+          version=$(node -p "require('./apps/desktop/package.json').version")
+          if [ "$TAG" != "v$version" ]; then
+            echo "::error::Tag $TAG does not match the app version $version"
+            exit 1
+          fi
+          if [ -z "$TWITCH_CLIENT_ID" ]; then
+            echo "::error::Set the TWITCH_CLIENT_ID repository variable (Settings → Secrets and variables → Actions → Variables)"
+            exit 1
+          fi
+      - run: npm ci
+      # OBS sources and obs-deps for the plugin, shared with the OBS plugin workflow.
+      - uses: actions/cache@v4
+        with:
+          path: obs-plugin/.deps
+          key: obs-deps-${{ runner.os }}-${{ hashFiles('obs-plugin/buildspec.json') }}
+      - name: Build the installer
+        run: npm run dist
+        env:
+          MAIN_VITE_TWITCH_CLIENT_ID: ${{ vars.TWITCH_CLIENT_ID }}
+      - name: Check that the Client ID is built in
+        run: |
+          if ! grep -q "$TWITCH_CLIENT_ID" apps/desktop/out/main/index.js; then
+            echo "::error::The built app does not contain the Client ID"
+            exit 1
+          fi
+      - name: Draft the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${TAG#v}"
+          gh release create "$TAG" --draft --title "Chatto $TAG" --generate-notes \
+            "apps/desktop/release/$version/Chatto-Setup-$version.exe"
