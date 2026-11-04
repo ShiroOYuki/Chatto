@@ -11,6 +11,7 @@ import { TooltipProvider } from './components/ui/tooltip';
 import { AlertsPage } from './pages/alerts/AlertsPage';
 import { ChatPage } from './pages/Chat';
 import { ConnectionsPage } from './pages/Connections';
+import { ExplorePage } from './pages/explore/ExplorePage';
 import { OutputsPage } from './pages/Outputs';
 import { OverviewPage } from './pages/Overview';
 import { SettingsPage } from './pages/Settings';
@@ -27,7 +28,9 @@ function Page({ id, state, onNavigate }: { id: PageId; state: AppState; onNaviga
     case 'chat':
       return <ChatPage />;
     case 'themes':
-      return <ThemesPage state={state} />;
+      return <ThemesPage state={state} onNavigate={onNavigate} />;
+    case 'explore':
+      return <ExplorePage state={state} />;
     case 'outputs':
       return <OutputsPage state={state} onNavigate={onNavigate} />;
     case 'alerts':

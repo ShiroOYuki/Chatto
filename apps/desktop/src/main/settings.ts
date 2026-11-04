@@ -10,6 +10,7 @@ import {
 import { DEFAULT_THEME_ID } from '@chatto/chat-ui/themes';
 import type { AppPrefs } from '../shared/ipc';
 import { app } from 'electron';
+import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
@@ -37,6 +38,8 @@ export interface Settings {
   prefs: AppPrefs;
   /** Main window bounds, restored on launch. */
   windowBounds?: Rect;
+  /** Theme sharing: the anonymous id that counts downloads, and the terms version agreed to (0 for none). */
+  share: { clientId: string; termsAccepted: number };
 }
 
 const defaults = (): Settings => ({
@@ -59,7 +62,15 @@ const defaults = (): Settings => ({
     chatLocale: 'auto',
     obsPluginPromptDismissed: false,
   },
+  share: { clientId: randomUUID(), termsAccepted: 0 },
 });
+
+/** Sharing settings from older versions or hand edits: a missing client id gets a new one. */
+export function normalizeShareSettings(raw: Partial<Settings['share']> | undefined): Settings['share'] {
+  const clientId = typeof raw?.clientId === 'string' && raw.clientId ? raw.clientId : randomUUID();
+  const termsAccepted = typeof raw?.termsAccepted === 'number' ? raw.termsAccepted : 0;
+  return { clientId, termsAccepted };
+}
 
 /** Fills preferences saved by older versions and drops unknown languages. */
 export function normalizePrefs(raw: Partial<AppPrefs> | undefined, base: AppPrefs): AppPrefs {
@@ -112,6 +123,7 @@ export class SettingsStore {
         alerts: normalizeAlertSettings(raw.alerts),
         selectedThemes: { ...base.selectedThemes, ...raw.selectedThemes },
         prefs: normalizePrefs(raw.prefs, base.prefs),
+        share: normalizeShareSettings(raw.share),
       };
     } catch {
       return defaults();

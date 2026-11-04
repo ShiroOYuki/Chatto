@@ -11,6 +11,7 @@ import {
   type EventOverride,
   type EventStyle,
   type Sides,
+  type ThemeOrigin,
 } from '@chatto/core';
 import { FONT_STACKS, upgradeFontStack } from './fontStacks';
 import { TEA_LEAF_FRAME } from './frames/teaLeafFrame';
@@ -605,9 +606,12 @@ function normalizeSchema(raw: unknown): ChatTheme {
   for (const [key, template] of Object.entries(theme.eventText ?? {})) {
     if (typeof template === 'string' && template.trim()) eventText[key] = template;
   }
+  const { origin: _origin, ...rest } = theme;
+  const origin = sanitizeOrigin(data.origin);
   return mapThemeImages(
     {
-      ...theme,
+      ...rest,
+      ...(origin ? { origin } : {}),
       roles,
       events,
       eventText,
@@ -616,6 +620,16 @@ function normalizeSchema(raw: unknown): ChatTheme {
     },
     sanitizeBoxImage,
   );
+}
+
+/** Keeps a theme's sharing origin only when it is complete. */
+function sanitizeOrigin(raw: unknown): ThemeOrigin | undefined {
+  if (!isPlainObject(raw)) return undefined;
+  const { shareId, version, contentHash } = raw as Partial<ThemeOrigin>;
+  if (typeof shareId !== 'string' || !shareId) return undefined;
+  if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) return undefined;
+  if (typeof contentHash !== 'string' || !contentHash) return undefined;
+  return { shareId, version, contentHash };
 }
 
 // ---------- events ----------

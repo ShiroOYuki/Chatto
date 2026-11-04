@@ -23,6 +23,7 @@ import { randomUUID } from 'node:crypto';
 import { copyFileSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 import type { AppPrefs, AppState, CssFileChange, CssFileOpenResult, DeviceCodeInfo, UpdateState } from '../shared/ipc';
+import type { ShareClient } from '../shared/share/client';
 import { alertCue, markAfterSilence, SilenceTracker } from './alerts';
 import { ChatHub } from './chat-hub';
 import type { CssFiles } from './css-files';
@@ -65,6 +66,8 @@ export class AppController {
   soundsDir = '';
   /** Frame images used by themes, served by the local server. */
   assets!: ThemeAssets;
+  /** Theme sharing; supplied by index.ts. */
+  share?: ShareClient;
   onChange: (state: AppState) => void = () => undefined;
   /** Plays a reminder sound in the control panel (it runs even when no overlay is open). */
   onAlertSound: (sound: SoundSetting) => void = () => undefined;
@@ -156,6 +159,10 @@ export class AppController {
       server: { port: this.server.port, embedUrl: this.server.url('embed'), overlayUrl: this.server.url('overlay') },
       themes: this.themes(),
       selectedThemes: settings.selectedThemes,
+      share: this.share?.state() ?? {
+        session: { status: 'signed-out' },
+        termsAccepted: settings.share.termsAccepted,
+      },
     };
   }
 

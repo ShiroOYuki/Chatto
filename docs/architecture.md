@@ -58,6 +58,22 @@ workspace package 直接提供 TypeScript 原始碼，由 Vite／electron-vite �
 - 自訂 CSS 檔案的路徑由主題 id 產生，id 只接受 `[\w-]+`；外部編輯器指令只來自使用者自己的設定。
 - 自動更新（main `updater.ts`，`electron-updater`）只讀 `ShiroOYuki/Chatto` 已發佈的 GitHub Release，下載後以 `latest.yml` 的 SHA-512 驗證才安裝。只會提示，下載與安裝都等使用者決定，不會在直播中自動重開。開發版不檢查。
 
+## 主題分享（開發中，GitHub #4）
+
+控制台的「探索」頁：瀏覽、安裝、投稿、按讚與檢舉別人分享的主題，以及 Chatto 帳號與管理功能。
+
+- **共用程式**在 `apps/desktop/src/shared/share/`：
+  - `model.ts`：資料型別（`ShareThemeSummary`、`ShareAccount`、`ShareResult` …）、類別、建議 tag、上限、條款版本。
+  - `rules.ts`：純函式：主題代碼（8 碼 Crockford Base32）、tag 正規化、自動 tag、`themeContentHash`、`checkPublish`（自訂 CSS 禁止外部 `url()`／`@import`、大小與圖片數上限）。分享服務也會跑同樣的檢查。
+  - `backend.ts`：`ShareBackend`，每個方法對應一個 `/v1` API。
+  - `fakeBackend.ts`、`fakeSeed.ts`：記憶體內的假服務與範例主題。**真正的服務（Cloudflare Worker）還沒上線**，桌面 App 與網頁模式目前都用它，重開就清空；開發版登入的帳號是管理者。
+  - `client.ts`：`ShareClient`，App 這端的流程：瀏覽器登入（輪詢）、session token、安裝（下載圖片、設定 `origin`）、投稿、管理。
+- **App 裡** `ShareClient` 在 main process（`index.ts` 建立，`SafeSessionStore` 以 `safeStorage` 加密 session token，存在 userData `share.token`），控制台透過單一 IPC `share:call`（`SHARE_METHODS` 白名單）呼叫；帳號狀態在 `AppState.share`。縮圖由 `share:capture-thumbnail` 擷取主視窗的一塊區域。
+- **網頁模式**的 mock API 在頁面裡直接建立 `ShareClient`＋假服務。
+- 控制台：`services/share.ts`（`shareCall`、`useShareSession`、`useInstalledThemes`、`useShareUpdates`）、`pages/explore/`。
+- 登入和聊天室連線完全分開，不使用聊天平台的 token；登入方式（Twitch、Google、Discord）由服務代理 OAuth。
+- 設定：`settings.share.clientId`（匿名下載計數）、`settings.share.termsAccepted`（同意過的條款版本，`SHARE_TERMS_VERSION`）。
+
 ## 路線圖
 
 - [x] 主題編輯器（視覺化調整、版型切換、自訂 CSS、即時預覽）

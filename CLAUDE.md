@@ -34,6 +34,7 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - 事件提醒規則分「通用」（跨平台分類 `ALERT_CATEGORIES`）與各平台專屬事件；新增平台事件時，能對應到通用分類就在 `EVENT_CATALOG` 填 `alertCategory`。
 - OBS 外掛只是包住 embed 頁的私有 obs-browser 來源，不自己畫聊天室；它讀 `/api/ping`、`/api/themes`，用 `/embed?theme=<id>` 選主題（見 `docs/architecture.md`）。這兩個 API 和 `?theme=` 是外掛的公開介面，改動要相容。模組名 `obs-chatto`、來源類型 id `chatto_chat` 會存進使用者的場景，不能改名。
 - App 更新：`electron-updater`（`apps/desktop/src/main/updater.ts`）讀最新**已發佈**的 GitHub Release，只提示，使用者同意才下載；開發版不檢查。
+- 主題分享（「探索」頁，GitHub #4）：資料型別、檢查規則與 App 端流程在 `apps/desktop/src/shared/share/`（`ShareClient`、`ShareBackend`）。App 裡 `ShareClient` 在 main process，session token 不離開 main；控制台經 IPC `share:call`（`SHARE_METHODS`）呼叫。分享服務（Cloudflare Worker）還沒上線，目前用記憶體內的假服務（`fakeBackend.ts`）。分享帳號和聊天室連線分開，不得使用聊天平台的 token。見 `docs/architecture.md`「主題分享」。
 - 提醒邏輯（沉寂偵測、事件規則）是 `apps/desktop/src/main/alerts.ts` 的純函式；內建提示音是從 soundcn 收進來的 CC0 音效（`packages/chat-ui/src/soundcn/`，由 `sounds.ts` 動態載入）；只能收 CC0 音效，並記到 `THIRD_PARTY_NOTICES.md`，不得使用 soundcn 的 Blizzard 音效。
 
 ### 核心原則
@@ -63,7 +64,7 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 
 - 視覺與互動的細則（色彩 token、字級、圓角與間距、kit 元件的用法、狀態回饋、動畫、吉祥物）見 `docs/design.md`，新增或修改介面前先看。
 - 品牌概念、色彩意象、茶杯吉祥物的造型、插圖與內建主題的美術方向見 `docs/visual-identity.md`；畫新素材、改吉祥物或新增內建主題前先看。
-- 兩種介面模式：**完整模式**（左側導覽：總覽、聊天室、主題、輸出、提醒、連線、設定）與**精簡模式**（單頁 Bento 控制台），由標題列或設定切換，存在 `prefs.uiMode`。
+- 兩種介面模式：**完整模式**（左側導覽：總覽、聊天室、主題、探索、輸出、提醒、連線、設定）與**精簡模式**（單頁 Bento 控制台），由標題列或設定切換，存在 `prefs.uiMode`。
 - 設定頁分「一般」「外觀」「進階」「關於」四個區塊，用左側選單（kit `SideNavItem`，主題編輯器共用）切換。
 - 主視窗為 frameless，自繪標題列並整合最小化／最大化／關閉；關閉行為依 `prefs.closeToTray` 決定縮到系統匣或結束。
 - 版面採 **Bento 格狀**，整體**簡潔直觀**。

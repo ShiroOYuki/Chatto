@@ -13,6 +13,45 @@ import type {
   SoundSetting,
   ViewerTarget,
 } from '@chatto/core';
+import type { ShareClient } from './share/client';
+import type { ShareState } from './share/model';
+
+/** Theme sharing calls the control panel may make; they run on the main process's `ShareClient`. */
+export const SHARE_METHODS = [
+  'acceptTerms',
+  'signIn',
+  'cancelSignIn',
+  'signOut',
+  'setDisplayName',
+  'unlink',
+  'deleteAccount',
+  'list',
+  'findByCode',
+  'get',
+  'versions',
+  'install',
+  'setLiked',
+  'report',
+  'mine',
+  'publish',
+  'unpublish',
+  'reports',
+  'setHidden',
+  'setBanned',
+] as const;
+export type ShareMethod = (typeof SHARE_METHODS)[number];
+export type ShareApi = Pick<ShareClient, ShareMethod>;
+
+export const isShareMethod = (value: unknown): value is ShareMethod =>
+  (SHARE_METHODS as readonly unknown[]).includes(value);
+
+/** A rectangle of the main window, in CSS pixels. */
+export interface CaptureRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export interface DeviceCodeInfo {
   userCode: string;
@@ -95,6 +134,8 @@ export interface AppState {
   server: { port: number; embedUrl: string; overlayUrl: string };
   themes: ChatTheme[];
   selectedThemes: Record<ViewerTarget, string>;
+  /** Theme sharing account; the session token stays in the main process. */
+  share: ShareState;
 }
 
 export interface ChattoApi {
@@ -158,6 +199,11 @@ export interface ChattoApi {
   downloadUpdate(): Promise<void>;
   /** Quits, installs the downloaded update and starts the new version. */
   installUpdate(): Promise<void>;
+
+  /** Theme sharing (GitHub #4); the account shows in `state.share`. */
+  share<K extends ShareMethod>(method: K, ...args: Parameters<ShareApi[K]>): Promise<Awaited<ReturnType<ShareApi[K]>>>;
+  /** A PNG data URL of part of the main window (theme thumbnails); null where it cannot capture. */
+  captureThumbnail(rect: CaptureRect): Promise<string | null>;
 }
 
 /**
@@ -216,4 +262,6 @@ export const IPC = {
   checkForUpdate: 'update:check',
   downloadUpdate: 'update:download',
   installUpdate: 'update:install',
+  share: 'share:call',
+  captureThumbnail: 'share:capture-thumbnail',
 } as const;

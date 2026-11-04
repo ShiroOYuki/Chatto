@@ -1,0 +1,323 @@
+import { assetFileOf, type ChatTheme } from '@chatto/core';
+import { normalizeTheme, themeImageSources } from '@chatto/chat-ui/themes';
+import type { ShareBackend, SignInPoll } from './backend';
+import {
+  SHARE_TERMS_VERSION,
+  shareFail,
+  shareOk,
+  type PublishMeta,
+  type ShareAccount,
+  type ShareErrorCode,
+  type SharePage,
+  type ShareProvider,
+  type ShareQuery,
+  type ShareReport,
+  type ShareReportReason,
+  type ShareResult,
+  type ShareSession,
+  type ShareState,
+  type ShareThemeDetail,
+  type ShareThemeSummary,
+} from './model';
+import { checkPublish, themeContentHash } from './rules';
+
+/** Where the session token is kept (encrypted on disk in the app). */
+export interface SessionStore {
+  load(): Promise<string | null>;
+  save(token: string): Promise<void>;
+  clear(): Promise<void>;
+}
+
+export interface ShareClientOptions {
+  backend: ShareBackend;
+  session: SessionStore;
+  /** Anonymous id that counts downloads once a day. */
+  clientId: () => string;
+  termsAccepted: () => number;
+  setTermsAccepted: (version: number) => void;
+  openExternal: (url: string) => void;
+  /** Local themes, and saving one (the app controller). */
+  themes: () => ChatTheme[];
+  saveTheme: (theme: ChatTheme) => void;
+  /** Frame image files (`ThemeAssets`). */
+  assets: { add(bytes: Uint8Array): string; has(file: string): boolean; read(file: string): Uint8Array | null };
+  onChange: () => void;
+  pollInterval?: number;
+  /** A sign-in left unfinished in the browser for this long gives up. */
+  signInTimeout?: number;
+  newThemeId?: () => string;
+  now?: () => number;
+}
+
+/**
+ * The app's side of theme sharing. In the app it runs in the main process, so the session
+ * token never reaches the control panel; the browser preview runs it in the page with the
+ * fake service. It runs the browser sign-in, and installs and publishes themes against the
+ * local theme store. Every call returns a `ShareResult`, so the control panel can show what
+ * went wrong.
+ */
+export class ShareClient {
+  #token: string | null = null;
+  #session: ShareSession = { status: 'signed-out' };
+  #poll: ReturnType<typeof setTimeout> | null = null;
+  /** Bumped by every sign-in and cancel, so a stale poll result is ignored. */
+  #attempt = 0;
+
+  constructor(private readonly options: ShareClientOptions) {}
+
+  state(): ShareState {
+    return { session: this.#session, termsAccepted: this.options.termsAccepted() };
+  }
+
+  /** Restores the saved session; a token the service no longer accepts is forgotten. */
+  async init(): Promise<void> {
+    const token = await this.options.session.load().catch(() => null);
+    if (!token) return;
+    const result = await this.options.backend.account(token).catch(() => shareFail<ShareAccount>('network'));
+    if (result.ok) {
+      this.#token = token;
+      this.#setSession({ status: 'signed-in', account: result.value });
+    }
+    // Offline: the token stays on disk for the next launch; until then the app shows signed out.
+    else if (result.error === 'unauthorized' || result.error === 'banned') await this.#forget();
+  }
+
+  acceptTerms(): void {
+    this.options.setTermsAccepted(SHARE_TERMS_VERSION);
+    this.options.onChange();
+  }
+
+  // ---------- sign-in ----------
+
+  /** Signs in with a provider, or links it to the signed-in account. Opens the browser. */
+  async signIn(provider: ShareProvider): Promise<ShareResult<void>> {
+    if (this.options.termsAccepted() < SHARE_TERMS_VERSION) return shareFail('terms');
+    if (this.#session.status === 'pending') this.cancelSignIn();
+    // With a session, the new sign-in method is linked to that account.
+    const linking = this.#token !== null;
+    const begun = await this.options.backend.beginSignIn(provider, this.#token ?? undefined);
+    if (!begun.ok) return shareFail(begun.error);
+    if (begun.value.url) this.options.openExternal(begun.value.url);
+    this.#setSession({ status: 'pending', provider, linking });
+    const started = (this.options.now ?? Date.now)();
+    const timeout = this.options.signInTimeout ?? 10 * 60_000;
+    const attempt = ++this.#attempt;
+    const tick = async () => {
+      this.#poll = null;
+      const result = await this.options.backend
+        .pollSignIn(begun.value.requestId)
+        .catch(() => shareFail<SignInPoll>('network'));
+      if (attempt !== this.#attempt) return; // cancelled or replaced meanwhile
+      if (result.ok && result.value.status === 'done') {
+        this.#token = result.value.token;
+        await this.options.session.save(result.value.token).catch(() => undefined);
+        return this.#setSession({ status: 'signed-in', account: result.value.account });
+      }
+      const failed: ShareErrorCode | null = !result.ok
+        ? result.error === 'network'
+          ? null // keep trying through short outages
+          : result.error
+        : result.value.status === 'failed'
+          ? result.value.error
+          : null;
+      if (failed || (this.options.now ?? Date.now)() - started > timeout) {
+        const error = failed ?? 'cancelled';
+        const account = this.#token ? await this.options.backend.account(this.#token) : null;
+        return this.#setSession(
+          account?.ok ? { status: 'signed-in', account: account.value, error } : { status: 'signed-out', error },
+        );
+      }
+      this.#poll = setTimeout(() => void tick(), this.options.pollInterval ?? 1500);
+    };
+    this.#poll = setTimeout(() => void tick(), this.options.pollInterval ?? 1500);
+    return shareOk(undefined);
+  }
+
+  /** Stops waiting for the browser; a link in progress goes back to the signed-in account. */
+  cancelSignIn(): void {
+    this.#attempt += 1;
+    if (this.#poll) clearTimeout(this.#poll);
+    this.#poll = null;
+    if (this.#session.status !== 'pending') return;
+    void this.#refreshAccount();
+  }
+
+  async signOut(): Promise<void> {
+    this.cancelSignIn();
+    if (this.#token) await this.options.backend.signOut(this.#token);
+    await this.#forget();
+  }
+
+  setDisplayName(name: string): Promise<ShareResult<ShareAccount>> {
+    return this.#accountCall((token) => this.options.backend.setDisplayName(token, name));
+  }
+
+  unlink(provider: ShareProvider): Promise<ShareResult<ShareAccount>> {
+    return this.#accountCall((token) => this.options.backend.unlink(token, provider));
+  }
+
+  async deleteAccount(): Promise<ShareResult<void>> {
+    const result = await this.#authed((token) => this.options.backend.deleteAccount(token));
+    if (result.ok) await this.#forget();
+    return result;
+  }
+
+  // ---------- browsing ----------
+
+  list(query: ShareQuery): Promise<ShareResult<SharePage>> {
+    return this.#call((token) => this.options.backend.list(query, token));
+  }
+
+  findByCode(code: string): Promise<ShareResult<ShareThemeSummary>> {
+    return this.#call((token) => this.options.backend.findByCode(code, token));
+  }
+
+  get(id: string): Promise<ShareResult<ShareThemeDetail>> {
+    return this.#call((token) => this.options.backend.get(id, token));
+  }
+
+  versions(ids: string[]): Promise<ShareResult<Record<string, number>>> {
+    return this.#call(() => this.options.backend.versions(ids));
+  }
+
+  setLiked(id: string, liked: boolean): Promise<ShareResult<ShareThemeSummary>> {
+    return this.#authed((token) => this.options.backend.setLiked(token, id, liked));
+  }
+
+  report(id: string, reason: ShareReportReason, note: string): Promise<ShareResult<void>> {
+    return this.#authed((token) => this.options.backend.report(token, id, reason, note));
+  }
+
+  /**
+   * Installs a shared theme as a new local theme, or updates the local theme `replaceId` in
+   * place. Frame images are fetched into the asset folder. Resolves to the saved theme.
+   */
+  async install(id: string, replaceId?: string): Promise<ShareResult<ChatTheme>> {
+    const detail = await this.get(id);
+    if (!detail.ok) return detail;
+    for (const src of themeImageSources(detail.value.theme)) {
+      const file = assetFileOf(src);
+      if (!file || this.options.assets.has(file)) continue;
+      const bytes = await this.options.backend.asset(file);
+      if (!bytes.ok) return bytes;
+      try {
+        if (this.options.assets.add(bytes.value) !== file) return shareFail('invalid');
+      } catch {
+        return shareFail('invalid');
+      }
+    }
+    const replacing = replaceId ? this.options.themes().find((theme) => theme.id === replaceId) : undefined;
+    const theme = normalizeTheme({
+      ...detail.value.theme,
+      id: replacing?.id ?? this.options.newThemeId?.() ?? `custom-${Date.now().toString(36)}`,
+      name: detail.value.name,
+      builtIn: false,
+    });
+    const installed: ChatTheme = {
+      ...theme,
+      origin: { shareId: id, version: detail.value.version, contentHash: themeContentHash(theme) },
+    };
+    try {
+      this.options.saveTheme(installed);
+    } catch {
+      return shareFail('unknown');
+    }
+    void this.options.backend.recordDownload(id, this.options.clientId());
+    return shareOk(installed);
+  }
+
+  // ---------- publishing ----------
+
+  mine(): Promise<ShareResult<ShareThemeSummary[]>> {
+    return this.#authed((token) => this.options.backend.mine(token));
+  }
+
+  /** Publishes a local theme, or a new version of the shared theme `shareId`. */
+  async publish(
+    themeId: string,
+    meta: PublishMeta,
+    thumbnail?: string,
+    shareId?: string,
+  ): Promise<ShareResult<ShareThemeSummary>> {
+    const theme = this.options.themes().find((item) => item.id === themeId && !item.builtIn);
+    if (!theme) return shareFail('not-found');
+    const issues = checkPublish(theme, meta, {
+      assetBytes: (src) => {
+        const file = assetFileOf(src);
+        return file ? (this.options.assets.read(file)?.byteLength ?? 0) : 0;
+      },
+    });
+    if (issues.length) return shareFail('invalid', issues);
+    const input = { ...meta, theme, ...(thumbnail ? { thumbnail } : {}) };
+    const result = await this.#authed((token) =>
+      shareId ? this.options.backend.update(token, shareId, input) : this.options.backend.publish(token, input),
+    );
+    if (!result.ok) return result;
+    // The local theme now follows what was published, so "My themes" can offer to update it later.
+    this.options.saveTheme({
+      ...theme,
+      origin: { shareId: result.value.id, version: result.value.version, contentHash: themeContentHash(theme) },
+    });
+    void this.#refreshAccount(); // publishes left today
+    return result;
+  }
+
+  unpublish(id: string): Promise<ShareResult<void>> {
+    return this.#authed((token) => this.options.backend.unpublish(token, id));
+  }
+
+  // ---------- moderation ----------
+
+  reports(): Promise<ShareResult<ShareReport[]>> {
+    return this.#authed((token) => this.options.backend.reports(token));
+  }
+
+  setHidden(id: string, hidden: boolean): Promise<ShareResult<void>> {
+    return this.#authed((token) => this.options.backend.setHidden(token, id, hidden));
+  }
+
+  setBanned(accountId: string, banned: boolean): Promise<ShareResult<void>> {
+    return this.#authed((token) => this.options.backend.setBanned(token, accountId, banned));
+  }
+
+  // ---------- helpers ----------
+
+  #setSession(session: ShareSession): void {
+    this.#session = session;
+    this.options.onChange();
+  }
+
+  async #forget(): Promise<void> {
+    this.#token = null;
+    await this.options.session.clear().catch(() => undefined);
+    this.#setSession({ status: 'signed-out' });
+  }
+
+  async #refreshAccount(): Promise<void> {
+    if (!this.#token) return this.#setSession({ status: 'signed-out' });
+    const result = await this.options.backend.account(this.#token);
+    if (result.ok) this.#setSession({ status: 'signed-in', account: result.value });
+    else if (result.error === 'unauthorized') await this.#forget();
+  }
+
+  /** A call that works signed in or out; a rejected token signs the app out. */
+  async #call<T>(run: (token?: string) => Promise<ShareResult<T>>): Promise<ShareResult<T>> {
+    const result = await run(this.#token ?? undefined).catch(() => shareFail<T>('network'));
+    if (!result.ok && result.error === 'unauthorized' && this.#token) await this.#forget();
+    return result;
+  }
+
+  /** A call that needs an account. */
+  #authed<T>(run: (token: string) => Promise<ShareResult<T>>): Promise<ShareResult<T>> {
+    const token = this.#token;
+    if (!token) return Promise.resolve(shareFail<T>('unauthorized'));
+    return this.#call(() => run(token));
+  }
+
+  /** An account change; the new account replaces the session's. */
+  async #accountCall(run: (token: string) => Promise<ShareResult<ShareAccount>>): Promise<ShareResult<ShareAccount>> {
+    const result = await this.#authed(run);
+    if (result.ok) this.#setSession({ status: 'signed-in', account: result.value });
+    return result;
+  }
+}

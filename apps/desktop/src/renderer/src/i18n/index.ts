@@ -15,6 +15,8 @@ import legal from './messages/legal';
 import outputs from './messages/outputs';
 import overview from './messages/overview';
 import settings from './messages/settings';
+import share from './messages/share';
+import shareTerms from './messages/shareTerms';
 import shell from './messages/shell';
 import themes from './messages/themes';
 
@@ -37,6 +39,8 @@ const NAMESPACES = {
   outputs,
   overview,
   settings,
+  share,
+  shareTerms,
   shell,
   themes,
 };
