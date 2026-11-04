@@ -89,10 +89,10 @@ packages/chat-ui          可主題化的聊天渲染器與預設主題
 apps/viewer               /overlay 與 /embed 頁面
 apps/desktop              Electron 桌面 App（控制台、本機伺服器、Overlay 視窗）
 obs-plugin                OBS 外掛「Chatto 聊天室」（C++，CMake）
-docs/                     架構、訊息格式、主題文件
+docs/                     架構、訊息格式、主題、測試、控制台設計文件
 ```
 
-詳見 [docs/architecture.md](docs/architecture.md)、[docs/message-format.md](docs/message-format.md)、[docs/theming.md](docs/theming.md)。
+詳見 [docs/architecture.md](docs/architecture.md)、[docs/message-format.md](docs/message-format.md)、[docs/theming.md](docs/theming.md)、[docs/design.md](docs/design.md)。
 
 ## 注意事項
 
