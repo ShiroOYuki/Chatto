@@ -88,6 +88,7 @@ function fakeSettings(initial: Partial<Settings> = {}) {
       editorCommand: '',
       locale: 'zh-TW',
       chatLocale: 'auto',
+      obsPluginPromptDismissed: false,
     },
     ...initial,
   };
@@ -318,6 +319,7 @@ describe('AppController CSS files', () => {
         editorCommand: 'notepad++',
         locale: 'zh-TW',
         chatLocale: 'auto',
+        obsPluginPromptDismissed: false,
       },
     });
     await controller.openCssFile('my-theme');

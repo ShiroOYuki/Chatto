@@ -36,6 +36,8 @@ export interface AppPrefs {
   locale: Locale;
   /** Language of event texts on the overlays and OBS: `auto` follows `locale`. */
   chatLocale: ChatLocalePref;
+  /** The user said no to the title bar's "install the OBS plugin" prompt (updates still show). */
+  obsPluginPromptDismissed: boolean;
 }
 
 /** How a theme's CSS file was opened: the configured editor, the system default app, or not at all. */

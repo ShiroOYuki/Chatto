@@ -27,6 +27,7 @@ describe('SettingsStore', () => {
       editorCommand: '',
       locale: 'zh-TW',
       chatLocale: 'auto',
+      obsPluginPromptDismissed: false,
     });
   });
 

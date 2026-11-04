@@ -1,9 +1,21 @@
-import { Coffee, Copy, Download, Minus, PanelsTopLeft, RotateCw, Square, X, LayoutDashboard } from 'lucide-react';
-import type { ReactNode } from 'react';
+import {
+  Coffee,
+  Copy,
+  Download,
+  LayoutDashboard,
+  Minus,
+  PanelsTopLeft,
+  Puzzle,
+  RotateCw,
+  Square,
+  X,
+} from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { SUPPORT_LINKS } from '../../../shared/support';
 import { useLocale, useMessages } from '../i18n';
 import { appPrefs, appWindow, openExternal } from '../services/app';
+import { obsPlugin, useObsPluginStatus } from '../services/obsPlugin';
 import { updater } from '../services/updater';
 import { SwapIcon } from './motion';
 import { Hint, channelTone, StatusDot } from './kit';
@@ -72,11 +84,13 @@ function SupportMenu() {
   );
 }
 
+/** Shape of the title bar's prompts (app update, OBS plugin); each adds its colors. */
+const PILL = 'app-no-drag inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium [&>svg]:size-3.5';
+
 /** Appears only while there is an update to act on: download it, watch it, or restart into it. */
 function UpdateBadge({ update }: { update: AppState['update'] }) {
   const m = useMessages().shell.titleBar;
-  const pill =
-    'app-no-drag mr-2 inline-flex h-7 items-center gap-1.5 rounded-full bg-matcha-soft px-3 text-xs font-medium text-matcha-strong [&>svg]:size-3.5';
+  const pill = `${PILL} mr-2 bg-matcha-soft text-matcha-strong`;
   if (update.status === 'downloading') {
     return (
       <span className={pill} role="status">
@@ -97,6 +111,75 @@ function UpdateBadge({ update }: { update: AppState['update'] }) {
         {ready ? m.updateReady : m.updateAvailable(update.version ?? '')}
       </button>
     </Hint>
+  );
+}
+
+const OBS_NOTICE_MS = 5000;
+
+/**
+ * Offers the OBS plugin when this Chatto ships a newer one than OBS has, or when OBS is
+ * here without it (until the user dismisses that). The outputs page has the full controls.
+ */
+function ObsPluginBadge({ dismissed }: { dismissed: boolean }) {
+  const m = useMessages().shell.titleBar;
+  const status = useObsPluginStatus();
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<'obs-running' | 'failed' | null>(null);
+
+  useEffect(() => {
+    if (!failure) return;
+    const timer = setTimeout(() => setFailure(null), OBS_NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [failure]);
+
+  if (failure) {
+    return (
+      <span role="alert" className={`${PILL} mr-2 bg-danger/10 text-danger`}>
+        <Puzzle /> {failure === 'obs-running' ? m.closeObsFirst : m.obsPluginFailed}
+      </span>
+    );
+  }
+  const outdated = status?.state === 'outdated';
+  const missing = status?.state === 'not-installed' && status.obsFound && !dismissed;
+  if (!outdated && !missing) return null;
+
+  const install = async () => {
+    setBusy(true);
+    try {
+      const result = await obsPlugin.install();
+      if (!result.ok) setFailure(result.reason);
+    } catch {
+      setFailure('failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <span className="mr-2 inline-flex items-center">
+      <Hint label={outdated ? m.updateObsPluginHint : m.installObsPluginHint}>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void install()}
+          className={`${PILL} bg-matcha-soft text-matcha-strong transition-colors hover:bg-matcha hover:text-white disabled:opacity-60`}
+        >
+          <Puzzle /> {outdated ? m.updateObsPlugin : m.installObsPlugin}
+        </button>
+      </Hint>
+      {missing ? (
+        <Hint label={m.dismissObsPlugin}>
+          <button
+            type="button"
+            aria-label={m.dismissObsPlugin}
+            onClick={() => appPrefs.set({ obsPluginPromptDismissed: true })}
+            className="app-no-drag ml-0.5 grid size-6 place-items-center rounded-full text-ink-faint transition-colors hover:bg-tile-muted hover:text-ink [&>svg]:size-3"
+          >
+            <X />
+          </button>
+        </Hint>
+      ) : null}
+    </span>
   );
 }
 
@@ -129,6 +212,7 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
 
       <div className="ml-auto flex h-full items-center">
         <UpdateBadge update={state.update} />
+        <ObsPluginBadge dismissed={state.prefs.obsPluginPromptDismissed} />
         <SupportMenu />
         <button
           type="button"

@@ -38,6 +38,13 @@ export default defineMessages({
       updateDownloading: (percent: number) => `下載中 ${percent}%`,
       updateReady: '重新啟動以更新',
       updateReadyHint: 'Overlay 和 OBS 來源會中斷幾秒；不重開的話，下次結束 Chatto 時安裝',
+      installObsPlugin: '安裝 OBS 外掛',
+      installObsPluginHint: '在 OBS 新增「Chatto 聊天室」來源，不用貼網址；OBS 要先關閉',
+      updateObsPlugin: '更新 OBS 外掛',
+      updateObsPluginHint: '這版 Chatto 附帶新的外掛；OBS 要先關閉',
+      dismissObsPlugin: '不再提醒安裝 OBS 外掛',
+      closeObsFirst: '先關閉 OBS 再試',
+      obsPluginFailed: '外掛沒有裝好',
     },
     kit: {
       url: '網址',
@@ -99,6 +106,13 @@ export default defineMessages({
       updateReady: 'Restart to update',
       updateReadyHint:
         'The overlay and OBS sources drop out for a few seconds; otherwise it installs when you quit Chatto',
+      installObsPlugin: 'Install OBS plugin',
+      installObsPluginHint: 'Adds a "Chatto Chat" source to OBS, no URL to paste; close OBS first',
+      updateObsPlugin: 'Update OBS plugin',
+      updateObsPluginHint: 'This Chatto version ships a newer plugin; close OBS first',
+      dismissObsPlugin: 'Stop suggesting the OBS plugin',
+      closeObsFirst: 'Close OBS and try again',
+      obsPluginFailed: 'The plugin was not installed',
     },
     kit: {
       url: 'URL',

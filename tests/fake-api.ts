@@ -16,6 +16,7 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
       editorCommand: '',
       locale: 'zh-TW',
       chatLocale: 'auto',
+      obsPluginPromptDismissed: false,
     },
     clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel' },

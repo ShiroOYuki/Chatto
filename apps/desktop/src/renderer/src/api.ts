@@ -37,6 +37,7 @@ function createMockApi(): ChattoApi {
       editorCommand: '',
       locale: params.get('lang') === 'en' ? 'en' : 'zh-TW',
       chatLocale: 'auto',
+      obsPluginPromptDismissed: false,
     },
     clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel' },
@@ -67,7 +68,11 @@ function createMockApi(): ChattoApi {
     };
   }
 
-  let obsPluginStatus: ObsPluginStatus = { state: 'not-installed', obsFound: true };
+  // Installed and current, so the title bar has no OBS prompt unless a test asks for one (`?obsPlugin=<state>`).
+  let obsPluginStatus: ObsPluginStatus = {
+    state: (params.get('obsPlugin') as ObsPluginStatus['state'] | null) ?? 'installed',
+    obsFound: true,
+  };
   let sent: string[] = [];
   if (!params.has('e2e'))
     setInterval(() => {

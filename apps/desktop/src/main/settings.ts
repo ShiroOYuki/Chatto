@@ -57,6 +57,7 @@ const defaults = (): Settings => ({
     // First launch speaks the system language.
     locale: localeFromTag(app.getLocale()),
     chatLocale: 'auto',
+    obsPluginPromptDismissed: false,
   },
 });
 

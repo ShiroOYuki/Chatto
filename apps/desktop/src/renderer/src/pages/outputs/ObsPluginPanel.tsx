@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { ObsPluginResult, ObsPluginStatus } from '../../../../shared/ipc';
+import { useState } from 'react';
+import type { ObsPluginResult } from '../../../../shared/ipc';
 import { Badge, Button } from '../../components/kit';
 import { useMessages } from '../../i18n';
-import { obsPlugin } from '../../services/obsPlugin';
+import { obsPlugin, useObsPluginStatus } from '../../services/obsPlugin';
 
 type Notice = 'installed' | 'obs-running' | 'failed' | null;
 
@@ -30,29 +30,14 @@ function PanelNote({ notice, obsFound }: { notice: Notice; obsFound: boolean }) 
 /** Installs, updates or removes the "Chatto Chat" OBS plugin from the OBS tile. */
 export function ObsPluginPanel() {
   const m = useMessages().outputs;
-  const [status, setStatus] = useState<ObsPluginStatus | null>(null);
+  const status = useObsPluginStatus();
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
-
-  const refresh = useCallback(() => {
-    obsPlugin
-      .status()
-      .then(setStatus)
-      .catch((error: unknown) => console.error('[chatto] obs plugin status failed', error));
-  }, []);
-
-  // OBS may be installed, closed or changed while Chatto runs: look again when the window regains focus.
-  useEffect(() => {
-    refresh();
-    window.addEventListener('focus', refresh);
-    return () => window.removeEventListener('focus', refresh);
-  }, [refresh]);
 
   const run = async (action: () => Promise<ObsPluginResult>, done: Notice) => {
     setBusy(true);
     try {
       const result = await action();
-      setStatus(result.status);
       setNotice(result.ok ? done : result.reason);
     } catch {
       setNotice('failed');

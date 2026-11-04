@@ -170,7 +170,7 @@ test('the theme editor swaps its side menu for a dropdown in the smallest window
 });
 
 test('the OBS tile installs and removes the OBS plugin', async ({ panel, page }) => {
-  await panel.open('page=outputs');
+  await panel.open('page=outputs&obsPlugin=not-installed');
   const plugin = page.getByRole('region', { name: 'OBS 外掛' });
   await expect(plugin.getByText('未安裝')).toBeVisible();
   await plugin.getByRole('button', { name: '安裝外掛' }).click();
@@ -179,6 +179,23 @@ test('the OBS tile installs and removes the OBS plugin', async ({ panel, page })
   await expect(plugin.getByRole('button', { name: '安裝外掛' })).toHaveCount(0);
   await plugin.getByRole('button', { name: '移除' }).click();
   await expect(plugin.getByText('未安裝')).toBeVisible();
+});
+
+test('the title bar offers an OBS plugin update and installs it', async ({ panel, page }) => {
+  await panel.open('page=overview&obsPlugin=outdated');
+  const update = page.getByRole('button', { name: '更新 OBS 外掛' });
+  await update.click();
+  await expect(update).toHaveCount(0);
+});
+
+test('the title bar suggests installing the OBS plugin until dismissed', async ({ panel, page }) => {
+  await panel.open('page=outputs&obsPlugin=not-installed');
+  const install = page.getByRole('button', { name: '安裝 OBS 外掛', exact: true });
+  await expect(install).toBeVisible();
+  await page.getByRole('button', { name: '不再提醒安裝 OBS 外掛' }).click();
+  await expect(install).toHaveCount(0);
+  // The outputs page still has it.
+  await expect(page.getByRole('region', { name: 'OBS 外掛' }).getByRole('button', { name: '安裝外掛' })).toBeVisible();
 });
 
 test('switching to compact mode and back', async ({ panel, page }) => {

@@ -31,6 +31,7 @@ describe('SettingsPage', () => {
           editorCommand: '',
           locale: 'zh-TW',
           chatLocale: 'auto',
+          obsPluginPromptDismissed: false,
         },
       }),
     );
