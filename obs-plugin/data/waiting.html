@@ -57,14 +57,11 @@
         border: 2px solid var(--ripple-rim);
         background: radial-gradient(circle, transparent 55%, var(--ripple) 100%);
         transform: translate(-50%, -50%);
-        animation: ripple 9s linear infinite;
+        animation: ripple 6s linear infinite;
       }
-      /* One ring every 3 s. Negative delays: the rings are already spread out on the first frame. */
+      /* One ring every 3 s. A negative delay: the rings are already spread out on the first frame. */
       .ripple:nth-child(2) {
         animation-delay: -3s;
-      }
-      .ripple:nth-child(3) {
-        animation-delay: -6s;
       }
       .plate {
         position: relative;
@@ -173,7 +170,6 @@
   </head>
   <body>
     <div class="stage">
-      <div class="ripple"></div>
       <div class="ripple"></div>
       <div class="ripple"></div>
       <div class="plate">
