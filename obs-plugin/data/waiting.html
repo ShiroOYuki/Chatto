@@ -1,39 +1,55 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<!-- Shown by the Chatto Chat source while the Chatto app is not running. Viewers can see it. -->
+<!-- Shown by the Chatto Chat source while it cannot reach the Chatto app. Viewers can see it. -->
 <html>
   <head>
     <meta charset="utf-8" />
     <title>Chatto</title>
     <style>
+      /* Colors of the Chatto mascot (see TeaCup.tsx in the desktop app). */
+      :root {
+        --bg: #27500a;
+        --plate: #f4f9ee;
+        --text: #f4f9ee;
+        --matcha: #6b9b2e;
+        --matcha-soft: #c0dd97;
+        --face: #27500a;
+        --sakura: #f4c0d1;
+        --steam: #c0dd97;
+      }
       html,
       body {
         margin: 0;
+        width: 100%;
         height: 100%;
-        background: transparent;
         overflow: hidden;
       }
       body {
         display: flex;
-        align-items: flex-end;
+        flex-direction: column;
+        align-items: center;
         justify-content: center;
-        padding-bottom: 24px;
-        box-sizing: border-box;
+        gap: 4vmin;
+        background: var(--bg);
+        color: var(--text);
         font-family: 'Segoe UI', 'Microsoft JhengHei UI', 'Microsoft JhengHei', sans-serif;
       }
-      .card {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 18px 10px 12px;
-        border-radius: 999px;
-        background: rgba(30, 70, 50, 0.78);
-        border: 1px solid rgba(159, 225, 203, 0.35);
-        color: #eaf3de;
-        font-size: 15px;
-        line-height: 1.3;
+      .plate {
+        display: grid;
+        place-items: center;
+        width: 38vmin;
+        height: 38vmin;
+        border-radius: 50%;
+        background: var(--plate);
+      }
+      .cup {
+        width: 72%;
+        height: 72%;
+        overflow: visible;
+        animation: bob 2.4s ease-in-out infinite;
       }
       .steam path {
+        stroke-dasharray: 12;
         animation: rise 2.4s ease-in-out infinite;
       }
       .steam path:nth-child(2) {
@@ -42,39 +58,97 @@
       .steam path:nth-child(3) {
         animation-delay: 0.8s;
       }
+      .eyes {
+        transform-origin: 48px 46px;
+        animation: blink 4s infinite;
+      }
+      .label {
+        font-size: clamp(14px, 5.5vmin, 40px);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .dots span {
+        animation: dot 1.4s infinite;
+        opacity: 0.2;
+      }
+      .dots span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .dots span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-3%);
+        }
+      }
       @keyframes rise {
+        0% {
+          opacity: 0;
+          stroke-dashoffset: 12;
+          transform: translateY(4px);
+        }
+        40% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          stroke-dashoffset: -12;
+          transform: translateY(-4px);
+        }
+      }
+      @keyframes blink {
+        0%,
+        92%,
+        100% {
+          transform: scaleY(1);
+        }
+        96% {
+          transform: scaleY(0.1);
+        }
+      }
+      @keyframes dot {
         0%,
         100% {
           opacity: 0.2;
-          transform: translateY(1px);
         }
-        50% {
-          opacity: 0.9;
-          transform: translateY(-1px);
+        40% {
+          opacity: 1;
         }
       }
     </style>
   </head>
   <body>
-    <div class="card">
-      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
-        <g class="steam" fill="none" stroke="#c0dd97" stroke-width="1.6" stroke-linecap="round">
-          <path d="M10 4c-1 1.5 1 2.5 0 4" />
-          <path d="M14.5 3c-1 1.5 1 2.5 0 4" />
-          <path d="M19 4c-1 1.5 1 2.5 0 4" />
+    <div class="plate">
+      <svg class="cup" viewBox="0 0 96 96" aria-hidden="true">
+        <g class="steam" stroke="var(--steam)" stroke-width="2.5" fill="none" stroke-linecap="round">
+          <path d="M36 22q-3-5 0-10" />
+          <path d="M48 20q-3-5 0-10" />
+          <path d="M60 22q-3-5 0-10" />
         </g>
-        <path d="M5 12h19v7a7 7 0 0 1-7 7h-5a7 7 0 0 1-7-7z" fill="#c0dd97" />
-        <path d="M24 14h1.5a3.5 3.5 0 0 1 0 7H23" fill="none" stroke="#c0dd97" stroke-width="2" />
-        <rect x="5" y="12" width="19" height="3" rx="1" fill="#639922" />
-        <circle cx="11.5" cy="19" r="1" fill="#27500a" />
-        <circle cx="17.5" cy="19" r="1" fill="#27500a" />
+        <path d="M72 40h4a10 10 0 0 1 0 20h-6" stroke="var(--matcha)" stroke-width="5" fill="none" />
+        <path d="M18 30h60v26a26 26 0 0 1-26 26h-8A26 26 0 0 1 18 56z" fill="var(--matcha-soft)" />
+        <path d="M18 30h60v6H18z" fill="var(--matcha)" />
+        <g class="eyes" fill="var(--face)">
+          <circle cx="37" cy="46" r="3" />
+          <circle cx="59" cy="46" r="3" />
+        </g>
+        <path d="M43 55q5 5 10 0" stroke="var(--face)" stroke-width="2.5" fill="none" stroke-linecap="round" />
+        <circle cx="30" cy="54" r="4" fill="var(--sakura)" opacity="0.8" />
+        <circle cx="66" cy="54" r="4" fill="var(--sakura)" opacity="0.8" />
       </svg>
-      <span id="text">Waiting for Chatto…</span>
+    </div>
+    <div class="label">
+      <span id="text">Connecting to Chatto</span><span class="dots"><span>.</span><span>.</span><span>.</span></span>
     </div>
     <script>
       // OBS gives the page its interface language.
       if ((navigator.language || '').toLowerCase().startsWith('zh')) {
-        document.getElementById('text').textContent = '等待 Chatto 開啟…';
+        document.getElementById('text').textContent = '連線至 Chatto 中';
         document.documentElement.lang = 'zh-Hant';
       }
     </script>
