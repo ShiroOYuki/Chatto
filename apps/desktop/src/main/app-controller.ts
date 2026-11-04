@@ -22,7 +22,7 @@ import { app, nativeTheme } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { copyFileSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
-import type { AppPrefs, AppState, CssFileChange, CssFileOpenResult, DeviceCodeInfo } from '../shared/ipc';
+import type { AppPrefs, AppState, CssFileChange, CssFileOpenResult, DeviceCodeInfo, UpdateState } from '../shared/ipc';
 import { alertCue, markAfterSilence, SilenceTracker } from './alerts';
 import { ChatHub } from './chat-hub';
 import type { CssFiles } from './css-files';
@@ -72,6 +72,8 @@ export class AppController {
   onLocaleChange: (locale: Locale) => void = () => undefined;
   /** Supplied by index.ts, which owns the main window. */
   isWindowMaximized: () => boolean = () => false;
+  /** Supplied by index.ts, which owns the app updater. */
+  updateState: () => UpdateState = () => ({ status: 'unsupported' });
 
   /** `builtInClientId` is the Twitch Client ID baked into this build, used unless the user set their own. */
   constructor(
@@ -139,6 +141,7 @@ export class AppController {
     const settings = this.settings.get();
     return {
       appInfo: { version: app.getVersion(), platform: process.platform },
+      update: this.updateState(),
       window: { maximized: this.isWindowMaximized() },
       prefs: settings.prefs,
       clientId: {

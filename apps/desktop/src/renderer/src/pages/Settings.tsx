@@ -1,6 +1,6 @@
-import { LayoutDashboard, PanelsTopLeft } from 'lucide-react';
+import { Download, LayoutDashboard, PanelsTopLeft, RotateCw } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
-import type { AppState } from '../../../shared/ipc';
+import type { AppState, UpdateState } from '../../../shared/ipc';
 import { SUPPORT_LINKS } from '../../../shared/support';
 import { appPrefs, openExternal } from '../services/app';
 import { Stagger } from '../components/motion';
@@ -8,7 +8,8 @@ import { ThemeSwitcher } from '../components/kibo-ui/theme-switcher';
 import { TeaCup } from '../components/TeaCup';
 import { ClientIdForm } from './ClientIdForm';
 import { Button, PageHeader, Segmented, Select, TextInput, Tile, Toggle } from '../components/kit';
-import { useLocale, useMessages } from '../i18n';
+import { useLocale, useMessages, type Messages } from '../i18n';
+import { updater } from '../services/updater';
 import { LOCALE_NAMES, LOCALES, type ChatLocalePref } from '@chatto/core';
 
 function Row({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
@@ -43,6 +44,87 @@ function EditorCommandField({ value }: { value: string }) {
       }}
       className="w-72 font-mono text-xs md:text-xs"
     />
+  );
+}
+
+/** What the update row says, and the one action it offers. */
+function updateRow(update: UpdateState, m: Messages['settings']): { text: string; action: ReactNode } {
+  const check = (
+    <Button size="sm" onClick={() => updater.check()}>
+      {m.checkForUpdate}
+    </Button>
+  );
+  const version = update.version ?? '';
+  switch (update.status) {
+    case 'unsupported':
+      return { text: m.updateUnsupported, action: null };
+    case 'idle':
+      return { text: m.updateIdle, action: check };
+    case 'checking':
+      return {
+        text: m.updateChecking,
+        action: (
+          <Button size="sm" disabled>
+            {m.checkForUpdate}
+          </Button>
+        ),
+      };
+    case 'not-available':
+      return { text: m.updateLatest, action: check };
+    case 'available':
+      return {
+        text: m.updateAvailable(version),
+        action: (
+          <Button size="sm" variant="primary" onClick={() => updater.download()}>
+            <Download /> {m.downloadUpdate}
+          </Button>
+        ),
+      };
+    case 'downloading':
+      return {
+        text: m.updateDownloading(version, update.percent ?? 0),
+        action: (
+          <div
+            role="progressbar"
+            aria-label={m.downloadUpdate}
+            aria-valuenow={update.percent ?? 0}
+            className="h-1.5 w-32 overflow-hidden rounded-full bg-tile-muted"
+          >
+            <div className="h-full bg-matcha transition-[width]" style={{ width: `${update.percent ?? 0}%` }} />
+          </div>
+        ),
+      };
+    case 'downloaded':
+      return {
+        text: m.updateDownloaded(version),
+        action: (
+          <Button size="sm" variant="primary" onClick={() => updater.install()}>
+            <RotateCw /> {m.restartToUpdate}
+          </Button>
+        ),
+      };
+    case 'error':
+      return { text: m.updateError(update.error ?? ''), action: check };
+    default: {
+      const unhandled: never = update.status;
+      return unhandled;
+    }
+  }
+}
+
+function UpdateRow({ update }: { update: UpdateState }) {
+  const m = useMessages().settings;
+  const { text, action } = updateRow(update, m);
+  return (
+    <div className="mt-4 flex items-center justify-between gap-6 border-t border-line pt-4">
+      <div>
+        <div className="text-sm font-medium">{m.update}</div>
+        <div className="mt-0.5 text-xs text-ink-faint" role="status">
+          {text}
+        </div>
+      </div>
+      {action}
+    </div>
   );
 }
 
@@ -160,6 +242,7 @@ export function SettingsPage({ state }: { state: AppState }) {
               {m.license}
             </Button>
           </div>
+          <UpdateRow update={state.update} />
           <div className="mt-4 flex items-center justify-between gap-6 border-t border-line pt-4">
             <div>
               <div className="text-sm font-medium">{m.support}</div>

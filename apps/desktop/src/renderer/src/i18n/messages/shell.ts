@@ -33,6 +33,11 @@ export default defineMessages({
       closeToTray: '關閉（縮到系統匣）',
       support: '支持 Chatto',
       supportTitle: '請 Ciel 喝杯茶',
+      updateAvailable: (version: string) => `有新版本 ${version}`,
+      updateAvailableHint: '下載更新，不會中斷直播',
+      updateDownloading: (percent: number) => `下載中 ${percent}%`,
+      updateReady: '重新啟動以更新',
+      updateReadyHint: 'Overlay 和 OBS 來源會中斷幾秒；不重開的話，下次結束 Chatto 時安裝',
     },
     kit: {
       url: '網址',
@@ -88,6 +93,12 @@ export default defineMessages({
       closeToTray: 'Close (to system tray)',
       support: 'Support Chatto',
       supportTitle: 'Buy Ciel a cup of tea',
+      updateAvailable: (version: string) => `Version ${version} is out`,
+      updateAvailableHint: 'Download the update; your stream keeps running',
+      updateDownloading: (percent: number) => `Downloading ${percent}%`,
+      updateReady: 'Restart to update',
+      updateReadyHint:
+        'The overlay and OBS sources drop out for a few seconds; otherwise it installs when you quit Chatto',
     },
     kit: {
       url: 'URL',

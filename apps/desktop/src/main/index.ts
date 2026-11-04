@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import { execFile } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -13,12 +14,14 @@ import { LocalServer } from './server';
 import { BUILT_IN_CLIENT_ID, SettingsStore, type Rect } from './settings';
 import { ThemeAssets } from './theme-assets';
 import { THEME_PACKAGE_EXTENSION } from './theme-package';
+import { Updater } from './updater';
 
 const isDev = !app.isPackaged;
 const resourcesDir = isDev ? join(__dirname, '../../resources') : join(process.resourcesPath, 'resources');
 const viewerDir = isDev ? join(__dirname, '../../../viewer/dist') : join(process.resourcesPath, 'viewer');
 
 let mainWindow: BrowserWindow | null = null;
+let updater = new Updater(null);
 let tray: Tray | null = null;
 let quitting = false;
 
@@ -186,6 +189,9 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.getObsPluginStatus, () => obsPlugin.status());
   ipcMain.handle(IPC.installObsPlugin, () => obsPlugin.install());
   ipcMain.handle(IPC.uninstallObsPlugin, () => obsPlugin.uninstall());
+  ipcMain.handle(IPC.checkForUpdate, () => updater.check());
+  ipcMain.handle(IPC.downloadUpdate, () => updater.download());
+  ipcMain.handle(IPC.installUpdate, () => updater.install());
 }
 
 /** The OBS plugin as this build ships it: packaged with the app, or the local CMake install in development. */
@@ -260,6 +266,9 @@ async function bootstrap(): Promise<void> {
 
   controller.onChange = (state: AppState) => send(IPC.state, state);
   controller.isWindowMaximized = () => Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized());
+  // Development builds have no installer to update from.
+  updater = new Updater(app.isPackaged ? autoUpdater : null, () => controller.emit());
+  controller.updateState = () => updater.state;
   controller.hub.subscribe((event) => send(IPC.chatEvent, event));
   controller.onAlertSound = (sound) => send(IPC.alertSound, sound);
 
@@ -274,6 +283,7 @@ async function bootstrap(): Promise<void> {
     tray?.setContextMenu(trayMenu(locale));
   };
   await controller.init();
+  updater.start();
 
   app.on('second-instance', showMainWindow);
   app.on('activate', () => {
@@ -281,6 +291,7 @@ async function bootstrap(): Promise<void> {
   });
   app.on('before-quit', () => {
     quitting = true;
+    updater.stop();
     controller.cssFiles?.stop();
     void controller.server.stop();
   });

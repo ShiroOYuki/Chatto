@@ -19,6 +19,12 @@ extraResources:
     filter:
       - '**/*'
       - '!**/*.pdb'
+# Where the app looks for updates (electron-updater); also writes latest.yml next to the installer.
+# Nothing is uploaded from here: the dist script passes --publish never and the release workflow uploads.
+publish:
+  provider: github
+  owner: ShiroOYuki
+  repo: Chatto
 win:
   target:
     - nsis

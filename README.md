@@ -40,6 +40,8 @@ npm run dev                                       # 啟動桌面 App
 
 推送版本 tag（例如 `v0.1.0`，要和 `apps/desktop/package.json` 的版本一致）會觸發 `.github/workflows/release.yml`：建置 OBS 外掛與安裝檔，並建立草稿 Release 附上安裝檔，確認後在 GitHub 上發佈。
 
+Release 同時附上 `latest.yml` 與 `.blockmap`：已安裝的 Chatto（`electron-updater`）啟動時與每 6 小時讀最新一份**已發佈**的 Release，有新版本時在標題列與設定頁「關於」提示，使用者同意後才下載；下載完按「重新啟動並更新」，或下次結束 Chatto 時安裝。草稿不會被讀到。
+
 內建的 Client ID 來自 repository variable `TWITCH_CLIENT_ID`（Settings → Secrets and variables → Actions → Variables）。它是公開值，所以用 variable 而不是 secret。
 
 ### 只預覽畫面

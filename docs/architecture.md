@@ -56,6 +56,7 @@ workspace package 直接提供 TypeScript 原始碼，由 Vite／electron-vite �
 - 本機伺服器只綁 loopback，並限制靜態檔路徑不能跳出 viewer 資料夾。`/api/*` 只回主題 id、名稱與版本，而且不送 CORS 標頭，其他網頁讀不到。
 - OBS 外掛的 embed 頁不需要控制 OBS，內部 browser 來源的 `webpage_control_level` 設為 0。
 - 自訂 CSS 檔案的路徑由主題 id 產生，id 只接受 `[\w-]+`；外部編輯器指令只來自使用者自己的設定。
+- 自動更新（main `updater.ts`，`electron-updater`）只讀 `ShiroOYuki/Chatto` 已發佈的 GitHub Release，下載後以 `latest.yml` 的 SHA-512 驗證才安裝。只會提示，下載與安裝都等使用者決定，不會在直播中自動重開。開發版不檢查。
 
 ## 路線圖
 
@@ -63,4 +64,4 @@ workspace package 直接提供 TypeScript 原始碼，由 Vite／electron-vite �
 - [x] 主題匯出／匯入（JSON）
 - [ ] 第三方表情（7TV、BTTV、FFZ）resolver
 - [ ] Provider registry 與多平台同時連線
-- [ ] 自動更新、開機自動啟動
+- [x] 自動更新、開機自動啟動

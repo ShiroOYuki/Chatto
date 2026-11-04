@@ -27,6 +27,7 @@ function createMockApi(): ChattoApi {
   const params = new URLSearchParams(location.search);
   let state: AppState = {
     appInfo: { version: '0.1.0', platform: 'web' },
+    update: { status: 'not-available' },
     window: { maximized: false },
     prefs: {
       uiMode: params.has('compact') ? 'compact' : 'full',
@@ -155,6 +156,21 @@ function createMockApi(): ChattoApi {
       obsPluginStatus = { ...obsPluginStatus, state: 'not-installed' };
       return { ok: true, status: obsPluginStatus };
     },
+    // Pretends a newer version is always out, so the whole update flow can be tried in the browser.
+    checkForUpdate: async () => {
+      set({ update: { status: 'checking' } });
+      setTimeout(() => set({ update: { status: 'available', version: '0.2.0' } }), 500);
+    },
+    downloadUpdate: async () => {
+      const version = state.update.version;
+      const step = (percent: number) => {
+        if (percent >= 100) return set({ update: { status: 'downloaded', version } });
+        set({ update: { status: 'downloading', version, percent } });
+        setTimeout(() => step(percent + 25), 300);
+      };
+      step(0);
+    },
+    installUpdate: async () => undefined,
   };
 }
 

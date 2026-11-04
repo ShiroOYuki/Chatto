@@ -1,9 +1,10 @@
-import { Coffee, Copy, Minus, PanelsTopLeft, Square, X, LayoutDashboard } from 'lucide-react';
+import { Coffee, Copy, Download, Minus, PanelsTopLeft, RotateCw, Square, X, LayoutDashboard } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { SUPPORT_LINKS } from '../../../shared/support';
 import { useLocale, useMessages } from '../i18n';
 import { appPrefs, appWindow, openExternal } from '../services/app';
+import { updater } from '../services/updater';
 import { SwapIcon } from './motion';
 import { Hint, channelTone, StatusDot } from './kit';
 import {
@@ -71,6 +72,34 @@ function SupportMenu() {
   );
 }
 
+/** Appears only while there is an update to act on: download it, watch it, or restart into it. */
+function UpdateBadge({ update }: { update: AppState['update'] }) {
+  const m = useMessages().shell.titleBar;
+  const pill =
+    'app-no-drag mr-2 inline-flex h-7 items-center gap-1.5 rounded-full bg-matcha-soft px-3 text-xs font-medium text-matcha-strong [&>svg]:size-3.5';
+  if (update.status === 'downloading') {
+    return (
+      <span className={pill} role="status">
+        <Download /> {m.updateDownloading(update.percent ?? 0)}
+      </span>
+    );
+  }
+  const ready = update.status === 'downloaded';
+  if (!ready && update.status !== 'available') return null;
+  return (
+    <Hint label={ready ? m.updateReadyHint : m.updateAvailableHint}>
+      <button
+        type="button"
+        onClick={() => (ready ? updater.install() : updater.download())}
+        className={`${pill} transition-colors hover:bg-matcha hover:text-white`}
+      >
+        {ready ? <RotateCw /> : <Download />}
+        {ready ? m.updateReady : m.updateAvailable(update.version ?? '')}
+      </button>
+    </Hint>
+  );
+}
+
 /**
  * Custom title bar for the frameless main window: brand, live status,
  * layout switch and integrated minimize / maximize / close buttons.
@@ -99,6 +128,7 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
       </div>
 
       <div className="ml-auto flex h-full items-center">
+        <UpdateBadge update={state.update} />
         <SupportMenu />
         <button
           type="button"

@@ -56,7 +56,9 @@ jobs:
       - name: Draft the release
         env:
           GH_TOKEN: ${{ github.token }}
+        # latest.yml and the blockmap are what installed copies read to find and download the update.
         run: |
           version="${TAG#v}"
+          dir="apps/desktop/release/$version"
           gh release create "$TAG" --draft --title "Chatto $TAG" --generate-notes \
-            "apps/desktop/release/$version/Chatto-Setup-$version.exe"
+            "$dir/Chatto-Setup-$version.exe" "$dir/Chatto-Setup-$version.exe.blockmap" "$dir/latest.yml"

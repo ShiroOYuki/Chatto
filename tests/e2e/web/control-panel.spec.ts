@@ -270,6 +270,23 @@ test('without a built-in Client ID, entering one is the first step', async ({ pa
   await expect(page.getByText('進階設定')).toHaveCount(0);
 });
 
+test('an update is found, downloaded on request and offered as a restart', async ({ panel, page }) => {
+  await panel.open('page=settings');
+  await expect(page.getByText('已是最新版本')).toBeVisible();
+  // Nothing to act on yet, so the title bar stays quiet.
+  await expect(page.getByRole('button', { name: /有新版本/ })).toHaveCount(0);
+
+  await page.getByRole('button', { name: '檢查更新' }).click();
+  await expect(page.getByText('有新版本 0.2.0').first()).toBeVisible();
+  // The title bar badge offers the download too; the settings button starts it here.
+  await expect(page.getByRole('button', { name: '有新版本 0.2.0' })).toBeVisible();
+  await page.getByRole('button', { name: '下載更新' }).click();
+  await expect(page.getByRole('progressbar')).toBeVisible();
+
+  await expect(page.getByRole('button', { name: '重新啟動並更新' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '重新啟動以更新' })).toBeVisible();
+});
+
 test('alert settings save from the 提醒 page', async ({ panel, page }) => {
   await panel.open('page=alerts');
   const threshold = page.getByRole('textbox', { name: '安靜多久算沉寂' });

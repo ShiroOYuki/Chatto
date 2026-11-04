@@ -52,11 +52,28 @@ export interface CssFileChange {
   css: string;
 }
 
+/**
+ * Where the app update stands. `unsupported` is a development build;
+ * `not-available` means this is the latest version.
+ */
+export type UpdateStatus =
+  'unsupported' | 'idle' | 'checking' | 'not-available' | 'available' | 'downloading' | 'downloaded' | 'error';
+
+export interface UpdateState {
+  status: UpdateStatus;
+  /** The new version, once one is found. */
+  version?: string;
+  /** Download progress, 0–100. */
+  percent?: number;
+  error?: string;
+}
+
 /** The user's own Client ID, the one built into this version, or none at all. */
 export type ClientIdSource = 'custom' | 'built-in' | 'none';
 
 export interface AppState {
   appInfo: { version: string; platform: string };
+  update: UpdateState;
   window: { maximized: boolean };
   prefs: AppPrefs;
   /** Which Twitch Client ID is in use; the value itself stays in the main process. */
@@ -127,6 +144,12 @@ export interface ChattoApi {
   getObsPluginStatus(): Promise<ObsPluginStatus>;
   installObsPlugin(): Promise<ObsPluginResult>;
   uninstallObsPlugin(): Promise<ObsPluginResult>;
+
+  /** App updates; progress arrives through `state.update`. */
+  checkForUpdate(): Promise<void>;
+  downloadUpdate(): Promise<void>;
+  /** Quits, installs the downloaded update and starts the new version. */
+  installUpdate(): Promise<void>;
 }
 
 /**
@@ -182,4 +205,7 @@ export const IPC = {
   getObsPluginStatus: 'obs-plugin:status',
   installObsPlugin: 'obs-plugin:install',
   uninstallObsPlugin: 'obs-plugin:uninstall',
+  checkForUpdate: 'update:check',
+  downloadUpdate: 'update:download',
+  installUpdate: 'update:install',
 } as const;

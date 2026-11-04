@@ -42,6 +42,9 @@ const api: ChattoApi = {
   getObsPluginStatus: () => ipcRenderer.invoke(IPC.getObsPluginStatus),
   installObsPlugin: () => ipcRenderer.invoke(IPC.installObsPlugin),
   uninstallObsPlugin: () => ipcRenderer.invoke(IPC.uninstallObsPlugin),
+  checkForUpdate: () => ipcRenderer.invoke(IPC.checkForUpdate),
+  downloadUpdate: () => ipcRenderer.invoke(IPC.downloadUpdate),
+  installUpdate: () => ipcRenderer.invoke(IPC.installUpdate),
 };
 
 contextBridge.exposeInMainWorld('chatto', api);

@@ -6,6 +6,7 @@ import type { AppState, ChattoApi, CssFileChange } from '../apps/desktop/src/sha
 export function sampleState(patch: Partial<AppState> = {}): AppState {
   return {
     appInfo: { version: '0.1.0', platform: 'test' },
+    update: { status: 'not-available' },
     window: { maximized: false },
     prefs: {
       uiMode: 'full',
@@ -107,6 +108,9 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
       ok: true as const,
       status: { state: 'not-installed' as const, obsFound: true },
     })),
+    checkForUpdate: resolved(),
+    downloadUpdate: resolved(),
+    installUpdate: resolved(),
     pushState(patch: Partial<AppState>) {
       fake.state = { ...fake.state, ...patch };
       stateListeners.forEach((listener) => listener(fake.state));
