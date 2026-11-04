@@ -166,7 +166,7 @@ export function ThemeEditor({
           </Tile>
         </div>
 
-        <PreviewPane theme={draft} highlight={hl} onInsertRule={insertRule} />
+        <PreviewPane theme={draft} highlight={hl} focus={resolved.focus} onInsertRule={insertRule} />
       </div>
     </div>
   );

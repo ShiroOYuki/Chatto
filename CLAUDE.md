@@ -54,7 +54,7 @@ docs/               architecture.md、message-format.md、theming.md
 - 圖片外框（`BoxStyle.image`、`roles.<身分>.frame`）的圖片存在 userData `theme-assets/<sha256>.<ext>`，主題裡只存 `asset:<檔名>`，本機 server 在 `/theme-assets/` 提供（不要用 `/assets/`，那是 viewer 建置檔的路徑）。只收 PNG／WebP／GIF，依內容判斷格式，不收 SVG。控制台裡的 `ChatView` 要傳 `assetUrl={useThemeAssetUrl()}`。內建主題的圖片用 data URL 內嵌，必須自製或 CC0。
 - **平台事件**：以 `平台:事件` 識別（如 `twitch:cheer`），清單集中在 `packages/chat-ui/src/events.ts` 的 `EVENT_CATALOG`，編輯器的「<平台> 專屬元件」選單由它產生。`theme.notice` 是通用事件訊息；`theme.events[key]` 為 `{ linked, style }`，linked 時持續跟隨通用樣式，編輯即解除連動。新增平台事件時：provider mapper 設 `eventType`、在 `events.ts` 的 `EVENT_CATALOG` 加定義、在 `eventSamples.ts` 加預覽範例（`events.ts` 只放定義，不依賴 mock 資料）、更新 `docs/message-format.md`。
 - 可客製元素的說明集中在 `packages/chat-ui/src/reference.ts`（編輯器的 class 標籤、自動完成、檢查標籤，以及「在 VSCode 開啟」產生的 `chatto-reference.css`、`css.customData` 都用它），新增 class、屬性或 CSS 變數時同步更新。
-- 主題編輯器的預覽有「範例」（`createSpecimenEvents()`，涵蓋所有元件與事件）與「即時」兩種模式，並提供檢查模式與選擇器建構器；自訂 CSS 使用 CodeMirror 6。
+- 主題編輯器的預覽有「範例」（`createSpecimenEvents()`，涵蓋所有元件與事件）與「即時」兩種模式，並提供檢查模式與選擇器建構器；自訂 CSS 使用 CodeMirror 6。「範例」可開「只看目前區塊」：區塊在 `sections.tsx` 以 `focus` 指定對應的範例列，篩選是 `lib/specimenFocus.ts` 的純函式；新增區塊或範例時一併確認對應。
 - 控制台裡的聊天預覽用 `all: revert` 隔離 Tailwind preflight，確保預覽與 OBS 實際畫面一致。
 - 所有可被客製的元素使用穩定的 `chatto-*` class 與 `data-*` 屬性，視為公開 API，改名屬於破壞性變更。
 

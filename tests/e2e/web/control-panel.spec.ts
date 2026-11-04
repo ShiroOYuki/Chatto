@@ -127,6 +127,39 @@ test("a theme's own event text shows in the editor preview", async ({ panel, pag
   );
 });
 
+test('the editor preview can show only the samples of the current section', async ({ panel, page }) => {
+  await panel.open('page=themes');
+  await page.getByRole('button', { name: '複製並編輯' }).first().click();
+  const rows = page.locator('.chatto-root .chatto-list > *');
+  const all = await rows.count();
+
+  // The structure section has no samples of its own.
+  const focus = page.getByRole('button', { name: '這個區塊沒有專屬範例，顯示全部' });
+  await expect(focus).toHaveAttribute('aria-disabled', 'true');
+  await expect(focus).toHaveAttribute('aria-pressed', 'false');
+
+  await page.getByRole('button', { name: '續訂', exact: true }).click();
+  const only = page.getByRole('button', { name: '只看目前區塊的範例' });
+  await only.click();
+  await expect(only).toHaveAttribute('aria-pressed', 'true');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toHaveAttribute('data-event', 'twitch:resub');
+
+  // It follows the section being edited.
+  await page.getByRole('button', { name: '新留言提醒', exact: true }).click();
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toHaveAttribute('data-highlight', /after-silence/);
+
+  // The live preview is never filtered.
+  await page.getByRole('tab', { name: '即時' }).click();
+  await expect(only).toHaveCount(0);
+  await page.getByRole('tab', { name: '範例' }).click();
+  await expect(rows).toHaveCount(1);
+
+  await only.click();
+  await expect(rows).toHaveCount(all);
+});
+
 test('compact mode fits the smallest window', async ({ panel, page }) => {
   await page.setViewportSize({ width: 960, height: 640 });
   await panel.open('compact');
