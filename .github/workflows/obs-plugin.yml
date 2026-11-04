@@ -1,0 +1,43 @@
+name: OBS plugin
+
+# The plugin rarely changes, so it is built only when its sources or build setup do.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'obs-plugin/**'
+      - 'scripts/build-obs-plugin.mjs'
+      - '.github/workflows/obs-plugin.yml'
+  pull_request:
+    paths:
+      - 'obs-plugin/**'
+      - 'scripts/build-obs-plugin.mjs'
+      - '.github/workflows/obs-plugin.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: obs-plugin-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build the OBS plugin
+    # Pinned: the CMake preset needs Visual Studio 2022 and Windows SDK 10.0.26100.
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      # OBS sources and obs-deps, downloaded on configure according to buildspec.json.
+      - uses: actions/cache@v4
+        with:
+          path: obs-plugin/.deps
+          key: obs-deps-${{ runner.os }}-${{ hashFiles('obs-plugin/buildspec.json') }}
+      # CI is set by GitHub, so the script uses the windows-ci-x64 preset (warnings as errors).
+      - run: npm run build:obs-plugin
+      - uses: actions/upload-artifact@v5
+        with:
+          name: obs-chatto
+          path: obs-plugin/release/obs-chatto/
+          retention-days: 14
