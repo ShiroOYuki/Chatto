@@ -9,4 +9,5 @@ export { CopyField, Field, TagsField, TextInput } from './fields';
 export { Hint } from './Hint';
 export { EmptyState, PageHeader, Tile } from './layout';
 export { Modal } from './Modal';
+export { SideNavItem } from './SideNav';
 export { channelTone, LoadingSpinner, StatusDot, StatusPill, type StatusTone } from './status';

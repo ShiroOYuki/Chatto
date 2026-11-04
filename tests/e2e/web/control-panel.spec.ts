@@ -200,11 +200,12 @@ test('the title bar suggests installing the OBS plugin until dismissed', async (
 
 test('switching to compact mode and back', async ({ panel, page }) => {
   await panel.open('page=settings');
+  await page.getByRole('button', { name: '外觀', exact: true }).click();
   await page.getByRole('tab', { name: /精簡/ }).click();
   await expect(page.getByRole('navigation')).toHaveCount(0);
   await expect(page.getByText('精簡模式')).toBeVisible();
   await page.getByTitle('切換到完整模式').click();
-  await expect(page.getByRole('navigation')).toBeVisible();
+  await expect(panel.nav('設定')).toBeVisible();
 });
 
 test('duplicating a built-in theme opens the editor and saves a custom copy', async ({ panel, page }) => {
@@ -289,6 +290,7 @@ test('without a built-in Client ID, entering one is the first step', async ({ pa
 
 test('an update is found, downloaded on request and offered as a restart', async ({ panel, page }) => {
   await panel.open('page=settings');
+  await page.getByRole('button', { name: '關於', exact: true }).click();
   await expect(page.getByText('已是最新版本')).toBeVisible();
   // Nothing to act on yet, so the title bar stays quiet.
   await expect(page.getByRole('button', { name: /有新版本/ })).toHaveCount(0);
@@ -306,6 +308,7 @@ test('an update is found, downloaded on request and offered as a restart', async
 
 test('a failed update check says what went wrong in plain words', async ({ panel, page }) => {
   await panel.open('page=settings');
+  await page.getByRole('button', { name: '關於', exact: true }).click();
   await panel.setState({ update: { status: 'error', error: 'not-found' } });
   await expect(page.getByText('目前讀不到更新資訊，請稍後再試')).toBeVisible();
   await expect(page.getByRole('button', { name: '檢查更新' })).toBeEnabled();
@@ -313,6 +316,7 @@ test('a failed update check says what went wrong in plain words', async ({ panel
 
 test('the license dialog shows the disclaimer, the GPL and third-party notices', async ({ panel, page }) => {
   await panel.open('page=settings');
+  await page.getByRole('button', { name: '關於', exact: true }).click();
   await page.getByRole('button', { name: '授權條款' }).click();
   const dialog = page.getByRole('dialog', { name: '免責聲明與授權' });
   await expect(dialog.getByRole('heading', { name: '不提供擔保' })).toBeVisible();

@@ -19,8 +19,23 @@ const renderPage = (state = sampleState()) =>
     </TooltipProvider>,
   );
 
+/** Picks a section from the settings menu on the left. */
+const openSection = (name: string) => userEvent.click(screen.getByRole('button', { name }));
+
 describe('SettingsPage', () => {
-  it('shows the current preferences', () => {
+  it('starts on General and switches sections from the left menu', async () => {
+    renderPage();
+    expect(screen.getByRole('button', { name: '一般' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('switch', { name: '關閉時縮到系統匣' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Ko-fi' })).toBeNull();
+
+    await openSection('關於');
+    expect(screen.getByRole('button', { name: '關於' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('button', { name: 'Ko-fi' })).toBeTruthy();
+    expect(screen.queryByRole('switch', { name: '關閉時縮到系統匣' })).toBeNull();
+  });
+
+  it('shows the current preferences', async () => {
     renderPage(
       sampleState({
         prefs: {
@@ -37,6 +52,7 @@ describe('SettingsPage', () => {
     );
     expect(screen.getByRole('switch', { name: '關閉時縮到系統匣' }).getAttribute('aria-checked')).toBe('false');
     expect(screen.getByRole('switch', { name: '開機時自動啟動' }).getAttribute('aria-checked')).toBe('true');
+    await openSection('外觀');
     expect(screen.getByRole('tab', { name: /精簡/ }).getAttribute('aria-selected')).toBe('true');
   });
 
@@ -45,12 +61,14 @@ describe('SettingsPage', () => {
     await userEvent.click(screen.getByRole('switch', { name: '關閉時縮到系統匣' }));
     expect(api.setPrefs).toHaveBeenLastCalledWith({ closeToTray: false });
 
+    await openSection('外觀');
     await userEvent.click(screen.getByRole('tab', { name: /精簡/ }));
     expect(api.setPrefs).toHaveBeenLastCalledWith({ uiMode: 'compact' });
   });
 
   it('opens each support link in the browser', async () => {
     renderPage();
+    await openSection('關於');
     await userEvent.click(screen.getByRole('button', { name: 'Ko-fi' }));
     expect(api.openExternal).toHaveBeenLastCalledWith('https://ko-fi.com/ciel518');
 
@@ -60,6 +78,7 @@ describe('SettingsPage', () => {
 
   it('saves the editor command when the field loses focus', async () => {
     renderPage();
+    await openSection('進階');
     const field = screen.getByRole('textbox', { name: '外部 CSS 編輯器指令' });
     await userEvent.type(field, 'notepad++');
     expect(api.setPrefs).not.toHaveBeenCalledWith({ editorCommand: 'notepad++' });
