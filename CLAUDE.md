@@ -114,9 +114,10 @@ npm run dist         # 打包 Windows 安裝檔（會先建置 OBS 外掛）
 
 - 能在瀏覽器驗證的 UI（viewer、控制台頁面）先用網頁模式加 mock 資料驗證。
 - 透明、置頂、滑鼠穿透這類原生行為，要在使用者的 Windows 桌面上實測。
-- 完成功能前執行 `npm run typecheck` 與 `npm test`；動到 UI 時加跑 `npm run test:e2e` 與 `npm run test:visual`，動到 main process 或視窗時加跑 `npm run test:electron`。
+- 完成功能前在本機執行 `npm run typecheck` 與 `npm test`，再只跑和改動相關的 Playwright 測試（`npx playwright test --project=web --workers=2 -g "<英文片段>"` 或指定 spec 檔）；新寫的測試先單獨跑通過。完整的 web E2E、視覺回歸、Electron 測試交給 CI（`develop` → `CI` 的 PR），本機不必全跑。
 - 新功能要附測試：純邏輯寫單元測試、React 元件寫元件測試、跨頁流程寫 E2E。修 bug 時先寫一個會失敗的測試。
-- 外觀刻意改變時，用 `npm run test:visual:update` 更新基準截圖，並在 commit 中一起提交；更新前先看過差異。
+- 外觀刻意改變時，在本機只更新受影響的基準截圖（`npx playwright test --project=visual --workers=2 --update-snapshots=all <spec 檔> [-g "<英文片段>"]`），比對新舊差異，只有雜訊的檔案還原，其餘和程式一起提交。
+- CI 的視覺回歸意外失敗時，用 `gh run download <run id> -n playwright-report` 取回 `-expected`／`-actual`／`-diff` 圖判斷：是 bug 就修；是預期的改變就在本機只對失敗的測試更新基準截圖。不要拿 CI 的 `-actual` 當基準。
 - 原生行為（透明、穿透）只能部分自動化，仍要在 Windows 桌面實測。
 
 ## Git
