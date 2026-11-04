@@ -10,7 +10,9 @@ Chatto 的測試分成五層。越下層越快，能在下層測的就不要放�
 | 視覺回歸 | Playwright 截圖比對               | `tests/e2e/visual`         | `npm run test:visual`   |
 | Electron | Playwright `_electron`            | `tests/e2e/electron`       | `npm run test:electron` |
 
-`npm run test:all` 會依序跑型別檢查和全部五層。CI（`.github/workflows/ci.yml`）在 Windows runner 上跑同一套。
+`npm run test:all` 會依序跑型別檢查和全部五層。CI（`.github/workflows/ci.yml`）在 Windows runner 上跑同一套，推送或 PR 到 `CI`、`main` 時執行。
+
+本機開發時只跑型別檢查、Vitest，以及和改動相關的 Playwright 測試（用 spec 檔或 `-g` 篩選，新寫的測試先單獨跑）；完整的 web E2E、視覺回歸、Electron 交給 CI。
 
 ## 單元測試
 
@@ -53,9 +55,12 @@ Chatto 的測試分成五層。越下層越快，能在下層測的就不要放�
 - 基準截圖放在 `tests/e2e/visual/__screenshots__/`，檔名帶平台（`-win32`），要一起 commit。
 - 控制台截圖會遮住即時預覽和訊息速率圖，因為它們隨時間變化；主題外觀由主題截圖負責。
 - 外觀刻意改變時：
-  1. 跑 `npm run test:visual`，打開 `npx playwright show-report` 看差異。
-  2. 確認差異都是預期的。
-  3. 跑 `npm run test:visual:update` 更新基準截圖，和程式一起提交。
+  1. 只對受影響的 spec 更新：`npx playwright test --project=visual --workers=2 --update-snapshots=all <spec 檔>`，可加 `-g` 縮小範圍。
+  2. 比對新舊截圖，確認差異都是預期的；`all` 也會重寫沒變的截圖（只有幾個像素的雜訊），這些檔案還原。
+  3. 把更新的基準截圖和程式一起提交。其他畫面有沒有被意外影響，由 CI 的完整視覺回歸檢查。
+- CI 的視覺回歸失敗時，失敗的 run 會上傳 `playwright-report` artifact（含 `test-results/`）。用 `gh run download <run id> -n playwright-report` 取回，看每張失敗截圖的 `-expected`、`-actual`、`-diff`：
+  - 是 bug：修程式後推送，PR 會重跑。
+  - 是預期的改變：在本機只對失敗的測試更新基準截圖並提交。不要直接用 CI 的 `-actual` 當基準，本機產生的才和其他基準一致。
 
 ## Electron
 
