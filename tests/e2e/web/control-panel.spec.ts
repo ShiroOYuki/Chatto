@@ -311,6 +311,24 @@ test('a failed update check says what went wrong in plain words', async ({ panel
   await expect(page.getByRole('button', { name: '檢查更新' })).toBeEnabled();
 });
 
+test('the license dialog shows the disclaimer, the GPL and third-party notices', async ({ panel, page }) => {
+  await panel.open('page=settings');
+  await page.getByRole('button', { name: '授權條款' }).click();
+  const dialog = page.getByRole('dialog', { name: '免責聲明與授權' });
+  await expect(dialog.getByRole('heading', { name: '不提供擔保' })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: '內容責任' })).toBeVisible();
+
+  await dialog.getByRole('tab', { name: 'GPL-3.0' }).click();
+  await expect(dialog.getByText('GNU GENERAL PUBLIC LICENSE').first()).toBeVisible();
+
+  await dialog.getByRole('tab', { name: '第三方授權' }).click();
+  await expect(dialog.getByRole('heading', { name: 'Fonts' })).toBeVisible();
+  await expect(dialog.getByRole('cell', { name: 'SIL Open Font License 1.1' }).first()).toBeVisible();
+
+  await dialog.getByRole('button', { name: '關閉' }).click();
+  await expect(dialog).toHaveCount(0);
+});
+
 test('alert settings save from the 提醒 page', async ({ panel, page }) => {
   await panel.open('page=alerts');
   const threshold = page.getByRole('textbox', { name: '安靜多久算沉寂' });

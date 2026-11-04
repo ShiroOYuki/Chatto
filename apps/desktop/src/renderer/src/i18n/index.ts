@@ -11,6 +11,7 @@ import connections from './messages/connections';
 import editor from './messages/editor';
 import editorFields from './messages/editorFields';
 import editorPanels from './messages/editorPanels';
+import legal from './messages/legal';
 import outputs from './messages/outputs';
 import overview from './messages/overview';
 import settings from './messages/settings';
@@ -32,6 +33,7 @@ const NAMESPACES = {
   editor,
   editorFields,
   editorPanels,
+  legal,
   outputs,
   overview,
   settings,

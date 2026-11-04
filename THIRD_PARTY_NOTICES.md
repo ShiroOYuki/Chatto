@@ -43,6 +43,7 @@ The OBS plugin in `obs-plugin/` (shipped as `obs-chatto`) is part of Chatto and 
 | [Tailwind CSS](https://tailwindcss.com)                                                                                                                              | MIT        |
 | [Electron](https://www.electronjs.org)                                                                                                                               | MIT        |
 | [ws](https://github.com/websockets/ws)                                                                                                                               | MIT        |
+| [electron-updater](https://github.com/electron-userland/electron-builder) (app updates)                                                                              | MIT        |
 | [shadcn/ui](https://ui.shadcn.com) (components copied into `components/ui`)                                                                                          | MIT        |
 | [Magic UI](https://magicui.design) (`confetti`, copied into `components/ui`)                                                                                         | MIT        |
 | [Radix UI](https://www.radix-ui.com) (`radix-ui`)                                                                                                                    | MIT        |

@@ -7,6 +7,7 @@ import { Stagger } from '../components/motion';
 import { ThemeSwitcher } from '../components/kibo-ui/theme-switcher';
 import { TeaCup } from '../components/TeaCup';
 import { ClientIdForm } from './ClientIdForm';
+import { LegalDialog } from './LegalDialog';
 import { Button, PageHeader, Segmented, Select, TextInput, Tile, Toggle } from '../components/kit';
 import { useLocale, useMessages, type Messages } from '../i18n';
 import { updater } from '../services/updater';
@@ -132,6 +133,7 @@ export function SettingsPage({ state }: { state: AppState }) {
   const { prefs } = state;
   const { settings: m, connections } = useMessages();
   const locale = useLocale();
+  const [legalOpen, setLegalOpen] = useState(false);
   const languages = LOCALES.map((locale) => ({ value: locale, label: LOCALE_NAMES[locale] }));
   return (
     <div className="max-w-3xl">
@@ -238,9 +240,10 @@ export function SettingsPage({ state }: { state: AppState }) {
               <div className="font-semibold">Chatto チャット</div>
               <div className="text-xs text-ink-faint">v{state.appInfo.version} · GPL-3.0-or-later · © 2026 Ciel</div>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => openExternal('https://www.gnu.org/licenses/gpl-3.0.html')}>
+            <Button size="sm" variant="ghost" onClick={() => setLegalOpen(true)}>
               {m.license}
             </Button>
+            <LegalDialog open={legalOpen} onOpenChange={setLegalOpen} />
           </div>
           <UpdateRow update={state.update} />
           <div className="mt-4 flex items-center justify-between gap-6 border-t border-line pt-4">
