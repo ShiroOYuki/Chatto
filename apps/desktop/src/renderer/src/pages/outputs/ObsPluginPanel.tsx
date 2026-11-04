@@ -13,6 +13,20 @@ const BADGE_TONE = {
   unavailable: 'neutral',
 } as const;
 
+/** The one note under the description: the last action's result, else a missing-OBS hint. */
+function PanelNote({ notice, obsFound }: { notice: Notice; obsFound: boolean }) {
+  const m = useMessages().outputs;
+  if (notice === 'obs-running' || notice === 'failed') {
+    return (
+      <p role="alert" className="mt-1 text-xs text-danger">
+        {notice === 'obs-running' ? m.closeObsFirst : m.pluginFailed}
+      </p>
+    );
+  }
+  if (notice === 'installed') return <p className="mt-1 text-xs text-matcha-strong">{m.pluginInstalled}</p>;
+  return obsFound ? null : <p className="mt-1 text-xs text-ink-faint">{m.obsNotFound}</p>;
+}
+
 /** Installs, updates or removes the "Chatto Chat" OBS plugin from the OBS tile. */
 export function ObsPluginPanel() {
   const m = useMessages().outputs;
@@ -52,38 +66,33 @@ export function ObsPluginPanel() {
   const installed = state === 'installed' || state === 'outdated';
 
   return (
+    // Title, status and actions share one row; below it one line explains, then at most one note.
     <section className="rounded-xl border border-line p-4" aria-label={m.obsPlugin}>
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-medium">{m.obsPlugin}</h3>
         <Badge tone={BADGE_TONE[state]}>{m.obsPluginState[state]}</Badge>
+        {state !== 'unavailable' ? (
+          <div className="ml-auto flex shrink-0 gap-1">
+            {installed ? (
+              <Button size="sm" variant="ghost" disabled={busy} onClick={() => void run(obsPlugin.uninstall, null)}>
+                {m.uninstallPlugin}
+              </Button>
+            ) : null}
+            {state !== 'installed' ? (
+              <Button
+                size="sm"
+                variant="primary"
+                disabled={busy}
+                onClick={() => void run(obsPlugin.install, 'installed')}
+              >
+                {state === 'outdated' ? m.updatePlugin : m.installPlugin}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
-      <p className="mt-1 text-sm text-ink-soft">{state === 'unavailable' ? m.pluginUnavailable : m.obsPluginIntro}</p>
-      {state !== 'unavailable' ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {state !== 'installed' ? (
-            <Button variant="primary" disabled={busy} onClick={() => void run(obsPlugin.install, 'installed')}>
-              {state === 'outdated' ? m.updatePlugin : m.installPlugin}
-            </Button>
-          ) : null}
-          {installed ? (
-            <Button variant="ghost" disabled={busy} onClick={() => void run(obsPlugin.uninstall, null)}>
-              {m.uninstallPlugin}
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-      {notice === 'installed' ? <p className="mt-2 text-xs text-matcha-strong">{m.pluginInstalled}</p> : null}
-      {notice === 'obs-running' ? (
-        <p role="alert" className="mt-2 text-xs text-danger">
-          {m.closeObsFirst}
-        </p>
-      ) : null}
-      {notice === 'failed' ? (
-        <p role="alert" className="mt-2 text-xs text-danger">
-          {m.pluginFailed}
-        </p>
-      ) : null}
-      {!obsFound && state !== 'unavailable' ? <p className="mt-2 text-xs text-ink-faint">{m.obsNotFound}</p> : null}
+      <p className="mt-2 text-sm text-ink-soft">{state === 'unavailable' ? m.pluginUnavailable : m.obsPluginIntro}</p>
+      <PanelNote notice={notice} obsFound={obsFound || state === 'unavailable'} />
     </section>
   );
 }
