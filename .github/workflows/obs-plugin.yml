@@ -22,7 +22,8 @@ concurrency:
 jobs:
   build:
     name: Build the OBS plugin
-    # Pinned: the CMake preset needs Visual Studio 2022 and Windows SDK 10.0.26100.
+    # windows-2025 ships Visual Studio 2026 (not 2022), so the windows-ci-x64 preset uses
+    # that generator; the preset also needs Windows SDK 10.0.26100.
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v5
