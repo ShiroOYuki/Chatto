@@ -57,7 +57,9 @@ obs_data_t *browser_settings(const ChattoSource &source, bool chat)
 		obs_data_set_string(settings, "local_file", waiting_page().c_str());
 	obs_data_set_int(settings, "width", source.width);
 	obs_data_set_int(settings, "height", source.height);
-	obs_data_set_string(settings, "css", kTransparentCss);
+	// The chat page is transparent; the waiting page paints its own background, which obs-browser's
+	// default CSS (a transparent body) would otherwise cover up.
+	obs_data_set_string(settings, "css", chat ? kTransparentCss : "");
 	obs_data_set_bool(settings, "reroute_audio", false);
 	obs_data_set_bool(settings, "shutdown", false);
 	obs_data_set_bool(settings, "restart_when_active", false);
