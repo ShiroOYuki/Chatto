@@ -55,11 +55,14 @@
         border-radius: 50%;
         /* A bright rim with a soft glow inside, like a ring on water. */
         border: 2px solid var(--ripple-rim);
-        background: radial-gradient(circle, transparent 55%, var(--ripple) 100%);
+        background: radial-gradient(circle, transparent 25%, var(--ripple) 100%);
         transform: translate(-50%, -50%);
         animation: ripple 6s linear infinite;
       }
-      /* One ring every 3 s. A negative delay: the rings are already spread out on the first frame. */
+      /*
+       * One ring every 3 s, each spreading for 4 s (the first two thirds of the 6 s cycle, see
+       * @keyframes ripple). A negative delay: the rings are already spread out on the first frame.
+       */
       .ripple:nth-child(2) {
         animation-delay: -3s;
       }
@@ -117,6 +120,7 @@
           height: 38vmin;
           opacity: 1;
         }
+        66.667%,
         100% {
           width: 140vmax;
           height: 140vmax;
