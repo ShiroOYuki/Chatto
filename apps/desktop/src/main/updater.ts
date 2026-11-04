@@ -4,6 +4,17 @@ import type { UpdateState } from '../shared/ipc';
 /** Checks again this often while Chatto keeps running (streamers often leave it open for days). */
 export const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
+const MAX_ERROR_LENGTH = 120;
+
+/**
+ * electron-updater's errors can carry whole HTTP responses (headers, cookies); the
+ * settings page shows only the first line, cut short. The full error goes to the log.
+ */
+export function shortError(message: string): string {
+  const line = message.split('\n')[0]!.trim();
+  return line.length > MAX_ERROR_LENGTH ? `${line.slice(0, MAX_ERROR_LENGTH - 1)}…` : line;
+}
+
 /** The part of electron-updater's `autoUpdater` this module uses, so tests can fake it. */
 export type UpdaterBackend = Pick<AppUpdater, 'checkForUpdates' | 'downloadUpdate' | 'quitAndInstall' | 'on'> & {
   autoDownload: boolean;
@@ -83,7 +94,8 @@ export class Updater {
 
   #fail(error: unknown): void {
     const message = error instanceof Error ? error.message : String(error);
-    this.#set({ status: 'error', version: this.#state.version, error: message });
+    console.error('[chatto] update failed', error);
+    this.#set({ status: 'error', version: this.#state.version, error: shortError(message) });
   }
 
   #set(state: UpdateState): void {

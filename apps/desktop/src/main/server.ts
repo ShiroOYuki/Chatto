@@ -124,6 +124,9 @@ export class LocalServer {
     });
 
     this.#wss = new WebSocketServer({ server: this.#http, path: '/ws' });
+    // ws re-emits the HTTP server's errors; listen() below already rejects with them,
+    // so without this a busy port would also surface as an uncaught exception.
+    this.#wss.on('error', () => undefined);
     this.#wss.on('connection', (socket) => {
       socket.on('message', (data) => {
         const frame = decodeClientFrame(String(data));

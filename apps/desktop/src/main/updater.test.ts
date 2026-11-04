@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { UpdateState } from '../shared/ipc';
-import { UPDATE_CHECK_INTERVAL_MS, Updater, type UpdaterBackend } from './updater';
+import { shortError, UPDATE_CHECK_INTERVAL_MS, Updater, type UpdaterBackend } from './updater';
 
 /** Stands in for electron-updater's autoUpdater: tests emit its events by hand. */
 function fakeBackend() {
@@ -25,6 +25,17 @@ function setup() {
 }
 
 afterEach(() => vi.useRealTimers());
+
+describe('shortError', () => {
+  it('keeps the first line of a long HTTP error, cut short', () => {
+    const message = `404 "method: GET url: https://github.com/x/y/releases.atom${'x'.repeat(200)}"\n\nheaders: set-cookie=secret`;
+    const short = shortError(message);
+    expect(short.startsWith('404 "method: GET url:')).toBe(true);
+    expect(short).not.toContain('secret');
+    expect(short.length).toBeLessThanOrEqual(120);
+    expect(shortError('offline')).toBe('offline');
+  });
+});
 
 describe('Updater', () => {
   it('does nothing in a development build', async () => {

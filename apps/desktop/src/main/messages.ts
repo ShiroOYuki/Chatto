@@ -19,6 +19,10 @@ export const MAIN_MESSAGES = defineMessages({
       imageFiles: '圖片',
       exportThemePackage: '匯出主題包',
       themePackageFiles: 'Chatto 主題包',
+      cannotStart: 'Chatto 無法啟動',
+      alreadyRunning: '另一個 Chatto 已經在執行（可能是安裝版或開發版）。請先從系統匣結束它，再開啟這一個。',
+      portInUse: (port: number) =>
+        `連接埠 ${port} 被其他程式佔用，Chatto 需要它提供 Overlay 和 OBS 畫面。請關閉佔用的程式後再開啟 Chatto。`,
     },
     errors: {
       imageTooLarge: '圖片超過 2 MB',
@@ -52,6 +56,11 @@ export const MAIN_MESSAGES = defineMessages({
       imageFiles: 'Images',
       exportThemePackage: 'Export theme package',
       themePackageFiles: 'Chatto theme package',
+      cannotStart: 'Chatto cannot start',
+      alreadyRunning:
+        'Another Chatto is already running (an installed or a development copy). Quit it from the tray, then open this one.',
+      portInUse: (port: number) =>
+        `Port ${port} is used by another program, and Chatto needs it for the overlay and OBS. Close that program, then open Chatto again.`,
     },
     errors: {
       imageTooLarge: 'Image is larger than 2 MB',

@@ -28,7 +28,9 @@ let quitting = false;
 // Lets end-to-end tests run against an isolated profile (and its own single-instance lock).
 if (!app.isPackaged && process.env.CHATTO_USER_DATA) app.setPath('userData', process.env.CHATTO_USER_DATA);
 
-if (!app.requestSingleInstanceLock()) app.quit();
+/** A second launch only brings the running Chatto forward (via `second-instance`) and must not start anything. */
+const isFirstInstance = app.requestSingleInstanceLock();
+if (!isFirstInstance) app.quit();
 
 /** Restores saved bounds only when they still fit on a connected display. */
 function restorableBounds(bounds?: Rect): Partial<Rect> {
@@ -212,6 +214,17 @@ const obsPlugin = new ObsPlugin({
     ),
 });
 
+/** Another Chatto (say, the installed copy next to a development one) already serves this port. */
+async function isChattoListening(port: number): Promise<boolean> {
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/ping`, { signal: AbortSignal.timeout(1000) });
+    const body = (await response.json()) as { app?: unknown };
+    return body.app === 'chatto';
+  } catch {
+    return false;
+  }
+}
+
 async function bootstrap(): Promise<void> {
   await app.whenReady();
   app.setAppUserModelId('dev.ciel.chatto');
@@ -248,7 +261,17 @@ async function bootstrap(): Promise<void> {
     soundsDir: controller.soundsDir,
     assets: controller.assets,
   });
-  await controller.server.start();
+  try {
+    await controller.server.start();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw error;
+    // The overlay and OBS need this port, so Chatto cannot run without it: say why and leave.
+    const port = settings.get().serverPort;
+    const m = controller.messages().dialogs;
+    dialog.showErrorBox(m.cannotStart, (await isChattoListening(port)) ? m.alreadyRunning : m.portInUse(port));
+    app.exit(1);
+    return;
+  }
 
   controller.overlay = new OverlayWindow(controller.server.url('overlay'), (bounds) =>
     settings.update((draft) => {
@@ -300,4 +323,4 @@ async function bootstrap(): Promise<void> {
 // Chatto keeps running in the tray so the overlay and OBS keep working.
 app.on('window-all-closed', () => undefined);
 
-void bootstrap();
+if (isFirstInstance) void bootstrap();

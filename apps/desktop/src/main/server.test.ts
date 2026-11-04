@@ -58,6 +58,26 @@ async function subscribe(port: number, target: ViewerTarget, themeId?: string) {
 }
 
 describe('LocalServer', () => {
+  it('rejects start on a busy port instead of throwing an uncaught error', async () => {
+    const { port } = await startServer();
+    const uncaught = vi.fn();
+    process.on('uncaughtException', uncaught);
+    const second = new LocalServer({
+      port,
+      viewerDir: tmpdir(),
+      hub: new ChatHub(),
+      themeFor: () => PRESET_THEMES[0]!,
+    });
+    try {
+      await expect(second.start()).rejects.toMatchObject({ code: 'EADDRINUSE' });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(uncaught).not.toHaveBeenCalled();
+    } finally {
+      process.off('uncaughtException', uncaught);
+      await second.stop();
+    }
+  });
+
   it('serves the viewer for /overlay and refuses path traversal', async () => {
     const { port } = await startServer();
     const page = await fetch(`http://127.0.0.1:${port}/overlay`);
