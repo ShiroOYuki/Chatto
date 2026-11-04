@@ -1,6 +1,6 @@
 # 控制台設計準則
 
-這份文件整理控制台（`apps/desktop/src/renderer`）的視覺與互動準則。聊天室本身的外觀由主題決定，見 [`theming.md`](theming.md)。
+這份文件整理控制台（`apps/desktop/src/renderer`）的視覺與互動準則。聊天室本身的外觀由主題決定，見 [`theming.md`](theming.md)；品牌、吉祥物與插圖的美術方向見 [`visual-identity.md`](visual-identity.md)。
 
 新增或修改介面時，先看這份文件，再參考現有頁面的寫法。規則和程式碼不一致時，以程式碼為準，並回頭更新這份文件。
 

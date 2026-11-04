@@ -25,7 +25,7 @@ apps/
   viewer/           @chatto/viewer — /overlay 與 /embed 頁面，由桌面 App 的本機 server 提供；瀏覽器可用 ?mock=1 獨立預覽
   desktop/          @chatto/desktop — Electron（electron-vite）：main / preload / renderer（控制台）
 obs-plugin/         obs-chatto — OBS 外掛「Chatto 聊天室」來源（C++，CMake，Windows；不在 npm workspaces 裡）
-docs/               architecture.md、message-format.md、theming.md、testing.md、design.md
+docs/               architecture.md、message-format.md、theming.md、testing.md、design.md、visual-identity.md
 ```
 
 資料流：`Provider → ChatHub（main process）→ 本機 WebSocket → viewer（overlay 視窗與 OBS）`；控制台透過 IPC 與 main 溝通。
@@ -62,6 +62,7 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 ## 控制台 App UI 方向
 
 - 視覺與互動的細則（色彩 token、字級、圓角與間距、kit 元件的用法、狀態回饋、動畫、吉祥物）見 `docs/design.md`，新增或修改介面前先看。
+- 品牌概念、色彩意象、茶杯吉祥物的造型、插圖與內建主題的美術方向見 `docs/visual-identity.md`；畫新素材、改吉祥物或新增內建主題前先看。
 - 兩種介面模式：**完整模式**（左側導覽：總覽、聊天室、主題、輸出、提醒、連線、設定）與**精簡模式**（單頁 Bento 控制台），由標題列或設定切換，存在 `prefs.uiMode`。
 - 設定頁分「一般」「外觀」「進階」「關於」四個區塊，用左側選單（kit `SideNavItem`，主題編輯器共用）切換。
 - 主視窗為 frameless，自繪標題列並整合最小化／最大化／關閉；關閉行為依 `prefs.closeToTray` 決定縮到系統匣或結束。
