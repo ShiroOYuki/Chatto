@@ -104,7 +104,7 @@ function updateRow(update: UpdateState, m: Messages['settings']): { text: string
         ),
       };
     case 'error':
-      return { text: m.updateError(update.error ?? ''), action: check };
+      return { text: m.updateError[update.error ?? 'unknown'], action: check };
     default: {
       const unhandled: never = update.status;
       return unhandled;

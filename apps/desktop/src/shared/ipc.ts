@@ -67,8 +67,14 @@ export interface UpdateState {
   version?: string;
   /** Download progress, 0–100. */
   percent?: number;
-  error?: string;
+  error?: UpdateErrorKind;
 }
+
+/**
+ * Why an update failed, as the user is told it (the raw error stays in the log):
+ * `not-found` — GitHub has no published release to read; `network` — GitHub was unreachable.
+ */
+export type UpdateErrorKind = 'not-found' | 'network' | 'unknown';
 
 /** The user's own Client ID, the one built into this version, or none at all. */
 export type ClientIdSource = 'custom' | 'built-in' | 'none';

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { UpdateState } from '../shared/ipc';
-import { shortError, UPDATE_CHECK_INTERVAL_MS, Updater, type UpdaterBackend } from './updater';
+import { updateErrorKind, UPDATE_CHECK_INTERVAL_MS, Updater, type UpdaterBackend } from './updater';
 
 /** Stands in for electron-updater's autoUpdater: tests emit its events by hand. */
 function fakeBackend() {
@@ -26,14 +26,18 @@ function setup() {
 
 afterEach(() => vi.useRealTimers());
 
-describe('shortError', () => {
-  it('keeps the first line of a long HTTP error, cut short', () => {
-    const message = `404 "method: GET url: https://github.com/x/y/releases.atom${'x'.repeat(200)}"\n\nheaders: set-cookie=secret`;
-    const short = shortError(message);
-    expect(short.startsWith('404 "method: GET url:')).toBe(true);
-    expect(short).not.toContain('secret');
-    expect(short.length).toBeLessThanOrEqual(120);
-    expect(shortError('offline')).toBe('offline');
+describe('updateErrorKind', () => {
+  it('tells a missing release, a network failure and anything else apart', () => {
+    const httpError = Object.assign(
+      new Error('404 "method: GET url: https://github.com/x/y/releases.atom"\n\nheaders: set-cookie=secret'),
+      { statusCode: 404 },
+    );
+    expect(updateErrorKind(httpError)).toBe('not-found');
+    expect(updateErrorKind(new Error('404 "method: GET url: …"'))).toBe('not-found');
+    expect(updateErrorKind(Object.assign(new Error('getaddrinfo failed'), { code: 'ENOTFOUND' }))).toBe('network');
+    expect(updateErrorKind(new Error('net::ERR_INTERNET_DISCONNECTED'))).toBe('network');
+    expect(updateErrorKind(new Error('sha512 checksum mismatch'))).toBe('unknown');
+    expect(updateErrorKind('weird')).toBe('unknown');
   });
 });
 
@@ -101,7 +105,7 @@ describe('Updater', () => {
     expect(updater.state).toEqual({ status: 'not-available' });
     backend.checkForUpdates.mockRejectedValueOnce(new Error('offline'));
     await updater.check();
-    expect(updater.state).toEqual({ status: 'error', version: undefined, error: 'offline' });
+    expect(updater.state).toEqual({ status: 'error', version: undefined, error: 'unknown' });
     expect(changes.at(-1)).toEqual(updater.state);
   });
 });

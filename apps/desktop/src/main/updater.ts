@@ -1,18 +1,22 @@
 import type { AppUpdater } from 'electron-updater';
-import type { UpdateState } from '../shared/ipc';
+import type { UpdateErrorKind, UpdateState } from '../shared/ipc';
 
 /** Checks again this often while Chatto keeps running (streamers often leave it open for days). */
 export const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
-const MAX_ERROR_LENGTH = 120;
+const NETWORK_ERROR = /ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|ETIMEDOUT|net::ERR_/;
 
 /**
- * electron-updater's errors can carry whole HTTP responses (headers, cookies); the
- * settings page shows only the first line, cut short. The full error goes to the log.
+ * Sorts an electron-updater error into what the user is told. Its messages can carry
+ * whole HTTP responses (headers, cookies), so they go to the log, never to the screen.
  */
-export function shortError(message: string): string {
-  const line = message.split('\n')[0]!.trim();
-  return line.length > MAX_ERROR_LENGTH ? `${line.slice(0, MAX_ERROR_LENGTH - 1)}…` : line;
+export function updateErrorKind(error: unknown): UpdateErrorKind {
+  const { statusCode, code, message } = (error ?? {}) as { statusCode?: unknown; code?: unknown; message?: unknown };
+  const text = typeof message === 'string' ? message : String(error);
+  // No published release (or no latest.yml in it) answers 404.
+  if (statusCode === 404 || /^404\b/.test(text)) return 'not-found';
+  if (NETWORK_ERROR.test(`${typeof code === 'string' ? code : ''} ${text}`)) return 'network';
+  return 'unknown';
 }
 
 /** The part of electron-updater's `autoUpdater` this module uses, so tests can fake it. */
@@ -93,9 +97,8 @@ export class Updater {
   }
 
   #fail(error: unknown): void {
-    const message = error instanceof Error ? error.message : String(error);
     console.error('[chatto] update failed', error);
-    this.#set({ status: 'error', version: this.#state.version, error: shortError(message) });
+    this.#set({ status: 'error', version: this.#state.version, error: updateErrorKind(error) });
   }
 
   #set(state: UpdateState): void {

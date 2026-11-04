@@ -304,6 +304,13 @@ test('an update is found, downloaded on request and offered as a restart', async
   await expect(page.getByRole('button', { name: '重新啟動以更新' })).toBeVisible();
 });
 
+test('a failed update check says what went wrong in plain words', async ({ panel, page }) => {
+  await panel.open('page=settings');
+  await panel.setState({ update: { status: 'error', error: 'not-found' } });
+  await expect(page.getByText('目前讀不到更新資訊，請稍後再試')).toBeVisible();
+  await expect(page.getByRole('button', { name: '檢查更新' })).toBeEnabled();
+});
+
 test('alert settings save from the 提醒 page', async ({ panel, page }) => {
   await panel.open('page=alerts');
   const threshold = page.getByRole('textbox', { name: '安靜多久算沉寂' });
