@@ -1,13 +1,17 @@
 name: CI
 
+# Branches merge feature/* -> develop -> CI -> main. develop runs nothing; CI runs the tests;
+# main runs the tests and then the release.
 on:
   push:
-    branches: [main]
+    branches: [CI, main]
   pull_request:
+    branches: [CI, main]
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a run on main: it may be in the middle of a release.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   test:
@@ -50,3 +54,11 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+
+  release:
+    name: Release
+    needs: [test, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml

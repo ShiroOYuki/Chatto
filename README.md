@@ -36,9 +36,21 @@ npm run dev                                       # 啟動桌面 App
 
 內建 Client ID 時，使用者仍可在連線頁的「進階設定」或設定頁的「進階」改用自己的 Client ID，也能改回內建。Client ID 是公開資訊，可以放進安裝檔；Chatto 不使用 client secret。
 
+### 分支與 CI
+
+分支依 `feature/*` → `develop` → `CI` → `main` 的順序合併。
+
+| 分支                   | 推送或 PR 時                                                                                 |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| `feature/*`、`develop` | 不跑任何 workflow                                                                            |
+| `CI`                   | 跑 CI（typecheck、單元與元件測試、web E2E、視覺回歸、Electron）；動到 OBS 外掛時另外建置外掛 |
+| `main`                 | 跑 CI；推送時 CI 通過後接著發佈                                                              |
+
+`CI` 與 `main` 受分支保護：只能透過 PR 合併，且 CI 必須通過。
+
 ### 發佈
 
-推送版本 tag（例如 `v0.1.0`，要和 `apps/desktop/package.json` 的版本一致）會觸發 `.github/workflows/release.yml`：建置 OBS 外掛與安裝檔，並建立草稿 Release 附上安裝檔，確認後在 GitHub 上發佈。
+推送到 `main` 且 CI 通過後，`.github/workflows/release.yml` 讀 `apps/desktop/package.json` 的版本：`v<版本>` tag 已存在就不做事；否則建置 OBS 外掛與安裝檔，打上 tag，建立草稿 Release 附上安裝檔，確認後在 GitHub 上發佈。要發新版，在 `develop` 提高版本號，再一路合併到 `main`。發佈失敗時，可以在 Actions 頁面對 `main` 手動執行 Release 重試。
 
 Release 同時附上 `latest.yml` 與 `.blockmap`：已安裝的 Chatto（`electron-updater`）啟動時與每 6 小時讀最新一份**已發佈**的 Release，有新版本時在標題列與設定頁「關於」提示，使用者同意後才下載；下載完按「重新啟動並更新」，或下次結束 Chatto 時安裝。草稿不會被讀到。
 

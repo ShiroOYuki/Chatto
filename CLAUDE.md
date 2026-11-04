@@ -124,3 +124,5 @@ npm run dist         # 打包 Windows 安裝檔（會先建置 OBS 外掛）
 - 使用 Conventional Commits（`feat:`、`fix:`、`docs:`、`refactor:`、`chore:` …），scope 用 package 名，例如 `feat(provider-twitch): ...`。
 - **commit message 不得加入 `Co-Authored-By` 或 `Claude-Session` 行。**
 - 不提交 `.env`、token、建置產物（`out/`、`dist/`、`release/`）。
+- 分支依 `feature/*` → `develop` → `CI` → `main` 合併。新工作開 `feature/<名稱>` 分支，完成後併入 `develop`；`develop` 不跑 workflow，`CI` 跑測試，`main` 跑測試並發佈（版本號沒有對應 tag 時，自動打 tag 並建立草稿 Release）。`CI`、`main` 有分支保護，只能透過 PR 合併。
+- 預設分支是 `main`，commit 裡的 `Closes #N` 要等合併到 `main` 才會關閉 issue。

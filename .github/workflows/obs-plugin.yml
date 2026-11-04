@@ -3,12 +3,13 @@ name: OBS plugin
 # The plugin rarely changes, so it is built only when its sources or build setup do.
 on:
   push:
-    branches: [main]
+    branches: [CI, main]
     paths:
       - 'obs-plugin/**'
       - 'scripts/build-obs-plugin.mjs'
       - '.github/workflows/obs-plugin.yml'
   pull_request:
+    branches: [CI, main]
     paths:
       - 'obs-plugin/**'
       - 'scripts/build-obs-plugin.mjs'
