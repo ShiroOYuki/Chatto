@@ -6,6 +6,7 @@ import { appPrefs, openExternal } from '../services/app';
 import { Stagger } from '../components/motion';
 import { ThemeSwitcher } from '../components/kibo-ui/theme-switcher';
 import { TeaCup } from '../components/TeaCup';
+import { ClientIdForm } from './ClientIdForm';
 import { Button, PageHeader, Segmented, Select, TextInput, Tile, Toggle } from '../components/kit';
 import { useLocale, useMessages } from '../i18n';
 import { LOCALE_NAMES, LOCALES, type ChatLocalePref } from '@chatto/core';
@@ -47,7 +48,7 @@ function EditorCommandField({ value }: { value: string }) {
 
 export function SettingsPage({ state }: { state: AppState }) {
   const { prefs } = state;
-  const m = useMessages().settings;
+  const { settings: m, connections } = useMessages();
   const locale = useLocale();
   const languages = LOCALES.map((locale) => ({ value: locale, label: LOCALE_NAMES[locale] }));
   return (
@@ -138,6 +139,14 @@ export function SettingsPage({ state }: { state: AppState }) {
           <Row title={m.port} hint={m.portHint}>
             <code className="rounded-lg bg-tile-muted px-3 py-1 font-mono text-sm">{state.server.port}</code>
           </Row>
+        </Tile>
+
+        <Tile title={m.advanced}>
+          <div className="mb-4">
+            <h3 className="text-sm font-medium">Twitch Client ID</h3>
+            <p className="mt-0.5 text-xs text-ink-faint">{connections.clientIdSource[state.clientId.source]}</p>
+          </div>
+          <ClientIdForm clientId={state.clientId} />
         </Tile>
 
         <Tile title={m.about}>

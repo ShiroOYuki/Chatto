@@ -243,6 +243,33 @@ test('sign-in shows the device code', async ({ panel, page }) => {
   await expect(page.getByText('MATCHA42')).toBeVisible();
 });
 
+test('a built-in Client ID stays under advanced settings and can be swapped and restored', async ({ panel, page }) => {
+  await panel.open('page=connections');
+  await expect(page.getByRole('heading', { name: '1. 帳號' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Client ID' })).toBeHidden();
+
+  await page.getByText('進階設定').click();
+  await expect(page.getByText('使用 Chatto 內建的 Client ID').last()).toBeVisible();
+  await page.getByRole('textbox', { name: 'Client ID' }).fill('my-own-id');
+  await page.getByRole('button', { name: '儲存' }).click();
+  await expect(page.getByText('使用你自己的 Client ID').last()).toBeVisible();
+  // A different Client ID needs a new sign-in.
+  await expect(page.getByRole('button', { name: '用 Twitch 登入' })).toBeVisible();
+
+  await page.getByRole('button', { name: '改回內建' }).click();
+  await expect(page.getByText('使用 Chatto 內建的 Client ID').last()).toBeVisible();
+  await expect(page.getByRole('button', { name: '改回內建' })).toHaveCount(0);
+});
+
+test('without a built-in Client ID, entering one is the first step', async ({ panel, page }) => {
+  await panel.open('page=connections');
+  await panel.setState({ clientId: { source: 'none', hasBuiltIn: false }, auth: { status: 'signed-out' } });
+  await expect(page.getByRole('heading', { name: '1. 應用程式' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '2. 帳號' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '用 Twitch 登入' })).toBeDisabled();
+  await expect(page.getByText('進階設定')).toHaveCount(0);
+});
+
 test('alert settings save from the 提醒 page', async ({ panel, page }) => {
   await panel.open('page=alerts');
   const threshold = page.getByRole('textbox', { name: '安靜多久算沉寂' });

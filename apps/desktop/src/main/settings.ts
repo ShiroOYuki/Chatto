@@ -20,7 +20,11 @@ export interface Rect {
   height: number;
 }
 
+/** The Twitch Client ID baked in at build time (`MAIN_VITE_TWITCH_CLIENT_ID`), or empty. */
+export const BUILT_IN_CLIENT_ID = (import.meta.env.MAIN_VITE_TWITCH_CLIENT_ID ?? '').trim();
+
 export interface Settings {
+  /** The user's own Twitch Client ID; empty means the built-in one is used. */
   twitchClientId: string;
   channelLogin: string;
   serverPort: number;
@@ -36,7 +40,7 @@ export interface Settings {
 }
 
 const defaults = (): Settings => ({
-  twitchClientId: import.meta.env.MAIN_VITE_TWITCH_CLIENT_ID ?? '',
+  twitchClientId: '',
   channelLogin: '',
   serverPort: 4820,
   overlay: { enabled: false },
@@ -62,6 +66,15 @@ export function normalizePrefs(raw: Partial<AppPrefs> | undefined, base: AppPref
   if (!isLocale(prefs.locale)) prefs.locale = base.locale;
   if (prefs.chatLocale !== 'auto' && !isLocale(prefs.chatLocale)) prefs.chatLocale = 'auto';
   return prefs;
+}
+
+/**
+ * Older versions saved the built-in Client ID as if the user had entered it;
+ * that copy is dropped so a newer built-in one takes over.
+ */
+export function customClientId(saved: string | undefined, builtIn = BUILT_IN_CLIENT_ID): string {
+  const id = (saved ?? '').trim();
+  return id === builtIn ? '' : id;
 }
 
 /** JSON settings in the user data folder, written atomically. */
@@ -92,7 +105,7 @@ export class SettingsStore {
       return {
         ...base,
         ...raw,
-        twitchClientId: raw.twitchClientId || base.twitchClientId,
+        twitchClientId: customClientId(raw.twitchClientId),
         overlay: { ...base.overlay, ...raw.overlay },
         alertsOverlay: { ...base.alertsOverlay, ...raw.alertsOverlay },
         alerts: normalizeAlertSettings(raw.alerts),

@@ -103,9 +103,9 @@ function fakeSettings(initial: Partial<Settings> = {}) {
   } as unknown as SettingsStore;
 }
 
-function setup(initial?: Partial<Settings>) {
+function setup(initial?: Partial<Settings>, builtInClientId = '') {
   const settings = fakeSettings(initial);
-  const controller = new AppController(settings);
+  const controller = new AppController(settings, builtInClientId);
   const server = {
     port: 4820,
     url: (target: string) => `http://127.0.0.1:4820/${target}`,
@@ -389,7 +389,7 @@ describe('AppController Twitch', () => {
     const { controller } = setup({ twitchClientId: '' });
     await controller.init();
     expect(created.providers).toHaveLength(0);
-    expect(controller.state().clientIdConfigured).toBe(false);
+    expect(controller.state().clientId).toEqual({ source: 'none', hasBuiltIn: false });
     await expect(controller.connect('ciel')).rejects.toThrow(/Client ID/);
   });
 
@@ -397,10 +397,46 @@ describe('AppController Twitch', () => {
     const { controller, settings } = setup();
     await controller.init();
     const first = latestProvider();
-    controller.setClientId('  new-id  ');
+    await controller.setClientId('  new-id  ');
     expect(settings.get().twitchClientId).toBe('new-id');
     expect(first.disconnect).toHaveBeenCalled();
     expect(latestProvider().options.clientId).toBe('new-id');
+  });
+
+  it('uses the built-in client id until the user sets their own, and can go back to it', async () => {
+    const { controller, settings } = setup({ twitchClientId: '' }, 'built-in-id');
+    await controller.init();
+    expect(latestProvider().options.clientId).toBe('built-in-id');
+    expect(controller.state().clientId).toEqual({ source: 'built-in', hasBuiltIn: true });
+
+    await controller.setClientId('own-id');
+    expect(latestProvider().options.clientId).toBe('own-id');
+    expect(controller.state().clientId.source).toBe('custom');
+
+    await controller.setClientId('');
+    expect(settings.get().twitchClientId).toBe('');
+    expect(latestProvider().options.clientId).toBe('built-in-id');
+    expect(controller.state().clientId.source).toBe('built-in');
+  });
+
+  it('does not store the built-in client id as the user’s own', async () => {
+    const { controller, settings } = setup({ twitchClientId: '' }, 'built-in-id');
+    await controller.init();
+    const count = created.providers.length;
+    await controller.setClientId(' built-in-id ');
+    expect(settings.get().twitchClientId).toBe('');
+    expect(created.providers).toHaveLength(count);
+  });
+
+  it('signs out when the client id in use changes, since the token belongs to the old one', async () => {
+    created.identity = { login: 'ciel', userId: '1' };
+    const { controller } = setup();
+    await controller.init();
+    const first = latestProvider();
+    expect(controller.state().auth.status).toBe('signed-in');
+    await controller.setClientId('new-id');
+    expect(first.auth.signOut).toHaveBeenCalled();
+    expect(controller.state().auth.status).toBe('signed-out');
   });
 
   it('runs the device flow and fills in the channel with the signed-in login', async () => {

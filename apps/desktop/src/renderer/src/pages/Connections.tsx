@@ -1,9 +1,10 @@
-import { ExternalLink, KeyRound, LogOut, Plug, PlugZap } from 'lucide-react';
+import { ChevronRight, ExternalLink, KeyRound, LogOut, Plug, PlugZap } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { useMessages } from '../i18n';
 import { twitch, twitchStatus } from '../services/twitch';
 import { Stagger } from '../components/motion';
+import { ClientIdForm } from './ClientIdForm';
 import {
   Badge,
   Button,
@@ -46,14 +47,80 @@ function PlatformMark({ platform }: { platform: keyof typeof PLATFORMS }) {
   );
 }
 
-function TwitchCard({ state }: { state: AppState }) {
+/** Step 1 of a build without a built-in Client ID: the user has to bring their own. */
+function ClientIdStep({ configured }: { configured: boolean }) {
   const messages = useMessages();
   const m = messages.connections;
   const [clientId, setClientId] = useState('');
-  const [editingClientId, setEditingClientId] = useState(!state.clientIdConfigured);
+  const [editing, setEditing] = useState(!configured);
+
+  return (
+    <section className="flex flex-col gap-3 rounded-xl bg-tile-muted p-4">
+      <h3 className="flex items-center gap-2 text-sm font-medium">
+        <KeyRound className="size-4 text-matcha" /> 1. {m.stepApp}
+      </h3>
+      {editing ? (
+        <>
+          <Field label="Client ID" hint={m.clientIdHint}>
+            <TextInput
+              value={clientId}
+              onChange={(event) => setClientId(event.target.value)}
+              placeholder={m.clientIdPlaceholder}
+            />
+          </Field>
+          <div className="mt-auto flex gap-2">
+            <Button
+              variant="primary"
+              disabled={!clientId.trim()}
+              onClick={() => {
+                twitch.setClientId(clientId);
+                setEditing(false);
+              }}
+            >
+              {messages.common.save}
+            </Button>
+            <Button variant="ghost" onClick={() => twitch.openDevConsole()}>
+              <ExternalLink /> {m.openConsole}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-ink-soft">{m.clientIdSet}</p>
+          <Button className="mt-auto self-start" size="sm" variant="raised" onClick={() => setEditing(true)}>
+            {m.change}
+          </Button>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Builds with a built-in Client ID keep it out of the way, under "Advanced settings". */
+function AdvancedSettings({ clientId }: { clientId: AppState['clientId'] }) {
+  const m = useMessages().connections;
+  return (
+    <details className="group rounded-xl border border-line">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+        <ChevronRight className="size-4 text-ink-faint transition-transform group-open:rotate-90" />
+        {m.advanced}
+        <span className="ml-auto text-xs font-normal text-ink-faint">{m.clientIdSource[clientId.source]}</span>
+      </summary>
+      <div className="border-t border-line p-4">
+        <ClientIdForm clientId={clientId} />
+      </div>
+    </details>
+  );
+}
+
+function TwitchCard({ state }: { state: AppState }) {
+  const messages = useMessages();
+  const m = messages.connections;
   const [login, setLogin] = useState(state.channel.login ?? '');
-  const { auth, channel } = state;
+  const { auth, channel, clientId } = state;
   const { signedIn, connected, busy } = twitchStatus(state);
+  // Without a built-in Client ID, entering one is the first step.
+  const accountStep = clientId.hasBuiltIn ? 1 : 2;
 
   return (
     <Tile className="col-span-2 gap-5">
@@ -70,56 +137,13 @@ function TwitchCard({ state }: { state: AppState }) {
         <Badge tone="matcha">EventSub</Badge>
       </header>
 
-      <div className="grid grid-cols-3 gap-4">
-        {/* Step 1: client id */}
-        <section className="flex flex-col gap-3 rounded-xl bg-tile-muted p-4">
-          <h3 className="flex items-center gap-2 text-sm font-medium">
-            <KeyRound className="size-4 text-matcha" /> {m.stepApp}
-          </h3>
-          {editingClientId ? (
-            <>
-              <Field label="Client ID" hint={m.clientIdHint}>
-                <TextInput
-                  value={clientId}
-                  onChange={(event) => setClientId(event.target.value)}
-                  placeholder={m.clientIdPlaceholder}
-                />
-              </Field>
-              <div className="mt-auto flex gap-2">
-                <Button
-                  variant="primary"
-                  disabled={!clientId.trim()}
-                  onClick={() => {
-                    twitch.setClientId(clientId);
-                    setEditingClientId(false);
-                  }}
-                >
-                  {messages.common.save}
-                </Button>
-                <Button variant="ghost" onClick={() => twitch.openDevConsole()}>
-                  <ExternalLink /> {m.openConsole}
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-ink-soft">{m.clientIdSet}</p>
-              <Button
-                className="mt-auto self-start"
-                size="sm"
-                variant="raised"
-                onClick={() => setEditingClientId(true)}
-              >
-                {m.change}
-              </Button>
-            </>
-          )}
-        </section>
+      <div className={clientId.hasBuiltIn ? 'grid grid-cols-2 gap-4' : 'grid grid-cols-3 gap-4'}>
+        {clientId.hasBuiltIn ? null : <ClientIdStep configured={clientId.source !== 'none'} />}
 
-        {/* Step 2: account */}
+        {/* Account */}
         <section className="flex flex-col gap-3 rounded-xl bg-tile-muted p-4">
           <h3 className="flex items-center gap-2 text-sm font-medium">
-            <Plug className="size-4 text-matcha" /> {m.stepAccount}
+            <Plug className="size-4 text-matcha" /> {accountStep}. {m.stepAccount}
           </h3>
           {auth.status === 'pending' ? (
             <>
@@ -160,7 +184,7 @@ function TwitchCard({ state }: { state: AppState }) {
               <Button
                 className="mt-auto self-start"
                 variant="primary"
-                disabled={!state.clientIdConfigured}
+                disabled={clientId.source === 'none'}
                 onClick={() => twitch.signIn()}
               >
                 {m.signIn}
@@ -169,10 +193,10 @@ function TwitchCard({ state }: { state: AppState }) {
           )}
         </section>
 
-        {/* Step 3: channel */}
+        {/* Channel */}
         <section className="flex flex-col gap-3 rounded-xl bg-tile-muted p-4">
           <h3 className="flex items-center gap-2 text-sm font-medium">
-            <PlugZap className="size-4 text-matcha" /> {m.stepChannel}
+            <PlugZap className="size-4 text-matcha" /> {accountStep + 1}. {m.stepChannel}
           </h3>
           <form
             className="flex flex-col gap-3"
@@ -213,6 +237,7 @@ function TwitchCard({ state }: { state: AppState }) {
           </form>
         </section>
       </div>
+      {clientId.hasBuiltIn ? <AdvancedSettings clientId={clientId} /> : null}
     </Tile>
   );
 }

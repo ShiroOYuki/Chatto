@@ -10,7 +10,7 @@ export function AccountTile({ state }: { state: AppState }) {
   const [clientId, setClientId] = useState('');
   const { auth } = state;
 
-  if (!state.clientIdConfigured) {
+  if (state.clientId.source === 'none') {
     return (
       <Tile title={m.twitchAccount}>
         <p className="mb-3 text-sm text-ink-soft">{m.clientIdIntro}</p>

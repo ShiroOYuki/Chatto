@@ -37,7 +37,7 @@ function createMockApi(): ChattoApi {
       locale: params.get('lang') === 'en' ? 'en' : 'zh-TW',
       chatLocale: 'auto',
     },
-    clientIdConfigured: true,
+    clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel' },
     channel: { login: 'shiraine_ciel', state: 'connected' },
     overlay: { enabled: true, editing: false },
@@ -90,7 +90,12 @@ function createMockApi(): ChattoApi {
     windowToggleMaximize: async () => set({ window: { maximized: !state.window.maximized } }),
     windowClose: async () => undefined,
     setPrefs: async (patch) => set({ prefs: { ...state.prefs, ...patch } }),
-    setClientId: async () => set({ clientIdConfigured: true }),
+    setClientId: async (clientId) => {
+      const { hasBuiltIn } = state.clientId;
+      const source = clientId.trim() ? 'custom' : hasBuiltIn ? 'built-in' : 'none';
+      // Like the app, a different Client ID signs the account out.
+      set({ clientId: { source, hasBuiltIn }, auth: { status: 'signed-out' } });
+    },
     signIn: async () => {
       set({
         auth: {

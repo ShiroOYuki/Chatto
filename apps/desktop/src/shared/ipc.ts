@@ -52,11 +52,15 @@ export interface CssFileChange {
   css: string;
 }
 
+/** The user's own Client ID, the one built into this version, or none at all. */
+export type ClientIdSource = 'custom' | 'built-in' | 'none';
+
 export interface AppState {
   appInfo: { version: string; platform: string };
   window: { maximized: boolean };
   prefs: AppPrefs;
-  clientIdConfigured: boolean;
+  /** Which Twitch Client ID is in use; the value itself stays in the main process. */
+  clientId: { source: ClientIdSource; hasBuiltIn: boolean };
   auth: { status: 'signed-out' | 'pending' | 'signed-in'; login?: string; deviceCode?: DeviceCodeInfo; error?: string };
   channel: { login?: string; state: ConnectionState; detail?: string };
   overlay: { enabled: boolean; editing: boolean };
@@ -81,6 +85,7 @@ export interface ChattoApi {
   windowClose(): Promise<void>;
   setPrefs(patch: Partial<AppPrefs>): Promise<void>;
 
+  /** Saves the user's own Client ID; an empty one goes back to the built-in ID. */
   setClientId(clientId: string): Promise<void>;
   signIn(): Promise<void>;
   cancelSignIn(): Promise<void>;

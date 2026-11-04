@@ -16,7 +16,7 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
       locale: 'zh-TW',
       chatLocale: 'auto',
     },
-    clientIdConfigured: true,
+    clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel' },
     channel: { login: 'shiraine_ciel', state: 'connected' },
     overlay: { enabled: false, editing: false },

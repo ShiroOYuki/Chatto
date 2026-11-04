@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const userData = vi.hoisted(() => ({ dir: '', locale: 'zh-TW' }));
 vi.mock('electron', () => ({ app: { getPath: () => userData.dir, getLocale: () => userData.locale } }));
 
-const { SettingsStore } = await import('./settings');
+const { SettingsStore, customClientId } = await import('./settings');
 
 beforeEach(() => {
   userData.dir = mkdtempSync(join(tmpdir(), 'chatto-settings-'));
@@ -41,6 +41,14 @@ describe('SettingsStore', () => {
     expect(prefs.locale).toBe('zh-TW');
     expect(prefs.chatLocale).toBe('auto');
     userData.locale = 'zh-TW';
+  });
+
+  it('keeps only a Client ID the user entered, not a saved copy of the built-in one', () => {
+    expect(customClientId(undefined, 'built-in')).toBe('');
+    expect(customClientId(' built-in ', 'built-in')).toBe('');
+    expect(customClientId(' own ', 'built-in')).toBe('own');
+    expect(customClientId('own', '')).toBe('own');
+    expect(new SettingsStore().get().twitchClientId).toBe('');
   });
 
   it('falls back to defaults when the file is corrupt', () => {

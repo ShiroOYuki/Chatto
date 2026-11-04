@@ -10,7 +10,7 @@ import { mainMessages } from './messages';
 import { OBS_PLUGIN_NAME, ObsPlugin } from './obs-plugin';
 import { OverlayWindow } from './overlay-window';
 import { LocalServer } from './server';
-import { SettingsStore, type Rect } from './settings';
+import { BUILT_IN_CLIENT_ID, SettingsStore, type Rect } from './settings';
 import { ThemeAssets } from './theme-assets';
 import { THEME_PACKAGE_EXTENSION } from './theme-package';
 
@@ -215,7 +215,7 @@ async function bootstrap(): Promise<void> {
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
   };
   const settings = new SettingsStore();
-  const controller = new AppController(settings);
+  const controller = new AppController(settings, BUILT_IN_CLIENT_ID);
   controller.soundsDir = join(app.getPath('userData'), 'sounds');
   controller.assets = new ThemeAssets(join(app.getPath('userData'), 'theme-assets'), () => controller.messages());
   // Safe here: no theme editor is open yet, so no unsaved theme can be using an image.

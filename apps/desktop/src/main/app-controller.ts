@@ -73,7 +73,11 @@ export class AppController {
   /** Supplied by index.ts, which owns the main window. */
   isWindowMaximized: () => boolean = () => false;
 
-  constructor(private readonly settings: SettingsStore) {}
+  /** `builtInClientId` is the Twitch Client ID baked into this build, used unless the user set their own. */
+  constructor(
+    private readonly settings: SettingsStore,
+    private readonly builtInClientId = '',
+  ) {}
 
   async init(): Promise<void> {
     this.#applyPrefs(this.settings.get().prefs);
@@ -137,7 +141,10 @@ export class AppController {
       appInfo: { version: app.getVersion(), platform: process.platform },
       window: { maximized: this.isWindowMaximized() },
       prefs: settings.prefs,
-      clientIdConfigured: Boolean(settings.twitchClientId),
+      clientId: {
+        source: settings.twitchClientId ? 'custom' : this.builtInClientId ? 'built-in' : 'none',
+        hasBuiltIn: Boolean(this.builtInClientId),
+      },
       auth: this.#auth,
       channel: { ...this.#channel, login: settings.channelLogin || undefined },
       overlay: { enabled: this.overlay.isOpen, editing: this.overlay.editing },
@@ -187,11 +194,24 @@ export class AppController {
 
   // ---------- auth ----------
 
-  setClientId(clientId: string): void {
+  /** The Client ID in use: the user's own, else the built-in one, else empty. */
+  #clientId(): string {
+    return this.settings.get().twitchClientId || this.builtInClientId;
+  }
+
+  /** Saves the user's own Client ID; an empty one (or the built-in one) goes back to the built-in ID. */
+  async setClientId(clientId: string): Promise<void> {
+    const before = this.#clientId();
+    const custom = clientId.trim();
     this.settings.update((draft) => {
-      draft.twitchClientId = clientId.trim();
+      draft.twitchClientId = custom === this.builtInClientId ? '' : custom;
     });
-    this.#createProvider();
+    if (this.#clientId() !== before) {
+      // A token belongs to the Client ID it was issued for, so a new ID means signing in again.
+      this.cancelSignIn();
+      if (this.#auth.status === 'signed-in') await this.signOut();
+      this.#createProvider();
+    }
     this.#emit();
   }
 
@@ -263,13 +283,13 @@ export class AppController {
   #createProvider(): void {
     this.#providerUnsubscribe?.();
     void this.#provider?.disconnect();
-    const { twitchClientId } = this.settings.get();
-    if (!twitchClientId) {
+    const clientId = this.#clientId();
+    if (!clientId) {
       this.#provider = null;
       return;
     }
     this.#provider = new TwitchChatProvider({
-      clientId: twitchClientId,
+      clientId,
       tokenStore: new SafeTokenStore('twitch'),
     });
     this.#providerUnsubscribe = this.#provider.onEvent((event) => this.#receive(event));
