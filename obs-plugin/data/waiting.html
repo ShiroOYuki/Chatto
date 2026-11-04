@@ -16,6 +16,8 @@
         --face: #27500a;
         --sakura: #f4c0d1;
         --steam: #c0dd97;
+        --ripple: rgba(151, 196, 89, 0.22);
+        --ripple-rim: rgba(192, 221, 151, 0.5);
       }
       /* !important and the html background keep the fill even if a browser source injects
          its default "transparent body" CSS (older plugin builds did). */
@@ -37,13 +39,47 @@
         color: var(--text);
         font-family: 'Segoe UI', 'Microsoft JhengHei UI', 'Microsoft JhengHei', sans-serif;
       }
-      .plate {
-        display: grid;
-        place-items: center;
+      /* The plate sits on a stage the ripples spread out from. */
+      .stage {
+        position: relative;
         width: 38vmin;
         height: 38vmin;
+      }
+      .ripple {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 38vmin;
+        height: 38vmin;
+        box-sizing: border-box;
+        border-radius: 50%;
+        /* A bright rim with a soft glow inside, like a ring on water. */
+        border: 2px solid var(--ripple-rim);
+        background: radial-gradient(circle, transparent 55%, var(--ripple) 100%);
+        transform: translate(-50%, -50%);
+        animation: ripple 6s linear infinite;
+      }
+      /* Negative delays: the rings are already spread out on the first frame. */
+      .ripple:nth-child(2) {
+        animation-delay: -1.5s;
+      }
+      .ripple:nth-child(3) {
+        animation-delay: -3s;
+      }
+      .ripple:nth-child(4) {
+        animation-delay: -4.5s;
+      }
+      .plate {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 100%;
+        height: 100%;
         border-radius: 50%;
         background: var(--plate);
+      }
+      .label {
+        position: relative;
       }
       .cup {
         width: 72%;
@@ -79,6 +115,19 @@
       }
       .dots span:nth-child(3) {
         animation-delay: 0.4s;
+      }
+      /* From the plate's edge to past the farthest corner of any source shape. */
+      @keyframes ripple {
+        0% {
+          width: 38vmin;
+          height: 38vmin;
+          opacity: 1;
+        }
+        100% {
+          width: 140vmax;
+          height: 140vmax;
+          opacity: 0;
+        }
       }
       @keyframes bob {
         0%,
@@ -126,24 +175,30 @@
     </style>
   </head>
   <body>
-    <div class="plate">
-      <svg class="cup" viewBox="0 0 96 96" aria-hidden="true">
-        <g class="steam" stroke="var(--steam)" stroke-width="2.5" fill="none" stroke-linecap="round">
-          <path d="M36 22q-3-5 0-10" />
-          <path d="M48 20q-3-5 0-10" />
-          <path d="M60 22q-3-5 0-10" />
-        </g>
-        <path d="M72 40h4a10 10 0 0 1 0 20h-6" stroke="var(--matcha)" stroke-width="5" fill="none" />
-        <path d="M18 30h60v26a26 26 0 0 1-26 26h-8A26 26 0 0 1 18 56z" fill="var(--matcha-soft)" />
-        <path d="M18 30h60v6H18z" fill="var(--matcha)" />
-        <g class="eyes" fill="var(--face)">
-          <circle cx="37" cy="46" r="3" />
-          <circle cx="59" cy="46" r="3" />
-        </g>
-        <path d="M43 55q5 5 10 0" stroke="var(--face)" stroke-width="2.5" fill="none" stroke-linecap="round" />
-        <circle cx="30" cy="54" r="4" fill="var(--sakura)" opacity="0.8" />
-        <circle cx="66" cy="54" r="4" fill="var(--sakura)" opacity="0.8" />
-      </svg>
+    <div class="stage">
+      <div class="ripple"></div>
+      <div class="ripple"></div>
+      <div class="ripple"></div>
+      <div class="ripple"></div>
+      <div class="plate">
+        <svg class="cup" viewBox="0 0 96 96" aria-hidden="true">
+          <g class="steam" stroke="var(--steam)" stroke-width="2.5" fill="none" stroke-linecap="round">
+            <path d="M36 22q-3-5 0-10" />
+            <path d="M48 20q-3-5 0-10" />
+            <path d="M60 22q-3-5 0-10" />
+          </g>
+          <path d="M72 40h4a10 10 0 0 1 0 20h-6" stroke="var(--matcha)" stroke-width="5" fill="none" />
+          <path d="M18 30h60v26a26 26 0 0 1-26 26h-8A26 26 0 0 1 18 56z" fill="var(--matcha-soft)" />
+          <path d="M18 30h60v6H18z" fill="var(--matcha)" />
+          <g class="eyes" fill="var(--face)">
+            <circle cx="37" cy="46" r="3" />
+            <circle cx="59" cy="46" r="3" />
+          </g>
+          <path d="M43 55q5 5 10 0" stroke="var(--face)" stroke-width="2.5" fill="none" stroke-linecap="round" />
+          <circle cx="30" cy="54" r="4" fill="var(--sakura)" opacity="0.8" />
+          <circle cx="66" cy="54" r="4" fill="var(--sakura)" opacity="0.8" />
+        </svg>
+      </div>
     </div>
     <div class="label">
       <span id="text">Connecting to Chatto</span><span class="dots"><span>.</span><span>.</span><span>.</span></span>
