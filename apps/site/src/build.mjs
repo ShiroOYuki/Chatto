@@ -3,7 +3,8 @@
  * home, themes, guide, FAQ, the changelog of each product, privacy notice, terms and a 404 page.
  * The legal texts come from `@chatto/share` (`legalText.ts`, loaded as TypeScript by Node), so
  * the site and the app say the same thing. The site is light unless the visitor switches it to
- * dark with the button in the header (`public/theme.js` remembers the choice).
+ * dark with the button in the header (`public/site.js` remembers the choice). The Features link
+ * scrolls to that section of the home page without putting `#features` in the address.
  *
  * The look is a streamer's notebook: grid paper, real pieces of the app taped on like photos,
  * the built-in themes as a sheet of stickers, steps as a to-do list and questions on sticky notes.
@@ -163,15 +164,16 @@ function header(locale, page) {
   const other = locale === 'en' ? 'zh-TW' : 'en';
   const current = (key) => page === key || (key === 'changelog-app' && page?.startsWith('changelog'));
   const items = [
-    ['home', 'features', '#features'],
+    ['home', 'features', 'features'],
     ['themes', 'themes'],
     ['guide', 'guide'],
     ['faq', 'faq'],
     ['changelog-app', 'changelog'],
   ]
-    .map(
-      ([key, label, hash]) =>
-        `<a href="${href(locale, key, hash)}"${!hash && current(key) ? ' aria-current="page"' : ''}>${escape(t.nav[label])}</a>`,
+    .map(([key, label, section]) =>
+      section
+        ? `<a href="${href(locale, key)}" data-section="${section}">${escape(t.nav[label])}</a>`
+        : `<a href="${href(locale, key)}"${current(key) ? ' aria-current="page"' : ''}>${escape(t.nav[label])}</a>`,
     )
     .join('');
   return `<header class="top wrap">
@@ -240,7 +242,7 @@ function layout(locale, page, { title, description, hero, body, closing = false 
 ${alternates}
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/styles.css">
-<script src="/theme.js"></script>
+<script src="/site.js"></script>
 </head>
 <body class="page-${page ?? 'missing'}">
 <div class="binding" aria-hidden="true"></div>
