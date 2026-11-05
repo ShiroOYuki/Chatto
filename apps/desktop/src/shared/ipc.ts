@@ -13,6 +13,45 @@ import type {
   SoundSetting,
   ViewerTarget,
 } from '@chatto/core';
+import type { ShareClient } from './share/client';
+import type { ShareState } from '@chatto/share';
+
+/** Theme sharing calls the control panel may make; they run on the main process's `ShareClient`. */
+export const SHARE_METHODS = [
+  'acceptTerms',
+  'signIn',
+  'cancelSignIn',
+  'signOut',
+  'setDisplayName',
+  'unlink',
+  'deleteAccount',
+  'list',
+  'findByCode',
+  'get',
+  'versions',
+  'install',
+  'setLiked',
+  'report',
+  'mine',
+  'publish',
+  'unpublish',
+  'reports',
+  'setHidden',
+  'setBanned',
+] as const;
+export type ShareMethod = (typeof SHARE_METHODS)[number];
+export type ShareApi = Pick<ShareClient, ShareMethod>;
+
+export const isShareMethod = (value: unknown): value is ShareMethod =>
+  (SHARE_METHODS as readonly unknown[]).includes(value);
+
+/** A rectangle of the main window, in CSS pixels. */
+export interface CaptureRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export interface DeviceCodeInfo {
   userCode: string;
@@ -86,7 +125,17 @@ export interface AppState {
   prefs: AppPrefs;
   /** Which Twitch Client ID is in use; the value itself stays in the main process. */
   clientId: { source: ClientIdSource; hasBuiltIn: boolean };
-  auth: { status: 'signed-out' | 'pending' | 'signed-in'; login?: string; deviceCode?: DeviceCodeInfo; error?: string };
+  auth: {
+    status: 'signed-out' | 'pending' | 'signed-in';
+    login?: string;
+    /**
+     * Signed in with permission to read channel points redemptions. Tokens from
+     * before Chatto asked for it lack it until the user signs in again.
+     */
+    redemptionScope?: boolean;
+    deviceCode?: DeviceCodeInfo;
+    error?: string;
+  };
   channel: { login?: string; state: ConnectionState; detail?: string };
   overlay: { enabled: boolean; editing: boolean };
   /** The event alert overlay window. */
@@ -95,6 +144,8 @@ export interface AppState {
   server: { port: number; embedUrl: string; overlayUrl: string };
   themes: ChatTheme[];
   selectedThemes: Record<ViewerTarget, string>;
+  /** Theme sharing account; the session token stays in the main process. */
+  share: ShareState;
 }
 
 export interface ChattoApi {
@@ -158,6 +209,11 @@ export interface ChattoApi {
   downloadUpdate(): Promise<void>;
   /** Quits, installs the downloaded update and starts the new version. */
   installUpdate(): Promise<void>;
+
+  /** Theme sharing (GitHub #4); the account shows in `state.share`. */
+  share<K extends ShareMethod>(method: K, ...args: Parameters<ShareApi[K]>): Promise<Awaited<ReturnType<ShareApi[K]>>>;
+  /** A PNG data URL of part of the main window (theme thumbnails); null where it cannot capture. */
+  captureThumbnail(rect: CaptureRect): Promise<string | null>;
 }
 
 /**
@@ -216,4 +272,6 @@ export const IPC = {
   checkForUpdate: 'update:check',
   downloadUpdate: 'update:download',
   installUpdate: 'update:install',
+  share: 'share:call',
+  captureThumbnail: 'share:capture-thumbnail',
 } as const;

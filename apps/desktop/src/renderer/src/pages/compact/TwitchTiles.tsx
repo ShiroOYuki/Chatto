@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { AppState } from '../../../../shared/ipc';
-import { Button, LoadingSpinner, Tile } from '../../components/kit';
+import { UserRound } from 'lucide-react';
+import { Button, Hint, LoadingSpinner, Tile } from '../../components/kit';
 import { useMessages } from '../../i18n';
 import { twitch, twitchStatus } from '../../services/twitch';
 
@@ -87,7 +88,8 @@ export function AccountTile({ state }: { state: AppState }) {
 }
 
 export function ChannelTile({ state }: { state: AppState }) {
-  const m = useMessages().compact;
+  const messages = useMessages();
+  const m = messages.compact;
   const [login, setLogin] = useState(state.channel.login ?? '');
   const { signedIn, connected, busy } = twitchStatus(state);
 
@@ -109,6 +111,18 @@ export function ChannelTile({ state }: { state: AppState }) {
             placeholder="shiraine_ciel"
             disabled={!signedIn}
           />
+          {signedIn && state.auth.login ? (
+            <Hint label={messages.connections.useMyChannel}>
+              <button
+                type="button"
+                aria-label={messages.connections.useMyChannel}
+                className="mr-1.5 grid size-8 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:bg-tile-muted hover:text-matcha"
+                onClick={() => setLogin(state.auth.login!)}
+              >
+                <UserRound className="size-4" />
+              </button>
+            </Hint>
+          ) : null}
         </div>
         {connected ? (
           <Button className="h-11" onClick={() => twitch.disconnect()}>

@@ -1,0 +1,9 @@
+# Copy to .dev.vars for `npm run dev` (wrangler dev). Never commit .dev.vars.
+PUBLIC_URL=http://localhost:8787
+HASH_SALT=dev-salt
+TWITCH_CLIENT_ID=
+TWITCH_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=

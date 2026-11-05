@@ -7,7 +7,7 @@ const livePreviews = (page: Page) => [
   page.locator('[aria-hidden="true"].flex.items-end'),
 ];
 
-const pages = ['overview', 'chat', 'themes', 'outputs', 'alerts', 'connections', 'settings'] as const;
+const pages = ['overview', 'chat', 'themes', 'explore', 'outputs', 'alerts', 'accounts', 'settings'] as const;
 
 for (const scheme of ['light', 'dark'] as const) {
   test.describe(`${scheme} mode`, () => {
@@ -16,6 +16,11 @@ for (const scheme of ['light', 'dark'] as const) {
     for (const id of pages) {
       test(`page ${id}`, async ({ panel, page }) => {
         await panel.open(`page=${id}`);
+        // Shared theme cards render their theme once it loads; wait for every card.
+        if (id === 'explore') {
+          await expect(page.locator('main article').first()).toBeVisible();
+          await expect(page.locator('main article .animate-pulse')).toHaveCount(0);
+        }
         if (id === 'chat') await panel.emit(chatMessage('歡迎來到茶室'), chatMessage('こんばんは～'));
         await page.evaluate(() => document.fonts.ready);
         await expect(page).toHaveScreenshot(`${id}-${scheme}.png`, { mask: livePreviews(page) });

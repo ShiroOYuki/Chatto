@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useChatLocale, useLocale, useMessages, useOutputTheme, type Messages } from '../i18n';
 import { inspectElement, queryInRoot, type InspectedElement } from '../lib/cssSelector';
 import { pillAtTop, type Box } from '../lib/matchPill';
+import { matchesFocus, type SpecimenFocus } from '../lib/specimenFocus';
 import { useThemeAssetUrl } from '../services/themes';
 import { BACKDROPS, type Backdrop } from './ThemePreview';
 
@@ -44,7 +45,7 @@ export function describeInspected(
 
 /**
  * Chat preview for the theme editor. "specimen" shows a fixed sample that uses
- * every part of the markup; "live" streams mock chat. In inspect mode hovering
+ * every part of the markup, or only the rows `focus` keeps; "live" streams mock chat. In inspect mode hovering
  * outlines the part under the cursor and clicking picks it. `highlight`
  * outlines everything a selector matches.
  */
@@ -52,6 +53,7 @@ export function InspectablePreview({
   theme,
   backdrop,
   mode,
+  focus,
   inspect,
   highlight,
   onPick,
@@ -59,6 +61,7 @@ export function InspectablePreview({
   theme: ChatTheme;
   backdrop: Backdrop;
   mode: PreviewMode;
+  focus?: SpecimenFocus;
   inspect: boolean;
   highlight: string | null;
   onPick: (info: InspectedElement) => void;
@@ -82,9 +85,11 @@ export function InspectablePreview({
 
   const specimen = useMemo(() => {
     const options = { ...theme.options, hiddenPrefixes: [], hiddenUsers: [], maxMessages: 100, messageLifetime: 0 };
-    return createSpecimenEvents().reduce((state, event) => reduceFeed(state, event, options, 0), emptyFeed).items;
-    // Built once: the specimen does not depend on styling.
-  }, []);
+    return createSpecimenEvents()
+      .filter((event) => !focus || matchesFocus(event, focus))
+      .reduce((state, event) => reduceFeed(state, event, options, 0), emptyFeed).items;
+    // Built once per focus: the specimen does not depend on styling.
+  }, [focus]);
   const shownTheme = useMemo(() => {
     const output = outputTheme(theme);
     return mode === 'specimen' ? { ...output, animation: { ...output.animation, enter: 'none' as const } } : output;

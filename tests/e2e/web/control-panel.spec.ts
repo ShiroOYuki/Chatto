@@ -2,7 +2,7 @@ import { createMockGiftBatch, createMockNotice, sampleEvent } from '@chatto/chat
 import { fileURLToPath } from 'node:url';
 import { chatMessage, expect, test } from '../fixtures';
 
-const PAGES = ['總覽', '聊天室', '主題', '輸出', '連線', '設定'];
+const PAGES = ['總覽', '聊天室', '主題', '輸出', '帳號', '設定'];
 
 test('every page opens from the sidebar without errors', async ({ panel, page }) => {
   const errors: string[] = [];
@@ -16,6 +16,43 @@ test('every page opens from the sidebar without errors', async ({ panel, page })
     if (label !== '總覽') await expect(page.getByRole('heading', { level: 1, name: label })).toBeVisible();
   }
   expect(errors).toEqual([]);
+});
+
+test('every clickable control shows a pointer', async ({ panel, page }) => {
+  await panel.open();
+  const CLICKABLE = [
+    'button',
+    'a[href]',
+    'summary',
+    '[role="button"]',
+    '[role="switch"]',
+    '[role="tab"]',
+    '[role="checkbox"]',
+    '[role="radio"]',
+    '[role="combobox"]:not(input)',
+  ].join(', ');
+  for (const label of [...PAGES, '探索', '提醒']) {
+    await panel.nav(label).click();
+    await expect(panel.nav(label)).toHaveAttribute('aria-current', 'page');
+    const wrong = await page.evaluate((selector) => {
+      const disabled = (el: Element) =>
+        el.matches(':disabled, [aria-disabled="true"], [data-disabled]') || el.closest('.chatto-root') !== null;
+      return [...document.querySelectorAll(selector)]
+        .filter((el) => !disabled(el) && el.getClientRects().length > 0)
+        .filter((el) => getComputedStyle(el).cursor !== 'pointer')
+        .map(
+          (el) =>
+            `${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 30)}"`,
+        );
+    }, CLICKABLE);
+    expect(wrong, label).toEqual([]);
+  }
+  // Disabled controls keep the arrow.
+  await panel.nav('帳號').click();
+  await panel.setState({ auth: { status: 'signed-out' }, channel: { state: 'idle' } });
+  const connect = page.getByRole('main').getByRole('button', { name: '連線', exact: true });
+  await expect(connect).toBeDisabled();
+  expect(await connect.evaluate((el) => getComputedStyle(el).cursor)).toBe('default');
 });
 
 test('the chat log shows new messages and marks deleted ones', async ({ panel, page }) => {
@@ -125,6 +162,39 @@ test("a theme's own event text shows in the editor preview", async ({ panel, pag
   await expect(page.locator('.chatto-root [data-event="twitch:resub"] .chatto-notice-system')).toHaveText(
     '感謝 Mochi_Fan 的 6 個月',
   );
+});
+
+test('the editor preview can show only the samples of the current section', async ({ panel, page }) => {
+  await panel.open('page=themes');
+  await page.getByRole('button', { name: '複製並編輯' }).first().click();
+  const rows = page.locator('.chatto-root .chatto-list > *');
+  const all = await rows.count();
+
+  // The structure section has no samples of its own.
+  const focus = page.getByRole('button', { name: '這個區塊沒有專屬範例，顯示全部' });
+  await expect(focus).toHaveAttribute('aria-disabled', 'true');
+  await expect(focus).toHaveAttribute('aria-pressed', 'false');
+
+  await page.getByRole('button', { name: '續訂', exact: true }).click();
+  const only = page.getByRole('button', { name: '只看目前區塊的範例' });
+  await only.click();
+  await expect(only).toHaveAttribute('aria-pressed', 'true');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toHaveAttribute('data-event', 'twitch:resub');
+
+  // It follows the section being edited.
+  await page.getByRole('button', { name: '新留言提醒', exact: true }).click();
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toHaveAttribute('data-highlight', /after-silence/);
+
+  // The live preview is never filtered.
+  await page.getByRole('tab', { name: '即時' }).click();
+  await expect(only).toHaveCount(0);
+  await page.getByRole('tab', { name: '範例' }).click();
+  await expect(rows).toHaveCount(1);
+
+  await only.click();
+  await expect(rows).toHaveCount(all);
 });
 
 test('compact mode fits the smallest window', async ({ panel, page }) => {
@@ -246,7 +316,7 @@ test('a picked image becomes a nine-slice frame on the preview', async ({ panel,
 });
 
 test('sign-in shows the device code', async ({ panel, page }) => {
-  await panel.open('page=connections');
+  await panel.open('page=accounts');
   await panel.setState({ auth: { status: 'signed-out' } });
   await panel.setState({
     auth: {
@@ -261,9 +331,27 @@ test('sign-in shows the device code', async ({ panel, page }) => {
   await expect(page.getByText('MATCHA42')).toBeVisible();
 });
 
+test('the channel field fills in the signed-in account’s own channel', async ({ panel, page }) => {
+  await panel.open('page=accounts');
+  const channel = page.getByRole('textbox', { name: '頻道名稱' });
+  await channel.fill('someone_else');
+  await page.getByRole('button', { name: '填入我的頻道' }).click();
+  await expect(channel).toHaveValue('shiraine_ciel');
+
+  await panel.open('compact');
+  const compact = page.getByPlaceholder('shiraine_ciel');
+  await compact.fill('someone_else');
+  await page.getByRole('button', { name: '填入我的頻道' }).click();
+  await expect(compact).toHaveValue('shiraine_ciel');
+
+  // Signed out, there is no channel of your own to fill in.
+  await panel.setState({ auth: { status: 'signed-out' } });
+  await expect(page.getByRole('button', { name: '填入我的頻道' })).toHaveCount(0);
+});
+
 test('a built-in Client ID stays under advanced settings and can be swapped and restored', async ({ panel, page }) => {
-  await panel.open('page=connections');
-  await expect(page.getByRole('heading', { name: '1. 帳號' })).toBeVisible();
+  await panel.open('page=accounts');
+  await expect(page.getByRole('heading', { name: '1. 登入' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Client ID' })).toBeHidden();
 
   await page.getByText('進階設定').click();
@@ -280,10 +368,10 @@ test('a built-in Client ID stays under advanced settings and can be swapped and 
 });
 
 test('without a built-in Client ID, entering one is the first step', async ({ panel, page }) => {
-  await panel.open('page=connections');
+  await panel.open('page=accounts');
   await panel.setState({ clientId: { source: 'none', hasBuiltIn: false }, auth: { status: 'signed-out' } });
   await expect(page.getByRole('heading', { name: '1. 應用程式' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '2. 帳號' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '2. 登入' })).toBeVisible();
   await expect(page.getByRole('button', { name: '用 Twitch 登入' })).toBeDisabled();
   await expect(page.getByText('進階設定')).toHaveCount(0);
 });

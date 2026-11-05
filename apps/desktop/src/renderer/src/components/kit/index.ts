@@ -5,6 +5,7 @@
 export { Button } from './Button';
 export { ChoiceCards, Segmented, Select, Slider, Toggle } from './controls';
 export { Badge, Sparkline } from './display';
+export { ActionNote, type ActionNoteTone } from './feedback';
 export { CopyField, Field, TagsField, TextInput } from './fields';
 export { Hint } from './Hint';
 export { EmptyState, PageHeader, Tile } from './layout';

@@ -8,7 +8,8 @@ import type { PageId } from '../../components/Sidebar';
 import { Stagger } from '../../components/motion';
 import { Button, Field, PageHeader, Tile, Toggle } from '../../components/kit';
 import { useLocale, useMessages } from '../../i18n';
-import { ruleFor, withEvents, withRule, withSilence } from './draft';
+import { redemptionAccess } from '../../services/twitch';
+import { ruleFor, withEvents, withRedemptions, withRule, withSilence } from './draft';
 import { NumberInput } from './NumberInput';
 import { SoundPicker } from './SoundPicker';
 
@@ -152,7 +153,9 @@ export function AlertsPage({ state, onNavigate }: { state: AppState; onNavigate:
                     amountLabel={event.amount?.label[locale]}
                     settings={settings}
                     port={port}
-                  />
+                  >
+                    {event.redemption ? <RedemptionOptions state={state} /> : null}
+                  </RuleRow>
                 ))}
               </RuleSection>
             ) : null;
@@ -173,7 +176,34 @@ function RuleSection({ title, hint, children }: { title: string; hint: string; c
   );
 }
 
-/** One alert rule: on/off, an optional minimum and its sound. */
+/** Redemptions' own options under their rule: OBS can leave them out, and a note when none can arrive. */
+function RedemptionOptions({ state }: { state: AppState }) {
+  const m = useMessages().redemptions;
+  const settings = state.alerts;
+  const access = redemptionAccess(state);
+  const note = access === 'not-broadcaster' ? m.notBroadcaster : access === 'reauth' ? m.reauth : null;
+  return (
+    <div className="col-span-3 flex items-start gap-3 pl-14">
+      <Toggle
+        checked={settings.redemptions.showInObs}
+        label={m.showInObs}
+        onChange={(showInObs) => alerts.setSettings(withRedemptions(settings, { showInObs }))}
+      />
+      <div className="min-w-0">
+        <div className="text-sm">{m.showInObs}</div>
+        <div className="text-xs text-ink-faint">{m.showInObsHint}</div>
+        {note ? (
+          <p data-testid="redemption-note" className="mt-1 flex gap-2 text-xs text-ink-soft">
+            <Info className="size-4 shrink-0 text-matcha" />
+            {note}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** One alert rule: on/off, an optional minimum and its sound; `children` adds the event's own options below. */
 function RuleRow({
   ruleKey,
   label,
@@ -181,6 +211,7 @@ function RuleRow({
   amountLabel,
   settings,
   port,
+  children,
 }: {
   ruleKey: string;
   label: string;
@@ -188,6 +219,7 @@ function RuleRow({
   amountLabel?: string;
   settings: AlertSettings;
   port: number;
+  children?: ReactNode;
 }) {
   const m = useMessages().alerts.rules;
   const rule = ruleFor(settings, ruleKey);
@@ -220,6 +252,7 @@ function RuleRow({
         ) : null}
       </div>
       <SoundPicker label={m.sound(label)} port={port} value={rule.sound} onChange={(sound) => update({ sound })} />
+      {children}
     </div>
   );
 }

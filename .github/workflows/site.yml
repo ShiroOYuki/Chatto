@@ -1,0 +1,47 @@
+name: Site
+
+# Deploys chattolive.com (apps/site) to Cloudflare. It runs when a GitHub Release is published,
+# so the changelog shows a version only once its installer can be downloaded, and when the site
+# changes on main. The build reads the published releases with the workflow token.
+on:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths:
+      - apps/site/**
+      - packages/share/src/legalText.ts
+      - assets/chatto-logo-dark.svg
+      - assets/chatto-icon.svg
+      - assets/chatto-cover-chat.png
+      - .github/workflows/site.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy the site
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Deploy
+        run: npm run deploy -w @chatto/site
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

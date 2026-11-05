@@ -1,11 +1,13 @@
 import type { UserRole } from '@chatto/core';
 import { ArrowDown, Eraser, Pause, Play, Search, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { AppState } from '../../../shared/ipc';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
+import { redemptionColumn, RedemptionsTile } from './RedemptionsTile';
 import { RollingNumber, Stagger } from '../components/motion';
 import { Button, EmptyState, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/kit';
 import { useMessages } from '../i18n';
-import { useChatLog } from '../store';
+import { useChatLog, useRedemptions } from '../store';
 
 type RoleFilter = 'all' | 'moderator' | 'subscriber' | 'vip';
 
@@ -15,9 +17,10 @@ const ROLE_MATCH: Record<Exclude<RoleFilter, 'all'>, UserRole[]> = {
   vip: ['vip'],
 };
 
-export function ChatPage() {
+export function ChatPage({ state }: { state: AppState }) {
   const m = useMessages().chat;
   const { entries, stats, clear } = useChatLog();
+  const column = redemptionColumn(useRedemptions().entries.length > 0);
   const [query, setQuery] = useState('');
   const [role, setRole] = useState<RoleFilter>('all');
   const [showDeleted, setShowDeleted] = useState(true);
@@ -146,7 +149,8 @@ export function ChatPage() {
             </div>
             <Sparkline values={stats.history} className="mt-3 h-12" />
           </Tile>
-          <Tile title={m.topChatters} icon={<Trophy />} className="flex-1">
+          <RedemptionsTile state={state} className={column.tile} />
+          <Tile title={m.topChatters} icon={<Trophy />} className={`min-h-0 flex-1 overflow-hidden ${column.other}`}>
             {topChatters.length === 0 ? (
               <p className="text-xs text-ink-faint">{m.noData}</p>
             ) : (

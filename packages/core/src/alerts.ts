@@ -50,9 +50,16 @@ export interface EventAlertSettings {
   rules: Record<string, EventAlertRule>;
 }
 
+/** Channel points redemptions; their alert rule is with the other event rules. */
+export interface RedemptionSettings {
+  /** Show redemptions in OBS; the desktop overlays and the control panel always get them. */
+  showInObs: boolean;
+}
+
 export interface AlertSettings {
   silence: SilenceAlertSettings;
   events: EventAlertSettings;
+  redemptions: RedemptionSettings;
 }
 
 export const defaultSound = (id: BuiltinSoundId = 'bubble', volume = 0.6): SoundSetting => ({
@@ -76,6 +83,7 @@ export const defaultAlertSettings = (): AlertSettings => ({
     sound: defaultSound('bubble'),
   },
   events: { durationSeconds: 5, hideInChatOverlay: false, rules: {} },
+  redemptions: { showInObs: true },
 });
 
 /** The highlight added to a chat message that broke a quiet spell (desktop overlay only). */
@@ -96,6 +104,7 @@ export function normalizeSound(setting: SoundSetting, fallback: BuiltinSoundId):
 export interface StoredAlertSettings {
   silence?: Partial<Omit<SilenceAlertSettings, 'sound'>> & { sound?: Partial<SoundSetting> };
   events?: Partial<Omit<EventAlertSettings, 'rules'>> & { rules?: Record<string, Partial<EventAlertRule>> };
+  redemptions?: Partial<RedemptionSettings>;
 }
 
 /** Fills missing fields from the defaults and repairs sounds that no longer exist. */
@@ -117,5 +126,6 @@ export function normalizeAlertSettings(raw?: StoredAlertSettings): AlertSettings
       sound: normalizeSound({ ...base.silence.sound, ...raw?.silence?.sound } as SoundSetting, 'bubble'),
     },
     events: { ...base.events, ...raw?.events, rules },
+    redemptions: { ...base.redemptions, ...raw?.redemptions },
   };
 }

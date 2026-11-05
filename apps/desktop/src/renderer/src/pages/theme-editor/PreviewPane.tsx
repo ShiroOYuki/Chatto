@@ -1,28 +1,43 @@
 import type { ChatTheme } from '@chatto/core';
-import { Crosshair } from 'lucide-react';
+import { Crosshair, Focus } from 'lucide-react';
 import { useState } from 'react';
 import { InspectablePreview, type PreviewMode } from '../../components/InspectablePreview';
 import { Hint, Segmented, Tile } from '../../components/kit';
 import { useMessages } from '../../i18n';
 import { BACKDROPS, type Backdrop } from '../../components/ThemePreview';
 import { buildSelector } from '../../lib/cssSelector';
+import type { SpecimenFocus } from '../../lib/specimenFocus';
 import { SelectorBuilder } from './SelectorBuilder';
 import type { PreviewHighlight } from './usePreviewHighlight';
 
-/** Right column: preview with mode, inspect and backdrop controls. */
+const iconToggle = (on: boolean) =>
+  `grid size-8 place-items-center rounded-full transition-colors [&>svg]:size-4 ${
+    on ? 'bg-matcha-strong text-on-matcha' : 'text-ink-soft hover:bg-tile-muted'
+  }`;
+
+/**
+ * Right column: preview with mode, focus, inspect and backdrop controls.
+ * `focus` is the specimen rows of the section being edited; with "only this section" on,
+ * the sample shows just those rows.
+ */
 export function PreviewPane({
   theme,
   highlight: hl,
+  focus,
   onInsertRule,
 }: {
   theme: ChatTheme;
   highlight: PreviewHighlight;
+  focus?: SpecimenFocus;
   onInsertRule: (selector: string) => void;
 }) {
   const [backdrop, setBackdrop] = useState<Backdrop>('game');
   const [previewMode, setPreviewMode] = useState<PreviewMode>('specimen');
+  const [focusOn, setFocusOn] = useState(false);
   const { picked } = hl;
   const m = useMessages().editor.preview;
+  const specimen = previewMode === 'specimen';
+  const focusLabel = focus ? m.focus : m.focusUnavailable;
 
   return (
     <Tile className="min-h-0 p-3!">
@@ -36,14 +51,28 @@ export function PreviewPane({
             { value: 'live', label: m.live },
           ]}
         />
+        {specimen ? (
+          <Hint label={focusLabel}>
+            {/* aria-disabled rather than disabled, so the tooltip still explains why. */}
+            <button
+              type="button"
+              aria-label={focusLabel}
+              aria-pressed={Boolean(focus) && focusOn}
+              aria-disabled={!focus}
+              onClick={() => focus && setFocusOn((on) => !on)}
+              className={`${iconToggle(Boolean(focus) && focusOn)} aria-disabled:opacity-40`}
+            >
+              <Focus />
+            </button>
+          </Hint>
+        ) : null}
         <Hint label={m.inspect}>
           <button
             type="button"
+            aria-label={m.inspect}
             aria-pressed={hl.inspect}
             onClick={hl.toggleInspect}
-            className={`grid size-8 place-items-center rounded-full transition-colors [&>svg]:size-4 ${
-              hl.inspect ? 'bg-matcha-strong text-on-matcha' : 'text-ink-soft hover:bg-tile-muted'
-            }`}
+            className={iconToggle(hl.inspect)}
           >
             <Crosshair />
           </button>
@@ -66,6 +95,7 @@ export function PreviewPane({
           theme={theme}
           backdrop={backdrop}
           mode={previewMode}
+          focus={specimen && focusOn ? focus : undefined}
           inspect={hl.inspect && !picked}
           highlight={hl.highlight}
           onPick={hl.pick}

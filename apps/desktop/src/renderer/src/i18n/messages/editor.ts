@@ -30,6 +30,8 @@ export default defineMessages({
     preview: {
       sample: '範例',
       live: '即時',
+      focus: '只看目前區塊的範例',
+      focusUnavailable: '這個區塊沒有專屬範例，顯示全部',
       inspect: '檢查：滑過預覽顯示 class，點一下產生選擇器',
       backdrop: (name: string) => `預覽背景 ${name}`,
       matches: (count: number) => `符合 ${count} 個元素`,
@@ -79,6 +81,8 @@ export default defineMessages({
     preview: {
       sample: 'Sample',
       live: 'Live',
+      focus: 'Show only samples for this section',
+      focusUnavailable: 'This section has no samples of its own, showing all',
       inspect: 'Inspect: hover the preview to see classes, click to build a selector',
       backdrop: (name: string) => `Preview background ${name}`,
       matches: (count: number) => (count === 1 ? 'Matches 1 element' : `Matches ${count} elements`),

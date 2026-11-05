@@ -87,6 +87,28 @@ export const EVENT_SAMPLES: Record<string, () => ChatEvent> = {
       fragments: [{ type: 'text', text: '全勤！' }],
       meta: { watchStreak: 10, channelPoints: 350 },
     }),
+  'twitch:redemption': () =>
+    notice('redemption', 'other', 'Mochi_Fan redeemed 點一首歌', {
+      author: mockUser(1),
+      meta: {
+        reward: '點一首歌',
+        cost: 500,
+        rewardId: 'mock-reward',
+        redemptionId: 'mock-redemption',
+        input: '夜に駆ける',
+      },
+    }),
+  'twitch:auto-redemption': () =>
+    notice('auto-redemption', 'other', 'okome_rice redeemed Unlock a Random Sub Emote', {
+      author: mockUser(3),
+      meta: {
+        rewardType: 'random_sub_emote_unlock',
+        cost: 300,
+        rewardId: 'random_sub_emote_unlock',
+        redemptionId: 'mock-auto-redemption',
+        emote: 'TeaCup',
+      },
+    }),
 };
 
 /** A fresh sample of one event. Throws for an uncatalogued key, which is a programming error. */

@@ -102,6 +102,37 @@ export interface TwitchNoticePayloads {
   watch_streak: { streak_count?: number; channel_points_awarded?: number };
 }
 
+/** channel.channel_points_custom_reward_redemption.add (v1): a reward the streamer created. */
+export interface TwitchRedemptionEvent {
+  id: string;
+  broadcaster_user_id: string;
+  user_id: string;
+  user_login: string;
+  user_name: string;
+  /** Empty when the reward asks for no text. */
+  user_input?: string;
+  status?: string;
+  reward: { id: string; title: string; cost: number; prompt?: string };
+  redeemed_at: string;
+}
+
+/** channel.channel_points_automatic_reward_redemption.add (v2): one of Twitch's own rewards. */
+export interface TwitchAutoRedemptionEvent {
+  id: string;
+  broadcaster_user_id: string;
+  user_id: string;
+  user_login: string;
+  user_name: string;
+  reward: {
+    /** `send_highlighted_message`, `gigantify_an_emote`, `random_sub_emote_unlock` … */
+    type: string;
+    channel_points: number;
+    emote?: { id: string; name: string } | null;
+  };
+  message?: { text: string; fragments?: unknown[] } | null;
+  redeemed_at: string;
+}
+
 export type BadgeLookup = (key: string) => ChatBadge | undefined;
 
 const PLATFORM = 'twitch';
@@ -391,6 +422,71 @@ export function mapNotification(event: TwitchNotificationEvent, lookup: BadgeLoo
   };
 }
 
+const redeemer = (event: { user_id: string; user_login: string; user_name: string }): ChatUser =>
+  mapUser(event.user_id, event.user_login, event.user_name, '', [], () => undefined);
+
+/**
+ * Automatic rewards whose chat message is its own event already (`twitch:highlighted`),
+ * so outputs show that message instead of a second line for the same redemption.
+ */
+const AUTO_REWARDS_SHOWN_AS_MESSAGE = new Set(['send_highlighted_message']);
+
+/** `gigantify_an_emote` → `Gigantify an emote`, for the fallback text of rewards Chatto has no name for. */
+const humanize = (type: string) => type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
+
+/**
+ * A redemption as a notice. Text the viewer typed goes into `meta.input` (the
+ * control panel's redemption list), not into the notice: Twitch also posts it
+ * to chat as a message, which the outputs show on its own.
+ */
+export function mapRedemption(event: TwitchRedemptionEvent, now = Date.now()): ChatNotice {
+  const meta: ChatNotice['meta'] = {
+    reward: event.reward.title,
+    cost: event.reward.cost,
+    rewardId: event.reward.id,
+    redemptionId: event.id,
+  };
+  if (event.user_input) meta.input = event.user_input;
+  return {
+    id: event.id,
+    platform: PLATFORM,
+    channelId: event.broadcaster_user_id,
+    timestamp: now,
+    kind: 'other',
+    eventType: 'redemption',
+    systemText: `${event.user_name || event.user_login} redeemed ${event.reward.title}`,
+    author: redeemer(event),
+    fragments: [],
+    meta,
+  };
+}
+
+/** An automatic reward (Twitch's own) as a notice; `meta.rewardType` names it, see `mapRedemption`. */
+export function mapAutoRedemption(event: TwitchAutoRedemptionEvent, now = Date.now()): ChatNotice {
+  const { reward } = event;
+  const meta: ChatNotice['meta'] = {
+    rewardType: reward.type,
+    cost: reward.channel_points,
+    rewardId: reward.type,
+    redemptionId: event.id,
+  };
+  if (reward.emote?.name) meta.emote = reward.emote.name;
+  if (event.message?.text) meta.input = event.message.text;
+  if (AUTO_REWARDS_SHOWN_AS_MESSAGE.has(reward.type)) meta.shownAsMessage = true;
+  return {
+    id: event.id,
+    platform: PLATFORM,
+    channelId: event.broadcaster_user_id,
+    timestamp: now,
+    kind: 'other',
+    eventType: 'auto-redemption',
+    systemText: `${event.user_name || event.user_login} redeemed ${humanize(reward.type)}`,
+    author: redeemer(event),
+    fragments: [],
+    meta,
+  };
+}
+
 /** Maps any supported EventSub notification to a ChatEvent, or null when ignored. */
 export function mapEventSubNotification(type: string, event: unknown, lookup: BadgeLookup): ChatEvent | null {
   const e = event as Record<string, string>;
@@ -415,6 +511,10 @@ export function mapEventSubNotification(type: string, event: unknown, lookup: Ba
       };
     case 'channel.chat.clear':
       return { type: 'chat-cleared', platform: PLATFORM, channelId: e.broadcaster_user_id ?? '' };
+    case 'channel.channel_points_custom_reward_redemption.add':
+      return { type: 'notice', notice: mapRedemption(event as TwitchRedemptionEvent) };
+    case 'channel.channel_points_automatic_reward_redemption.add':
+      return { type: 'notice', notice: mapAutoRedemption(event as TwitchAutoRedemptionEvent) };
     default:
       return null;
   }

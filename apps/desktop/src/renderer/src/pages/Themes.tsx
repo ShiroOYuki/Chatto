@@ -1,11 +1,15 @@
 import { duplicateTheme } from '@chatto/chat-ui';
 import type { ChatTheme, ViewerTarget } from '@chatto/core';
-import { Copy, Download, Ellipsis, MonitorUp, Pencil, Plus, Trash2, Upload } from 'lucide-react';
+import { Copy, Download, Ellipsis, MonitorUp, Pencil, Plus, Send, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
+import type { PageId } from '../components/Sidebar';
 import { useChatLocale, useMessages, useThemeName } from '../i18n';
 import { runAction } from '../services/run';
+import { useShareUpdates } from '../services/share';
 import { themes } from '../services/themes';
+import { PublishDialog } from './explore/PublishDialog';
+import { SignInDialog } from '../components/share/SignInDialog';
 import { motion, riseIn, Stagger } from '../components/motion';
 import { StaticThemePreview } from '../components/ThemePreview';
 import { Badge, Button, Hint, PageHeader } from '../components/kit';
@@ -30,14 +34,23 @@ import { ThemeEditor } from './theme-editor/ThemeEditor';
 import { exportTheme, needsPackage, pickThemeFile } from './themeIO';
 import { describeTheme } from './themeLabels';
 
-export function ThemesPage({ state }: { state: AppState }) {
+export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate: (page: PageId) => void }) {
   const [editing, setEditing] = useState<ChatTheme | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ChatTheme | null>(null);
+  const [publishing, setPublishing] = useState<ChatTheme | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
   const messages = useMessages();
   const m = messages.themes;
   const themeName = useThemeName();
   const chatLocale = useChatLocale();
+  const updates = useShareUpdates();
+
+  // Publishing needs an account; without one, signing in comes first.
+  const publish = (theme: ChatTheme) => {
+    if (state.share.session.status === 'signed-in') setPublishing(theme);
+    else setSigningIn(true);
+  };
 
   if (editing) {
     return <ThemeEditor initial={editing} onClose={() => setEditing(null)} onSaved={(theme) => setEditing(theme)} />;
@@ -108,6 +121,11 @@ export function ThemesPage({ state }: { state: AppState }) {
                         <h3 className="truncate font-medium">{themeName(theme)}</h3>
                         <p className="flex flex-wrap items-center gap-1.5 text-xs text-ink-faint">
                           {describeTheme(theme, m.labels)} · {theme.builtIn ? m.builtIn : m.custom}
+                          {updates.has(theme.id) ? (
+                            <button type="button" onClick={() => onNavigate('explore')}>
+                              <Badge tone="sakura">{messages.share.updateAvailable}</Badge>
+                            </button>
+                          ) : null}
                           {targets.map((target) => (
                             <Badge key={target} tone="matcha">
                               {target === 'overlay' ? 'Overlay' : 'OBS'}
@@ -152,6 +170,11 @@ export function ThemesPage({ state }: { state: AppState }) {
                             {!theme.builtIn ? (
                               <DropdownMenuItem onSelect={() => void duplicate(theme)}>
                                 <Copy /> {m.duplicate}
+                              </DropdownMenuItem>
+                            ) : null}
+                            {!theme.builtIn ? (
+                              <DropdownMenuItem onSelect={() => publish(theme)}>
+                                <Send /> {m.publish}
                               </DropdownMenuItem>
                             ) : null}
                             {!theme.builtIn ? (
@@ -208,6 +231,12 @@ export function ThemesPage({ state }: { state: AppState }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <PublishDialog
+        open={publishing !== null}
+        onOpenChange={(open) => !open && setPublishing(null)}
+        themeId={publishing?.id}
+      />
+      <SignInDialog open={signingIn} onOpenChange={setSigningIn} />
     </div>
   );
 }

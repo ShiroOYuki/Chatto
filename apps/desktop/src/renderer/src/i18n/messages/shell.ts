@@ -7,9 +7,10 @@ export default defineMessages({
       overview: '總覽',
       chat: '聊天室',
       themes: '主題',
+      explore: '探索',
       outputs: '輸出',
       alerts: '提醒',
-      connections: '連線',
+      accounts: '帳號',
       settings: '設定',
     },
     mood: {
@@ -74,9 +75,10 @@ export default defineMessages({
       overview: 'Overview',
       chat: 'Chat',
       themes: 'Themes',
+      explore: 'Explore',
       outputs: 'Outputs',
       alerts: 'Alerts',
-      connections: 'Connections',
+      accounts: 'Accounts',
       settings: 'Settings',
     },
     mood: {

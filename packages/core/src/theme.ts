@@ -78,6 +78,15 @@ export interface BoxStyle {
 export const ASSET_TYPES = { png: 'image/png', webp: 'image/webp', gif: 'image/gif' } as const;
 export type AssetExtension = keyof typeof ASSET_TYPES;
 
+/** The image type of a file, from its first bytes rather than its name. */
+export function sniffImage(bytes: Uint8Array): AssetExtension | null {
+  const ascii = (start: number, end: number) => String.fromCharCode(...bytes.subarray(start, end));
+  if (bytes[0] === 0x89 && ascii(1, 4) === 'PNG') return 'png';
+  if (ascii(0, 4) === 'GIF8') return 'gif';
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return 'webp';
+  return null;
+}
+
 /** A stored asset file: the SHA-256 of its bytes plus its extension. */
 export const ASSET_FILE = /^[0-9a-f]{64}\.(png|webp|gif)$/;
 const ASSET_PREFIX = 'asset:';
@@ -114,7 +123,8 @@ export type MessageArrangement = 'inline' | 'stacked' | 'columns';
 
 /** Keys for per-role and per-highlight overrides. */
 /** `viewer` is everyone without a broadcaster, moderator, VIP or subscriber (founder) role. */
-export type RoleKey = 'viewer' | 'broadcaster' | 'moderator' | 'vip' | 'subscriber' | 'first-message';
+export const ROLE_KEYS = ['viewer', 'broadcaster', 'moderator', 'vip', 'subscriber', 'first-message'] as const;
+export type RoleKey = (typeof ROLE_KEYS)[number];
 
 /**
  * Where an event's frame goes on events that are chat messages (cheers, highlighted messages …):
@@ -198,12 +208,24 @@ export interface ChatThemeBehavior {
 /** @deprecated v1 name, kept so feed helpers read naturally. */
 export type ChatThemeOptions = ChatThemeBehavior;
 
+/** Where a theme installed from theme sharing came from. */
+export interface ThemeOrigin {
+  /** The shared theme's id on the sharing platform. */
+  shareId: string;
+  /** The shared version that was installed. */
+  version: number;
+  /** Content hash when installed; once the theme's content differs, the user has changed it. */
+  contentHash: string;
+}
+
 export interface ChatTheme {
   schemaVersion: typeof THEME_SCHEMA_VERSION;
   id: string;
   name: string;
   /** Built-in presets are read-only; users duplicate them to edit. */
   builtIn?: boolean;
+  /** Set on themes installed from theme sharing (and on copies made from them). */
+  origin?: ThemeOrigin;
   /** `blank` renders markup only — no generated CSS — for fully custom styling. */
   base: 'styled' | 'blank';
 

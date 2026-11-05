@@ -32,13 +32,13 @@ jobs:
         with:
           node-version: 24
       # OBS sources and obs-deps, downloaded on configure according to buildspec.json.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: obs-plugin/.deps
           key: obs-deps-${{ runner.os }}-${{ hashFiles('obs-plugin/buildspec.json') }}
       # CI is set by GitHub, so the script uses the windows-ci-x64 preset (warnings as errors).
       - run: npm run build:obs-plugin
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: obs-chatto
           path: obs-plugin/release/obs-chatto/

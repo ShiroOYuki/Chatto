@@ -45,6 +45,8 @@ const api: ChattoApi = {
   checkForUpdate: () => ipcRenderer.invoke(IPC.checkForUpdate),
   downloadUpdate: () => ipcRenderer.invoke(IPC.downloadUpdate),
   installUpdate: () => ipcRenderer.invoke(IPC.installUpdate),
+  share: (method, ...args) => ipcRenderer.invoke(IPC.share, method, ...args),
+  captureThumbnail: (rect) => ipcRenderer.invoke(IPC.captureThumbnail, rect),
 };
 
 contextBridge.exposeInMainWorld('chatto', api);

@@ -19,7 +19,7 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
       obsPluginPromptDismissed: false,
     },
     clientId: { source: 'built-in', hasBuiltIn: true },
-    auth: { status: 'signed-in', login: 'shiraine_ciel' },
+    auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true },
     channel: { login: 'shiraine_ciel', state: 'connected' },
     overlay: { enabled: false, editing: false },
     alertsOverlay: { enabled: false, editing: false },
@@ -27,6 +27,7 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
     server: { port: 4820, embedUrl: 'http://127.0.0.1:4820/embed', overlayUrl: 'http://127.0.0.1:4820/overlay' },
     themes: PRESET_THEMES,
     selectedThemes: { overlay: 'matcha-glass', embed: 'washi', alerts: 'bubble' },
+    share: { session: { status: 'signed-out' }, termsAccepted: 0 },
     ...patch,
   };
 }
@@ -112,6 +113,8 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     checkForUpdate: resolved(),
     downloadUpdate: resolved(),
     installUpdate: resolved(),
+    share: vi.fn(async () => ({ ok: false, error: 'unknown' })),
+    captureThumbnail: vi.fn(async () => null),
     pushState(patch: Partial<AppState>) {
       fake.state = { ...fake.state, ...patch };
       stateListeners.forEach((listener) => listener(fake.state));

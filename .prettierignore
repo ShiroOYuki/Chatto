@@ -8,3 +8,4 @@ obs-plugin/.deps
 obs-plugin/build_x64
 obs-plugin/release
 obs-plugin/.clang-format
+.wrangler
