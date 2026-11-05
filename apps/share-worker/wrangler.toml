@@ -11,8 +11,7 @@ PUBLIC_URL = "https://api.chattolive.com"
 [[d1_databases]]
 binding = "DB"
 database_name = "chatto-share"
-# Filled in after `wrangler d1 create chatto-share` (see docs/share-service.md).
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "8ddc43db-149f-49b3-9ff6-f83fee656c67"
 migrations_dir = "migrations"
 
 [[r2_buckets]]
