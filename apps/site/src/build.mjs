@@ -124,7 +124,7 @@ const teacup = (cls) => `<img class="die-cut teacup ${cls}" src="/icon.svg" alt=
 /** A hand-drawn checkbox, ticked or not. */
 const checkbox = (ticked) =>
   `<svg class="check" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><path class="box" d="M4 5 C9 3.6 18 4.2 24 4.6 C24.6 11 24.2 18 23.6 24 C17 24.6 10 24.2 4.4 23.8 C3.8 17 4 10 4 5Z"/>${
-    ticked ? '<path class="tick" d="M8 14 L12.5 19 L25 5"/>' : ''
+    ticked ? '<path class="tick" pathLength="1" d="M8 14 L12.5 19 L25 5"/>' : ''
   }</svg>`;
 
 /* ---------- product specimens: real pieces of the app on a see-through sheet ---------- */
@@ -357,7 +357,7 @@ function home(locale) {
       label: t.heroCaption,
     })}
     <p class="note hero-note">${escape(t.heroSticky)}</p>
-    <svg class="arrow" viewBox="0 0 120 80" width="120" height="80" aria-hidden="true"><path d="M112 70 C88 72 60 66 44 50 C32 38 30 26 34 14"/><path d="M26 22 L34 12 L42 21"/></svg>
+    <svg class="arrow" viewBox="0 0 120 80" width="120" height="80" aria-hidden="true"><path pathLength="1" d="M112 70 C88 72 60 66 44 50 C32 38 30 26 34 14"/><path class="head" pathLength="1" d="M26 22 L34 12 L42 21"/></svg>
     ${teacup('hero-cup')}
   </div>
 </section>`,

@@ -402,6 +402,145 @@ img {
   }
 }
 
+/* ---------- motion ----------
+ * One moment on load: the photo lands on the page, the tape sticks, chat arrives message by
+ * message, then the sticky note and the teacup are slapped on and the arrow is drawn. Further
+ * down, the to-do ticks are drawn as they scroll into view. Nothing loops.
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero .photo {
+    animation: land 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .hero .photo .tape {
+    animation: stick 0.3s ease-out 0.45s both;
+  }
+
+  .hero .photo .tape-r {
+    animation-delay: 0.55s;
+  }
+
+  .hero-chat .m {
+    animation: arrive 0.35s ease-out both;
+  }
+
+  .hero-chat .m:nth-child(1) {
+    animation-delay: 0.8s;
+  }
+  .hero-chat .m:nth-child(2) {
+    animation-delay: 1.15s;
+  }
+  .hero-chat .m:nth-child(3) {
+    animation-delay: 1.5s;
+  }
+  .hero-chat .m:nth-child(4) {
+    animation-delay: 1.95s;
+  }
+
+  .hero-note {
+    animation: slap 0.4s cubic-bezier(0.3, 1.4, 0.5, 1) 2.4s both;
+  }
+
+  .arrow path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: draw 0.45s ease-out 2.8s forwards;
+  }
+
+  .arrow .head {
+    animation-delay: 3.2s;
+    animation-duration: 0.2s;
+  }
+
+  .hero-cup {
+    animation: slap 0.4s cubic-bezier(0.3, 1.4, 0.5, 1) 0.6s both;
+  }
+
+  /* The ticks on the to-do list are drawn as the list scrolls into view. */
+  @supports (animation-timeline: view()) {
+    .todo .tick {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: draw linear both;
+      animation-timeline: view();
+      animation-range: entry 60% cover 35%;
+    }
+
+    .todo li:nth-child(2) .tick {
+      animation-range: entry 90% cover 45%;
+    }
+  }
+
+  /* The icon that appears after a switch turns in. */
+  .theme-toggle svg {
+    animation: turn-in 0.35s ease-out;
+  }
+
+  .note {
+    transition:
+      rotate 0.2s ease,
+      translate 0.2s ease;
+  }
+
+  .notes .note:hover {
+    rotate: 0deg;
+    translate: 0 -3px;
+  }
+
+  .button svg {
+    transition: translate 0.15s ease;
+  }
+
+  .button:hover svg {
+    translate: 0 -1px;
+  }
+}
+
+@keyframes land {
+  from {
+    opacity: 0;
+    translate: 0 -20px;
+    scale: 1.04;
+  }
+}
+
+@keyframes stick {
+  from {
+    opacity: 0;
+    scale: 1.2;
+  }
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+
+@keyframes slap {
+  from {
+    opacity: 0;
+    scale: 1.2;
+    rotate: 10deg;
+  }
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes turn-in {
+  from {
+    opacity: 0;
+    rotate: -90deg;
+    scale: 0.6;
+  }
+}
+
 /* ---------- header ---------- */
 
 .theme-toggle {
