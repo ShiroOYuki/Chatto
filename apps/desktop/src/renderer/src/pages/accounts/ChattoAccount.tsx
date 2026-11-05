@@ -2,7 +2,7 @@ import { LogIn, LogOut, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SHARE_LIMITS, SHARE_PROVIDERS, type ShareAccount, type ShareProvider } from '@chatto/share';
 import { Stagger } from '../../components/motion';
-import { ActionNote, Badge, Button, Field, LoadingSpinner, Modal, TextInput, Tile } from '../../components/kit';
+import { ActionNote, Badge, Button, Field, Hint, LoadingSpinner, Modal, TextInput, Tile } from '../../components/kit';
 import { TeaCup } from '../../components/TeaCup';
 import {
   AlertDialog,
@@ -89,9 +89,12 @@ function SignedInAccount({ account, onLink }: { account: ShareAccount; onLink: (
           <Button size="sm" variant="ghost" onClick={() => setShowTerms(true)}>
             {m.account.viewTerms}
           </Button>
-          <Button size="sm" variant="danger" className="ml-auto" onClick={() => setDeleting(true)}>
-            <Trash2 /> {m.account.deleteAccount}
-          </Button>
+          {/* Below 1180px the row has no room for the label; the trash icon stays, with a tooltip. */}
+          <Hint label={m.account.deleteAccount}>
+            <Button size="sm" variant="danger" className="ml-auto" onClick={() => setDeleting(true)}>
+              <Trash2 /> <span className="max-[1180px]:sr-only">{m.account.deleteAccount}</span>
+            </Button>
+          </Hint>
         </div>
         {error ? (
           <ActionNote tone="error" className="mt-3">

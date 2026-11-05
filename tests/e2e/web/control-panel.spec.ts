@@ -333,7 +333,7 @@ test('sign-in shows the device code', async ({ panel, page }) => {
 
 test('a built-in Client ID stays under advanced settings and can be swapped and restored', async ({ panel, page }) => {
   await panel.open('page=accounts');
-  await expect(page.getByRole('heading', { name: '1. 帳號' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '1. 登入' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Client ID' })).toBeHidden();
 
   await page.getByText('進階設定').click();
@@ -353,7 +353,7 @@ test('without a built-in Client ID, entering one is the first step', async ({ pa
   await panel.open('page=accounts');
   await panel.setState({ clientId: { source: 'none', hasBuiltIn: false }, auth: { status: 'signed-out' } });
   await expect(page.getByRole('heading', { name: '1. 應用程式' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '2. 帳號' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '2. 登入' })).toBeVisible();
   await expect(page.getByRole('button', { name: '用 Twitch 登入' })).toBeDisabled();
   await expect(page.getByText('進階設定')).toHaveCount(0);
 });

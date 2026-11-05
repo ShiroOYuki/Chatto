@@ -135,7 +135,7 @@ function TwitchCard({ state }: { state: AppState }) {
         {/* Account */}
         <section className="flex flex-col gap-3 rounded-xl bg-tile-muted p-4">
           <h3 className="flex items-center gap-2 text-sm font-medium">
-            <Plug className="size-4 text-matcha" /> {accountStep}. {m.stepAccount}
+            <Plug className="size-4 text-matcha" /> {accountStep}. {m.stepSignIn}
           </h3>
           {auth.status === 'pending' ? (
             <>
