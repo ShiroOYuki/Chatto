@@ -38,7 +38,7 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - OBS 外掛只是包住 embed 頁的私有 obs-browser 來源，不自己畫聊天室；它讀 `/api/ping`、`/api/themes`，用 `/embed?theme=<id>` 選主題（見 `docs/architecture.md`）。這兩個 API 和 `?theme=` 是外掛的公開介面，改動要相容。模組名 `obs-chatto`、來源類型 id `chatto_chat` 會存進使用者的場景，不能改名。
 - App 更新：`electron-updater`（`apps/desktop/src/main/updater.ts`）讀最新**已發佈**的 GitHub Release，只提示，使用者同意才下載；開發版不檢查。
 - 主題分享（「探索」頁，GitHub #4）：資料型別、檢查規則、`ShareBackend` 與 HTTP 協定在 `packages/share`，App 端流程是 `apps/desktop/src/shared/share/client.ts`（`ShareClient`），服務是 `apps/share-worker`。App 裡 `ShareClient` 在 main process，session token 不離開 main；控制台經 IPC `share:call`（`SHARE_METHODS`）呼叫。服務部署在 `api.chattolive.com`：打包版連正式服務，開發版預設用記憶體內的假服務（`@chatto/share/fake`），`MAIN_VITE_SHARE_API_URL`（建置時）或 `CHATTO_SHARE_API`（執行時）可設成網址或 `fake`。分享帳號和聊天室連線分開，不得使用聊天平台的 token。API 只能向後相容地擴充（舊版 App 要能用）。見 `docs/architecture.md`「主題分享」與 `docs/share-service.md`。
-- 分享條款、隱私說明與 App 免責聲明的文字只有一份：`packages/share/src/legalText.ts`，App（`shareTerms`、`legal` 訊息）與網站（`apps/site`）都從這裡讀。改分享條款或隱私說明要遞增 `SHARE_TERMS_VERSION` 與 `LEGAL_UPDATED`，並重新部署網站（`npm run deploy -w @chatto/site`）。
+- 分享條款、隱私說明與 App 免責聲明的文字只有一份：`packages/share/src/legalText.ts`，App（`shareTerms`、`legal` 訊息）與網站（`apps/site`）都從這裡讀。改分享條款或隱私說明要遞增 `SHARE_TERMS_VERSION` 與 `LEGAL_UPDATED`，網站會在推到 `main` 時由 `site.yml` 自動部署（也可手動 `npm run deploy -w @chatto/site`）。
 - 提醒邏輯（沉寂偵測、事件規則）是 `apps/desktop/src/main/alerts.ts` 的純函式；內建提示音是從 soundcn 收進來的 CC0 音效（`packages/chat-ui/src/soundcn/`，由 `sounds.ts` 動態載入）；只能收 CC0 音效，並記到 `THIRD_PARTY_NOTICES.md`，不得使用 soundcn 的 Blizzard 音效。
 
 ### 核心原則
@@ -134,5 +134,5 @@ npm run dist         # 打包 Windows 安裝檔（會先建置 OBS 外掛）
 - 使用 Conventional Commits（`feat:`、`fix:`、`docs:`、`refactor:`、`chore:` …），scope 用 package 名，例如 `feat(provider-twitch): ...`。
 - **commit message 不得加入 `Co-Authored-By` 或 `Claude-Session` 行。**
 - 不提交 `.env`、token、建置產物（`out/`、`dist/`、`release/`）。
-- 分支依 `feature/*` → `develop` → `CI` → `main` 合併。新工作開 `feature/<名稱>` 分支，完成後併入 `develop`；`develop` 不跑 workflow，`CI` 跑測試，`main` 跑測試並發佈（版本號沒有對應 tag 時，自動打 tag 並建立草稿 Release）。`CI`、`main` 有分支保護，只能透過 PR 合併。
+- 分支依 `feature/*` → `develop` → `CI` → `main` 合併。新工作開 `feature/<名稱>` 分支，完成後併入 `develop`；`develop` 不跑 workflow，`CI` 跑測試，`main` 跑測試並發佈（版本號沒有對應 tag 時，自動打 tag 並建立草稿 Release，說明由 `apps/site/src/changelog.mjs` 產生，發版前要先把「下一版」改成這個版本；按下發佈後網站自動部署）。`CI`、`main` 有分支保護，只能透過 PR 合併。
 - 預設分支是 `main`，commit 裡的 `Closes #N` 要等合併到 `main` 才會關閉 issue。

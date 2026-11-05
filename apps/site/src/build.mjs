@@ -16,6 +16,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const repo = join(root, '..', '..');
 const dist = join(root, 'dist');
 const SITE = 'https://chattolive.com';
+const GITHUB_API = 'https://api.github.com/repos/ShiroOYuki/Chatto';
 const LOCALES = ['en', 'zh-TW'];
 const PRODUCTS = ['app', 'themes', 'obs'];
 
@@ -195,11 +196,34 @@ ${footer(locale, closing)}
 const faqItem = (item, open = false) =>
   `<details${open ? ' open' : ''}><summary><span>${escape(item.q)}</span>${icon('plus', 20)}</summary><p>${escape(item.a)}</p></details>`;
 
+/**
+ * Where an entry stands: `upcoming` (no version yet), `unreleased` (has a version, but that
+ * GitHub Release is not published yet) or `released`. The OBS plugin follows the Chatto release
+ * it comes with (`chatto`).
+ */
+function statusOf(entry, product) {
+  if (entry.upcoming) return 'upcoming';
+  const tag = product === 'obs' ? entry.chatto : product === 'app' ? entry.version : null;
+  if (!tag || PUBLISHED === null || PUBLISHED.has(tag)) return 'released';
+  return 'unreleased';
+}
+
+const releasedEntries = (product) => CHANGELOG[product].filter((entry) => statusOf(entry, product) === 'released');
+
 function ticket(locale, entry, { compact = false, product = 'app' } = {}) {
   const t = CONTENT[locale].changelog;
-  const head = entry.upcoming
-    ? `<b class="upcoming-title">${escape(t.upcoming)}</b><span class="pill muted">${escape(t.inProgress)}</span>`
-    : `<b class="version">${escape(entry.version)}</b><time datetime="${entry.date}">${entry.date}</time>${entry === CHANGELOG[product].find((e) => !e.upcoming) ? `<span class="pill">${escape(t.latest)}</span>` : ''}`;
+  const status = statusOf(entry, product);
+  const latest = status === 'released' && entry === releasedEntries(product)[0];
+  const head =
+    status === 'upcoming'
+      ? `<b class="upcoming-title">${escape(t.upcoming)}</b><span class="pill muted">${escape(t.inProgress)}</span>`
+      : `<b class="version">${escape(entry.version)}</b><time datetime="${entry.date}">${entry.date}</time>${
+          status === 'unreleased'
+            ? `<span class="pill muted">${escape(t.notReleased)}</span>`
+            : latest
+              ? `<span class="pill">${escape(t.latest)}</span>`
+              : ''
+        }`;
   const sections = entry.sections
     .map((section) => {
       const items = section.items.map((item) => `<li>${escape(item[locale])}</li>`).join('');
@@ -210,10 +234,10 @@ function ticket(locale, entry, { compact = false, product = 'app' } = {}) {
     .join('');
   const summary = entry.summary ? `<p class="summary">${escape(entry.summary[locale])}</p>` : '';
   const download =
-    !compact && entry.download
+    !compact && entry.download && status === 'released'
       ? `<a class="button small" href="${GITHUB_URL}/releases/tag/${entry.version}">${escape(t.downloadVersion(entry.version))}</a>`
       : '';
-  return `<article class="ticket${entry.upcoming ? ' upcoming' : ''}">
+  return `<article class="ticket${status === 'released' ? '' : ' upcoming'}">
   <div class="stub">${head}</div>
   <div class="detail">${summary}${compact && entry.summary ? '' : sections}${download}</div>
 </article>`;
@@ -248,7 +272,7 @@ function home(locale) {
   const faq = [groups.basics[0], groups.overlay[0], groups.obs[0], groups.basics[2]]
     .map((item, index) => faqItem(item, index === 0))
     .join('\n');
-  const released = CHANGELOG.app.filter((e) => !e.upcoming).slice(0, 2);
+  const released = releasedEntries('app').slice(0, 2);
   return layout(locale, 'home', {
     title: t.title,
     description: t.description,
@@ -570,6 +594,30 @@ function copyFonts() {
   }
   return faces.join('\n');
 }
+
+/* ---------- published releases ---------- */
+
+/**
+ * Tags of the published GitHub Releases, so a version that is still a draft shows as not
+ * released yet. `null` means unknown: a local build without network treats every version as
+ * released; in CI the build fails instead.
+ */
+async function publishedReleases() {
+  const headers = { accept: 'application/vnd.github+json', 'user-agent': 'chatto-site-build' };
+  if (process.env.GITHUB_TOKEN) headers.authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  try {
+    const response = await fetch(`${GITHUB_API}/releases?per_page=100`, { headers });
+    if (!response.ok) throw new Error(`GitHub answered ${response.status}`);
+    const releases = await response.json();
+    return new Set(releases.filter((r) => !r.draft && !r.prerelease).map((r) => r.tag_name));
+  } catch (error) {
+    if (process.env.CI) throw error;
+    console.warn(`Could not read the published releases (${error.message}); showing every version as released.`);
+    return null;
+  }
+}
+
+const PUBLISHED = await publishedReleases();
 
 /* ---------- write ---------- */
 

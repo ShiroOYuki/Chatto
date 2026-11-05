@@ -1,12 +1,13 @@
 /**
  * The changelog of each Chatto product, newest first. An entry with `upcoming: true` is work on
  * `develop` that has not been released; it is shown without a version or date. Every text is
- * written in both languages.
+ * written in both languages. An OBS plugin entry names the Chatto release it comes with
+ * (`chatto`): the site shows it once that release is published, and the release notes include it.
  */
 
 /** @typedef {{ en: string, 'zh-TW': string }} Text */
 /** @typedef {{ kind: 'new' | 'improved' | 'fixed', items: Text[] }} Section */
-/** @typedef {{ version?: string, date?: string, upcoming?: boolean, download?: boolean, summary?: Text, sections: Section[] }} Entry */
+/** @typedef {{ version?: string, date?: string, upcoming?: boolean, download?: boolean, chatto?: string, summary?: Text, sections: Section[] }} Entry */
 
 const t = (en, zh) => ({ en, 'zh-TW': zh });
 
@@ -113,6 +114,7 @@ export const CHANGELOG = {
     {
       version: 'v0.1.0',
       date: '2026-11-04',
+      chatto: 'v0.1.0',
       summary: t('The first version, included with Chatto v0.1.0.', '第一個版本，隨 Chatto v0.1.0 附上。'),
       sections: [
         {
