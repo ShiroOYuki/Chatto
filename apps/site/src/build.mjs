@@ -78,18 +78,22 @@ const more = (url, label, cls = 'more') => `<a class="${cls}" href="${url}">${es
 /* ---------- chat previews of the built-in themes ---------- */
 
 /** A few messages drawn with each theme's own colors and shapes (see packages/chat-ui/src/themes.ts). */
-function chatPreview(id, locale, { count = 2, raid = false } = {}) {
+function chatPreview(id, locale, { count = 3, raid = false } = {}) {
   const s = CONTENT[locale].sample;
   const messages = [
-    { name: 'Yuki', text: s.greeting },
-    { name: 'TeaTime', text: s.chest, mention: '@Shiro' },
+    { name: 'Yuki', badge: 'sub', text: s.greeting },
+    { name: 'TeaTime', badge: 'mod', text: s.chest, mention: '@Shiro' },
     { name: 'kuma_kuma', text: s.boss },
   ].slice(0, count);
   const body = messages
-    .map(
-      (m) =>
-        `<p class="m">${id === 'terminal' ? '<time>21:04</time>' : ''}<b class="n">${id === 'terminal' ? '@' : ''}${escape(m.name)}</b><span class="t">${m.mention ? `<span class="at">${m.mention}</span> ` : ''}${escape(m.text)}</span></p>`,
-    )
+    .map((m) => {
+      const avatar = id === 'bubble' ? `<span class="av av-${m.badge ?? 'none'}">${escape(m.name[0])}</span>` : '';
+      const time = id === 'terminal' ? '<time>21:04</time>' : '';
+      const badge = m.badge ? `<i class="badge badge-${m.badge}"></i>` : '';
+      const name = `${id === 'terminal' ? '@' : ''}${escape(m.name)}`;
+      const text = `${m.mention ? `<span class="at">${m.mention}</span> ` : ''}${escape(m.text)}`;
+      return `<p class="m">${avatar}${time}<span class="head">${badge}<b class="n">${name}</b><span class="sep">:</span></span><span class="t">${text}</span></p>`;
+    })
     .join('');
   const event = raid
     ? `<p class="m event"><span class="t">${escape(s.raid)}</span>${id === 'bubble' ? `<span class="sticker">${escape(s.raidTag)}</span>` : ''}</p>`
@@ -227,10 +231,11 @@ function home(locale) {
         `<li><span class="feature-icon${f.icon === 'bell' ? ' sakura' : ''}">${icon(f.icon)}</span><div><h3>${escape(f.title)}</h3><p>${escape(f.body)}</p></div></li>`,
     )
     .join('\n');
-  const strip = THEME_IDS.map((id) => {
+  const tiles = THEME_IDS.map((id) => {
     const theme = c.themes.list[id];
-    return `<li><a href="${href(locale, 'themes', `#${id}`)}"><div class="scene scene-${id}">${chatPreview(id, locale, { count: 1 })}</div><h3>${escape(theme.name)}</h3><p>${escape(theme.idea)}</p></a></li>`;
+    return `<li><a href="${href(locale, 'themes', `#${id}`)}"><div class="scene">${chatPreview(id, locale)}</div><h3>${escape(theme.name)}</h3><p>${escape(theme.idea)}</p></a></li>`;
   }).join('\n');
+  const blankTile = `<li><a href="${href(locale, 'themes', '#custom')}"><div class="scene blank-scene">${icon('plus', 28)}</div><h3>${escape(c.themes.blank.name)}</h3><p>${escape(c.themes.blank.body)}</p></a></li>`;
   const steps = t.steps
     .map(
       (step, index) =>
@@ -272,13 +277,16 @@ ${features}
 </section>
 
 <section class="band-deep theme-strip" aria-labelledby="themes-title">
-  <div class="wrap section-head">
-    <h2 id="themes-title">${lines(t.themesTitle)}</h2>
-    ${more(href(locale, 'themes'), t.themesMore)}
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="themes-title">${lines(t.themesTitle)}</h2>
+      ${more(href(locale, 'themes'), t.themesMore)}
+    </div>
+    <ul class="theme-tiles">
+${tiles}
+${blankTile}
+    </ul>
   </div>
-  <div class="strip-scroll"><ul class="strip">
-${strip}
-  </ul></div>
 </section>
 
 <section class="wrap split" aria-labelledby="guide-title">
@@ -327,10 +335,9 @@ function themesPage(locale) {
   <dt>${escape(t.shape)}</dt><dd>${escape(theme.shape)}</dd>
   <dt>${escape(t.motion)}</dt><dd>${escape(theme.motion)}</dd>
 </dl>`;
-  const featured = THEME_IDS.slice(0, 2)
-    .map((id, index) => {
-      const theme = t.list[id];
-      return `<article class="theme-row" id="${id}">
+  const rows = THEME_IDS.map((id, index) => {
+    const theme = t.list[id];
+    return `<article class="theme-row" id="${id}">
   <div class="theme-text">
     <p class="eyebrow">0${index + 1}${index === 0 ? ` · ${escape(t.default)}` : ''}</p>
     <h2>${escape(theme.name)}</h2>
@@ -338,35 +345,27 @@ function themesPage(locale) {
     ${spec(theme)}
   </div>
   <div class="theme-scenes">
-    <figure><div class="scene scene-bright">${chatPreview(id, locale, { count: 2 })}</div><figcaption>${escape(t.bright)}</figcaption></figure>
-    <figure><div class="scene scene-dark">${chatPreview(id, locale, { count: 2 })}</div><figcaption>${escape(t.dark)}</figcaption></figure>
+    <figure><div class="scene scene-bright">${chatPreview(id, locale)}</div><figcaption>${escape(t.bright)}</figcaption></figure>
+    <figure><div class="scene scene-dark">${chatPreview(id, locale)}</div><figcaption>${escape(t.dark)}</figcaption></figure>
   </div>
 </article>`;
-    })
-    .join('\n');
-  const grid = THEME_IDS.slice(2)
-    .map((id, index) => {
-      const theme = t.list[id];
-      return `<article class="theme-card" id="${id}">
-  <div class="scene scene-${id}">${chatPreview(id, locale, { count: 2, raid: id === 'bubble' })}</div>
-  <p class="eyebrow">0${index + 3}</p>
-  <h2>${escape(theme.name)}</h2>
-  <p class="idea">${escape(theme.idea)}</p>
-  ${spec(theme)}
+  }).join('\n');
+  const blank = `<article class="theme-row" id="blank">
+  <div class="theme-text">
+    <p class="eyebrow">08</p>
+    <h2>${escape(t.blank.name)}</h2>
+    <p class="idea">${escape(t.blank.body)}</p>
+  </div>
+  <div class="theme-scenes"><div class="scene blank-scene"><code>.chatto-message { }</code></div></div>
 </article>`;
-    })
-    .join('\n');
   return layout(locale, 'themes', {
     title: `${t.title} — Chatto`,
     description: t.description,
     hero: pageHero(t.title, t.lead),
     body: `<nav class="jump wrap" aria-label="${escape(t.jump)}"><div>${jump}</div></nav>
 <div class="wrap themes-body">
-${featured}
-<section class="theme-grid">
-${grid}
-<article class="theme-card blank"><h2>${escape(t.blank.name)}</h2><p>${escape(t.blank.body)}</p></article>
-</section>
+${rows}
+${blank}
 <section class="custom" id="custom">
   <div><h2>${escape(t.customTitle)}</h2><p>${escape(t.customBody)}</p></div>
   <ul>${t.custom.map((item) => `<li>${escape(item)}</li>`).join('')}</ul>
