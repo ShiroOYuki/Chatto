@@ -159,6 +159,9 @@ const SPECIMENS = {
 
 /* ---------- layout ---------- */
 
+/** The highlight behind the current tab; it slides from tab to tab when the page changes. */
+const mark = '<i class="tab-mark" aria-hidden="true"></i>';
+
 function header(locale, page) {
   const t = CONTENT[locale];
   const other = locale === 'en' ? 'zh-TW' : 'en';
@@ -173,7 +176,7 @@ function header(locale, page) {
     .map(([key, label, section]) =>
       section
         ? `<a href="${href(locale, key)}" data-section="${section}">${escape(t.nav[label])}</a>`
-        : `<a href="${href(locale, key)}"${current(key) ? ' aria-current="page"' : ''}>${escape(t.nav[label])}</a>`,
+        : `<a href="${href(locale, key)}"${current(key) ? ' aria-current="page"' : ''}>${current(key) ? mark : ''}${escape(t.nav[label])}</a>`,
     )
     .join('');
   return `<header class="top wrap">
@@ -540,7 +543,7 @@ function changelogPage(locale, product) {
   const t = CONTENT[locale].changelog;
   const tabs = PRODUCTS.map(
     (p) =>
-      `<a href="${href(locale, `changelog-${p}`)}"${p === product ? ' aria-current="page"' : ''}>${escape(t.products[p])}</a>`,
+      `<a href="${href(locale, `changelog-${p}`)}"${p === product ? ' aria-current="page"' : ''}>${p === product ? mark : ''}${escape(t.products[p])}</a>`,
   ).join('');
   const entries = CHANGELOG[product].map((entry, index) => ticket(locale, entry, product, index)).join('\n');
   const releases =

@@ -542,11 +542,13 @@ img {
 }
 
 /* ---------- transitions ----------
- * Moving between pages turns a leaf of the notebook. It is bound along the top, so the old page
- * is lifted from its bottom edge and flipped up over the binding, showing the new page under it.
- * The binding and the header stay where they are. Switching to dark or light spreads from the
- * button in a circle (public/site.js sets
- * `theming` and the circle's centre on <html>). Browsers without view transitions just load.
+ * Moving between pages changes the notebook piece by piece instead of all at once. The old page
+ * fades away; what both pages share moves to its new place: the highlight slides to the new tab,
+ * the title and its strip of tape change in place. The new page's pieces are then put down one
+ * after another: the lead, the tabs or contents, then each sheet, photo and note. The binding and
+ * the header stay put. Switching to dark or light spreads from the button in a circle
+ * (public/site.js sets `theming` and the circle's centre on <html>). Browsers without view
+ * transitions skip the moving parts, but still put the pieces down.
  */
 
 @media (prefers-reduced-motion: no-preference) {
@@ -562,18 +564,77 @@ img {
     view-transition-name: top;
   }
 
-  ::view-transition-old(root) {
+  .top .tab-mark {
+    view-transition-name: tab-mark;
+  }
+
+  .tabs {
+    view-transition-name: subtabs;
+  }
+
+  .tabs .tab-mark {
+    view-transition-name: subtab-mark;
+  }
+
+  /* The highlights slide underneath the tab labels. */
+  ::view-transition-group(tab-mark),
+  ::view-transition-group(subtab-mark) {
     z-index: 1;
-    transform-origin: 50% 0;
-    animation: flip-up 0.55s cubic-bezier(0.55, 0, 0.7, 0.4) both;
+  }
+
+  ::view-transition-group(top),
+  ::view-transition-group(subtabs) {
+    z-index: 2;
+  }
+
+  .page-hero h1 {
+    view-transition-name: page-title;
+  }
+
+  .page-hero .tape {
+    view-transition-name: page-tape;
+  }
+
+  ::view-transition-old(root) {
+    animation: fade-out 0.18s ease-in both;
   }
 
   ::view-transition-new(root) {
-    animation: under-leaf 0.55s ease-out both;
+    animation: none;
+  }
+
+  ::view-transition-group(tab-mark),
+  ::view-transition-group(subtab-mark),
+  ::view-transition-group(page-title),
+  ::view-transition-group(page-tape) {
+    animation-duration: 0.4s;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Titles change in place rather than stretching from one width to the other. */
+  ::view-transition-old(page-title),
+  ::view-transition-new(page-title) {
+    width: auto;
+    height: 100%;
+    object-fit: none;
+    object-position: left top;
+  }
+
+  ::view-transition-old(page-title) {
+    animation-duration: 0.15s;
+  }
+
+  ::view-transition-new(page-title) {
+    animation-duration: 0.25s;
+    animation-delay: 0.08s;
   }
 
   html.theming .binding,
-  html.theming .top {
+  html.theming .top,
+  html.theming .tabs,
+  html.theming .tab-mark,
+  html.theming .page-hero h1,
+  html.theming .page-hero .tape {
     view-transition-name: none;
   }
 
@@ -584,29 +645,65 @@ img {
   html.theming::view-transition-new(root) {
     animation: spread 0.55s ease-in-out;
   }
+
+  /* Pieces of an inner page, put down one after another. */
+  .page-hero .lead,
+  .jump,
+  .product-intro,
+  .toc,
+  .themes-body > *,
+  .tickets > *,
+  .doc > *,
+  .legal {
+    animation: put-down 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .page-hero .lead {
+    animation-delay: 0.1s;
+  }
+
+  .jump,
+  .toc {
+    animation-delay: 0.18s;
+  }
+
+  .product-intro,
+  .legal,
+  .themes-body > :nth-child(1),
+  .tickets > :nth-child(1),
+  .doc > :nth-child(1) {
+    animation-delay: 0.26s;
+  }
+
+  .themes-body > :nth-child(2),
+  .tickets > :nth-child(2),
+  .doc > :nth-child(2) {
+    animation-delay: 0.36s;
+  }
+
+  .themes-body > :nth-child(3),
+  .tickets > :nth-child(3),
+  .doc > :nth-child(3) {
+    animation-delay: 0.46s;
+  }
+
+  .themes-body > :nth-child(n + 4),
+  .tickets > :nth-child(n + 4),
+  .doc > :nth-child(n + 4) {
+    animation-delay: 0.56s;
+  }
 }
 
-@keyframes flip-up {
-  0% {
-    transform: perspective(2000px) rotateX(0deg);
-    box-shadow: 0 0 0 rgba(29, 42, 20, 0);
-  }
-
-  30% {
-    box-shadow: 0 30px 60px -20px rgba(29, 42, 20, 0.35);
-  }
-
-  100% {
-    transform: perspective(2000px) rotateX(88deg);
-    box-shadow: 0 30px 60px -20px rgba(29, 42, 20, 0);
-    opacity: 0.6;
+@keyframes fade-out {
+  to {
+    opacity: 0;
   }
 }
 
-/* The page underneath starts in the shadow of the one being lifted. */
-@keyframes under-leaf {
+@keyframes put-down {
   from {
-    filter: brightness(0.9);
+    opacity: 0;
+    translate: 0 14px;
   }
 }
 
@@ -714,13 +811,24 @@ img {
 }
 
 .top nav a[aria-current='page'] {
-  background: var(--tape-matcha);
+  position: relative;
+  isolation: isolate;
+  background: none;
   color: #173404;
   box-shadow: none;
 }
 
 .lang {
   color: var(--faint);
+}
+
+/* The current tab's highlight is its own element, so it can slide between tabs. */
+.tab-mark {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--tape-matcha);
 }
 
 /* ---------- home ---------- */
@@ -1661,7 +1769,9 @@ dd {
 }
 
 .tabs a[aria-current='page'] {
-  background: var(--tape-matcha);
+  position: relative;
+  isolation: isolate;
+  background: none;
   color: #173404;
   box-shadow: none;
 }
