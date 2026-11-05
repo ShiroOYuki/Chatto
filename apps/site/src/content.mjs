@@ -33,7 +33,7 @@ export const CONTENT = {
     note: 'Free and open source · Windows 10+',
     more: 'More',
     sample: {
-      greeting: 'Evening! Tea time again',
+      greeting: 'Evening! What are we playing today?',
       boss: 'This boss is so hard',
       chest: 'there’s a chest on the left',
       song: 'Love this song',
@@ -88,7 +88,7 @@ export const CONTENT = {
       faqMore: 'All questions',
       changelogTitle: 'Changelog',
       changelogMore: 'All versions',
-      closing: 'Brew a cup and go live',
+      closing: 'Download Chatto and go live',
       heroAlt: 'Chat messages floating around the Chatto tea cup',
     },
     themes: {
@@ -405,7 +405,7 @@ export const CONTENT = {
     note: '免費開源 · Windows 10 以上',
     more: '更多',
     sample: {
-      greeting: '晚安，今天也來喝茶了',
+      greeting: '晚安，今天玩什麼？',
       boss: '這個 boss 好難',
       chest: '左邊有寶箱',
       song: '這首歌好好聽',
@@ -445,7 +445,7 @@ export const CONTENT = {
       faqMore: '所有問題',
       changelogTitle: '更新紀錄',
       changelogMore: '全部版本',
-      closing: '泡杯茶，開始直播',
+      closing: '下載 Chatto，開始直播',
       heroAlt: '聊天訊息浮在 Chatto 茶杯周圍',
     },
     themes: {
