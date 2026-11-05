@@ -43,7 +43,7 @@ export const CHANGELOG = {
               'Settings are split into General, Appearance, Advanced and About',
               '設定頁分成一般、外觀、進階、關於四個區塊',
             ),
-            t('Read the disclaimer and licenses in the app and the installer', '在 App 與安裝檔裡查看免責聲明與授權'),
+            t('Read the disclaimer and licenses in the app and the installer', 'App 與安裝檔裡可以查看免責聲明與授權'),
           ],
         },
         {

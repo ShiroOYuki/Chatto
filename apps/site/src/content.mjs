@@ -410,7 +410,7 @@ export const CONTENT = {
       chest: '左邊有寶箱',
       song: '這首歌好好聽',
       gg: 'GG',
-      raid: 'ShiroLive 帶了 42 位觀眾揪團過來！',
+      raid: 'ShiroLive 帶著 42 位觀眾揪團過來了',
       raidTag: '揪團',
     },
     home: {
@@ -460,7 +460,7 @@ export const CONTENT = {
       bright: '明亮的遊戲畫面',
       dark: '深色的畫面',
       blank: { name: '空白', body: '不帶任何樣式，只留結構與 class，給想從零寫 CSS 的人。' },
-      customTitle: '逐項調成你的樣子',
+      customTitle: '每一處都能調',
       customBody: '主題編輯器會同時顯示所有元件的範例，改了什麼立刻看得到。桌面浮層和 OBS 可以各用一個主題。',
       custom: [
         '四邊內距、四角圓角、框線、陰影、模糊',
@@ -468,14 +468,14 @@ export const CONTENT = {
         '管理員、VIP、訂閱者各自的樣式',
         '訂閱、揪團等事件的樣式與文字',
         '自訂 CSS，附自動完成與檢查模式',
-        '匯出、匯入，含圖片的 .chattotheme',
+        '匯出與匯入，可以連同圖片打包成 .chattotheme',
       ],
       list: {
         'matcha-glass': {
           name: '抹茶玻璃',
           idea: '一杯透光的冰抹茶',
           colors: '半透明深綠底、淡薄荷名字、淡綠文字',
-          shape: '12px 圓角、細的淡色邊',
+          shape: '12px 圓角、淡色細邊框',
           motion: '淡入',
         },
         washi: {
@@ -540,7 +540,7 @@ export const CONTENT = {
           title: '連上頻道',
           steps: [
             '打開「連線」頁，選擇直播平台並按「登入」。',
-            '瀏覽器會開啟平台的授權頁，輸入 Chatto 顯示的代碼。',
+            '瀏覽器會開啟平台的授權頁，在那裡輸入 Chatto 顯示的代碼。',
             '授權完成後回到 Chatto，聊天就會出現在「聊天室」頁的預覽裡。',
           ],
         },
@@ -596,7 +596,7 @@ export const CONTENT = {
         },
       ],
       stuck: '還是卡住了？',
-      stuckBody: '看看常見問題，或寫信給我們。',
+      stuckBody: '看看常見問題，或直接寫信來問。',
       email: '寫信聯絡',
     },
     faq: {
@@ -610,10 +610,10 @@ export const CONTENT = {
           items: [
             { q: 'Chatto 要付費嗎？', a: '不用。Chatto 是免費的開源軟體，以 GPL-3.0 授權，原始碼都在 GitHub。' },
             { q: '支援哪些直播平台？', a: '目前支援 Twitch，YouTube 與 Kick 正在規劃中。' },
-            { q: '支援 macOS 嗎？', a: '目前只有 Windows 10 以上的版本。' },
+            { q: '支援 macOS 嗎？', a: '目前只支援 Windows 10 以上。' },
             {
               q: '怎麼更新？',
-              a: 'Chatto 啟動時與每 6 小時會檢查新版本，在標題列和設定頁「關於」提示。你同意後才下載，按「重新啟動並更新」或下次結束 Chatto 時安裝。',
+              a: 'Chatto 會在啟動時和之後每 6 小時檢查新版本，有新版時在標題列和設定頁「關於」提示。你同意後才下載；下載完按「重新啟動並更新」立即安裝，或等下次結束 Chatto 時自動安裝。',
             },
           ],
         },
@@ -644,7 +644,7 @@ export const CONTENT = {
             { q: '安裝外掛時說 OBS 正在執行', a: '先關閉 OBS，再到「輸出」頁按一次「安裝外掛」。' },
             {
               q: '外掛和瀏覽器來源該用哪個？',
-              a: '外掛不用貼網址、每個來源能選自己的主題，Chatto 沒開時也有等待畫面。不想在 OBS 安裝東西的話，瀏覽器來源也可以用。',
+              a: '建議用外掛：不用貼網址，每個來源能選自己的主題，Chatto 沒開時也有等待畫面。不想在 OBS 裡安裝東西的話，用瀏覽器來源也可以。',
             },
           ],
         },
@@ -653,10 +653,13 @@ export const CONTENT = {
           title: '主題',
           items: [
             { q: '浮層和 OBS 可以用不同主題嗎？', a: '可以，在「輸出」頁各選一個。' },
-            { q: '怎麼把主題分享給別人？', a: '在「主題」頁匯出成 JSON，或含圖片的 .chattotheme 檔，對方匯入即可。' },
+            {
+              q: '怎麼把主題分享給別人？',
+              a: '在「主題」頁匯出成 JSON，或連同圖片打包成 .chattotheme 檔，對方匯入就能用。',
+            },
             {
               q: '可以自己寫 CSS 嗎？',
-              a: '可以。每個元素都有固定的 chatto-* class，編輯器有自動完成，也能在 VS Code 開啟，附上所有 class 的說明。',
+              a: '可以。每個元素都有固定的 chatto-* class，編輯器有自動完成；也能用 VS Code 開啟，裡面附有所有 class 的說明。',
             },
           ],
         },
