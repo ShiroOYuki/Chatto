@@ -30,7 +30,7 @@ vi.mock('./token-store', () => ({ SafeTokenStore: class {} }));
 const created = vi.hoisted(() => ({
   providers: [] as FakeProvider[],
   /** Identity the next provider reports for a restored session. */
-  identity: null as { login: string; userId: string } | null,
+  identity: null as { login: string; userId: string; scopes: string[] } | null,
 }));
 interface FakeProvider {
   options: { clientId: string };
@@ -44,7 +44,8 @@ interface FakeProvider {
   disconnect: ReturnType<typeof vi.fn>;
   emit(event: ChatEvent): void;
 }
-vi.mock('@chatto/provider-twitch', () => ({
+vi.mock('@chatto/provider-twitch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@chatto/provider-twitch')>()),
   TwitchChatProvider: class {
     #listeners = new Set<(event: ChatEvent) => void>();
     auth = {
@@ -432,7 +433,7 @@ describe('AppController Twitch', () => {
   });
 
   it('signs out when the client id in use changes, since the token belongs to the old one', async () => {
-    created.identity = { login: 'ciel', userId: '1' };
+    created.identity = { login: 'ciel', userId: '1', scopes: ['user:read:chat'] };
     const { controller } = setup();
     await controller.init();
     const first = latestProvider();
@@ -455,7 +456,7 @@ describe('AppController Twitch', () => {
     latestProvider().auth.signIn.mockImplementation(async (onPrompt: (p: DeviceCodeInfo) => void) => {
       onPrompt(prompt);
       expect(controller.state().auth.deviceCode).toEqual(prompt);
-      return { login: 'shiraine_ciel', userId: '1' };
+      return { login: 'shiraine_ciel', userId: '1', scopes: ['user:read:chat', 'channel:read:redemptions'] };
     });
     const openUrl = vi.fn();
 
@@ -463,7 +464,7 @@ describe('AppController Twitch', () => {
 
     expect(openUrl).toHaveBeenCalledWith(prompt.verificationUri);
     expect(seen).toEqual(['pending', 'pending', 'signed-in']);
-    expect(controller.state().auth).toEqual({ status: 'signed-in', login: 'shiraine_ciel' });
+    expect(controller.state().auth).toEqual({ status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true });
     expect(settings.get().channelLogin).toBe('shiraine_ciel');
   });
 
@@ -512,10 +513,11 @@ describe('AppController Twitch', () => {
 
   it('restores the session and reconnects to the saved channel on launch', async () => {
     const { controller } = setup({ channelLogin: 'shiraine_ciel' });
-    created.identity = { login: 'shiraine_ciel', userId: '1' };
+    // A token from before Chatto asked for redemptions still signs in; it just cannot read them.
+    created.identity = { login: 'shiraine_ciel', userId: '1', scopes: ['user:read:chat'] };
     await controller.init();
     await vi.waitFor(() => expect(latestProvider().connect).toHaveBeenCalled());
-    expect(controller.state().auth).toEqual({ status: 'signed-in', login: 'shiraine_ciel' });
+    expect(controller.state().auth).toEqual({ status: 'signed-in', login: 'shiraine_ciel', redemptionScope: false });
   });
 
   it('disconnects before signing out', async () => {
@@ -650,10 +652,53 @@ describe('AppController alerts', () => {
     expect(controller.route('embed', raid)).not.toBeNull();
   });
 
+  it('shows redemptions everywhere unless the streamer keeps them out of OBS', () => {
+    const { controller, settings } = setup();
+    const redemption = sampleEvent('twitch:redemption');
+    const auto = sampleEvent('twitch:auto-redemption');
+    for (const target of ['overlay', 'embed', 'alerts'] as const) {
+      expect(controller.route(target, redemption)?.event, target).toEqual(redemption);
+      expect(controller.route(target, auto)?.event, target).toEqual(auto);
+    }
+    const { alerts } = settings.get();
+    controller.setAlertSettings({ ...alerts, redemptions: { showInObs: false } });
+    expect(settings.get().alerts.redemptions.showInObs).toBe(false);
+    expect(controller.route('embed', redemption)).toBeNull();
+    expect(controller.route('embed', auto)).toBeNull();
+    expect(controller.route('overlay', redemption)).not.toBeNull();
+    expect(controller.route('alerts', redemption)).not.toBeNull();
+    expect(controller.route('embed', sampleEvent('twitch:raid'))).not.toBeNull();
+  });
+
+  it('one switch turns off alerts for both kinds of redemption', () => {
+    const { controller, settings } = setup();
+    const { alerts } = settings.get();
+    controller.setAlertSettings({
+      ...alerts,
+      events: { ...alerts.events, rules: { 'twitch:redemption': { ...defaultEventAlertRule(), enabled: false } } },
+    });
+    expect(controller.route('alerts', sampleEvent('twitch:redemption'))).toBeNull();
+    expect(controller.route('alerts', sampleEvent('twitch:auto-redemption'))).toBeNull();
+    expect(controller.route('overlay', sampleEvent('twitch:redemption'))).not.toBeNull();
+  });
+
+  it('leaves out a redemption that reaches chat as its own message', () => {
+    const { controller } = setup();
+    const sample = sampleEvent('twitch:auto-redemption');
+    if (sample.type !== 'notice') throw new Error('expected a notice');
+    const highlighted: ChatEvent = {
+      type: 'notice',
+      notice: { ...sample.notice, meta: { ...sample.notice.meta, shownAsMessage: true } },
+    };
+    for (const target of ['overlay', 'embed', 'alerts'] as const)
+      expect(controller.route(target, highlighted)).toBeNull();
+  });
+
   it('clamps alert settings before saving them', () => {
     const { controller, settings, onChange } = setup();
     const alerts = defaultAlertSettings();
     controller.setAlertSettings({
+      ...alerts,
       silence: { ...alerts.silence, thresholdSeconds: 5, sound: { ...alerts.silence.sound, volume: 3 } },
       events: {
         ...alerts.events,

@@ -26,7 +26,7 @@ function Page({ id, state, onNavigate }: { id: PageId; state: AppState; onNaviga
     case 'overview':
       return <OverviewPage state={state} onNavigate={onNavigate} />;
     case 'chat':
-      return <ChatPage />;
+      return <ChatPage state={state} />;
     case 'themes':
       return <ThemesPage state={state} onNavigate={onNavigate} />;
     case 'explore':

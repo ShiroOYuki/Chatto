@@ -81,6 +81,8 @@ function receive(state: ChatLogState, event: ChatEvent, at: number): ChatLogStat
       };
     }
     case 'notice': {
+      // Its chat message (a highlighted message) is already in the log; the redemption list keeps the notice.
+      if (event.notice.meta.shownAsMessage === true) return state;
       // A batch counts once: its lead, not each gifted sub.
       const member = noticeGroup(event.notice)?.lead === false;
       return {

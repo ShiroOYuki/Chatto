@@ -59,6 +59,21 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
 | `watchStreak`                     | `number`                     | 觀看連勝                           | 連續觀看的直播場數                     |
 | `channelPoints`                   | `number`                     | 觀看連勝                           | 這次里程碑獲得的忠誠點數               |
 
+#### 忠誠點數兌換（`twitch:redemption`、`twitch:auto-redemption`）
+
+| 鍵               | 型別      | 說明                                                                                                                               |
+| ---------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `reward`         | `string`  | 獎勵名稱（實況主建立的獎勵）                                                                                                       |
+| `rewardType`     | `string`  | 平台內建獎勵的類型（Twitch 自動獎勵，如 `random_sub_emote_unlock`）；名稱由 `AUTO_REWARD_NAMES` 依語言提供                         |
+| `cost`           | `number`  | 花費的點數                                                                                                                         |
+| `rewardId`       | `string`  | 獎勵 id（自動獎勵用類型）                                                                                                          |
+| `redemptionId`   | `string`  | 這次兌換的 id                                                                                                                      |
+| `input`          | `string`  | 觀眾輸入的文字（有才有）；只給控制台的兌換紀錄，通知本身不帶 `fragments`，因為平台也會把文字當成聊天訊息送出                       |
+| `emote`          | `string`  | 解鎖或使用的表情符號名稱（有才有）                                                                                                 |
+| `shownAsMessage` | `boolean` | 這次兌換也以自己的聊天訊息事件出現（Twitch「強調我的訊息」＝`twitch:highlighted`），所有輸出都略過這則通知，只留在控制台的兌換紀錄 |
+
+`EVENT_CATALOG` 裡標了 `redemption: true` 的事件就是兌換（`isRedemption()`）：控制台收進兌換紀錄，「顯示在 OBS」關閉時不送到 `embed`。兩種兌換共用一條提醒規則（`alertRule: 'twitch:redemption'`）。
+
 ### 同一批事件（`ChatNotice.meta`）
 
 有些平台把一個動作拆成好幾則通知，例如 Twitch 一次贈送 5 份訂閱：先送 1 則「送出 5 份訂閱給聊天室」，再送 5 則個別贈訂。平台無關的 `meta` 鍵把它們標成同一批：
@@ -115,13 +130,17 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
 
 ## Twitch 對應
 
-| EventSub subscription              | ChatEvent         |
-| ---------------------------------- | ----------------- |
-| `channel.chat.message`             | `message`         |
-| `channel.chat.notification`        | `notice`          |
-| `channel.chat.message_delete`      | `message-deleted` |
-| `channel.chat.clear_user_messages` | `user-cleared`    |
-| `channel.chat.clear`               | `chat-cleared`    |
+| EventSub subscription                                          | ChatEvent                     |
+| -------------------------------------------------------------- | ----------------------------- |
+| `channel.chat.message`                                         | `message`                     |
+| `channel.chat.notification`                                    | `notice`                      |
+| `channel.chat.message_delete`                                  | `message-deleted`             |
+| `channel.chat.clear_user_messages`                             | `user-cleared`                |
+| `channel.chat.clear`                                           | `chat-cleared`                |
+| `channel.channel_points_custom_reward_redemption.add`（v1）    | `notice`（`redemption`）      |
+| `channel.channel_points_automatic_reward_redemption.add`（v2） | `notice`（`auto-redemption`） |
+
+兌換只有頻道擁有者本人、token 有 `channel:read:redemptions` 時才訂閱（`canReadRedemptions()`），否則略過；訂閱失敗也不影響聊天室連線。舊版 App 的 token 沒有這個 scope，控制台會提示重新登入。兌換的欄位：`reward.title`／`cost`／`id` → `reward`／`cost`／`rewardId`、`user_input` → `input`；自動獎勵的 `reward.type`／`channel_points`／`emote.name` → `rewardType`／`cost`／`emote`、`message.text` → `input`。
 
 事件類型：附帶小奇點的訊息 → `cheer`；`message_type: channel_points_highlighted` → `highlighted`；通知的 `notice_type` 轉成 kebab-case 並去掉 `shared_chat_` 前綴，`sub_gift` → `sub-gift`、`community_sub_gift` → `community-gift`（`twitchNoticeEventType()`）。
 
@@ -130,6 +149,8 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
 同一批贈訂：`community_sub_gift.id` → `meta.groupId`＋`meta.groupLead`；`sub_gift.community_gift_id` → `meta.groupId`；`sub_gift.recipient_user_name` → `meta.recipient`。
 
 ## 變更紀錄
+
+- **v1.7**（2026-11-06）：新增 Twitch 事件 `redemption`、`auto-redemption` 與兌換的 `meta` 欄位（`reward`、`rewardType`、`cost`、`input`、`shownAsMessage` 等）（非破壞性）。
 
 - **v1.6**（2026-11-04）：`subscribe` 加上選填的 `themeId`；本機 server 新增 `/api/ping`、`/api/themes`（非破壞性）。
 

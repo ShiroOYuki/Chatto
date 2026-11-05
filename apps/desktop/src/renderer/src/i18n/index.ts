@@ -14,6 +14,7 @@ import editorPanels from './messages/editorPanels';
 import legal from './messages/legal';
 import outputs from './messages/outputs';
 import overview from './messages/overview';
+import redemptions from './messages/redemptions';
 import settings from './messages/settings';
 import share from './messages/share';
 import shareTerms from './messages/shareTerms';
@@ -38,6 +39,7 @@ const NAMESPACES = {
   legal,
   outputs,
   overview,
+  redemptions,
   settings,
   share,
   shareTerms,

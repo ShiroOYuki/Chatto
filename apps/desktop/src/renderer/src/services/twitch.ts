@@ -21,6 +21,22 @@ export function twitchStatus(state: AppState): TwitchStatus {
   };
 }
 
+/**
+ * Whether redemptions can reach Chatto: `ready`; `reauth` when the token is
+ * from before Chatto asked for the permission; `not-broadcaster` when watching
+ * someone else's channel (Twitch only gives them to the channel's owner).
+ */
+export type RedemptionAccess = 'signed-out' | 'not-broadcaster' | 'reauth' | 'ready';
+
+export function redemptionAccess(state: AppState): RedemptionAccess {
+  const { auth, channel } = state;
+  if (auth.status !== 'signed-in') return 'signed-out';
+  if (channel.login && auth.login && channel.login.toLowerCase() !== auth.login.toLowerCase()) {
+    return 'not-broadcaster';
+  }
+  return auth.redemptionScope ? 'ready' : 'reauth';
+}
+
 /** Twitch account and channel actions. Errors surface through `state.auth` and `state.channel`. */
 export const twitch = {
   setClientId: (clientId: string) => runAction('setClientId', api.setClientId(clientId)),

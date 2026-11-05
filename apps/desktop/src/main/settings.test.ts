@@ -117,6 +117,8 @@ describe('SettingsStore', () => {
     expect(alerts.silence).toMatchObject({ enabled: true, thresholdSeconds: 300 });
     expect(alerts.silence.sound).toEqual({ enabled: false, sound: { kind: 'builtin', id: 'bubble' }, volume: 0.3 });
     expect(alerts.events.durationSeconds).toBe(5);
+    // Settings from before redemptions get the default: shown in OBS.
+    expect(alerts.redemptions).toEqual({ showInObs: true });
     expect(alerts.events.rules['twitch:raid']).toMatchObject({
       enabled: true,
       minimum: 5,

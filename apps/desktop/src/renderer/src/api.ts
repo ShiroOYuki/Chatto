@@ -43,7 +43,7 @@ function createMockApi(): ChattoApi {
       obsPluginPromptDismissed: false,
     },
     clientId: { source: 'built-in', hasBuiltIn: true },
-    auth: { status: 'signed-in', login: 'shiraine_ciel' },
+    auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true },
     channel: { login: 'shiraine_ciel', state: 'connected' },
     overlay: { enabled: true, editing: false },
     alertsOverlay: { enabled: false, editing: false },
@@ -148,7 +148,7 @@ function createMockApi(): ChattoApi {
           },
         },
       });
-      setTimeout(() => set({ auth: { status: 'signed-in', login: 'shiraine_ciel' } }), 4000);
+      setTimeout(() => set({ auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true } }), 4000);
     },
     cancelSignIn: async () => set({ auth: { status: 'signed-out' } }),
     signOut: async () => set({ auth: { status: 'signed-out' }, channel: { state: 'idle' } }),

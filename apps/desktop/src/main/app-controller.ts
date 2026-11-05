@@ -17,13 +17,14 @@ import {
   type ViewerTarget,
 } from '@chatto/core';
 import { PRESET_THEMES, getPresetTheme, localizeTheme, mapThemeImages, normalizeTheme } from '@chatto/chat-ui/themes';
-import { TwitchChatProvider } from '@chatto/provider-twitch';
+import { hasRedemptionScope, TwitchChatProvider, type TwitchIdentity } from '@chatto/provider-twitch';
 import { app, nativeTheme } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { copyFileSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 import type { AppPrefs, AppState, CssFileChange, CssFileOpenResult, DeviceCodeInfo, UpdateState } from '../shared/ipc';
 import type { ShareClient } from '../shared/share/client';
+import { isRedemption } from '@chatto/chat-ui/events';
 import { alertCue, markAfterSilence, SilenceTracker } from './alerts';
 import { ChatHub } from './chat-hub';
 import type { CssFiles } from './css-files';
@@ -34,6 +35,12 @@ import { normalizePrefs, type SettingsStore } from './settings';
 import { MAX_ASSET_BYTES, type ThemeAssets } from './theme-assets';
 import { packTheme, themeAssetFiles, unpackTheme } from './theme-package';
 import { SafeTokenStore } from './token-store';
+
+const signedIn = (identity: TwitchIdentity): AppState['auth'] => ({
+  status: 'signed-in',
+  login: identity.login,
+  redemptionScope: hasRedemptionScope(identity.scopes),
+});
 
 /**
  * Owns the app's runtime state and is the only place that mutates it.
@@ -88,7 +95,7 @@ export class AppController {
     this.#applyPrefs(this.settings.get().prefs);
     this.#createProvider();
     const identity = await this.#provider?.auth.currentIdentity();
-    if (identity) this.#auth = { status: 'signed-in', login: identity.login };
+    if (identity) this.#auth = signedIn(identity);
     const { channelLogin, overlay, alertsOverlay } = this.settings.get();
     if (overlay.enabled) this.overlay.open(overlay.bounds);
     if (alertsOverlay.enabled) this.alertsOverlay.open(alertsOverlay.bounds);
@@ -238,7 +245,7 @@ export class AppController {
         this.#emit();
         openUrl(prompt.verificationUri);
       }, abort.signal);
-      this.#auth = { status: 'signed-in', login: identity.login };
+      this.#auth = signedIn(identity);
       if (!this.settings.get().channelLogin) {
         this.settings.update((draft) => {
           draft.channelLogin = identity.login;
@@ -345,13 +352,20 @@ export class AppController {
   // ---------- outputs ----------
 
   /**
-   * What each output receives. OBS gets everything as is; the desktop chat
-   * overlay additionally marks messages that broke a quiet spell (and can leave
-   * out events the alert overlay shows); the alert overlay only gets events
-   * that pass their alert rule, with a cue for duration and sound.
+   * What each output receives. OBS gets everything as is, except redemptions
+   * when the streamer keeps them off stream; the desktop chat overlay
+   * additionally marks messages that broke a quiet spell (and can leave out
+   * events the alert overlay shows); the alert overlay only gets events that
+   * pass their alert rule, with a cue for duration and sound. Notices whose
+   * chat message is the same event (`meta.shownAsMessage`) go nowhere.
    */
   route(target: ViewerTarget, event: ChatEvent): Routed {
     const { alerts } = this.settings.get();
+    // The redemption's own chat message (a highlighted message) shows it already; only the control panel lists both.
+    if (event.type === 'notice' && event.notice.meta.shownAsMessage === true) return null;
+    if (target === 'embed' && event.type === 'notice' && isRedemption(event.notice) && !alerts.redemptions.showInObs) {
+      return null;
+    }
     if (target === 'alerts') {
       if (event.type === 'connection') return null;
       if (event.type !== 'message' && event.type !== 'notice') return { event }; // moderation removes alerts too
@@ -413,6 +427,7 @@ export class AppController {
         thresholdSeconds: clamp(next.silence.thresholdSeconds, SILENCE_THRESHOLD.min, SILENCE_THRESHOLD.max),
         sound: volume(next.silence.sound),
       },
+      redemptions: next.redemptions,
       events: {
         ...next.events,
         durationSeconds: clamp(next.events.durationSeconds, 1, 60),

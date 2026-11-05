@@ -1,8 +1,8 @@
-import { ChevronRight, ExternalLink, KeyRound, LogOut, Plug, PlugZap } from 'lucide-react';
+import { ChevronRight, ExternalLink, Info, KeyRound, LogIn, LogOut, Plug, PlugZap } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { useMessages } from '../i18n';
-import { twitch, twitchStatus } from '../services/twitch';
+import { redemptionAccess, twitch, twitchStatus } from '../services/twitch';
 import { Stagger } from '../components/motion';
 import { ClientIdForm } from './ClientIdForm';
 import {
@@ -119,6 +119,8 @@ function TwitchCard({ state }: { state: AppState }) {
   const [login, setLogin] = useState(state.channel.login ?? '');
   const { auth, channel, clientId } = state;
   const { signedIn, connected, busy } = twitchStatus(state);
+  const redemptions = redemptionAccess(state);
+  const r = messages.redemptions;
   // Without a built-in Client ID, entering one is the first step.
   const accountStep = clientId.hasBuiltIn ? 1 : 2;
 
@@ -170,12 +172,27 @@ function TwitchCard({ state }: { state: AppState }) {
                 </span>
                 <div>
                   <div className="font-medium">{auth.login}</div>
-                  <div className="text-xs text-ink-faint">{m.scope}</div>
+                  <div className="text-xs text-ink-faint">
+                    {auth.redemptionScope ? m.scopeWithRedemptions : m.scope}
+                  </div>
                 </div>
               </div>
-              <Button className="mt-auto self-start" size="sm" variant="raised" onClick={() => twitch.signOut()}>
-                <LogOut /> {m.signOut}
-              </Button>
+              {redemptions === 'reauth' ? (
+                <p data-testid="redemption-reauth" className="flex gap-2 text-xs text-ink-soft">
+                  <Info className="size-4 shrink-0 text-matcha" />
+                  {r.reauth}
+                </p>
+              ) : null}
+              <div className="mt-auto flex flex-wrap gap-2">
+                {redemptions === 'reauth' ? (
+                  <Button size="sm" variant="primary" onClick={() => twitch.signIn()}>
+                    <LogIn /> {r.signInAgain}
+                  </Button>
+                ) : null}
+                <Button size="sm" variant="raised" onClick={() => twitch.signOut()}>
+                  <LogOut /> {m.signOut}
+                </Button>
+              </div>
             </>
           ) : (
             <>
@@ -234,6 +251,12 @@ function TwitchCard({ state }: { state: AppState }) {
               </Button>
             )}
             {channel.state === 'error' ? <p className="text-xs text-danger">{channel.detail}</p> : null}
+            {redemptions === 'not-broadcaster' ? (
+              <p className="flex gap-2 text-xs text-ink-faint">
+                <Info className="size-4 shrink-0" />
+                {r.notBroadcaster}
+              </p>
+            ) : null}
           </form>
         </section>
       </div>

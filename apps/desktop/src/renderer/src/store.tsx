@@ -2,9 +2,11 @@ import { createContext, useContext, useEffect, useReducer, useRef, useState, typ
 import type { AppState } from '../../shared/ipc';
 import { api } from './api';
 import { emptyChatLog, messageHistory, messageRate, reduceChatLog, type LogEntry } from './chatLog';
+import { emptyRedemptionLog, reduceRedemptions, type RedemptionEntry } from './redemptionLog';
 import { previewSound } from './services/alerts';
 
 export type { LogEntry } from './chatLog';
+export type { RedemptionEntry } from './redemptionLog';
 
 export interface ChatStats {
   /** Messages in the last 60 seconds. */
@@ -23,13 +25,24 @@ interface ChatLogValue {
   clear(): void;
 }
 
+interface RedemptionsValue {
+  /** Newest first. */
+  entries: RedemptionEntry[];
+  dismiss(key: string): void;
+}
+
 const AppStateContext = createContext<AppState | null>(null);
 const ChatLogContext = createContext<ChatLogValue | null>(null);
+const RedemptionsContext = createContext<RedemptionsValue | null>(null);
 
-/** Session-wide stores for the control panel: the app state and the chat log (see `chatLog.ts`). */
+/**
+ * Session-wide stores for the control panel: the app state, the chat log
+ * (see `chatLog.ts`) and the redemption list (see `redemptionLog.ts`).
+ */
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState | null>(null);
   const [log, dispatch] = useReducer(reduceChatLog, emptyChatLog);
+  const [redemptionLog, dispatchRedemption] = useReducer(reduceRedemptions, emptyRedemptionLog);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -47,7 +60,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => api.onChatEvent((event) => dispatch({ type: 'event', event, at: Date.now() })), []);
+  useEffect(
+    () =>
+      api.onChatEvent((event) => {
+        const at = Date.now();
+        dispatch({ type: 'event', event, at });
+        dispatchRedemption({ type: 'event', event, at });
+      }),
+    [],
+  );
 
   const stats: ChatStats = {
     rate: messageRate(log.timestamps, now),
@@ -64,15 +85,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     clear: () => dispatch({ type: 'clear' }),
   };
 
+  const redemptions: RedemptionsValue = {
+    entries: redemptionLog.entries,
+    dismiss: (key) => dispatchRedemption({ type: 'dismiss', key }),
+  };
+
   return (
     <AppStateContext.Provider value={state}>
-      <ChatLogContext.Provider value={value}>{children}</ChatLogContext.Provider>
+      <ChatLogContext.Provider value={value}>
+        <RedemptionsContext.Provider value={redemptions}>{children}</RedemptionsContext.Provider>
+      </ChatLogContext.Provider>
     </AppStateContext.Provider>
   );
 }
 
 export function useAppState(): AppState | null {
   return useContext(AppStateContext);
+}
+
+/** This session's channel points redemptions, shared by the overview and the chat page. */
+export function useRedemptions(): RedemptionsValue {
+  const value = useContext(RedemptionsContext);
+  if (!value) throw new Error('useRedemptions must be used inside StoreProvider');
+  return value;
 }
 
 export function useChatLog(): ChatLogValue {

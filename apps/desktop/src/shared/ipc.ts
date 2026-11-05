@@ -125,7 +125,17 @@ export interface AppState {
   prefs: AppPrefs;
   /** Which Twitch Client ID is in use; the value itself stays in the main process. */
   clientId: { source: ClientIdSource; hasBuiltIn: boolean };
-  auth: { status: 'signed-out' | 'pending' | 'signed-in'; login?: string; deviceCode?: DeviceCodeInfo; error?: string };
+  auth: {
+    status: 'signed-out' | 'pending' | 'signed-in';
+    login?: string;
+    /**
+     * Signed in with permission to read channel points redemptions. Tokens from
+     * before Chatto asked for it lack it until the user signs in again.
+     */
+    redemptionScope?: boolean;
+    deviceCode?: DeviceCodeInfo;
+    error?: string;
+  };
   channel: { login?: string; state: ConnectionState; detail?: string };
   overlay: { enabled: boolean; editing: boolean };
   /** The event alert overlay window. */

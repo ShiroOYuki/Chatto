@@ -60,12 +60,14 @@ for (const [width, height] of [
     const layout = await page.evaluate(() => {
       // Either `main` or the page wrapper scrolls, depending on the page.
       const scrollers = [document.querySelector('main')!, document.querySelector('main > div')!];
-      const tiles = ['最新留言', '最近活動'].map((title) => {
+      const bottomOf = (title: string) => {
         const tile = [...document.querySelectorAll('section')].find(
           (el) => el.querySelector('h2')?.textContent === title,
-        )!;
-        return tile.getBoundingClientRect().bottom;
-      });
+        );
+        return tile ? tile.getBoundingClientRect().bottom : 0;
+      };
+      // The right column ends with recent activity, or with redemptions in short windows.
+      const tiles = [bottomOf('最新留言'), Math.max(bottomOf('最近活動'), bottomOf('兌換紀錄'))];
       return {
         overflow: Math.max(...scrollers.map((el) => el.scrollHeight - el.clientHeight)),
         tiles,
