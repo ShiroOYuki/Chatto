@@ -37,6 +37,7 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - 事件提醒規則分「通用」（跨平台分類 `ALERT_CATEGORIES`）與各平台專屬事件；新增平台事件時，能對應到通用分類就在 `EVENT_CATALOG` 填 `alertCategory`。
 - OBS 外掛只是包住 embed 頁的私有 obs-browser 來源，不自己畫聊天室；它讀 `/api/ping`、`/api/themes`，用 `/embed?theme=<id>` 選主題（見 `docs/architecture.md`）。這兩個 API 和 `?theme=` 是外掛的公開介面，改動要相容。模組名 `obs-chatto`、來源類型 id `chatto_chat` 會存進使用者的場景，不能改名。
 - App 更新：`electron-updater`（`apps/desktop/src/main/updater.ts`）讀最新**已發佈**的 GitHub Release，只提示，使用者同意才下載；開發版不檢查。
+- 帳號頁（`pages/accounts/`）是所有帳號的統一入口：上半 Chatto 帳號（分享用）、下半直播平台（登入與頻道連線）；左側欄底部的帳號卡也開這一頁。兩者只在介面合併，底層仍分開。探索頁不放帳號管理。
 - 主題分享（「探索」頁，GitHub #4）：資料型別、檢查規則、`ShareBackend` 與 HTTP 協定在 `packages/share`，App 端流程是 `apps/desktop/src/shared/share/client.ts`（`ShareClient`），服務是 `apps/share-worker`。App 裡 `ShareClient` 在 main process，session token 不離開 main；控制台經 IPC `share:call`（`SHARE_METHODS`）呼叫。服務部署在 `api.chattolive.com`：打包版連正式服務，開發版預設用記憶體內的假服務（`@chatto/share/fake`），`MAIN_VITE_SHARE_API_URL`（建置時）或 `CHATTO_SHARE_API`（執行時）可設成網址或 `fake`。分享帳號和聊天室連線分開，不得使用聊天平台的 token。API 只能向後相容地擴充（舊版 App 要能用）。見 `docs/architecture.md`「主題分享」與 `docs/share-service.md`。
 - 分享條款、隱私說明與 App 免責聲明的文字只有一份：`packages/share/src/legalText.ts`，App（`shareTerms`、`legal` 訊息）與網站（`apps/site`）都從這裡讀。改分享條款或隱私說明要遞增 `SHARE_TERMS_VERSION` 與 `LEGAL_UPDATED`，網站會在推到 `main` 時由 `site.yml` 自動部署（也可手動 `npm run deploy -w @chatto/site`）。
 - 提醒邏輯（沉寂偵測、事件規則）是 `apps/desktop/src/main/alerts.ts` 的純函式；內建提示音是從 soundcn 收進來的 CC0 音效（`packages/chat-ui/src/soundcn/`，由 `sounds.ts` 動態載入）；只能收 CC0 音效，並記到 `THIRD_PARTY_NOTICES.md`，不得使用 soundcn 的 Blizzard 音效。
@@ -68,7 +69,7 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 
 - 視覺與互動的細則（色彩 token、字級、圓角與間距、kit 元件的用法、狀態回饋、動畫、吉祥物）見 `docs/design.md`，新增或修改介面前先看。
 - 品牌概念、色彩意象、茶杯吉祥物的造型、插圖與內建主題的美術方向見 `docs/visual-identity.md`；畫新素材、改吉祥物或新增內建主題前先看。
-- 兩種介面模式：**完整模式**（左側導覽：總覽、聊天室、主題、探索、輸出、提醒、連線、設定）與**精簡模式**（單頁 Bento 控制台），由標題列或設定切換，存在 `prefs.uiMode`。
+- 兩種介面模式：**完整模式**（左側導覽：總覽、聊天室、主題、探索、輸出、提醒、帳號、設定）與**精簡模式**（單頁 Bento 控制台），由標題列或設定切換，存在 `prefs.uiMode`。
 - 設定頁分「一般」「外觀」「進階」「關於」四個區塊，用左側選單（kit `SideNavItem`，主題編輯器共用）切換。
 - 主視窗為 frameless，自繪標題列並整合最小化／最大化／關閉；關閉行為依 `prefs.closeToTray` 決定縮到系統匣或結束。
 - 版面採 **Bento 格狀**，整體**簡潔直觀**。
@@ -83,7 +84,8 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - 大頁面拆成資料夾，例如 `pages/theme-editor/`：狀態 hook（`useThemeDraft`、`usePreviewHighlight`）、純函式（`draft.ts`，有單元測試）、各區塊面板（`panels/`）、參數欄位（`fields/`）。只給單一頁面用的元件放在該頁資料夾，多處共用的才放 `components/`。
 - 主題草稿用型別化的 `set('author', 'box')(value)`（`PathSetter`）更新，路徑或值的型別錯了會直接編譯失敗。
 
-- 贊助連結（Ko-fi、綠界）集中在 `apps/desktop/src/shared/support.ts`，改動時同步 `README.md` 與 `.github/FUNDING.yml`。
+- 贊助連結（Ko-fi、綠界）集中在 `apps/desktop/src/shared/support.ts`，改動時同步 `README.md`、`README.zh-TW.md` 與 `.github/FUNDING.yml`。
+- 說明文件分兩種、各有英文與繁中：`README.md`／`README.zh-TW.md` 給一般使用者（功能、下載、開始使用，詳細教學連到網站），`CONTRIBUTING.md`／`CONTRIBUTING.zh-TW.md` 給開發者（環境、指令、結構、分支與 CI、發佈）。改動時兩種語言一起改。
 
 ## 多語系
 

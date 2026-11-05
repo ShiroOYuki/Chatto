@@ -60,7 +60,7 @@ export function PreviewPane({
               aria-pressed={Boolean(focus) && focusOn}
               aria-disabled={!focus}
               onClick={() => focus && setFocusOn((on) => !on)}
-              className={`${iconToggle(Boolean(focus) && focusOn)} aria-disabled:cursor-default aria-disabled:opacity-40`}
+              className={`${iconToggle(Boolean(focus) && focusOn)} aria-disabled:opacity-40`}
             >
               <Focus />
             </button>

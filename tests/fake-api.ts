@@ -19,7 +19,7 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
       obsPluginPromptDismissed: false,
     },
     clientId: { source: 'built-in', hasBuiltIn: true },
-    auth: { status: 'signed-in', login: 'shiraine_ciel' },
+    auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true },
     channel: { login: 'shiraine_ciel', state: 'connected' },
     overlay: { enabled: false, editing: false },
     alertsOverlay: { enabled: false, editing: false },

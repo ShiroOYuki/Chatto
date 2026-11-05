@@ -109,6 +109,7 @@
 - 斷點是 `max-[1180px]:`，處理 960～1180 寬的視窗。
 - 窄的時候先收掉裝飾（例如 Hero 的茶杯），再收 padding、改直排，最後才換元件（主題編輯器的左側選單換成下拉選單 `EditorNavSelect`）。
 - 文字用 `truncate` 處理過長的頻道名稱、主題名稱，容器要有 `min-w-0`。
+- 一排按鈕放不下時，次要的按鈕可以只留圖示（文字包 `max-[1180px]:sr-only`，按鈕加 `Hint`），例如帳號頁的「刪除帳號」。
 
 ## 元件
 
@@ -150,6 +151,7 @@
 - 「前往某頁」的按鈕在文字後面加 `ArrowRight`。
 - icon 按鈕外面包 `Hint`，按鈕本身也要有 `aria-label`（tooltip 不算名稱）。
 - 動作進行中：按鈕 `disabled`，必要時加 `LoadingSpinner`；不要讓人重複按。
+- 游標：可點的元素（按鈕、連結、開關、分頁、選單項、下拉選單、核取方塊）由 `styles.css` 的全域規則顯示 pointer，停用的（`disabled`、`aria-disabled`）維持箭頭，不必逐個加 `cursor-pointer`。可點的東西要用 `<button>` 或正確的 ARIA role；用 `div` 加 `onClick` 時要自己加 `cursor-pointer`。複製進來的 shadcn 選單項原本寫死 `cursor-default`，已改成 `cursor-pointer`。
 
 ### 設定與表單
 
@@ -211,11 +213,11 @@
 | 圖示切換（複製 → 打勾）    | `SwapIcon`                                        |
 | 按下按鈕                   | `whileTap={{ scale: 0.97 }}`                      |
 
-- **hover 只改顏色**，不位移、不放大、不發光。
+- **hover 只改顏色**，不位移、不放大、不發光（唯一的例外見下方）。
 - 不做常駐的動畫，例外是吉祥物的茶煙（表示「活著」）。
 - 尊重 `prefers-reduced-motion`：頁面切換不做位移、彩紙不放、茶煙停止。新的動畫也要處理。
 - 已經拿掉、不要加回來的：border beam、spotlight 光暈、hover 上浮、空狀態漂浮、吉祥物搖晃、大面積彩紙。
-- 目前左側主導覽的圖示在 hover 時有一個小晃動，是唯一保留的 hover 動態，不要套到其他元件。
+- 例外：左側主導覽的圖示在 hover 時小晃動（`Sidebar.tsx` 的 `NavItem`），是刻意保留的唯一 hover 動態，不要套到其他元件。
 
 ## 吉祥物與可愛元素
 

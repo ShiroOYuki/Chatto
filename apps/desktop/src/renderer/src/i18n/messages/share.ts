@@ -4,7 +4,7 @@ import { defineMessages } from '../define';
 export default defineMessages({
   'zh-TW': {
     description: '瀏覽其他實況主分享的聊天室主題，一鍵安裝，也能投稿自己的主題',
-    tabs: { browse: '瀏覽', mine: '我的主題', account: '帳號', moderation: '管理' },
+    tabs: { browse: '瀏覽', mine: '我的主題', moderation: '管理' },
     signIn: '登入',
     signingIn: '等待登入',
     categories: {
@@ -96,7 +96,6 @@ export default defineMessages({
       link: '連結',
       unlink: '解除',
       lastMethod: '至少要保留一個登入方式',
-      session: '帳號',
       signOut: '登出',
       deleteAccount: '刪除帳號',
       deleteTitle: '刪除 Chatto 帳號？',
@@ -194,7 +193,7 @@ export default defineMessages({
   },
   en: {
     description: 'Browse chat themes other streamers share, install one in a click, or publish your own',
-    tabs: { browse: 'Browse', mine: 'My themes', account: 'Account', moderation: 'Moderation' },
+    tabs: { browse: 'Browse', mine: 'My themes', moderation: 'Moderation' },
     signIn: 'Sign in',
     signingIn: 'Waiting for sign-in',
     categories: {
@@ -286,7 +285,6 @@ export default defineMessages({
       link: 'Link',
       unlink: 'Unlink',
       lastMethod: 'Keep at least one sign-in method',
-      session: 'Account',
       signOut: 'Sign out',
       deleteAccount: 'Delete account',
       deleteTitle: 'Delete your Chatto account?',

@@ -137,6 +137,7 @@ repo 的 Social preview（分享連結時的預覽圖），1280×640。上傳位
 - 圓角方形，深抹茶底，正中間是開心的茶杯（含蒸氣），佔畫面大部分。
 - 不放文字、不放外框。
 - 小尺寸（工作列、系統匣）也要認得出杯子和臉，所以五官不再加細節。
+- 檔案：`assets/chatto-icon.svg`（原稿，網站的 favicon 也用它）、`assets/chatto-icon.png`（256 px，給 README 等只吃點陣圖的地方）；App 打包用的是 `apps/desktop/resources/icon.png`，內容相同。
 
 ## 插圖與裝飾
 

@@ -18,7 +18,7 @@ export interface LegalParagraph {
 }
 
 /** When the texts below last changed, as shown on the website. */
-export const LEGAL_UPDATED = '2026-11-05';
+export const LEGAL_UPDATED = '2026-11-06';
 
 export const SHARE_TERMS_TEXT: Record<LegalLocale, { terms: LegalList; privacy: LegalList }> = {
   'zh-TW': {
@@ -86,11 +86,11 @@ export const APP_DISCLAIMER: Record<LegalLocale, LegalParagraph[]> = {
     },
     {
       title: '非官方軟體',
-      body: 'Chatto 是個人開發的開源專案，與 Twitch Interactive, Inc.、OBS Project 及其他平台沒有關聯，也沒有獲得它們的認可或贊助。Twitch、OBS 等名稱與商標屬於各自的擁有者。',
+      body: 'Chatto 是個人開發的開源專案，與各直播平台（例如 Twitch Interactive, Inc.）及 OBS Project 沒有關聯，也沒有獲得它們的認可或贊助。各平台、OBS 的名稱與商標屬於各自的擁有者。',
     },
     {
       title: '資料處理',
-      body: 'Chatto 只要求讀取聊天室的權限。登入憑證（token）以 Windows 的加密功能存在你的電腦上，不會傳給任何人。Chatto 不蒐集使用資料；只會連到 Twitch（登入與聊天室）、GitHub（檢查與下載更新），以及使用「探索」頁時的主題分享服務（api.chattolive.com，架設在 Cloudflare）。分享服務只在你登入分享帳號後保存帳號資料，詳見探索頁或 chattolive.com/zh-tw/privacy 的隱私說明。本機伺服器只在 127.0.0.1 提供 Overlay 與 OBS 畫面，區網內的其他裝置讀不到。',
+      body: 'Chatto 只向直播平台要求讀取聊天室所需的權限（例如 Twitch 的聊天室與忠誠點數兌換）。直播平台的登入憑證（token）以 Windows 的加密功能存在你的電腦上，不會傳給其他人。Chatto 不蒐集使用資料；只會連到你登入的直播平台（登入與讀取聊天室）、GitHub（檢查與下載更新），以及使用主題分享時的分享服務（api.chattolive.com，架設在 Cloudflare）。分享服務只在你登入 Chatto 帳號後保存帳號資料，詳見帳號頁或 chattolive.com/zh-tw/privacy 的隱私說明。本機伺服器只在 127.0.0.1 提供 Overlay 與 OBS 畫面，區網內的其他裝置讀不到。',
     },
     {
       title: '內容責任',
@@ -104,11 +104,11 @@ export const APP_DISCLAIMER: Record<LegalLocale, LegalParagraph[]> = {
     },
     {
       title: 'Unofficial software',
-      body: 'Chatto is an independent open source project. It is not affiliated with, endorsed by or sponsored by Twitch Interactive, Inc., the OBS Project or any other platform. Twitch, OBS and other names and trademarks belong to their owners.',
+      body: 'Chatto is an independent open source project. It is not affiliated with, endorsed by or sponsored by any streaming platform (such as Twitch Interactive, Inc.) or the OBS Project. Platform names, OBS and other trademarks belong to their owners.',
     },
     {
       title: 'Your data',
-      body: 'Chatto only asks for permission to read chat. Your sign-in token is encrypted with Windows and stays on your computer; it is never sent to anyone. Chatto collects no usage data. It only connects to Twitch (sign-in and chat), GitHub (checking for and downloading updates) and, when you use the Explore page, the theme sharing service (api.chattolive.com, hosted on Cloudflare). The sharing service keeps account data only once you sign in to a sharing account; see the Privacy Notice on the Explore page or at chattolive.com/privacy. Its local server serves the overlay and OBS on 127.0.0.1 only, so other devices on your network cannot read it.',
+      body: 'Chatto only asks streaming platforms for the permissions it needs to read chat (on Twitch, chat and channel points redemptions). Your streaming platform sign-in tokens are encrypted with Windows and stay on your computer; they are never sent to anyone else. Chatto collects no usage data. It only connects to the streaming platforms you sign in to (sign-in and reading chat), GitHub (checking for and downloading updates) and, when you use theme sharing, the sharing service (api.chattolive.com, hosted on Cloudflare). The sharing service keeps account data only once you sign in to a Chatto account; see the Privacy Notice on the Accounts page or at chattolive.com/privacy. Its local server serves the overlay and OBS on 127.0.0.1 only, so other devices on your network cannot read it.',
     },
     {
       title: 'Chat content',

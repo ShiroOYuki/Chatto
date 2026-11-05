@@ -48,24 +48,45 @@ test('liking and reporting ask for an account first', async ({ panel, page }) =>
   await expect(page.getByRole('dialog', { name: '登入 Chatto 帳號' })).toBeVisible();
 });
 
-test('signing in, linking a method and renaming the account', async ({ panel, page }) => {
+test('signing in on the explore page, then managing the account on the accounts page', async ({ panel, page }) => {
   await panel.open('page=explore');
+  await expect(page.getByRole('tab', { name: '帳號' })).toHaveCount(0);
   await signIn(page);
-  await expect(page.getByRole('button', { name: 'shiraine_ciel' })).toBeVisible();
+  await expect(page.getByTestId('sidebar-account')).toContainText('shiraine_ciel');
 
-  await page.getByRole('tab', { name: '帳號' }).click();
-  await page.getByRole('listitem').filter({ hasText: 'Google' }).getByRole('button', { name: '連結' }).click();
+  // The name in the header opens the accounts page.
+  await page.getByRole('button', { name: 'shiraine_ciel', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '帳號' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Chatto 帳號' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '直播平台' })).toBeVisible();
+
+  // The Twitch card below has its own sign-out; stay inside the Chatto account section.
+  const chatto = page.getByRole('region', { name: 'Chatto 帳號' });
+  await chatto.getByRole('listitem').filter({ hasText: 'Google' }).getByRole('button', { name: '連結' }).click();
   const dialog = page.getByRole('dialog', { name: '登入 Chatto 帳號' });
   await dialog.getByRole('button', { name: '連結 Google' }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByRole('listitem').filter({ hasText: 'Google' })).toContainText('Ciel');
+  await expect(chatto.getByRole('listitem').filter({ hasText: 'Google' })).toContainText('Ciel');
 
-  await page.getByRole('textbox', { name: '顯示名稱' }).fill('Ciel 的茶館');
-  await page.getByRole('button', { name: '儲存' }).click();
-  await expect(page.getByRole('button', { name: 'Ciel 的茶館' })).toBeVisible();
+  await chatto.getByRole('textbox', { name: '顯示名稱' }).fill('Ciel 的茶館');
+  await chatto.getByRole('button', { name: '儲存' }).click();
+  await expect(page.getByTestId('sidebar-account')).toContainText('Ciel 的茶館');
 
-  await page.getByRole('button', { name: '登出' }).click();
-  await expect(page.getByRole('button', { name: '登入', exact: true }).first()).toBeVisible();
+  await chatto.getByRole('button', { name: '登出' }).click();
+  await expect(chatto.getByRole('button', { name: '登入', exact: true })).toBeVisible();
+  await expect(page.getByTestId('sidebar-account')).toContainText('未登入 Chatto');
+  // Signing out of Chatto leaves the chat connection alone.
+  await expect(page.getByRole('region', { name: '直播平台' }).getByRole('button', { name: '中斷連線' })).toBeVisible();
+});
+
+test('the sidebar account card opens the accounts page', async ({ panel, page }) => {
+  await panel.open('page=overview');
+  await page.getByTestId('sidebar-account').click();
+  await expect(page.getByRole('heading', { level: 1, name: '帳號' })).toBeVisible();
+  await expect(page.getByTestId('sidebar-account')).toHaveAttribute('aria-current', 'page');
+  await expect(
+    page.getByRole('region', { name: 'Chatto 帳號' }).getByRole('button', { name: '登入', exact: true }),
+  ).toBeVisible();
 });
 
 test('a custom theme is checked, published and listed under my themes', async ({ panel, page }) => {

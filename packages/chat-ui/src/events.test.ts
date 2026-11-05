@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ALERT_CATEGORIES, alertRuleKey, EVENT_CATALOG, eventKeyOf, findEvent, platformOnlyEvents } from './events';
+import {
+  ALERT_CATEGORIES,
+  alertRuleKey,
+  EVENT_CATALOG,
+  eventKeyOf,
+  findEvent,
+  isRedemption,
+  platformOnlyEvents,
+} from './events';
 import { EVENT_SAMPLES, sampleEvent } from './eventSamples';
 import { createSpecimenEvents } from './mock';
 import { themeToCss } from './themeCss';
@@ -34,6 +42,8 @@ describe('platform events', () => {
     expect(alertRuleKey('twitch:community-gift')).toBe('any:gift');
     expect(alertRuleKey('twitch:highlighted')).toBe('twitch:highlighted');
     expect(alertRuleKey('youtube:unknown')).toBe('youtube:unknown');
+    // Both redemption kinds share one switch.
+    expect(alertRuleKey('twitch:auto-redemption')).toBe('twitch:redemption');
     const twitch = EVENT_CATALOG.find((group) => group.platform === 'twitch')!;
     expect(platformOnlyEvents(twitch).map((event) => event.key)).toEqual([
       'twitch:highlighted',
@@ -41,10 +51,19 @@ describe('platform events', () => {
       'twitch:bits-badge-tier',
       'twitch:charity-donation',
       'twitch:watch-streak',
+      'twitch:redemption',
     ]);
     // Every category is used by at least one event.
     const used = new Set(EVENT_CATALOG.flatMap((group) => group.events.map((event) => event.alertCategory)));
     for (const category of ALERT_CATEGORIES) expect(used).toContain(category.key);
+  });
+
+  it('tells redemptions apart from other events', () => {
+    const notice = (eventType: string) => ({ platform: 'twitch', eventType });
+    expect(isRedemption(notice('redemption'))).toBe(true);
+    expect(isRedemption(notice('auto-redemption'))).toBe(true);
+    expect(isRedemption(notice('highlighted'))).toBe(false);
+    expect(isRedemption({ platform: 'twitch', eventType: undefined })).toBe(false);
   });
 
   it('every sample belongs to a catalogued event', () => {

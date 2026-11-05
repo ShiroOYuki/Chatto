@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { fragmentsToText, noticeGroup } from '@chatto/core';
 import {
+  mapAutoRedemption,
   mapChatMessage,
   mapEventSubNotification,
   mapNotification,
+  mapRedemption,
   noticeMeta,
   twitchNoticeEventType,
   type TwitchChatMessageEvent,
@@ -192,6 +194,117 @@ describe('twitch mapper', () => {
     expect(meta('watch_streak', { watch_streak: { streak_count: 100, channel_points_awarded: 350 } })).toMatchObject({
       watchStreak: 100,
       channelPoints: 350,
+    });
+  });
+
+  it('maps custom reward redemptions', () => {
+    // Example payload from the EventSub reference (channel.channel_points_custom_reward_redemption.add v1).
+    const event = mapEventSubNotification(
+      'channel.channel_points_custom_reward_redemption.add',
+      {
+        id: '17fa2df1-ad76-4804-bfa5-a40ef63efe63',
+        broadcaster_user_id: '1337',
+        broadcaster_user_login: 'cool_user',
+        broadcaster_user_name: 'Cool_User',
+        user_id: '9001',
+        user_login: 'cooler_user',
+        user_name: 'Cooler_User',
+        user_input: 'pogchamp',
+        status: 'unfulfilled',
+        reward: { id: '92af127c-7326-4483-a52b-b0da0be61c01', title: 'title', cost: 100, prompt: 'reward prompt' },
+        redeemed_at: '2020-07-15T17:16:03.17106713Z',
+      },
+      () => undefined,
+    );
+    expect(event).toMatchObject({
+      type: 'notice',
+      notice: {
+        id: '17fa2df1-ad76-4804-bfa5-a40ef63efe63',
+        platform: 'twitch',
+        channelId: '1337',
+        eventType: 'redemption',
+        systemText: 'Cooler_User redeemed title',
+        author: { id: '9001', login: 'cooler_user', displayName: 'Cooler_User', roles: [] },
+        fragments: [],
+        meta: {
+          reward: 'title',
+          cost: 100,
+          rewardId: '92af127c-7326-4483-a52b-b0da0be61c01',
+          redemptionId: '17fa2df1-ad76-4804-bfa5-a40ef63efe63',
+          input: 'pogchamp',
+        },
+      },
+    });
+    const silent = mapRedemption({
+      id: 'r',
+      broadcaster_user_id: '1',
+      user_id: '2',
+      user_login: 'okome_rice',
+      user_name: 'okome_rice',
+      user_input: '',
+      reward: { id: 'w', title: 'Hydrate', cost: 50 },
+      redeemed_at: '2026-11-05T00:00:00Z',
+    });
+    expect(silent.meta).not.toHaveProperty('input');
+  });
+
+  it('maps automatic reward redemptions', () => {
+    // Example payload from the EventSub reference (channel.channel_points_automatic_reward_redemption.add v2).
+    const highlighted = mapEventSubNotification(
+      'channel.channel_points_automatic_reward_redemption.add',
+      {
+        broadcaster_user_id: '12826',
+        broadcaster_user_name: 'Twitch',
+        broadcaster_user_login: 'twitch',
+        user_id: '141981764',
+        user_name: 'TwitchDev',
+        user_login: 'twitchdev',
+        id: 'f024099a-e0aa-4339-b4be-5b5d9d9c4dc6',
+        reward: { type: 'send_highlighted_message', channel_points: 100, emote: null },
+        message: {
+          text: 'Hello world! VoteYea',
+          fragments: [
+            { type: 'text', text: 'Hello world! ', emote: null },
+            { type: 'emote', text: 'VoteYea', emote: { id: '81274' } },
+          ],
+        },
+        redeemed_at: '2024-08-12T21:14:34.260398045Z',
+      },
+      () => undefined,
+    );
+    expect(highlighted).toMatchObject({
+      type: 'notice',
+      notice: {
+        eventType: 'auto-redemption',
+        channelId: '12826',
+        systemText: 'TwitchDev redeemed Send highlighted message',
+        fragments: [],
+        meta: {
+          rewardType: 'send_highlighted_message',
+          cost: 100,
+          redemptionId: 'f024099a-e0aa-4339-b4be-5b5d9d9c4dc6',
+          input: 'Hello world! VoteYea',
+          // The same redemption reaches chat as a highlighted message.
+          shownAsMessage: true,
+        },
+      },
+    });
+    const unlock = mapAutoRedemption({
+      id: 'u',
+      broadcaster_user_id: '1',
+      user_id: '2',
+      user_login: 'mochi_fan',
+      user_name: 'Mochi_Fan',
+      reward: { type: 'random_sub_emote_unlock', channel_points: 300, emote: { id: '9', name: 'matchaHype' } },
+      message: null,
+      redeemed_at: '2026-11-05T00:00:00Z',
+    });
+    expect(unlock.meta).toEqual({
+      rewardType: 'random_sub_emote_unlock',
+      cost: 300,
+      rewardId: 'random_sub_emote_unlock',
+      redemptionId: 'u',
+      emote: 'matchaHype',
     });
   });
 

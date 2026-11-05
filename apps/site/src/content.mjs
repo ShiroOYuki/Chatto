@@ -83,7 +83,10 @@ export const CONTENT = {
           title: 'Download and install',
           body: 'To use Chatto in OBS, check “Install the OBS plugin” in the installer.',
         },
-        { title: 'Connect your channel', body: 'Sign in on the Connections page and chat appears in the preview.' },
+        {
+          title: 'Connect your channel',
+          body: 'Sign in to your streaming platform on the Accounts page and chat appears in the preview.',
+        },
         { title: 'Choose where it shows', body: 'Turn on the desktop overlay, or add a “Chatto Chat” source in OBS.' },
       ],
       faqTitle: 'Asked a lot',
@@ -202,7 +205,7 @@ export const CONTENT = {
           id: 'connect',
           title: 'Connect your channel',
           steps: [
-            'Open the Connections page, pick your streaming platform and click Sign in.',
+            'Open the Accounts page and click Sign in on your streaming platform.',
             'Your browser opens the platform’s authorization page. Enter the code Chatto shows you.',
             'Back in Chatto, chat appears in the preview on the Chat page.',
           ],
@@ -469,7 +472,7 @@ export const CONTENT = {
       guideMore: '完整教學',
       steps: [
         { title: '下載並安裝', body: '要在 OBS 用，安裝時勾選「安裝 OBS 外掛」。' },
-        { title: '連上你的頻道', body: '在「連線」頁登入直播平台帳號，預覽裡就會出現聊天。' },
+        { title: '連上你的頻道', body: '在「帳號」頁登入直播平台，預覽裡就會出現聊天。' },
         { title: '選擇顯示的地方', body: '開啟桌面 Overlay，或在 OBS 新增「Chatto 聊天室」來源。' },
       ],
       faqTitle: '常被問到的',
@@ -585,7 +588,7 @@ export const CONTENT = {
           id: 'connect',
           title: '連上頻道',
           steps: [
-            '打開「連線」頁，選擇直播平台並按「登入」。',
+            '打開「帳號」頁，在直播平台的卡片上按「登入」。',
             '瀏覽器會開啟平台的授權頁，在那裡輸入 Chatto 顯示的代碼。',
             '授權完成後回到 Chatto，聊天就會出現在「聊天室」頁的預覽裡。',
           ],

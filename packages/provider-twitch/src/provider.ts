@@ -8,7 +8,7 @@ import {
   type ConnectionState,
   type Unsubscribe,
 } from '@chatto/core';
-import { TwitchAuth, type TokenStore } from './auth';
+import { hasRedemptionScope, TwitchAuth, type TokenStore, type TwitchIdentity } from './auth';
 import { EventSubSession } from './eventsub';
 import { HelixClient } from './helix';
 import { mapEventSubNotification } from './mapper';
@@ -21,6 +21,20 @@ export const CHAT_SUBSCRIPTIONS = [
   'channel.chat.clear_user_messages',
   'channel.chat.clear',
 ] as const;
+
+/**
+ * Channel points redemptions. Twitch only allows them on the signed-in user's
+ * own channel, with `channel:read:redemptions`; without either they are skipped.
+ */
+export const REDEMPTION_SUBSCRIPTIONS = [
+  { type: 'channel.channel_points_custom_reward_redemption.add', version: '1' },
+  { type: 'channel.channel_points_automatic_reward_redemption.add', version: '2' },
+] as const;
+
+/** Whether this sign-in can receive the channel's redemptions. */
+export function canReadRedemptions(identity: Pick<TwitchIdentity, 'userId' | 'scopes'>, channelId: string): boolean {
+  return identity.userId === channelId && hasRedemptionScope(identity.scopes);
+}
 
 export interface TwitchProviderOptions {
   clientId: string;
@@ -81,6 +95,19 @@ export class TwitchChatProvider implements ChatProvider {
                 ),
               ),
             );
+            if (canReadRedemptions(identity, channel.channelId)) {
+              // Optional: chat works without them, so a failure here is not a connection error.
+              await Promise.allSettled(
+                REDEMPTION_SUBSCRIPTIONS.map(({ type, version }) =>
+                  this.helix.createEventSubSubscription(
+                    type,
+                    version,
+                    { broadcaster_user_id: channel.channelId },
+                    sessionId,
+                  ),
+                ),
+              );
+            }
             if (!settled) {
               settled = true;
               resolve();

@@ -8,9 +8,9 @@ import { TitleBar } from './components/TitleBar';
 import { Confetti, type ConfettiRef } from './components/ui/confetti';
 import { useMessages } from './i18n';
 import { TooltipProvider } from './components/ui/tooltip';
+import { AccountsPage } from './pages/accounts/AccountsPage';
 import { AlertsPage } from './pages/alerts/AlertsPage';
 import { ChatPage } from './pages/Chat';
-import { ConnectionsPage } from './pages/Connections';
 import { ExplorePage } from './pages/explore/ExplorePage';
 import { OutputsPage } from './pages/Outputs';
 import { OverviewPage } from './pages/Overview';
@@ -26,17 +26,17 @@ function Page({ id, state, onNavigate }: { id: PageId; state: AppState; onNaviga
     case 'overview':
       return <OverviewPage state={state} onNavigate={onNavigate} />;
     case 'chat':
-      return <ChatPage />;
+      return <ChatPage state={state} />;
     case 'themes':
       return <ThemesPage state={state} onNavigate={onNavigate} />;
     case 'explore':
-      return <ExplorePage state={state} />;
+      return <ExplorePage state={state} onNavigate={onNavigate} />;
     case 'outputs':
       return <OutputsPage state={state} onNavigate={onNavigate} />;
     case 'alerts':
       return <AlertsPage state={state} onNavigate={onNavigate} />;
-    case 'connections':
-      return <ConnectionsPage state={state} />;
+    case 'accounts':
+      return <AccountsPage state={state} />;
     case 'settings':
       return <SettingsPage state={state} />;
   }

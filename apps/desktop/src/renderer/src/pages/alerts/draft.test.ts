@@ -8,11 +8,21 @@ import {
   soundOptions,
   soundValue,
   withEvents,
+  withRedemptions,
   withRule,
   withSilence,
 } from './draft';
 
 describe('alert settings drafts', () => {
+  it('keeps redemptions out of OBS without touching the other settings', () => {
+    const base = defaultAlertSettings();
+    expect(base.redemptions.showInObs).toBe(true);
+    const next = withRedemptions(base, { showInObs: false });
+    expect(next.redemptions.showInObs).toBe(false);
+    expect(next.events).toBe(base.events);
+    expect(base.redemptions.showInObs).toBe(true);
+  });
+
   it('reads the default rule for events that have none yet and stores edits per event', () => {
     const base = defaultAlertSettings();
     expect(ruleFor(base, 'twitch:raid')).toMatchObject({ enabled: true, sound: { enabled: false } });

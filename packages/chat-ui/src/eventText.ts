@@ -89,7 +89,31 @@ export const TEMPLATE_VARIABLES: Record<string, Localized> = {
   donation: { 'zh-TW': '捐款金額（含貨幣）', en: 'The amount donated, with currency' },
   watchStreak: { 'zh-TW': '連續觀看的直播場數', en: 'Streams watched in a row' },
   channelPoints: { 'zh-TW': '觀看連勝獲得的忠誠點數', en: 'Channel Points awarded for the watch streak' },
+  reward: { 'zh-TW': '兌換的獎勵名稱', en: 'The reward redeemed' },
+  cost: { 'zh-TW': '花費的忠誠點數', en: 'Channel Points spent' },
+  emote: { 'zh-TW': '解鎖或放大的表情符號（有的才有）', en: 'The emote unlocked or used (when there is one)' },
 };
+
+/**
+ * Names of Twitch's automatic rewards (`meta.rewardType`), since their
+ * redemptions carry only a type. Unknown types fall back to the platform text.
+ */
+export const AUTO_REWARD_NAMES: Record<string, Localized> = {
+  single_message_bypass_sub_mode: { 'zh-TW': '在訂閱者模式傳送訊息', en: 'Send a Message in Sub-Only Mode' },
+  send_highlighted_message: { 'zh-TW': '強調我的訊息', en: 'Highlight My Message' },
+  random_sub_emote_unlock: { 'zh-TW': '隨機解鎖表情符號', en: 'Unlock a Random Sub Emote' },
+  chosen_sub_emote_unlock: { 'zh-TW': '選擇解鎖表情符號', en: 'Choose an Emote to Unlock' },
+  chosen_modified_sub_emote_unlock: { 'zh-TW': '修改表情符號', en: 'Modify a Single Emote' },
+  message_effect: { 'zh-TW': '訊息特效', en: 'Message Effects' },
+  gigantify_an_emote: { 'zh-TW': '放大表情符號', en: 'Gigantify an Emote' },
+  celebration: { 'zh-TW': '螢幕慶祝特效', en: 'On-Screen Celebration' },
+};
+
+/** A redemption's reward name: its own title, or the name of a Twitch reward type. */
+export function rewardName(meta: ChatNotice['meta'], locale: Locale): string | undefined {
+  if (typeof meta.reward === 'string' && meta.reward) return meta.reward;
+  return typeof meta.rewardType === 'string' ? AUTO_REWARD_NAMES[meta.rewardType]?.[locale] : undefined;
+}
 
 const ANONYMOUS: Record<Locale, string> = { 'zh-TW': '匿名觀眾', en: 'An anonymous user' };
 const ANONYMOUS_GIFTER: Record<Locale, string> = { 'zh-TW': '匿名觀眾', en: 'an anonymous gifter' };
@@ -125,6 +149,9 @@ export function noticeVariables(notice: ChatNotice, locale: Locale): TemplateVar
     charity: text(meta.charity),
     watchStreak: count(meta.watchStreak),
     channelPoints: count(meta.channelPoints),
+    reward: rewardName(meta, locale),
+    cost: count(meta.cost),
+    emote: text(meta.emote),
     donation:
       donation === undefined
         ? undefined

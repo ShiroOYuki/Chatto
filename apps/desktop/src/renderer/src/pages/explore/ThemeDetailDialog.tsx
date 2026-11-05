@@ -13,7 +13,7 @@ import { ActionNote, Badge, Button, CopyField, Field, LoadingSpinner, Modal, Sel
 import { useLocale, useMessages } from '../../i18n';
 import { loadShareDetail, shareCall, useInstalledThemes, useShareAction, useShareSession } from '../../services/share';
 import { authorName } from './ShareCard';
-import { errorText, failureText, formatCount } from './shareText';
+import { errorText, failureText, formatCount } from '../../components/share/shareText';
 
 function ReportDialog({
   summary,

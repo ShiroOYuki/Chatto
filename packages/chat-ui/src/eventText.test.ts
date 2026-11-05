@@ -53,6 +53,17 @@ describe('event text templates', () => {
     expect(noticeText(streak, 'en')).toBe('Mochi_Fan watched 100 consecutive streams and sparked a watch streak!');
   });
 
+  it("names the reward of a redemption, including Twitch's own rewards", () => {
+    const custom = notice('redemption', { reward: '點一首歌', cost: 500 });
+    expect(noticeText(custom, 'zh-TW')).toBe('Mochi_Fan 兌換了「點一首歌」');
+    expect(noticeText(custom, 'en')).toBe('Mochi_Fan redeemed 點一首歌');
+    const unlock = notice('auto-redemption', { rewardType: 'random_sub_emote_unlock', cost: 300, emote: 'TeaCup' });
+    expect(noticeText(unlock, 'zh-TW')).toBe('Mochi_Fan 兌換了「隨機解鎖表情符號」：TeaCup');
+    expect(noticeText(unlock, 'en')).toBe('Mochi_Fan redeemed Unlock a Random Sub Emote: TeaCup');
+    // A reward type newer than Chatto keeps the platform's text.
+    expect(noticeText(notice('auto-redemption', { rewardType: 'something_new' }), 'en')).toBe('original text');
+  });
+
   it("falls back to the platform's text when fields are missing or the event has no template", () => {
     expect(noticeText(notice('resub', {}), 'zh-TW')).toBe('original text');
     expect(noticeText(notice('watch-streak', {}), 'zh-TW')).toBe('original text');

@@ -7,7 +7,7 @@ import { StaticThemePreview } from '../../components/ThemePreview';
 import { Badge } from '../../components/kit';
 import { useLocale, useMessages } from '../../i18n';
 import { loadShareDetail } from '../../services/share';
-import { formatCount } from './shareText';
+import { formatCount } from '../../components/share/shareText';
 
 /** The thumbnail the author published, or the theme itself rendered when there is none. */
 export function SharePreview({ summary }: { summary: ShareThemeSummary }) {

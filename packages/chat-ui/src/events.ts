@@ -39,6 +39,16 @@ export interface EventDefinition {
    * Events without one are platform-only and get their own alert rule.
    */
   alertCategory?: AlertCategoryKey;
+  /**
+   * Another platform event whose alert rule this one shares (both Twitch
+   * redemption kinds have one switch). Such events get no rule of their own.
+   */
+  alertRule?: string;
+  /**
+   * A channel points redemption (or a platform's equivalent): kept in the
+   * control panel's redemption list, and shown in OBS only if the streamer allows it.
+   */
+  redemption?: boolean;
 }
 
 export interface PlatformEventGroup {
@@ -64,7 +74,7 @@ const twitch = (
   label: Localized,
   description: Localized,
   category: EventCategory,
-  extra: Pick<EventDefinition, 'text' | 'variables' | 'amount' | 'alertCategory'> = {},
+  extra: Pick<EventDefinition, 'text' | 'variables' | 'amount' | 'alertCategory' | 'alertRule' | 'redemption'> = {},
 ): EventDefinition => ({
   key: eventKey('twitch', eventType),
   platform: 'twitch',
@@ -123,17 +133,28 @@ export const ALERT_CATEGORIES = [
 
 export type AlertCategoryKey = (typeof ALERT_CATEGORIES)[number]['key'];
 
-/** The alert rule key for an event: its cross-platform category, or its own key when it has none. */
+/**
+ * The alert rule key for an event: its cross-platform category, the event it
+ * shares a rule with, or its own key.
+ */
 export function alertRuleKey(eventKey: string): string {
-  return findEvent(eventKey)?.alertCategory ?? eventKey;
+  const event = findEvent(eventKey);
+  return event?.alertCategory ?? event?.alertRule ?? eventKey;
 }
 
-/** Platform-only events, which have their own alert rules (the per-platform sections). */
+/** Platform-only events with a rule of their own (the per-platform sections of the alert rules). */
 export function platformOnlyEvents(group: PlatformEventGroup): EventDefinition[] {
-  return group.events.filter((event) => !event.alertCategory);
+  return group.events.filter((event) => !event.alertCategory && !event.alertRule);
+}
+
+/** Whether a message or notice is a channel points redemption (see {@link EventDefinition.redemption}). */
+export function isRedemption(item: Pick<ChatMessage | ChatNotice, 'platform' | 'eventType'>): boolean {
+  const key = eventKeyOf(item);
+  return key !== undefined && findEvent(key)?.redemption === true;
 }
 
 const SUB_VARIABLES = ['user', 'tier', 'duration'];
+const REDEMPTION_VARIABLES = ['user', 'reward', 'cost'];
 
 export const EVENT_CATALOG: PlatformEventGroup[] = [
   {
@@ -294,6 +315,34 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
             '{user} watched {watchStreak} consecutive {watchStreak|stream|streams} and sparked a watch streak!',
           ),
           variables: ['user', 'watchStreak', 'channelPoints'],
+        },
+      ),
+      twitch(
+        'redemption',
+        L('忠誠點數兌換', 'Channel points reward'),
+        L('你建立的獎勵與 Twitch 內建獎勵', "Your own rewards and Twitch's built-in ones"),
+        'notice',
+        {
+          text: L('{user} 兌換了「{reward}」', '{user} redeemed {reward}'),
+          variables: REDEMPTION_VARIABLES,
+          amount: { label: L('點數', 'Points'), read: metaNumber('cost') },
+          redemption: true,
+        },
+      ),
+      twitch(
+        'auto-redemption',
+        L('自動獎勵兌換', 'Twitch reward'),
+        L(
+          '觀眾兌換 Twitch 內建的獎勵，例如解鎖表情符號',
+          "A viewer redeems one of Twitch's own rewards, like an emote unlock",
+        ),
+        'notice',
+        {
+          text: L('{user} 兌換了「{reward}」[：{emote}]', '{user} redeemed {reward}[: {emote}]'),
+          variables: [...REDEMPTION_VARIABLES, 'emote'],
+          amount: { label: L('點數', 'Points'), read: metaNumber('cost') },
+          alertRule: 'twitch:redemption',
+          redemption: true,
         },
       ),
     ],

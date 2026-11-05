@@ -1,21 +1,11 @@
-import { ChevronRight, ExternalLink, KeyRound, LogOut, Plug, PlugZap } from 'lucide-react';
+import { ChevronRight, ExternalLink, Info, KeyRound, LogIn, LogOut, Plug, PlugZap, UserRound } from 'lucide-react';
 import { useState } from 'react';
-import type { AppState } from '../../../shared/ipc';
-import { useMessages } from '../i18n';
-import { twitch, twitchStatus } from '../services/twitch';
-import { Stagger } from '../components/motion';
-import { ClientIdForm } from './ClientIdForm';
-import {
-  Badge,
-  Button,
-  LoadingSpinner,
-  Field,
-  PageHeader,
-  channelTone,
-  StatusDot,
-  TextInput,
-  Tile,
-} from '../components/kit';
+import type { AppState } from '../../../../shared/ipc';
+import { useMessages } from '../../i18n';
+import { redemptionAccess, twitch, twitchStatus } from '../../services/twitch';
+import { Stagger } from '../../components/motion';
+import { ClientIdForm } from '../ClientIdForm';
+import { Badge, Button, LoadingSpinner, Field, channelTone, StatusDot, TextInput, Tile } from '../../components/kit';
 
 /** Platform glyphs from Simple Icons (CC0 1.0), drawn on a 24×24 grid. */
 const PLATFORMS = {
@@ -119,6 +109,8 @@ function TwitchCard({ state }: { state: AppState }) {
   const [login, setLogin] = useState(state.channel.login ?? '');
   const { auth, channel, clientId } = state;
   const { signedIn, connected, busy } = twitchStatus(state);
+  const redemptions = redemptionAccess(state);
+  const r = messages.redemptions;
   // Without a built-in Client ID, entering one is the first step.
   const accountStep = clientId.hasBuiltIn ? 1 : 2;
 
@@ -143,7 +135,7 @@ function TwitchCard({ state }: { state: AppState }) {
         {/* Account */}
         <section className="flex flex-col gap-3 rounded-xl bg-tile-muted p-4">
           <h3 className="flex items-center gap-2 text-sm font-medium">
-            <Plug className="size-4 text-matcha" /> {accountStep}. {m.stepAccount}
+            <Plug className="size-4 text-matcha" /> {accountStep}. {m.stepSignIn}
           </h3>
           {auth.status === 'pending' ? (
             <>
@@ -170,12 +162,27 @@ function TwitchCard({ state }: { state: AppState }) {
                 </span>
                 <div>
                   <div className="font-medium">{auth.login}</div>
-                  <div className="text-xs text-ink-faint">{m.scope}</div>
+                  <div className="text-xs text-ink-faint">
+                    {auth.redemptionScope ? m.scopeWithRedemptions : m.scope}
+                  </div>
                 </div>
               </div>
-              <Button className="mt-auto self-start" size="sm" variant="raised" onClick={() => twitch.signOut()}>
-                <LogOut /> {m.signOut}
-              </Button>
+              {redemptions === 'reauth' ? (
+                <p data-testid="redemption-reauth" className="flex gap-2 text-xs text-ink-soft">
+                  <Info className="size-4 shrink-0 text-matcha" />
+                  {r.reauth}
+                </p>
+              ) : null}
+              <div className="mt-auto flex flex-wrap gap-2">
+                {redemptions === 'reauth' ? (
+                  <Button size="sm" variant="primary" onClick={() => twitch.signIn()}>
+                    <LogIn /> {r.signInAgain}
+                  </Button>
+                ) : null}
+                <Button size="sm" variant="raised" onClick={() => twitch.signOut()}>
+                  <LogOut /> {m.signOut}
+                </Button>
+              </div>
             </>
           ) : (
             <>
@@ -206,12 +213,20 @@ function TwitchCard({ state }: { state: AppState }) {
             }}
           >
             <Field label={m.channelName} hint={m.channelHint}>
-              <TextInput
-                value={login}
-                onChange={(event) => setLogin(event.target.value)}
-                placeholder="shiraine_ciel"
-                disabled={!signedIn}
-              />
+              <div className="flex gap-2">
+                <TextInput
+                  aria-label={m.channelName}
+                  value={login}
+                  onChange={(event) => setLogin(event.target.value)}
+                  placeholder="shiraine_ciel"
+                  disabled={!signedIn}
+                />
+                {signedIn && auth.login ? (
+                  <Button size="sm" variant="raised" className="h-9 shrink-0" onClick={() => setLogin(auth.login!)}>
+                    <UserRound /> {m.useMyChannel}
+                  </Button>
+                ) : null}
+              </div>
             </Field>
             {connected ? (
               <Button className="self-start" variant="raised" onClick={() => twitch.disconnect()}>
@@ -234,6 +249,12 @@ function TwitchCard({ state }: { state: AppState }) {
               </Button>
             )}
             {channel.state === 'error' ? <p className="text-xs text-danger">{channel.detail}</p> : null}
+            {redemptions === 'not-broadcaster' ? (
+              <p className="flex gap-2 text-xs text-ink-faint">
+                <Info className="size-4 shrink-0" />
+                {r.notBroadcaster}
+              </p>
+            ) : null}
           </form>
         </section>
       </div>
@@ -256,16 +277,13 @@ function ComingSoon({ name, platform }: { name: string; platform: keyof typeof P
   );
 }
 
-export function ConnectionsPage({ state }: { state: AppState }) {
-  const m = useMessages().connections;
+/** The streaming platforms Chatto reads chat from, on the accounts page. */
+export function PlatformCards({ state }: { state: AppState }) {
   return (
-    <div>
-      <PageHeader title={m.title} description={m.description} />
-      <Stagger className="grid grid-cols-2 gap-3">
-        <TwitchCard state={state} />
-        <ComingSoon name="YouTube" platform="youtube" />
-        <ComingSoon name="Kick" platform="kick" />
-      </Stagger>
-    </div>
+    <Stagger className="grid grid-cols-2 gap-3">
+      <TwitchCard state={state} />
+      <ComingSoon name="YouTube" platform="youtube" />
+      <ComingSoon name="Kick" platform="kick" />
+    </Stagger>
   );
 }

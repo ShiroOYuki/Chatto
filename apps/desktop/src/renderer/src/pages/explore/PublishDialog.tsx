@@ -29,7 +29,7 @@ import {
 import { useMessages, useThemeName } from '../../i18n';
 import { captureThumbnail, shareCall, useShareAction } from '../../services/share';
 import { useAppState } from '../../store';
-import { failureText, issueText } from './shareText';
+import { failureText, issueText } from '../../components/share/shareText';
 
 const ALL_SUGGESTED = Object.values(SUGGESTED_TAGS).flat();
 

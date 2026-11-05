@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { SHARE_PROVIDERS, type ShareProvider } from '@chatto/share';
-import { ActionNote, Button, LoadingSpinner, Modal, Toggle } from '../../components/kit';
+import { ActionNote, Button, LoadingSpinner, Modal, Toggle } from '../kit';
 import { useMessages } from '../../i18n';
 import { runAction } from '../../services/run';
 import { shareCall, useShareSession } from '../../services/share';

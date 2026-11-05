@@ -1,10 +1,8 @@
 import { defineMessages } from '../define';
 
-/** The connections page: Twitch setup and planned platforms. */
+/** Streaming platform cards on the accounts page: Twitch setup and planned platforms. */
 export default defineMessages({
   'zh-TW': {
-    title: '連線',
-    description: '管理直播平台的帳號與聊天室來源',
     channelState: {
       idle: '尚未連線',
       connecting: '連線中…',
@@ -27,16 +25,18 @@ export default defineMessages({
     },
     customClientIdHint: '改用自己在 Twitch Developer Console 建立的應用程式（類型選 Public），更換後要重新登入',
     useBuiltInClientId: '改回內建',
-    stepAccount: '帳號',
+    stepSignIn: '登入',
     enterCode: '在 Twitch 授權頁輸入：',
     reopenAuth: '重新開啟授權頁',
     scope: '權限：讀取聊天室',
+    scopeWithRedemptions: '權限：讀取聊天室、忠誠點數兌換',
     signOut: '登出',
-    scopeNote: 'Chatto 只會要求讀取聊天室的權限',
+    scopeNote: 'Chatto 只會要求讀取聊天室和忠誠點數兌換的權限',
     signIn: '用 Twitch 登入',
     stepChannel: '頻道',
     channelName: '頻道名稱',
     channelHint: '可以是自己或任何頻道',
+    useMyChannel: '填入我的頻道',
     disconnect: '中斷連線',
     connecting: '連線中…',
     connect: '連線',
@@ -44,8 +44,6 @@ export default defineMessages({
     planned: '規劃中',
   },
   en: {
-    title: 'Connections',
-    description: 'Manage your streaming accounts and chat sources',
     channelState: {
       idle: 'Not connected',
       connecting: 'Connecting…',
@@ -68,16 +66,18 @@ export default defineMessages({
     },
     customClientIdHint: 'Use your own app from the Twitch Developer Console (type: Public); changing it signs you out',
     useBuiltInClientId: 'Use built-in',
-    stepAccount: 'Account',
+    stepSignIn: 'Sign in',
     enterCode: 'Enter this on the Twitch authorization page:',
     reopenAuth: 'Reopen authorization page',
     scope: 'Permission: read chat',
+    scopeWithRedemptions: 'Permission: read chat and channel points redemptions',
     signOut: 'Sign out',
-    scopeNote: 'Chatto only asks for permission to read chat',
+    scopeNote: 'Chatto only asks for permission to read chat and channel points redemptions',
     signIn: 'Sign in with Twitch',
     stepChannel: 'Channel',
     channelName: 'Channel name',
     channelHint: 'Your own or any other channel',
+    useMyChannel: 'Use my channel',
     disconnect: 'Disconnect',
     connecting: 'Connecting…',
     connect: 'Connect',

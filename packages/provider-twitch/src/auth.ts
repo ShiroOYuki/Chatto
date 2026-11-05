@@ -6,8 +6,17 @@
 
 const OAUTH_BASE = 'https://id.twitch.tv/oauth2';
 
-/** Scopes Chatto needs. `user:read:chat` is required for EventSub chat. */
-export const TWITCH_SCOPES = ['user:read:chat'] as const;
+/** Lets the broadcaster's own token read channel points redemptions. */
+export const REDEMPTION_SCOPE = 'channel:read:redemptions';
+
+/**
+ * Scopes Chatto asks for. `user:read:chat` is required for EventSub chat;
+ * {@link REDEMPTION_SCOPE} only does anything on the signed-in user's own channel.
+ */
+export const TWITCH_SCOPES = ['user:read:chat', REDEMPTION_SCOPE] as const;
+
+/** Whether a token can read channel points redemptions (tokens from older versions lack the scope). */
+export const hasRedemptionScope = (scopes: readonly string[]) => scopes.includes(REDEMPTION_SCOPE);
 
 export interface TwitchTokens {
   accessToken: string;

@@ -5,6 +5,7 @@ import {
   type AlertSettings,
   type EventAlertRule,
   type EventAlertSettings,
+  type RedemptionSettings,
   type SilenceAlertSettings,
   type SoundRef,
 } from '@chatto/core';
@@ -26,6 +27,10 @@ export function withSilence(settings: AlertSettings, patch: Partial<SilenceAlert
 
 export function withEvents(settings: AlertSettings, patch: Partial<Omit<EventAlertSettings, 'rules'>>): AlertSettings {
   return { ...settings, events: { ...settings.events, ...patch } };
+}
+
+export function withRedemptions(settings: AlertSettings, patch: Partial<RedemptionSettings>): AlertSettings {
+  return { ...settings, redemptions: { ...settings.redemptions, ...patch } };
 }
 
 /** Value of the custom entry before a file is chosen: picking it opens the file picker. */

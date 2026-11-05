@@ -60,7 +60,7 @@ jobs:
       - run: npm ci
         if: steps.version.outputs.skip == 'false'
       # OBS sources and obs-deps for the plugin, shared with the OBS plugin workflow.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         if: steps.version.outputs.skip == 'false'
         with:
           path: obs-plugin/.deps
