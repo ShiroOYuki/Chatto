@@ -418,10 +418,10 @@ export const CONTENT = {
       description:
         'Chatto 是給實況主的聊天室工具：桌面上的透明 Overlay，加上可自訂主題的 OBS 聊天室來源。免費、開源，支援 Windows。',
       tagline: '在桌面和 OBS\n顯示聊天室',
-      lead: '將聊天室以透明浮層顯示在桌面，或加入 OBS，兩者都能使用自訂主題。',
+      lead: '將聊天室以透明 Overlay 顯示在桌面，或加入 OBS，兩者都能使用自訂主題。',
       featuresTitle: '功能',
       features: [
-        { icon: 'monitor', title: '透明的桌面浮層', body: '置頂、滑鼠可穿透，玩遊戲時也看得到聊天。' },
+        { icon: 'monitor', title: '透明的桌面 Overlay', body: '置頂、滑鼠可穿透，玩遊戲時也看得到聊天。' },
         {
           icon: 'obs',
           title: 'OBS 外掛',
@@ -438,9 +438,9 @@ export const CONTENT = {
       steps: [
         { title: '下載並安裝', body: '要在 OBS 用，安裝時勾選「安裝 OBS 外掛」。' },
         { title: '連上你的頻道', body: '在「連線」頁登入直播平台帳號，預覽裡就會出現聊天。' },
-        { title: '選擇顯示的地方', body: '開啟桌面浮層，或在 OBS 新增「Chatto 聊天室」來源。' },
+        { title: '選擇顯示的地方', body: '開啟桌面 Overlay，或在 OBS 新增「Chatto 聊天室」來源。' },
       ],
-      outputs: ['桌面浮層', 'OBS 外掛', '瀏覽器來源'],
+      outputs: ['桌面 Overlay', 'OBS 外掛', '瀏覽器來源'],
       faqTitle: '常見問題',
       faqMore: '所有問題',
       changelogTitle: '更新紀錄',
@@ -461,7 +461,7 @@ export const CONTENT = {
       dark: '深色的畫面',
       blank: { name: '空白', body: '不帶任何樣式，只留結構與 class，給想從零寫 CSS 的人。' },
       customTitle: '每一處都能調',
-      customBody: '主題編輯器會同時顯示所有元件的範例，改了什麼立刻看得到。桌面浮層和 OBS 可以各用一個主題。',
+      customBody: '主題編輯器會同時顯示所有元件的範例，改了什麼立刻看得到。桌面 Overlay 和 OBS 可以各用一個主題。',
       custom: [
         '四邊內距、四角圓角、框線、陰影、模糊',
         '九宮格圖片外框（PNG、WebP、GIF）',
@@ -546,13 +546,13 @@ export const CONTENT = {
         },
         {
           id: 'overlay',
-          title: '桌面浮層',
+          title: '桌面 Overlay',
           body: [
             '給自己看的透明聊天室，浮在所有視窗上方，滑鼠可以直接穿過。在「輸出」頁開啟，按「調整」後拖曳移動位置、拖曳邊緣改大小，完成後按「完成調整」。',
           ],
           tips: [
-            { title: '遊戲用無邊框視窗', body: '獨佔全螢幕會蓋過所有置頂視窗，浮層就看不到了。' },
-            { title: 'OBS 改用遊戲或視窗擷取', body: '「顯示器擷取」會把浮層一起錄進直播。' },
+            { title: '遊戲用無邊框視窗', body: '獨佔全螢幕會蓋過所有置頂視窗，Overlay 就看不到了。' },
+            { title: 'OBS 改用遊戲或視窗擷取', body: '「顯示器擷取」會把 Overlay 一起錄進直播。' },
           ],
         },
         {
@@ -578,7 +578,7 @@ export const CONTENT = {
           id: 'theme',
           title: '調整主題',
           body: [
-            '在「主題」頁複製一個內建主題，再打開編輯器。左側選區塊，右側預覽會同時顯示所有元件與事件的範例；改的是草稿，按「儲存」才會套用。在「輸出」頁替桌面浮層和 OBS 各選一個主題。',
+            '在「主題」頁複製一個內建主題，再打開編輯器。左側選區塊，右側預覽會同時顯示所有元件與事件的範例；改的是草稿，按「儲存」才會套用。在「輸出」頁替桌面 Overlay 和 OBS 各選一個主題。',
           ],
           link: '看所有內建主題',
         },
@@ -588,7 +588,7 @@ export const CONTENT = {
           cards: [
             {
               title: '新留言提醒',
-              body: '聊天室安靜一段時間後（預設 2 分鐘，可設 30 秒到 30 分鐘）有人留言，桌面浮層會標出那則留言並播放提示音。',
+              body: '聊天室安靜一段時間後（預設 2 分鐘，可設 30 秒到 30 分鐘）有人留言，桌面 Overlay 會標出那則留言並播放提示音。',
             },
             { title: '事件 Overlay', body: '訂閱、揪團等事件在桌面右上角跳出卡片。在「提醒」頁選擇要提醒哪些事件。' },
           ],
@@ -601,7 +601,7 @@ export const CONTENT = {
     },
     faq: {
       title: '常見問題',
-      description: '關於 Chatto 桌面浮層、OBS 外掛與主題的常見問題。',
+      description: '關於 Chatto 桌面 Overlay、OBS 外掛與主題的常見問題。',
       lead: '找不到答案的話，寫信到 support@chattolive.com。',
       groups: [
         {
@@ -619,13 +619,19 @@ export const CONTENT = {
         },
         {
           id: 'overlay',
-          title: '桌面浮層',
+          title: '桌面 Overlay',
           items: [
-            { q: '浮層會擋到遊戲操作嗎？', a: '不會。滑鼠會直接穿過浮層，只有在「輸出」頁按「調整」時才能拖曳它。' },
-            { q: '遊戲全螢幕時看不到浮層', a: '獨佔全螢幕會蓋過所有置頂視窗。把遊戲改成「無邊框視窗」模式就看得到。' },
             {
-              q: '浮層被一起錄進直播了',
-              a: '「顯示器擷取」會錄下螢幕上的所有東西，包括浮層。改用「遊戲擷取」或「視窗擷取」。',
+              q: 'Overlay 會擋到遊戲操作嗎？',
+              a: '不會。滑鼠會直接穿過 Overlay，只有在「輸出」頁按「調整」時才能拖曳它。',
+            },
+            {
+              q: '遊戲全螢幕時看不到 Overlay',
+              a: '獨佔全螢幕會蓋過所有置頂視窗。把遊戲改成「無邊框視窗」模式就看得到。',
+            },
+            {
+              q: 'Overlay 被一起錄進直播了',
+              a: '「顯示器擷取」會錄下螢幕上的所有東西，包括 Overlay。改用「遊戲擷取」或「視窗擷取」。',
             },
           ],
         },
@@ -635,7 +641,7 @@ export const CONTENT = {
           items: [
             {
               q: '被刪除的訊息會留在直播畫面上嗎？',
-              a: '不會。管理員刪除訊息、封鎖觀眾或清除聊天室時，訊息會立刻從浮層和 OBS 消失。',
+              a: '不會。管理員刪除訊息、封鎖觀眾或清除聊天室時，訊息會立刻從 Overlay 和 OBS 消失。',
             },
             {
               q: 'Chatto 沒開時，OBS 會顯示什麼？',
@@ -652,7 +658,7 @@ export const CONTENT = {
           id: 'themes',
           title: '主題',
           items: [
-            { q: '浮層和 OBS 可以用不同主題嗎？', a: '可以，在「輸出」頁各選一個。' },
+            { q: 'Overlay 和 OBS 可以用不同主題嗎？', a: '可以，在「輸出」頁各選一個。' },
             {
               q: '怎麼把主題分享給別人？',
               a: '在「主題」頁匯出成 JSON，或連同圖片打包成 .chattotheme 檔，對方匯入就能用。',
@@ -682,7 +688,7 @@ export const CONTENT = {
       lead: '已安裝的 Chatto 會自動檢查新版本，你同意後才下載。',
       products: { app: 'Chatto', themes: 'Chatto Themes', obs: 'Chatto OBS' },
       intro: {
-        app: '桌面 App：浮層、OBS 輸出、主題與提醒。',
+        app: '桌面 App：Overlay、OBS 輸出、主題與提醒。',
         themes: '主題分享：瀏覽、安裝、分享其他人做的主題。',
         obs: '新增「Chatto 聊天室」來源的 OBS 外掛，隨 Chatto 安裝檔附上。',
       },

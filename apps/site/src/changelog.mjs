@@ -65,7 +65,7 @@ export const CHANGELOG = {
           items: [
             t(
               'A transparent, always-on-top desktop overlay the mouse clicks through',
-              '透明、置頂、滑鼠可穿透的桌面浮層',
+              '透明、置頂、滑鼠可穿透的桌面 Overlay',
             ),
             t('OBS browser source and the “Chatto Chat” plugin', 'OBS 瀏覽器來源與「Chatto 聊天室」外掛'),
             t('Seven built-in themes and the theme editor', '七種內建主題與主題編輯器'),
