@@ -1,7 +1,7 @@
 import type { ChatTheme } from '@chatto/core';
 import { Download, Heart } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { ShareThemeSummary } from '../../../../shared/share/model';
+import type { ShareThemeSummary } from '@chatto/share';
 import { motion, riseIn } from '../../components/motion';
 import { StaticThemePreview } from '../../components/ThemePreview';
 import { Badge } from '../../components/kit';

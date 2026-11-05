@@ -37,6 +37,16 @@ export interface ShareBackend {
   versions(ids: string[]): Promise<ShareResult<Record<string, number>>>;
   /** Bytes of an `asset:` frame image a shared theme uses. */
   asset(file: string): Promise<ShareResult<Uint8Array>>;
+  /**
+   * Uploads a frame image before publishing a theme that uses it. `file` is `<sha256>.<ext>`
+   * of the bytes, as `ThemeAssets` names it; files the service already has are accepted as is.
+   */
+  uploadAsset(token: string, file: string, bytes: Uint8Array): Promise<ShareResult<void>>;
+  /**
+   * Where a preview can load an `asset:` image of a shared theme before it is installed: a URL
+   * of the service, or a data URL. Null when the service has no such file.
+   */
+  assetUrl(file: string): string | null;
   /** Counts a download; the same client is counted once a day per theme. */
   recordDownload(id: string, clientId: string): Promise<ShareResult<void>>;
 

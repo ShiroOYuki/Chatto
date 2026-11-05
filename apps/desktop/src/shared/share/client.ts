@@ -1,7 +1,8 @@
-import { assetFileOf, type ChatTheme } from '@chatto/core';
-import { normalizeTheme, themeImageSources } from '@chatto/chat-ui/themes';
-import type { ShareBackend, SignInPoll } from './backend';
+import { assetFileOf, assetSrc, THEME_SCHEMA_VERSION, type ChatTheme } from '@chatto/core';
+import { mapThemeImages, normalizeTheme, themeImageSources } from '@chatto/chat-ui/themes';
 import {
+  type ShareBackend,
+  type SignInPoll,
   SHARE_TERMS_VERSION,
   shareFail,
   shareOk,
@@ -18,14 +19,22 @@ import {
   type ShareState,
   type ShareThemeDetail,
   type ShareThemeSummary,
-} from './model';
-import { checkPublish, themeContentHash } from './rules';
+  checkPublish,
+  themeContentHash,
+} from '@chatto/share';
 
 /** Where the session token is kept (encrypted on disk in the app). */
 export interface SessionStore {
   load(): Promise<string | null>;
   save(token: string): Promise<void>;
   clear(): Promise<void>;
+}
+
+/** Stores frame images as `<sha256>.<ext>` files; `add` throws on images Chatto does not take. */
+export interface ShareAssets {
+  add(bytes: Uint8Array): string | Promise<string>;
+  has(file: string): boolean | Promise<boolean>;
+  read(file: string): Uint8Array | null | Promise<Uint8Array | null>;
 }
 
 export interface ShareClientOptions {
@@ -39,8 +48,8 @@ export interface ShareClientOptions {
   /** Local themes, and saving one (the app controller). */
   themes: () => ChatTheme[];
   saveTheme: (theme: ChatTheme) => void;
-  /** Frame image files (`ThemeAssets`). */
-  assets: { add(bytes: Uint8Array): string; has(file: string): boolean; read(file: string): Uint8Array | null };
+  /** Frame image files (`ThemeAssets` in the app; in memory in the browser preview). */
+  assets: ShareAssets;
   onChange: () => void;
   pollInterval?: number;
   /** A sign-in left unfinished in the browser for this long gives up. */
@@ -172,7 +181,19 @@ export class ShareClient {
     return this.#call((token) => this.options.backend.findByCode(code, token));
   }
 
-  get(id: string): Promise<ShareResult<ShareThemeDetail>> {
+  /** A shared theme for previewing: its `asset:` images point at the service until it is installed. */
+  async get(id: string): Promise<ShareResult<ShareThemeDetail>> {
+    const result = await this.#detail(id);
+    if (!result.ok) return result;
+    const theme = mapThemeImages(result.value.theme, (image) => {
+      const file = assetFileOf(image.src);
+      const url = file ? this.options.backend.assetUrl(file) : null;
+      return url ? { ...image, src: url } : image;
+    });
+    return shareOk({ ...result.value, theme });
+  }
+
+  #detail(id: string): Promise<ShareResult<ShareThemeDetail>> {
     return this.#call((token) => this.options.backend.get(id, token));
   }
 
@@ -193,15 +214,16 @@ export class ShareClient {
    * place. Frame images are fetched into the asset folder. Resolves to the saved theme.
    */
   async install(id: string, replaceId?: string): Promise<ShareResult<ChatTheme>> {
-    const detail = await this.get(id);
+    const detail = await this.#detail(id);
     if (!detail.ok) return detail;
+    if ((detail.value.theme.schemaVersion as number) > THEME_SCHEMA_VERSION) return shareFail('app-outdated');
     for (const src of themeImageSources(detail.value.theme)) {
       const file = assetFileOf(src);
-      if (!file || this.options.assets.has(file)) continue;
+      if (!file || (await this.options.assets.has(file))) continue;
       const bytes = await this.options.backend.asset(file);
       if (!bytes.ok) return bytes;
       try {
-        if (this.options.assets.add(bytes.value) !== file) return shareFail('invalid');
+        if ((await this.options.assets.add(bytes.value)) !== file) return shareFail('invalid');
       } catch {
         return shareFail('invalid');
       }
@@ -241,17 +263,19 @@ export class ShareClient {
   ): Promise<ShareResult<ShareThemeSummary>> {
     const theme = this.options.themes().find((item) => item.id === themeId && !item.builtIn);
     if (!theme) return shareFail('not-found');
-    const issues = checkPublish(theme, meta, {
-      assetBytes: (src) => {
-        const file = assetFileOf(src);
-        return file ? (this.options.assets.read(file)?.byteLength ?? 0) : 0;
-      },
-    });
+    const sizes = new Map<string, number>();
+    for (const src of themeImageSources(theme)) {
+      const file = assetFileOf(src);
+      if (file) sizes.set(src, (await this.options.assets.read(file))?.byteLength ?? 0);
+    }
+    const issues = checkPublish(theme, meta, { assetBytes: (src) => sizes.get(src) ?? 0 });
     if (issues.length) return shareFail('invalid', issues);
-    const input = { ...meta, theme, ...(thumbnail ? { thumbnail } : {}) };
-    const result = await this.#authed((token) =>
-      shareId ? this.options.backend.update(token, shareId, input) : this.options.backend.publish(token, input),
-    );
+    const result = await this.#authed(async (token) => {
+      const uploaded = await this.#uploadImages(token, theme);
+      if (!uploaded.ok) return uploaded;
+      const input = { ...meta, theme: uploaded.value, ...(thumbnail ? { thumbnail } : {}) };
+      return shareId ? this.options.backend.update(token, shareId, input) : this.options.backend.publish(token, input);
+    });
     if (!result.ok) return result;
     // The local theme now follows what was published, so "My themes" can offer to update it later.
     this.options.saveTheme({
@@ -281,6 +305,34 @@ export class ShareClient {
   }
 
   // ---------- helpers ----------
+
+  /**
+   * Uploads a theme's frame images and returns the theme as the service stores it: every image an
+   * `asset:` file. Data URLs are saved as local asset files first, so they upload the same way.
+   */
+  async #uploadImages(token: string, theme: ChatTheme): Promise<ShareResult<ChatTheme>> {
+    const files = new Map<string, string>();
+    for (const src of themeImageSources(theme)) {
+      let file = assetFileOf(src);
+      if (!file) {
+        const match = /^data:[^,]*;base64,(.*)$/s.exec(src);
+        if (!match) return shareFail('invalid');
+        try {
+          file = await this.options.assets.add(Uint8Array.from(atob(match[1]!), (char) => char.charCodeAt(0)));
+        } catch {
+          return shareFail('invalid');
+        }
+      }
+      files.set(src, file);
+    }
+    for (const file of new Set(files.values())) {
+      const bytes = await this.options.assets.read(file);
+      if (!bytes) return shareFail('invalid', [{ code: 'image-missing', file }]);
+      const result = await this.options.backend.uploadAsset(token, file, bytes);
+      if (!result.ok) return result;
+    }
+    return shareOk(mapThemeImages(theme, (image) => ({ ...image, src: assetSrc(files.get(image.src)!) })));
+  }
 
   #setSession(session: ShareSession): void {
     this.#session = session;

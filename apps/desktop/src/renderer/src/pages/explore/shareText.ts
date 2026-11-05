@@ -1,4 +1,4 @@
-import type { ShareErrorCode, ShareIssue, ShareResult } from '../../../../shared/share/model';
+import type { ShareErrorCode, ShareIssue, ShareResult } from '@chatto/share';
 import type { Messages } from '../../i18n';
 
 type ShareMessages = Messages['share'];
@@ -16,7 +16,10 @@ export function issueText(m: ShareMessages, issue: ShareIssue): string {
     case 'name-missing':
     case 'category-missing':
     case 'unchanged-copy':
+    case 'image-inline':
       return t[issue.code];
+    case 'image-missing':
+      return t[issue.code](issue.file);
     case 'name-too-long':
     case 'description-too-long':
     case 'too-many-tags':

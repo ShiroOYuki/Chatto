@@ -7,8 +7,9 @@ import {
   type ShareErrorCode,
   type ShareSort,
   type ShareThemeSummary,
-} from '../../../../shared/share/model';
-import { formatShareCode, parseShareCode } from '../../../../shared/share/rules';
+  formatShareCode,
+  parseShareCode,
+} from '@chatto/share';
 import { Stagger } from '../../components/motion';
 import { Button, EmptyState, LoadingSpinner, Select, TextInput } from '../../components/kit';
 import { useMessages } from '../../i18n';

@@ -5,8 +5,9 @@ import {
   type ShareReportReason,
   type ShareThemeDetail,
   type ShareThemeSummary,
-} from '../../../../shared/share/model';
-import { formatShareCode, isModifiedInstall } from '../../../../shared/share/rules';
+  formatShareCode,
+  isModifiedInstall,
+} from '@chatto/share';
 import { LiveThemePreview } from '../../components/ThemePreview';
 import { Badge, Button, CopyField, Field, LoadingSpinner, Modal, Select } from '../../components/kit';
 import { useLocale, useMessages } from '../../i18n';

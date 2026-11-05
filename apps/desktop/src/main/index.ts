@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import type { ChatTheme, Locale } from '@chatto/core';
 import { IPC, isShareMethod, type AppState, type CaptureRect } from '../shared/ipc';
 import { ShareClient } from '../shared/share/client';
-import { createFakeShareBackend } from '../shared/share/fakeBackend';
+import { canOpenSignInPage, createShareBackend } from './share-backend';
 import { SafeSessionStore } from './share-session';
 import { AppController } from './app-controller';
 import { CssFiles } from './css-files';
@@ -267,9 +267,7 @@ async function bootstrap(): Promise<void> {
   controller.onCssFileChanged = (change) => send(IPC.cssFileChanged, change);
   controller.cssFiles.start();
   controller.share = new ShareClient({
-    // The sharing service is not online yet (GitHub #4); until then an in-memory fake with sample
-    // themes stands in. Nothing published to it outlives the app.
-    backend: createFakeShareBackend({ moderator: isDev }),
+    backend: createShareBackend({ version: app.getVersion(), isDev }),
     session: new SafeSessionStore(),
     clientId: () => settings.get().share.clientId,
     termsAccepted: () => settings.get().share.termsAccepted,
@@ -278,7 +276,7 @@ async function bootstrap(): Promise<void> {
         draft.share.termsAccepted = version;
       }),
     openExternal: (url) => {
-      if (/^https:\/\//.test(url)) void shell.openExternal(url);
+      if (canOpenSignInPage(url, isDev)) void shell.openExternal(url);
     },
     themes: () => controller.themes(),
     saveTheme: (theme) => controller.saveTheme(theme),

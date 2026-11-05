@@ -15,7 +15,7 @@ import {
   type ShareThemeDetail,
   type ShareThemeSummary,
 } from './model';
-import { autoTags, checkPublish, createShareCode, normalizeTag, themeContentHash } from './rules';
+import { autoTags, checkPublish, createShareCode, isAssetFile, normalizeTag, themeContentHash } from './rules';
 
 const DAY = 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 24;
@@ -94,6 +94,8 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
   const sessions = new Map<string, string>();
   const themes = new Map<string, StoredTheme>();
   const signIns = new Map<string, { provider: ShareProvider; linkTo: string | null; readyAt: number }>();
+  /** Uploaded frame images by file name. */
+  const assets = new Map<string, Uint8Array>();
   let counter = 0;
   const nextId = (prefix: string) => `${prefix}-${(++counter).toString(36)}${Math.floor(random() * 1e6).toString(36)}`;
 
@@ -292,9 +294,26 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
       return shareOk(result);
     },
 
-    // Fake themes keep their images as data URLs, so there are no files to fetch.
-    async asset() {
-      return shareFail('not-found');
+    async asset(file) {
+      const bytes = assets.get(file);
+      return bytes ? shareOk(bytes.slice()) : shareFail('not-found');
+    },
+
+    assetUrl(file) {
+      const bytes = assets.get(file);
+      if (!bytes) return null;
+      let text = '';
+      for (const byte of bytes) text += String.fromCharCode(byte);
+      return `data:image/${file.slice(file.lastIndexOf('.') + 1)};base64,${btoa(text)}`;
+    },
+
+    async uploadAsset(token, file, bytes) {
+      const result = requireAccount(token);
+      if (!result.ok) return result;
+      if (!(await isAssetFile(file, bytes))) return shareFail('invalid');
+      if (bytes.byteLength > SHARE_LIMITS.imageBytes) return shareFail('invalid');
+      assets.set(file, bytes.slice());
+      return shareOk(undefined);
     },
 
     async recordDownload(id, clientId) {

@@ -1,7 +1,6 @@
 import { Download, Heart, LogIn, Plus, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import type { ShareAccount, ShareErrorCode, ShareThemeSummary } from '../../../../shared/share/model';
-import { formatShareCode } from '../../../../shared/share/rules';
+import { type ShareAccount, type ShareErrorCode, type ShareThemeSummary, formatShareCode } from '@chatto/share';
 import { Stagger, motion, riseIn } from '../../components/motion';
 import { Badge, Button, EmptyState, LoadingSpinner } from '../../components/kit';
 import {

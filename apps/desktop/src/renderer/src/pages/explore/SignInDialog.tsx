@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { SHARE_PROVIDERS, type ShareProvider } from '../../../../shared/share/model';
+import { SHARE_PROVIDERS, type ShareProvider } from '@chatto/share';
 import { Button, LoadingSpinner, Modal, Toggle } from '../../components/kit';
 import { useMessages } from '../../i18n';
 import { runAction } from '../../services/run';

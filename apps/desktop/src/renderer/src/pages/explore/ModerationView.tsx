@@ -1,6 +1,6 @@
 import { Ban, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import type { ShareErrorCode, ShareReport, ShareReportReason, ShareThemeSummary } from '../../../../shared/share/model';
+import type { ShareErrorCode, ShareReport, ShareReportReason, ShareThemeSummary } from '@chatto/share';
 import { Stagger, motion, riseIn } from '../../components/motion';
 import { Badge, Button, EmptyState, LoadingSpinner } from '../../components/kit';
 import { useMessages } from '../../i18n';

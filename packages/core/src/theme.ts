@@ -78,6 +78,15 @@ export interface BoxStyle {
 export const ASSET_TYPES = { png: 'image/png', webp: 'image/webp', gif: 'image/gif' } as const;
 export type AssetExtension = keyof typeof ASSET_TYPES;
 
+/** The image type of a file, from its first bytes rather than its name. */
+export function sniffImage(bytes: Uint8Array): AssetExtension | null {
+  const ascii = (start: number, end: number) => String.fromCharCode(...bytes.subarray(start, end));
+  if (bytes[0] === 0x89 && ascii(1, 4) === 'PNG') return 'png';
+  if (ascii(0, 4) === 'GIF8') return 'gif';
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return 'webp';
+  return null;
+}
+
 /** A stored asset file: the SHA-256 of its bytes plus its extension. */
 export const ASSET_FILE = /^[0-9a-f]{64}\.(png|webp|gif)$/;
 const ASSET_PREFIX = 'asset:';

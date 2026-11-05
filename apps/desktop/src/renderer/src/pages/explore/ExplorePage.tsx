@@ -1,7 +1,7 @@
 import { LogIn, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../../shared/ipc';
-import type { ShareProvider, ShareThemeSummary } from '../../../../shared/share/model';
+import type { ShareProvider, ShareThemeSummary } from '@chatto/share';
 import { Button, LoadingSpinner, PageHeader, Segmented } from '../../components/kit';
 import { useMessages } from '../../i18n';
 import { AccountView } from './AccountView';

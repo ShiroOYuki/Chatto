@@ -14,7 +14,7 @@ import type {
   ViewerTarget,
 } from '@chatto/core';
 import type { ShareClient } from './share/client';
-import type { ShareState } from './share/model';
+import type { ShareState } from '@chatto/share';
 
 /** Theme sharing calls the control panel may make; they run on the main process's `ShareClient`. */
 export const SHARE_METHODS = [

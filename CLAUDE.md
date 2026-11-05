@@ -21,11 +21,13 @@ packages/
   core/             @chatto/core — 標準化聊天格式、ChatProvider 介面、主題 schema、WS 傳輸協定（無平台相依、無 I/O）
   provider-twitch/  @chatto/provider-twitch — Device Code Flow、EventSub WebSocket、Helix、payload → 標準格式
   chat-ui/          @chatto/chat-ui — 可主題化的 React 聊天渲染器、feed reducer、預設主題、mock 產生器
+  share/            @chatto/share — 主題分享的資料型別、檢查規則、ShareBackend、HTTP 協定與用戶端、假服務（App 與 Worker 共用）
 apps/
   viewer/           @chatto/viewer — /overlay 與 /embed 頁面，由桌面 App 的本機 server 提供；瀏覽器可用 ?mock=1 獨立預覽
   desktop/          @chatto/desktop — Electron（electron-vite）：main / preload / renderer（控制台）
+  share-worker/     @chatto/share-worker — 主題分享服務（Cloudflare Worker＋D1＋R2），不打包進 App
 obs-plugin/         obs-chatto — OBS 外掛「Chatto 聊天室」來源（C++，CMake，Windows；不在 npm workspaces 裡）
-docs/               architecture.md、message-format.md、theming.md、testing.md、design.md、visual-identity.md
+docs/               architecture.md、message-format.md、theming.md、testing.md、design.md、visual-identity.md、share-service.md
 ```
 
 資料流：`Provider → ChatHub（main process）→ 本機 WebSocket → viewer（overlay 視窗與 OBS）`；控制台透過 IPC 與 main 溝通。
@@ -34,7 +36,7 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - 事件提醒規則分「通用」（跨平台分類 `ALERT_CATEGORIES`）與各平台專屬事件；新增平台事件時，能對應到通用分類就在 `EVENT_CATALOG` 填 `alertCategory`。
 - OBS 外掛只是包住 embed 頁的私有 obs-browser 來源，不自己畫聊天室；它讀 `/api/ping`、`/api/themes`，用 `/embed?theme=<id>` 選主題（見 `docs/architecture.md`）。這兩個 API 和 `?theme=` 是外掛的公開介面，改動要相容。模組名 `obs-chatto`、來源類型 id `chatto_chat` 會存進使用者的場景，不能改名。
 - App 更新：`electron-updater`（`apps/desktop/src/main/updater.ts`）讀最新**已發佈**的 GitHub Release，只提示，使用者同意才下載；開發版不檢查。
-- 主題分享（「探索」頁，GitHub #4）：資料型別、檢查規則與 App 端流程在 `apps/desktop/src/shared/share/`（`ShareClient`、`ShareBackend`）。App 裡 `ShareClient` 在 main process，session token 不離開 main；控制台經 IPC `share:call`（`SHARE_METHODS`）呼叫。分享服務（Cloudflare Worker）還沒上線，目前用記憶體內的假服務（`fakeBackend.ts`）。分享帳號和聊天室連線分開，不得使用聊天平台的 token。見 `docs/architecture.md`「主題分享」。
+- 主題分享（「探索」頁，GitHub #4）：資料型別、檢查規則、`ShareBackend` 與 HTTP 協定在 `packages/share`，App 端流程是 `apps/desktop/src/shared/share/client.ts`（`ShareClient`），服務是 `apps/share-worker`。App 裡 `ShareClient` 在 main process，session token 不離開 main；控制台經 IPC `share:call`（`SHARE_METHODS`）呼叫。服務還沒部署，App 預設用記憶體內的假服務（`@chatto/share/fake`），`MAIN_VITE_SHARE_API_URL` 可改連本機或正式服務。分享帳號和聊天室連線分開，不得使用聊天平台的 token。API 只能向後相容地擴充（舊版 App 要能用）。見 `docs/architecture.md`「主題分享」與 `docs/share-service.md`。
 - 提醒邏輯（沉寂偵測、事件規則）是 `apps/desktop/src/main/alerts.ts` 的純函式；內建提示音是從 soundcn 收進來的 CC0 音效（`packages/chat-ui/src/soundcn/`，由 `sounds.ts` 動態載入）；只能收 CC0 音效，並記到 `THIRD_PARTY_NOTICES.md`，不得使用 soundcn 的 Blizzard 音效。
 
 ### 核心原則

@@ -8,8 +8,11 @@ import {
   type PublishMeta,
   type ShareCategory,
   type ShareThemeSummary,
-} from '../../../../shared/share/model';
-import { autoTags, checkPublish, formatShareCode, normalizeTag } from '../../../../shared/share/rules';
+  autoTags,
+  checkPublish,
+  formatShareCode,
+  normalizeTag,
+} from '@chatto/share';
 import { StaticThemePreview } from '../../components/ThemePreview';
 import {
   Badge,

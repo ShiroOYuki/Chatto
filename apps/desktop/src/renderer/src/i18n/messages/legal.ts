@@ -24,7 +24,7 @@ export default defineMessages({
       },
       {
         title: '資料處理',
-        body: 'Chatto 只要求讀取聊天室的權限。登入憑證（token）以 Windows 的加密功能存在你的電腦上，不會傳給任何人。Chatto 沒有自己的伺服器，也不蒐集使用資料；只會連到 Twitch（登入與聊天室）和 GitHub（檢查與下載更新）。本機伺服器只在 127.0.0.1 提供 Overlay 與 OBS 畫面，區網內的其他裝置讀不到。',
+        body: 'Chatto 只要求讀取聊天室的權限。登入憑證（token）以 Windows 的加密功能存在你的電腦上，不會傳給任何人。Chatto 不蒐集使用資料；只會連到 Twitch（登入與聊天室）、GitHub（檢查與下載更新），以及使用「探索」頁時的主題分享服務（api.chattolive.com，架設在 Cloudflare）。分享服務只在你登入分享帳號後保存帳號資料，詳見探索頁的使用條款與隱私說明。本機伺服器只在 127.0.0.1 提供 Overlay 與 OBS 畫面，區網內的其他裝置讀不到。',
       },
       {
         title: '內容責任',
@@ -53,7 +53,7 @@ export default defineMessages({
       },
       {
         title: 'Your data',
-        body: 'Chatto only asks for permission to read chat. Your sign-in token is encrypted with Windows and stays on your computer; it is never sent to anyone. Chatto has no server of its own and collects no usage data. It only connects to Twitch (sign-in and chat) and GitHub (checking for and downloading updates). Its local server serves the overlay and OBS on 127.0.0.1 only, so other devices on your network cannot read it.',
+        body: 'Chatto only asks for permission to read chat. Your sign-in token is encrypted with Windows and stays on your computer; it is never sent to anyone. Chatto collects no usage data. It only connects to Twitch (sign-in and chat), GitHub (checking for and downloading updates) and, when you use the Explore page, the theme sharing service (api.chattolive.com, hosted on Cloudflare). The sharing service keeps account data only once you sign in to a sharing account; see the Terms of Use and Privacy Notice on the Explore page. Its local server serves the overlay and OBS on 127.0.0.1 only, so other devices on your network cannot read it.',
       },
       {
         title: 'Chat content',

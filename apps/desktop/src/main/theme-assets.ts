@@ -1,4 +1,4 @@
-import { ASSET_FILE, type AssetExtension } from '@chatto/core';
+import { ASSET_FILE, sniffImage } from '@chatto/core';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -7,14 +7,7 @@ import { mainMessages, type MainMessages } from './messages';
 /** Largest frame image Chatto accepts. */
 export const MAX_ASSET_BYTES = 2 * 1024 * 1024;
 
-/** The image type of a file, from its first bytes rather than its name. */
-export function sniffImage(bytes: Uint8Array): AssetExtension | null {
-  const ascii = (start: number, end: number) => String.fromCharCode(...bytes.subarray(start, end));
-  if (bytes[0] === 0x89 && ascii(1, 4) === 'PNG') return 'png';
-  if (ascii(0, 4) === 'GIF8') return 'gif';
-  if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return 'webp';
-  return null;
-}
+export { sniffImage };
 
 /**
  * Frame images used by themes, stored once each as `<sha256>.<ext>` in one

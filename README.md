@@ -86,13 +86,15 @@ npm run dev:web      # 控制台在瀏覽器執行（使用假資料）http://lo
 packages/core             標準化聊天格式、Provider 介面、主題 schema、WS 協定
 packages/provider-twitch  Twitch：Device Code Flow、EventSub、Helix
 packages/chat-ui          可主題化的聊天渲染器與預設主題
+packages/share            主題分享的資料格式、檢查規則與 API 用戶端
 apps/viewer               /overlay 與 /embed 頁面
 apps/desktop              Electron 桌面 App（控制台、本機伺服器、Overlay 視窗）
+apps/share-worker         主題分享服務（Cloudflare Worker）
 obs-plugin                OBS 外掛「Chatto 聊天室」（C++，CMake）
-docs/                     架構、訊息格式、主題、測試、控制台設計、美術與視覺識別文件
+docs/                     架構、訊息格式、主題、測試、控制台設計、美術與視覺識別、分享服務文件
 ```
 
-詳見 [docs/architecture.md](docs/architecture.md)、[docs/message-format.md](docs/message-format.md)、[docs/theming.md](docs/theming.md)、[docs/design.md](docs/design.md)、[docs/visual-identity.md](docs/visual-identity.md)。
+詳見 [docs/architecture.md](docs/architecture.md)、[docs/message-format.md](docs/message-format.md)、[docs/theming.md](docs/theming.md)、[docs/design.md](docs/design.md)、[docs/visual-identity.md](docs/visual-identity.md)、[docs/share-service.md](docs/share-service.md)。
 
 ## 注意事項
 

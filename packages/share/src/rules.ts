@@ -2,7 +2,7 @@
  * Pure rules of theme sharing: theme codes, tags, the content hash and the checks a theme
  * must pass before it is published. The sharing service runs the same checks.
  */
-import { ROLE_KEYS, type ChatTheme } from '@chatto/core';
+import { ASSET_FILE, ROLE_KEYS, sniffImage, type ChatTheme } from '@chatto/core';
 import { EVENT_CATALOG } from '@chatto/chat-ui/events';
 import { mapThemeImages, themeImageSources } from '@chatto/chat-ui/themes';
 import { isShareCategory, SHARE_LIMITS, type PublishMeta, type ShareIssue } from './model';
@@ -56,6 +56,20 @@ export function autoTags(theme: ChatTheme): string[] {
 }
 
 // ---------- content hash ----------
+
+/** SHA-256 of some bytes as lowercase hex (Web Crypto, so it runs in the app and the Worker). */
+export async function sha256Hex(bytes: Uint8Array | string): Promise<string> {
+  const data = typeof bytes === 'string' ? new TextEncoder().encode(bytes) : bytes;
+  const digest = await crypto.subtle.digest('SHA-256', data as Uint8Array<ArrayBuffer>);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/** The bytes are a PNG, WebP or GIF named `<sha256>.<ext>` after their content. */
+export async function isAssetFile(file: string, bytes: Uint8Array): Promise<boolean> {
+  if (!ASSET_FILE.test(file)) return false;
+  const ext = sniffImage(bytes);
+  return ext !== null && file === `${await sha256Hex(bytes)}.${ext}`;
+}
 
 /** JSON with object keys sorted, so the same content always gives the same text. */
 function stableJson(value: unknown): string {

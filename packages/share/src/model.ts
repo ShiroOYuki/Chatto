@@ -175,6 +175,10 @@ export type ShareIssue =
   | { code: 'css-external'; excerpt: string }
   | { code: 'too-many-images'; count: number; max: number }
   | { code: 'image-too-large'; bytes: number; max: number }
+  /** An `asset:` image the service has not received (upload it first). */
+  | { code: 'image-missing'; file: string }
+  /** Images go up as `asset:` files; the service does not take data URLs inside the theme. */
+  | { code: 'image-inline' }
   | { code: 'unchanged-copy' };
 
 export type ShareErrorCode =
@@ -189,6 +193,10 @@ export type ShareErrorCode =
   | 'last-identity'
   | 'terms'
   | 'cancelled'
+  /** Too many requests from this address or account in a short time. */
+  | 'busy'
+  /** The shared theme uses a newer theme schema than this version of Chatto understands. */
+  | 'app-outdated'
   | 'unknown';
 
 /** Results cross IPC as plain data, so errors keep their code (an Error keeps only its message). */

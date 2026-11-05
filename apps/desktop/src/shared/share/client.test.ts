@@ -1,13 +1,14 @@
-import type { ChatTheme } from '@chatto/core';
-import { createTheme, PRESET_THEMES } from '@chatto/chat-ui/themes';
+import { assetFileOf, THEME_SCHEMA_VERSION, type ChatTheme } from '@chatto/core';
+import { createTheme, getPresetTheme, PRESET_THEMES, themeImageSources } from '@chatto/chat-ui/themes';
+import { isModifiedInstall, SHARE_TERMS_VERSION, type ShareBackend } from '@chatto/share';
+import { createFakeShareBackend } from '@chatto/share/fake';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShareClient } from './client';
-import { createFakeShareBackend } from './fakeBackend';
-import { SHARE_TERMS_VERSION } from './model';
-import { isModifiedInstall } from './rules';
+import { createMemoryAssets } from './memoryAssets';
 
-function setup(options: { terms?: number; token?: string | null } = {}) {
-  const backend = createFakeShareBackend({ signInDelay: 0 });
+function setup(options: { terms?: number; token?: string | null; backend?: ShareBackend } = {}) {
+  const backend = options.backend ?? createFakeShareBackend({ signInDelay: 0 });
+  const assets = createMemoryAssets();
   let themes: ChatTheme[] = [...PRESET_THEMES];
   let terms = options.terms ?? SHARE_TERMS_VERSION;
   let token = options.token ?? null;
@@ -30,12 +31,12 @@ function setup(options: { terms?: number; token?: string | null } = {}) {
         ? themes.map((item) => (item.id === theme.id ? theme : item))
         : [...themes, theme];
     },
-    assets: { add: () => '', has: () => false, read: () => null },
+    assets,
     onChange,
     pollInterval: 10,
     newThemeId: () => `local-${++ids}`,
   });
-  return { client, backend, onChange, themes: () => themes, token: () => token };
+  return { client, backend, assets, onChange, themes: () => themes, token: () => token };
 }
 
 async function signIn(client: ShareClient) {
@@ -113,6 +114,53 @@ describe('ShareClient', () => {
     });
     const update = await client.publish('mine', { ...meta, name: 'Mine 2' }, undefined, result.value.id);
     expect(update.ok && update.value.version).toBe(2);
+  });
+
+  it('uploads frame images as asset files, and installs them back', async () => {
+    const backend = createFakeShareBackend({ signInDelay: 0 });
+    const author = setup({ backend });
+    await signIn(author.client);
+    const framed = { ...getPresetTheme('tea-leaf')!, id: 'framed', builtIn: false };
+    expect(themeImageSources(framed)[0]).toMatch(/^data:/);
+    author.themes().push(framed);
+    const meta = { name: 'Framed', description: '', category: 'nature' as const, tags: [] };
+    const published = await author.client.publish('framed', meta);
+    if (!published.ok) throw new Error(`publish failed: ${published.error}`);
+    // The local theme keeps its data URL; the shared one points at the uploaded file.
+    expect(themeImageSources(author.themes().find((theme) => theme.id === 'framed')!)[0]).toMatch(/^data:/);
+    const detail = await backend.get(published.value.id);
+    const file = detail.ok ? assetFileOf(themeImageSources(detail.value.theme)[0]!) : null;
+    expect(file).toMatch(/^[0-9a-f]{64}\.png$/);
+
+    const viewer = setup({ backend });
+    // Previews load the image from the service before it is installed.
+    const preview = await viewer.client.get(published.value.id);
+    expect(preview.ok && themeImageSources(preview.value.theme)[0]).toMatch(/^data:image\/png;base64,/);
+    const installed = await viewer.client.install(published.value.id);
+    expect(installed.ok && themeImageSources(installed.value)[0]).toBe(`asset:${file}`);
+    expect(viewer.assets.files.has(file!)).toBe(true);
+  });
+
+  it('refuses themes made for a newer Chatto', async () => {
+    const backend = createFakeShareBackend({ signInDelay: 0 });
+    const page = await backend.list({ sort: 'newest' });
+    const id = page.ok ? page.value.items[0]!.id : '';
+    const real = await backend.get(id);
+    const newer: ShareBackend = {
+      ...backend,
+      get: async () =>
+        real.ok
+          ? {
+              ok: true,
+              value: {
+                ...real.value,
+                theme: { ...real.value.theme, schemaVersion: THEME_SCHEMA_VERSION + 1 } as unknown as ChatTheme,
+              },
+            }
+          : real,
+    };
+    const { client } = setup({ backend: newer });
+    expect(await client.install(id)).toEqual({ ok: false, error: 'app-outdated' });
   });
 
   it('checks a theme before sending it', async () => {

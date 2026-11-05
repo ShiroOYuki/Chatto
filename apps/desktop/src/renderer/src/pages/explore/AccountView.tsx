@@ -1,6 +1,6 @@
 import { LogIn, LogOut, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { SHARE_LIMITS, SHARE_PROVIDERS, type ShareAccount, type ShareProvider } from '../../../../shared/share/model';
+import { SHARE_LIMITS, SHARE_PROVIDERS, type ShareAccount, type ShareProvider } from '@chatto/share';
 import { Stagger } from '../../components/motion';
 import { Badge, Button, EmptyState, Field, Modal, TextInput, Tile } from '../../components/kit';
 import {

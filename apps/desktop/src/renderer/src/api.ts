@@ -2,7 +2,8 @@ import { createMockMessage, createMockNotice, PRESET_THEMES } from '@chatto/chat
 import { defaultAlertSettings, type ChatEvent, type ChatTheme, type SoundSetting } from '@chatto/core';
 import type { AppState, ChattoApi, CssFileChange, ObsPluginStatus } from '../../shared/ipc';
 import { ShareClient } from '../../shared/share/client';
-import { createFakeShareBackend } from '../../shared/share/fakeBackend';
+import { createMemoryAssets } from '../../shared/share/memoryAssets';
+import { createFakeShareBackend } from '@chatto/share/fake';
 
 declare global {
   interface Window {
@@ -87,8 +88,9 @@ function createMockApi(): ChattoApi {
     openExternal: (url) => void window.open(url, '_blank'),
     themes: () => state.themes,
     saveTheme,
-    // The browser preview has no asset folder; fake themes keep their images as data URLs.
-    assets: { add: () => '', has: () => false, read: () => null },
+    // The browser preview has no asset folder: images live in memory, and themes installed with
+    // `asset:` images show without them. Seed themes keep their images as data URLs.
+    assets: createMemoryAssets(),
     onChange: () => set({ share: share.state() }),
   });
 

@@ -6,8 +6,8 @@ import {
   type ShareResult,
   type ShareSession,
   type ShareThemeDetail,
-} from '../../../shared/share/model';
-import { isModifiedInstall } from '../../../shared/share/rules';
+  isModifiedInstall,
+} from '@chatto/share';
 import { api } from '../api';
 import { useAppState } from '../store';
 

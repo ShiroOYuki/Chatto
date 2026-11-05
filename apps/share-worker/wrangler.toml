@@ -1,0 +1,27 @@
+# Chatto theme sharing service (GitHub #4). Setup and deployment: docs/share-service.md.
+name = "chatto-share"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = false
+routes = [{ pattern = "api.chattolive.com", custom_domain = true }]
+
+[vars]
+PUBLIC_URL = "https://api.chattolive.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chatto-share"
+# Filled in after `wrangler d1 create chatto-share` (see docs/share-service.md).
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "chatto-share"
+
+[triggers]
+# Every 10 minutes: short-lived rows. Daily (must match DAILY_CRON in src/index.ts): unused images too.
+crons = ["*/10 * * * *", "17 3 * * *"]
+
+[observability]
+enabled = true
