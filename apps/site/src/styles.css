@@ -3,8 +3,9 @@
  * photos, the built-in themes as a sheet of stickers, the steps as a to-do list and questions on
  * sticky notes. Matcha comes from the Chatto design system (docs/visual-identity.md).
  *
- * Photos and sticky notes stay light in dark mode, as paper does on a dark desk; the page itself
- * turns into a notebook at night.
+ * The site is light by default; the button in the header switches it to dark (`data-theme` on
+ * <html>, set by public/theme.js). Photos and sticky notes stay light in dark mode, as paper does
+ * on a dark desk; the page itself turns into a notebook at night.
  */
 :root {
   --paper: #fbfcf6;
@@ -39,29 +40,27 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #161b14;
-    --grid: #222a1f;
-    --text: #eaf3de;
-    --muted: #c3cfb6;
-    --faint: #97a68a;
-    --accent: #c0dd97;
-    --on-accent: #173404;
-    --mark: #97c459;
-    --tab: #222a1f;
-    --sheet: #1f261c;
-    --sticker-sheet: #1f261c;
-    --line: rgba(234, 243, 222, 0.12);
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 28px -16px rgba(0, 0, 0, 0.8);
-    --shadow-note: 0 10px 18px -12px rgba(0, 0, 0, 0.7);
-    --note-1: #efe3a6;
-    --note-2: #cfe3b8;
-    --note-3: #f0cdd6;
-    --note-4: #c9dcf0;
-    --footer: #1d3a08;
-    color-scheme: dark;
-  }
+:root[data-theme='dark'] {
+  --paper: #161b14;
+  --grid: #222a1f;
+  --text: #eaf3de;
+  --muted: #c3cfb6;
+  --faint: #97a68a;
+  --accent: #c0dd97;
+  --on-accent: #173404;
+  --mark: #97c459;
+  --tab: #222a1f;
+  --sheet: #1f261c;
+  --sticker-sheet: #1f261c;
+  --line: rgba(234, 243, 222, 0.12);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 28px -16px rgba(0, 0, 0, 0.8);
+  --shadow-note: 0 10px 18px -12px rgba(0, 0, 0, 0.7);
+  --note-1: #efe3a6;
+  --note-2: #cfe3b8;
+  --note-3: #f0cdd6;
+  --note-4: #c9dcf0;
+  --footer: #1d3a08;
+  color-scheme: dark;
 }
 
 * {
@@ -405,6 +404,45 @@ img {
 
 /* ---------- header ---------- */
 
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--tab);
+  box-shadow: 0 0 0 1px var(--line);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+
+.theme-toggle:hover {
+  box-shadow: 0 0 0 1px var(--mark);
+}
+
+.theme-toggle:focus-visible {
+  outline: 3px solid var(--mark);
+  outline-offset: 3px;
+}
+
+.theme-toggle svg:last-child,
+:root[data-theme='dark'] .theme-toggle svg:first-child {
+  display: none;
+}
+
+:root[data-theme='dark'] .theme-toggle svg:last-child {
+  display: block;
+}
+
+.with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .top {
   display: flex;
   align-items: center;
@@ -422,6 +460,15 @@ img {
   display: block;
   width: 120px;
   height: auto;
+}
+
+.logo.logo-dark,
+:root[data-theme='dark'] .logo.logo-light {
+  display: none;
+}
+
+:root[data-theme='dark'] .logo.logo-dark {
+  display: block;
 }
 
 .top nav {

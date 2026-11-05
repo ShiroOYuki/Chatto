@@ -2,7 +2,8 @@
  * Builds chattolive.com into dist/, in English (/) and Traditional Chinese (/zh-tw/):
  * home, themes, guide, FAQ, the changelog of each product, privacy notice, terms and a 404 page.
  * The legal texts come from `@chatto/share` (`legalText.ts`, loaded as TypeScript by Node), so
- * the site and the app say the same thing. Light and dark follow the visitor's system setting.
+ * the site and the app say the same thing. The site is light unless the visitor switches it to
+ * dark with the button in the header (`public/theme.js` remembers the choice).
  *
  * The look is a streamer's notebook: grid paper, real pieces of the app taped on like photos,
  * the built-in themes as a sheet of stickers, steps as a to-do list and questions on sticky notes.
@@ -68,8 +69,17 @@ const svg = (paths, size = 24) =>
 const ICONS = {
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
   plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  github:
+    '<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>',
+  help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+  mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
 };
 const icon = (name, size) => svg(ICONS[name], size);
+/** The Windows logo, filled, for the download buttons. */
+const windows = (size = 18) =>
+  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="currentColor" aria-hidden="true"><path d="M3 5.6 10.4 4.6v7H3z"/><path d="M11.4 4.4 21 3v8.6h-9.6z"/><path d="M3 12.6h7.4v7L3 18.6z"/><path d="M11.4 12.6H21V21l-9.6-1.4z"/></svg>`;
 
 /* ---------- chat previews of the built-in themes ---------- */
 
@@ -165,8 +175,9 @@ function header(locale, page) {
     )
     .join('');
   return `<header class="top wrap">
-  <a class="brand" href="${href(locale, 'home')}"><picture><source srcset="/chatto-logo-dark.svg" media="(prefers-color-scheme: dark)"><img class="logo" src="/chatto-logo.svg" alt="Chatto" width="818" height="243"></picture></a>
+  <a class="brand" href="${href(locale, 'home')}"><img class="logo logo-light" src="/chatto-logo.svg" alt="Chatto" width="818" height="243"><img class="logo logo-dark" src="/chatto-logo-dark.svg" alt="Chatto" width="818" height="243"></a>
   <nav aria-label="${escape(t.nav.label)}">${items}</nav>
+  <button class="theme-toggle" type="button" aria-pressed="false" aria-label="${escape(t.darkMode)}" title="${escape(t.darkMode)}">${icon('moon', 18)}${icon('sun', 18)}</button>
   <a class="lang" href="${href(other, page ?? 'home')}" hreflang="${CONTENT[other].lang}" lang="${CONTENT[other].lang}">${escape(t.otherLanguage)}</a>
 </header>`;
 }
@@ -191,13 +202,13 @@ function footer(locale, closing) {
           ? `<p>${escape(t.home.latest(latest.version, latest.date))}<a href="${href(locale, 'changelog-app')}">${escape(t.home.latestMore)}</a></p>`
           : ''
       }</div></div>
-      <a class="button light" href="${DOWNLOAD_URL}">${icon('download', 18)}${escape(t.download)}</a>
+      <a class="button light" href="${DOWNLOAD_URL}">${windows()}${escape(t.download)}</a>
     </div>`
         : ''
     }
     <div class="legal-row">
       <p>${escape(t.footer.license)}${t.space}${escape(t.footer.unofficial)}</p>
-      <p class="links"><a href="${href(locale, 'privacy')}">${escape(t.nav.privacy)}</a><a href="${href(locale, 'terms')}">${escape(t.nav.terms)}</a><a href="${GITHUB_URL}">GitHub</a><a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></p>
+      <p class="links"><a href="${href(locale, 'privacy')}">${escape(t.nav.privacy)}</a><a href="${href(locale, 'terms')}">${escape(t.nav.terms)}</a><a class="with-icon" href="${GITHUB_URL}">${icon('github', 14)}GitHub</a><a class="with-icon" href="mailto:${SUPPORT_EMAIL}">${icon('mail', 14)}${SUPPORT_EMAIL}</a></p>
     </div>
   </div>
 </footer>`;
@@ -218,7 +229,7 @@ function layout(locale, page, { title, description, hero, body, closing = false 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escape(title)}</title>
 <meta name="description" content="${escape(description)}">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
 <meta name="theme-color" content="#27500a">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Chatto">
@@ -229,6 +240,7 @@ function layout(locale, page, { title, description, hero, body, closing = false 
 ${alternates}
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/styles.css">
+<script src="/theme.js"></script>
 </head>
 <body class="page-${page ?? 'missing'}">
 <div class="binding" aria-hidden="true"></div>
@@ -285,7 +297,7 @@ function ticket(locale, entry, product, index) {
   const summary = entry.summary ? `<p class="summary">${escape(entry.summary[locale])}</p>` : '';
   const download =
     entry.download && status === 'released'
-      ? `<a class="button small" href="${GITHUB_URL}/releases/tag/${entry.version}">${escape(t.downloadVersion(entry.version))}</a>`
+      ? `<a class="button small" href="${GITHUB_URL}/releases/tag/${entry.version}">${windows(16)}${escape(t.downloadVersion(entry.version))}</a>`
       : '';
   const colors = ['matcha', 'sky', 'sakura'];
   return `<article class="ticket sheet${status === 'released' ? '' : ' upcoming'}">
@@ -333,7 +345,7 @@ function home(locale) {
   <div class="hero-text">
     <h1>${lines(t.tagline)}</h1>
     <p class="lead">${escape(t.lead)}</p>
-    <p class="actions"><a class="button" href="${DOWNLOAD_URL}">${icon('download', 18)}${escape(c.download)}</a><a class="text-link" href="${GITHUB_URL}">${escape(c.source)}</a></p>
+    <p class="actions"><a class="button" href="${DOWNLOAD_URL}">${windows()}${escape(c.download)}</a><a class="text-link with-icon" href="${GITHUB_URL}">${icon('github', 18)}${escape(c.source)}</a></p>
     <p class="note-line">${escape(c.note)}</p>
   </div>
   <div class="hero-visual">
@@ -492,7 +504,7 @@ ${sections}
 <aside class="stuck note">
   <img src="/teacup-sleepy.svg" alt="" width="72" height="72">
   <div><p class="stuck-title">${escape(t.stuck)}</p><p>${escape(t.stuckBody)}</p></div>
-  <p class="actions"><a class="button" href="${href(locale, 'faq')}">${escape(c.nav.faq)}</a><a class="text-link" href="mailto:${SUPPORT_EMAIL}">${escape(t.email)}</a></p>
+  <p class="actions"><a class="button" href="${href(locale, 'faq')}">${icon('help', 18)}${escape(c.nav.faq)}</a><a class="text-link with-icon" href="mailto:${SUPPORT_EMAIL}">${icon('mail', 16)}${escape(t.email)}</a></p>
 </aside>
 </article>
 </div>`,
