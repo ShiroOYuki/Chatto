@@ -69,6 +69,9 @@ html {
 
 body {
   margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -221,13 +224,16 @@ img {
   color: inherit;
 }
 
+main {
+  flex: 1 0 auto;
+}
+
 .top {
   width: min(1160px, 100% - 32px);
   margin-inline: auto;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
   gap: 16px 24px;
   padding: 24px 0;
   position: relative;
@@ -245,6 +251,7 @@ img {
 }
 
 .top nav {
+  justify-self: end;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -252,12 +259,15 @@ img {
   font-size: 15px;
 }
 
-.top nav a {
+.top nav a,
+.top .lang {
   text-decoration: none;
   color: var(--band-muted);
+  font-size: 15px;
 }
 
-.top nav a:hover {
+.top nav a:hover,
+.top .lang:hover {
   color: var(--band-text);
 }
 
@@ -269,7 +279,7 @@ img {
   text-underline-offset: 6px;
 }
 
-.top nav .lang {
+.top .lang {
   padding-left: 20px;
   border-left: 1px solid rgba(192, 221, 151, 0.3);
 }
@@ -443,11 +453,6 @@ img {
   place-items: center;
 }
 
-.feature-icon.sakura {
-  background: var(--sakura);
-  color: var(--text);
-}
-
 .features h3 {
   margin: 4px 0 8px;
   font-size: 22px;
@@ -502,7 +507,7 @@ img {
 }
 
 .theme-tiles .scene {
-  height: 220px;
+  height: 180px;
 }
 
 .theme-tiles h3 {
@@ -614,17 +619,42 @@ img {
   color: var(--text);
 }
 
-.band-pale {
-  background: var(--pale);
-  color: var(--pale-text);
+.ruled {
+  border-top: 1px solid var(--line);
 }
 
-.band-pale .split {
-  padding: 96px 0;
+.release-list {
+  flex: 2 1 520px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 32px 40px;
 }
 
-.band-pale .more {
-  color: var(--pale-text);
+.release-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 8px;
+}
+
+.release-head time {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.release-list p {
+  margin: 0 0 4px;
+}
+
+.release-list ul {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--muted);
+  font-size: 16px;
 }
 
 /* ---------- FAQ items ---------- */
@@ -642,10 +672,6 @@ details {
   background: var(--surface);
   border: 1px solid var(--line);
   padding: 18px 24px;
-}
-
-.band-pale details {
-  background: var(--pale-card);
 }
 
 summary {
@@ -679,19 +705,10 @@ details p {
 
 /* ---------- changelog tickets ---------- */
 
-.changelog-teaser {
-  padding: 112px 0;
-}
-
 .tickets {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.tickets.two {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
 }
 
 .ticket {
@@ -716,11 +733,6 @@ details p {
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-}
-
-.tickets.two .stub {
-  flex-basis: 136px;
-  padding: 24px 20px;
 }
 
 .version {
@@ -1138,7 +1150,7 @@ dd {
 }
 
 .theme-scenes .scene {
-  height: 220px;
+  height: 200px;
 }
 
 .theme-scenes > .blank-scene {
@@ -1636,12 +1648,7 @@ dd {
 
   .features,
   .split,
-  .changelog-teaser,
   .theme-strip {
-    padding-block: 72px;
-  }
-
-  .band-pale .split {
     padding-block: 72px;
   }
 
@@ -1664,19 +1671,35 @@ dd {
     font-size: 16px;
   }
 
+  /* Logo and language on one row, the links below in one line that scrolls sideways. */
   .top {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 16px 0;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 16px 0 8px;
   }
 
   .top nav {
-    gap: 4px 16px;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: stretch;
+    flex-wrap: nowrap;
+    gap: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 8px;
   }
 
-  .top nav .lang {
+  .top nav a {
+    flex: none;
+  }
+
+  .top .lang {
     padding-left: 0;
     border-left: 0;
+  }
+
+  .theme-tiles .scene {
+    height: 160px;
   }
 
   .jump div {
@@ -1748,10 +1771,6 @@ dd {
     border-right: 0;
     border-bottom: 2px dashed var(--line);
     padding: 18px 20px;
-  }
-
-  .tickets.two .stub {
-    flex-basis: 100%;
   }
 
   .detail {

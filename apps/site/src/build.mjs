@@ -122,7 +122,8 @@ function header(locale, page) {
     .join('');
   return `<header class="top">
   <a class="brand" href="${href(locale, 'home')}"><img class="logo" src="/chatto-logo-dark.svg" alt="Chatto" width="818" height="243"></a>
-  <nav aria-label="${escape(t.nav.label)}">${items}<a class="lang" href="${href(other, page ?? 'home')}" hreflang="${CONTENT[other].lang}" lang="${CONTENT[other].lang}">${escape(t.otherLanguage)}</a></nav>
+  <nav aria-label="${escape(t.nav.label)}">${items}</nav>
+  <a class="lang" href="${href(other, page ?? 'home')}" hreflang="${CONTENT[other].lang}" lang="${CONTENT[other].lang}">${escape(t.otherLanguage)}</a>
 </header>`;
 }
 
@@ -210,7 +211,7 @@ function statusOf(entry, product) {
 
 const releasedEntries = (product) => CHANGELOG[product].filter((entry) => statusOf(entry, product) === 'released');
 
-function ticket(locale, entry, { compact = false, product = 'app' } = {}) {
+function ticket(locale, entry, product) {
   const t = CONTENT[locale].changelog;
   const status = statusOf(entry, product);
   const latest = status === 'released' && entry === releasedEntries(product)[0];
@@ -227,20 +228,28 @@ function ticket(locale, entry, { compact = false, product = 'app' } = {}) {
   const sections = entry.sections
     .map((section) => {
       const items = section.items.map((item) => `<li>${escape(item[locale])}</li>`).join('');
-      return compact
-        ? `<ul>${items}</ul>`
-        : `<div class="kind"><h3>${escape(t.kinds[section.kind])}</h3><ul>${items}</ul></div>`;
+      return `<div class="kind"><h3>${escape(t.kinds[section.kind])}</h3><ul>${items}</ul></div>`;
     })
     .join('');
   const summary = entry.summary ? `<p class="summary">${escape(entry.summary[locale])}</p>` : '';
   const download =
-    !compact && entry.download && status === 'released'
+    entry.download && status === 'released'
       ? `<a class="button small" href="${GITHUB_URL}/releases/tag/${entry.version}">${escape(t.downloadVersion(entry.version))}</a>`
       : '';
   return `<article class="ticket${status === 'released' ? '' : ' upcoming'}">
   <div class="stub">${head}</div>
-  <div class="detail">${summary}${compact && entry.summary ? '' : sections}${download}</div>
+  <div class="detail">${summary}${sections}${download}</div>
 </article>`;
+}
+
+/** A released version on the home page: its number, date and first three changes. */
+function releaseLine(locale, entry) {
+  const items = entry.sections.flatMap((section) => section.items).slice(0, 3);
+  const summary = entry.summary ? `<p>${escape(entry.summary[locale])}</p>` : '';
+  return `<li>
+  <p class="release-head"><b class="version">${escape(entry.version)}</b><time datetime="${entry.date}">${entry.date}</time></p>
+  ${summary}<ul>${items.map((item) => `<li>${escape(item[locale])}</li>`).join('')}</ul>
+</li>`;
 }
 
 /* ---------- pages ---------- */
@@ -252,7 +261,7 @@ function home(locale) {
   const features = t.features
     .map(
       (f) =>
-        `<li><span class="feature-icon${f.icon === 'bell' ? ' sakura' : ''}">${icon(f.icon)}</span><div><h3>${escape(f.title)}</h3><p>${escape(f.body)}</p></div></li>`,
+        `<li><span class="feature-icon">${icon(f.icon)}</span><div><h3>${escape(f.title)}</h3><p>${escape(f.body)}</p></div></li>`,
     )
     .join('\n');
   const tiles = THEME_IDS.map((id) => {
@@ -324,8 +333,8 @@ ${steps}
   </ol>
 </section>
 
-<section class="band-pale" aria-labelledby="faq-title">
-  <div class="wrap split">
+<section aria-labelledby="faq-title">
+  <div class="wrap split ruled">
     <div class="split-head">
       <h2 id="faq-title">${escape(t.faqTitle)}</h2>
       ${more(href(locale, 'faq'), t.faqMore)}
@@ -336,14 +345,14 @@ ${faq}
   </div>
 </section>
 
-<section class="wrap changelog-teaser" aria-labelledby="changelog-title">
-  <div class="section-head">
+<section class="wrap split ruled" aria-labelledby="changelog-title">
+  <div class="split-head">
     <h2 id="changelog-title">${escape(t.changelogTitle)}</h2>
     ${more(href(locale, 'changelog-app'), t.changelogMore)}
   </div>
-  <div class="tickets two">
-${released.map((entry) => ticket(locale, entry, { compact: true })).join('\n')}
-  </div>
+  <ol class="release-list">
+${released.map((entry) => releaseLine(locale, entry)).join('\n')}
+  </ol>
 </section>`,
   });
 }
@@ -479,7 +488,7 @@ function changelogPage(locale, product) {
     (p) =>
       `<a href="${href(locale, `changelog-${p}`)}"${p === product ? ' aria-current="page"' : ''}>${escape(t.products[p])}</a>`,
   ).join('');
-  const entries = CHANGELOG[product].map((entry) => ticket(locale, entry, { product })).join('\n');
+  const entries = CHANGELOG[product].map((entry) => ticket(locale, entry, product)).join('\n');
   const releases =
     product === 'themes'
       ? ''
