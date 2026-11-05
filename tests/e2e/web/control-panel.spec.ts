@@ -2,7 +2,7 @@ import { createMockGiftBatch, createMockNotice, sampleEvent } from '@chatto/chat
 import { fileURLToPath } from 'node:url';
 import { chatMessage, expect, test } from '../fixtures';
 
-const PAGES = ['總覽', '聊天室', '主題', '輸出', '連線', '設定'];
+const PAGES = ['總覽', '聊天室', '主題', '輸出', '帳號', '設定'];
 
 test('every page opens from the sidebar without errors', async ({ panel, page }) => {
   const errors: string[] = [];
@@ -48,7 +48,7 @@ test('every clickable control shows a pointer', async ({ panel, page }) => {
     expect(wrong, label).toEqual([]);
   }
   // Disabled controls keep the arrow.
-  await panel.nav('連線').click();
+  await panel.nav('帳號').click();
   await panel.setState({ auth: { status: 'signed-out' }, channel: { state: 'idle' } });
   const connect = page.getByRole('main').getByRole('button', { name: '連線', exact: true });
   await expect(connect).toBeDisabled();

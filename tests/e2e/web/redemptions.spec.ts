@@ -35,7 +35,7 @@ test('an older sign-in is asked to sign in again for redemptions', async ({ pane
   await panel.setState({ auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: false } });
   await expect(page.getByText('重新登入以啟用兌換提醒')).toBeVisible();
 
-  await panel.nav('連線').click();
+  await panel.nav('帳號').click();
   await expect(page.getByTestId('redemption-reauth')).toBeVisible();
   await expect(page.getByText('權限：讀取聊天室', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '重新登入' }).click();
@@ -52,7 +52,7 @@ test("watching someone else's channel explains that redemptions only come to the
   await expect(page.getByTestId('redemptions')).toHaveCount(0);
   await expect(page.getByText('還沒有人兌換獎勵')).toHaveCount(0);
 
-  await panel.nav('連線').click();
+  await panel.nav('帳號').click();
   await expect(page.getByText('只有用實況主帳號登入時才能收到兌換')).toBeVisible();
 
   await panel.nav('提醒').click();
