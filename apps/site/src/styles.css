@@ -331,95 +331,168 @@ main {
   color: var(--band-muted);
 }
 
+/* The hero shows the product: a game with the Matcha Glass chat over it, drawn in flat shapes. */
 .hero-visual {
-  position: relative;
-  height: 440px;
-  display: grid;
-  place-items: center;
-}
-
-.hero-visual .ring {
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  border: 1.5px solid rgba(var(--ring), 0.5);
-}
-
-.hero-visual .r1 {
-  width: 280px;
-  height: 280px;
-}
-
-.hero-visual .r2 {
-  width: 400px;
-  height: 400px;
-  border-color: rgba(var(--ring), 0.32);
-}
-
-.hero-visual .r3 {
-  width: 520px;
-  height: 520px;
-  border-color: rgba(var(--ring), 0.18);
-}
-
-.disc {
-  position: relative;
-  width: 168px;
-  height: 168px;
-  border-radius: 50%;
-  background: #f4f9ee;
-  display: grid;
-  place-items: center;
-}
-
-.disc img {
-  width: 124px;
-  height: 124px;
-}
-
-.float {
-  position: absolute;
   margin: 0;
-  max-width: 62%;
-  padding: 8px 14px;
-  border-radius: 14px 14px 14px 4px;
-  background: rgba(23, 52, 4, 0.9);
-  border: 1px solid rgba(192, 221, 151, 0.35);
-  font-size: 14px;
-  line-height: 1.5;
-  color: #eaf3de;
 }
 
-.float b {
-  font-weight: 400;
-  color: #c0dd97;
-  margin-right: 0.3em;
+.game {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #9fc3dc;
+  box-shadow: 0 24px 48px -28px rgba(10, 25, 2, 0.8);
 }
 
-.f1 {
-  left: 0;
-  top: 64px;
-}
-
-.f2 {
-  right: 0;
-  top: 190px;
-  border-radius: 14px 14px 4px 14px;
-}
-
-.f3 {
-  left: 40px;
-  bottom: 56px;
-}
-
-.hero-visual .dot {
+.game > span {
   position: absolute;
-  right: 64px;
-  top: 40px;
-  width: 16px;
-  height: 16px;
+}
+
+.sun {
+  left: 12%;
+  top: 14%;
+  width: 11%;
+  aspect-ratio: 1;
   border-radius: 50%;
-  background: var(--sakura);
+  background: #f6e7b8;
+}
+
+.hill {
+  border-radius: 50% 50% 0 0;
+}
+
+.hill-a {
+  left: -10%;
+  right: 30%;
+  bottom: 30%;
+  height: 34%;
+  background: #86ad8c;
+}
+
+.hill-b {
+  left: 35%;
+  right: -15%;
+  bottom: 26%;
+  height: 38%;
+  background: #6f9a77;
+}
+
+.ground {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30%;
+  background: #4f7a4a;
+  border-top: 6px solid #3f6a3c;
+}
+
+.tree {
+  left: 20%;
+  bottom: 30%;
+  width: 1.6%;
+  height: 14%;
+  background: #5a3f2a;
+}
+
+.tree::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 70%;
+  width: 640%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: #3f6a3c;
+}
+
+.player {
+  left: 34%;
+  bottom: 30%;
+  width: 4.6%;
+  height: 11%;
+  border-radius: 10px 10px 4px 4px;
+  background: #e8dcc0;
+}
+
+.player::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 72%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: #e8dcc0;
+}
+
+.hud {
+  left: 3%;
+  top: 4%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 26%;
+}
+
+.hud i {
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.hud i::after {
+  content: '';
+  display: block;
+  height: 100%;
+}
+
+.hud .hp::after {
+  width: 72%;
+  background: #e86a5a;
+}
+
+.hud .mp {
+  width: 75%;
+}
+
+.hud .mp::after {
+  width: 45%;
+  background: #6aa7e8;
+}
+
+.overlay {
+  position: absolute;
+  right: 3%;
+  bottom: 4%;
+  width: 46%;
+}
+
+/* The pointer sits on the edge of the chat, where a click would go through to the game. */
+.pointer {
+  position: absolute;
+  right: 45%;
+  bottom: 9%;
+}
+
+.pointer path {
+  fill: #1d2a14;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.hero-visual figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--band-muted);
 }
 
 /* ---------- home sections ---------- */
@@ -1388,6 +1461,12 @@ dd {
   color: #c0dd97;
 }
 
+.tp-matcha-glass .event {
+  box-shadow: inset 3px 0 0 #c0dd97;
+  color: #c0dd97;
+  font-weight: 600;
+}
+
 /* 和紙 */
 .tp-washi {
   font-family: 'Noto Serif TC', 'Source Han Serif TC', 'PMingLiU', serif;
@@ -1638,14 +1717,6 @@ dd {
     padding: 16px 0 72px;
   }
 
-  .hero-visual {
-    height: 360px;
-  }
-
-  .hero-visual .r3 {
-    display: none;
-  }
-
   .features,
   .split,
   .theme-strip {
@@ -1716,41 +1787,25 @@ dd {
     font-size: 17px;
   }
 
-  .hero-visual {
-    height: 320px;
+  /* On a phone the game is small, so the chat keeps two messages. */
+  .overlay {
+    width: 64%;
   }
 
-  .hero-visual .r2 {
-    width: 300px;
-    height: 300px;
+  .overlay .tp {
+    font-size: 11px;
   }
 
-  .hero-visual .r1 {
-    width: 220px;
-    height: 220px;
-  }
-
-  .disc {
-    width: 128px;
-    height: 128px;
-  }
-
-  .disc img {
-    width: 96px;
-    height: 96px;
-  }
-
-  .f1 {
-    top: 8px;
-  }
-
-  .f2 {
-    top: auto;
-    bottom: 8px;
-  }
-
-  .f3 {
+  .overlay .m:nth-child(n + 3) {
     display: none;
+  }
+
+  .hud {
+    gap: 4px;
+  }
+
+  .hud i {
+    height: 6px;
   }
 
   /* Four themes are enough on a phone; the link leads to the rest. */

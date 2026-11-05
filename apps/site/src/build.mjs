@@ -293,14 +293,16 @@ function home(locale) {
     <p class="actions"><a class="button cream" href="${DOWNLOAD_URL}">${icon('download', 18)}${escape(c.download)}</a><a class="button outline" href="${GITHUB_URL}">${escape(c.source)}</a></p>
     <p class="note">${escape(c.note)}</p>
   </div>
-  <div class="hero-visual" role="img" aria-label="${escape(t.heroAlt)}">
-    <span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span>
-    <span class="disc"><img src="/teacup.svg" alt="" width="96" height="96"></span>
-    <p class="float f1"><b>Yuki</b> ${escape(s.greeting)}</p>
-    <p class="float f2"><b>TeaTime</b> ${escape(s.song)}</p>
-    <p class="float f3"><b>kuma_kuma</b> ${escape(s.gg)}</p>
-    <span class="dot"></span>
-  </div>
+  <figure class="hero-visual">
+    <div class="game" role="img" aria-label="${escape(t.heroAlt)}">
+      <span class="sun"></span><span class="hill hill-a"></span><span class="hill hill-b"></span><span class="ground"></span>
+      <span class="tree"></span><span class="player"></span>
+      <span class="hud"><i class="hp"></i><i class="mp"></i></span>
+      <div class="overlay">${chatPreview('matcha-glass', locale, { raid: true })}</div>
+      <svg class="pointer" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 3l7 17 2.5-7.5L21 10z"/></svg>
+    </div>
+    <figcaption>${t.heroNotes.map((note) => `<span>${escape(note)}</span>`).join('')}</figcaption>
+  </figure>
 </section>`,
     body: `<section class="features wrap" id="features" aria-labelledby="features-title">
   <h2 id="features-title" class="visually-hidden">${escape(t.featuresTitle)}</h2>
