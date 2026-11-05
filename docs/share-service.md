@@ -54,7 +54,7 @@ npm run db:migrate:local -w @chatto/share-worker
 npm run dev -w @chatto/share-worker      # http://localhost:8787
 ```
 
-- 要讓 App 連本機服務：在 `apps/desktop/.env` 加 `MAIN_VITE_SHARE_API_URL=http://localhost:8787`，再 `npm run dev`。沒設定時 App 用記憶體假服務（`main/share-backend.ts`）。
+- App 連哪個服務由 `main/share-backend.ts` 的 `pickShareService` 決定：**打包版連正式服務**，**開發版預設用記憶體假服務**（不會寫進正式資料）。要改就設 `MAIN_VITE_SHARE_API_URL`（`apps/desktop/.env`，建置時）或 `CHATTO_SHARE_API`（執行時，Electron 測試用 `fake`），值是網址或 `fake`；連本機服務用 `http://localhost:8787`。
 - 平台的 OAuth 應用程式要加上 `http://localhost:8787/v1/auth/callback/<provider>` 才能在本機登入。
 - 測試：`npx vitest run packages/share apps/share-worker`（不需要 Workers runtime）。
 
@@ -72,7 +72,7 @@ npm run dev -w @chatto/share-worker      # http://localhost:8787
 4. **第一次部署**：`npm run deploy -w @chatto/share-worker`（套用 migration 後部署，Custom Domain `api.chattolive.com` 會自動建立）。確認 `https://api.chattolive.com/v1/themes` 回 `{"ok":true,...}`。
 5. **GitHub 自動部署**：repository secrets `CLOUDFLARE_API_TOKEN`（權限：Workers Scripts Edit、D1 Edit、Workers R2 Storage Edit、Workers Routes／Custom Domains）、`CLOUDFLARE_ACCOUNT_ID`；repository variable `SHARE_DEPLOY=true`。之後推到 `main` 且 Worker 相關檔案有改時，`.github/workflows/share-worker.yml` 會測試並部署。
 6. **管理者帳號**：在 App 登入一次後，`npx wrangler d1 execute chatto-share --remote --command "UPDATE accounts SET role = 'moderator' WHERE id = '<帳號 id>'"`（帳號 id 可用 `SELECT a.id, a.display_name, i.provider, i.name FROM accounts a JOIN identities i ON i.account_id = a.id` 查）。
-7. **App 改用真正的服務**：`main/share-backend.ts` 的預設從假服務改成 `SHARE_API_URL`（開發版仍可用 `MAIN_VITE_SHARE_API_URL` 指向本機），發新版。
+7. **App 改用真正的服務**：已完成，打包版預設連 `SHARE_API_URL`。
 
 ## 網站 chattolive.com
 
