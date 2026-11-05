@@ -76,7 +76,22 @@ npm run dev -w @chatto/share-worker      # http://localhost:8787
 
 ## 網站 chattolive.com
 
-`apps/site` 是純靜態網站（Workers 靜態資源，沒有 Worker 程式）：英文在 `/`、`/privacy`、`/terms`，繁中在 `/zh-tw/`。`src/build.mjs` 把 `packages/share/src/legalText.ts` 的條款與免責聲明、`src/content.mjs` 的首頁文案組成 HTML，字型（粉圓）從 `@fontsource/huninn` 複製，標誌從 `assets/` 複製並拿掉 C2PA metadata。
+`apps/site` 是純靜態網站（Workers 靜態資源，沒有 Worker 程式），亮色與暗色跟隨訪客的系統設定。英文在 `/`，繁中在 `/zh-tw/` 底下，頁面相同：
+
+| 路徑                                                | 內容                                                            |
+| --------------------------------------------------- | --------------------------------------------------------------- |
+| `/`                                                 | 首頁：開頭、功能、主題、三步開始、常見問題、最新兩版更新紀錄    |
+| `/themes`                                           | 七種內建主題的意象、色彩、形狀、動態與預覽，以及可調整的項目    |
+| `/guide`                                            | 使用教學：安裝、連上頻道、桌面浮層、放進 OBS、調整主題、提醒    |
+| `/faq`                                              | 常見問題，依分類                                                |
+| `/changelog`、`/changelog/themes`、`/changelog/obs` | 更新紀錄：Chatto、Chatto Themes（主題分享）、Chatto OBS（外掛） |
+| `/privacy`、`/terms`                                | 隱私說明與使用條款                                              |
+
+- `src/content.mjs`：所有頁面的文案（兩種語言結構相同）。
+- `src/changelog.mjs`：三個產品的更新紀錄，新的在前；`upcoming: true` 是 `develop` 上還沒發佈的內容，顯示成「下一版」。**發版時**把 `upcoming` 那筆改成版本號與日期，Chatto 的版本加上 `download: true`。
+- `src/build.mjs` 把上面兩份文案和 `packages/share/src/legalText.ts` 的條款、免責聲明組成 HTML。主題預覽是照 `packages/chat-ui/src/themes.ts` 的參數用 CSS 畫的近似樣子（`styles.css` 的 `.tp-<主題 id>`），改內建主題的顏色或形狀時一起更新。
+- 字型（粉圓、JetBrains Mono）從 `@fontsource` 複製，標誌從 `assets/` 複製並拿掉 C2PA metadata，茶杯在 `public/`。
+- 版面依 `docs/visual-identity.md`：深抹茶色帶（頁首、主題列、頁尾）夾著奶白頁面，暗色時色帶維持深色。
 
 ```bash
 npm run build -w @chatto/site      # 產生 apps/site/dist

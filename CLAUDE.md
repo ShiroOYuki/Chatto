@@ -26,7 +26,7 @@ apps/
   viewer/           @chatto/viewer — /overlay 與 /embed 頁面，由桌面 App 的本機 server 提供；瀏覽器可用 ?mock=1 獨立預覽
   desktop/          @chatto/desktop — Electron（electron-vite）：main / preload / renderer（控制台）
   share-worker/     @chatto/share-worker — 主題分享服務（Cloudflare Worker＋D1＋R2），不打包進 App
-  site/             @chatto/site — chattolive.com 靜態網站（首頁、隱私說明、使用條款，繁中＋英文），Cloudflare Workers 靜態資源
+  site/             @chatto/site — chattolive.com 靜態網站（首頁、主題、教學、常見問題、更新紀錄、隱私說明、使用條款，繁中＋英文，亮暗色），Cloudflare Workers 靜態資源
 obs-plugin/         obs-chatto — OBS 外掛「Chatto 聊天室」來源（C++，CMake，Windows；不在 npm workspaces 裡）
 docs/               architecture.md、message-format.md、theming.md、testing.md、design.md、visual-identity.md、share-service.md
 ```
