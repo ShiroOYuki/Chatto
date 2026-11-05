@@ -4,7 +4,7 @@
  * sticky notes. Matcha comes from the Chatto design system (docs/visual-identity.md).
  *
  * The site is light by default; the button in the header switches it to dark (`data-theme` on
- * <html>, set by public/site.js). Photos and sticky notes stay light in dark mode, as paper does
+ * <html>, set by src/site.js). Photos and sticky notes stay light in dark mode, as paper does
  * on a dark desk; the page itself turns into a notebook at night.
  */
 :root {
@@ -547,7 +547,7 @@ img {
  * the title and its strip of tape change in place. The new page's pieces are then put down one
  * after another: the lead, the tabs or contents, then each sheet, photo and note. The binding and
  * the header stay put. Switching to dark or light spreads from the button in a circle
- * (public/site.js sets `theming` and the circle's centre on <html>). Browsers without view
+ * (src/site.js sets `theming` and the circle's centre on <html>). Browsers without view
  * transitions skip the moving parts, but still put the pieces down.
  */
 

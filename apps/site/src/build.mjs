@@ -3,11 +3,16 @@
  * home, themes, guide, FAQ, the changelog of each product, privacy notice, terms and a 404 page.
  * The legal texts come from `@chatto/share` (`legalText.ts`, loaded as TypeScript by Node), so
  * the site and the app say the same thing. The site is light unless the visitor switches it to
- * dark with the button in the header (`public/site.js` remembers the choice).
+ * dark with the button in the header (`src/site.js` remembers the choice).
+ *
+ * Clicks should not wait: styles and script are written under /static/ with a content hash in
+ * their names and cached for good (see public/_headers), and speculation rules fetch a page
+ * before it is clicked: the header's links right away, other links when the pointer rests on them.
  *
  * The look is a streamer's notebook: grid paper, real pieces of the app taped on like photos,
  * the built-in themes as a sheet of stickers, steps as a to-do list and questions on sticky notes.
  */
+import { createHash } from 'node:crypto';
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -249,8 +254,9 @@ function layout(locale, page, { title, description, hero, body, closing = false 
 <meta name="twitter:card" content="summary_large_image">
 ${alternates}
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/styles.css">
-<script src="/site.js"></script>
+<link rel="stylesheet" href="${ASSETS.styles}">
+<script src="${ASSETS.script}"></script>
+<script type="speculationrules">${SPECULATION}</script>
 </head>
 <body class="page-${page ?? 'missing'}">
 <div class="binding" aria-hidden="true"></div>
@@ -693,6 +699,27 @@ const PUBLISHED = await publishedReleases();
 /* ---------- write ---------- */
 
 rmSync(dist, { recursive: true, force: true });
+
+/** Writes `text` to /static/ under a name with its content hash, and returns its URL. */
+function hashed(name, ext, text) {
+  const file = `static/${name}.${createHash('sha256').update(text).digest('hex').slice(0, 10)}.${ext}`;
+  mkdirSync(join(dist, 'static'), { recursive: true });
+  writeFileSync(join(dist, file), text);
+  return `/${file}`;
+}
+
+const ASSETS = {
+  styles: hashed('styles', 'css', `${copyFonts()}\n${readFileSync(join(root, 'src', 'styles.css'), 'utf8')}`),
+  script: hashed('site', 'js', readFileSync(join(root, 'src', 'site.js'), 'utf8')),
+};
+
+/** Fetch the header's pages right away and other pages when the pointer rests on a link. */
+const SPECULATION = JSON.stringify({
+  prefetch: [
+    { where: { selector_matches: '.top a, .tabs a' }, eagerness: 'immediate' },
+    { where: { href_matches: '/*' }, eagerness: 'moderate' },
+  ],
+});
 const write = (path, html) => {
   mkdirSync(dirname(join(dist, path)), { recursive: true });
   writeFileSync(join(dist, path), html);
@@ -708,8 +735,6 @@ for (const locale of LOCALES) {
 }
 write('404.html', notFound());
 
-const fonts = copyFonts();
-writeFileSync(join(dist, 'styles.css'), `${fonts}\n${readFileSync(join(root, 'src', 'styles.css'), 'utf8')}`);
 for (const file of readdirSync(join(root, 'public'))) copyFileSync(join(root, 'public', file), join(dist, file));
 copySvg(join(repo, 'assets', 'chatto-logo.svg'), join(dist, 'chatto-logo.svg'));
 copySvg(join(repo, 'assets', 'chatto-logo-dark.svg'), join(dist, 'chatto-logo-dark.svg'));
