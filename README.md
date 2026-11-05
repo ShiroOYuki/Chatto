@@ -50,7 +50,7 @@ npm run dev                                       # 啟動桌面 App
 
 ### 發佈
 
-推送到 `main` 且 CI 通過後，`.github/workflows/release.yml` 讀 `apps/desktop/package.json` 的版本：`v<版本>` tag 已存在就不做事；否則建置 OBS 外掛與安裝檔，打上 tag，建立草稿 Release 附上安裝檔，確認後在 GitHub 上發佈。要發新版，在 `develop` 提高版本號，再一路合併到 `main`。發佈失敗時，可以在 Actions 頁面對 `main` 手動執行 Release 重試。
+推送到 `main` 且 CI 通過後，`.github/workflows/release.yml` 讀 `apps/desktop/package.json` 的版本：`v<版本>` tag 已存在就不做事；否則建置 OBS 外掛與安裝檔，打上 tag，建立草稿 Release 附上安裝檔，確認後在 GitHub 上發佈。要發新版，在 `develop` 提高版本號，並把 `apps/site/src/changelog.mjs` 裡「下一版」那筆改成這個版本與日期（Release 說明由它產生，沒有這個版本的紀錄時 Release 會失敗），再一路合併到 `main`。在 GitHub 按下發佈後，`site.yml` 會自動部署網站。發佈失敗時，可以在 Actions 頁面對 `main` 手動執行 Release 重試。
 
 Release 同時附上 `latest.yml` 與 `.blockmap`：已安裝的 Chatto（`electron-updater`）啟動時與每 6 小時讀最新一份**已發佈**的 Release，有新版本時在標題列與設定頁「關於」提示，使用者同意後才下載；下載完按「重新啟動並更新」，或下次結束 Chatto 時安裝。草稿不會被讀到。
 
@@ -90,7 +90,7 @@ packages/share            主題分享的資料格式、檢查規則與 API 用�
 apps/viewer               /overlay 與 /embed 頁面
 apps/desktop              Electron 桌面 App（控制台、本機伺服器、Overlay 視窗）
 apps/share-worker         主題分享服務（Cloudflare Worker）
-apps/site                 chattolive.com 網站（首頁、隱私說明、使用條款）
+apps/site                 chattolive.com 網站（首頁、主題、教學、常見問題、更新紀錄、條款）
 obs-plugin                OBS 外掛「Chatto 聊天室」（C++，CMake）
 docs/                     架構、訊息格式、主題、測試、控制台設計、美術與視覺識別、分享服務文件
 ```

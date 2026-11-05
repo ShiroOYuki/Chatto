@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "GPL-3.0-or-later",
-  "description": "chattolive.com: Chatto's home page, privacy notice and terms (static, on Cloudflare)",
+  "description": "chattolive.com: Chatto's website (home, themes, guide, FAQ, changelog, privacy notice and terms; static, on Cloudflare)",
   "type": "module",
   "scripts": {
     "build": "node src/build.mjs",
@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@fontsource/huninn": "^5.3.1",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "wrangler": "^4.157.0"
   }
 }

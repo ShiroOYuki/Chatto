@@ -1,8 +1,15 @@
-/** Words of the website, apart from the legal texts (those come from `@chatto/share`). */
+/**
+ * Words of the website, apart from the legal texts (those come from `@chatto/share`) and the
+ * changelog (`changelog.mjs`). Both languages have the same shape.
+ */
 
 export const GITHUB_URL = 'https://github.com/ShiroOYuki/Chatto';
 export const DOWNLOAD_URL = `${GITHUB_URL}/releases/latest`;
+export const ISSUES_URL = `${GITHUB_URL}/issues`;
 export const SUPPORT_EMAIL = 'support@chattolive.com';
+
+/** The built-in themes, in the order the app lists them. Previews are drawn by `build.mjs`. */
+export const THEME_IDS = ['matcha-glass', 'washi', 'bubble', 'outline', 'noren', 'terminal', 'tea-leaf'];
 
 export const CONTENT = {
   en: {
@@ -10,36 +17,366 @@ export const CONTENT = {
     /** Joins sentences: a space in English, nothing in Chinese. */
     space: ' ',
     otherLanguage: '繁體中文',
-    nav: { home: 'Home', privacy: 'Privacy', terms: 'Terms' },
+    darkMode: 'Dark mode',
+    nav: {
+      label: 'Main',
+      home: 'Home',
+      themes: 'Themes',
+      guide: 'Guide',
+      faq: 'FAQ',
+      changelog: 'Changelog',
+      privacy: 'Privacy',
+      terms: 'Terms',
+    },
+    download: 'Download for Windows',
+    source: 'GitHub',
+    note: 'Free and open source, for Windows 10 and later',
+    more: 'More',
+    sample: {
+      greeting: 'Evening! What are we playing today?',
+      hello: 'Evening!',
+      boss: 'This boss is so hard',
+      chest: 'there’s a chest on the left',
+      raid: 'ShiroLive is raiding with 42 viewers!',
+      raidTag: 'Raid',
+    },
     home: {
       title: 'Chatto — Live chat overlay for streamers',
       description:
         'Chatto puts your stream chat on your desktop as a see-through overlay and in OBS as a themed chat source. Free and open source for Windows.',
-      tagline: 'Chat on your desktop and in OBS',
+      tagline: 'Chat on your desktop\nand in OBS',
       lead: 'Display chat as a transparent desktop overlay or add it to OBS. Customize both with your own themes.',
-      download: 'Download for Windows',
-      source: 'View on GitHub',
-      note: 'Free and open source · Windows 10+',
-      previewAlt: 'A chat in the Bubbles theme: five messages and a raid alert',
       featuresTitle: 'What it does',
       features: [
         {
-          title: 'Desktop overlay',
-          body: 'A transparent, always-on-top chat that clicks through to the game below, so you can read chat without alt-tabbing.',
+          icon: 'monitor',
+          title: 'On top of your game, out of the way',
+          body: 'The overlay stays above everything and clicks pass straight through. Unlock it to move or resize it, then drag the edges.',
         },
         {
-          title: 'OBS chat source',
-          body: 'Add the “Chatto Chat” source in OBS and pick a theme for each one. Deleted and banned messages leave the stream right away.',
+          icon: 'obs',
+          title: 'Pick it as a source in OBS',
+          body: 'Add a “Chatto Chat” source, with no URL to paste, and give each source its own theme. While Chatto is closed, it shows a waiting screen.',
         },
         {
-          title: 'Themes',
-          body: 'Start from seven built-in themes, then tune padding, corners, frames and roles, or write your own CSS.',
+          icon: 'sliders',
+          title: 'Tune every part',
+          body: 'Padding, corners, borders, image frames and role styles, with the result right in front of you. Write CSS if you like, and export a theme to share it.',
         },
         {
-          title: 'Private chat alerts',
-          body: 'Get notified when new messages arrive after a quiet period.',
+          icon: 'bell',
+          title: 'Alerts only you see',
+          body: 'Raids and subs pop up as cards in a corner of your desktop, and you get a nudge when someone writes after chat has gone quiet. None of it shows on stream.',
         },
       ],
+      themesTitle: 'Seven built-in themes,\nall of them adjustable',
+      themesMore: 'See all themes',
+      themesLead:
+        'Pick one to stick on and change it if it isn’t quite right. The desktop and OBS can use different ones.',
+      themesSheet: 'Chatto theme stickers',
+      themesBlank: 'Draw your own',
+      themesBlankNote: 'Custom CSS',
+      guideTitle: 'Before you go live',
+      guideMore: 'Read the full guide',
+      steps: [
+        {
+          title: 'Download and install',
+          body: 'To use Chatto in OBS, check “Install the OBS plugin” in the installer.',
+        },
+        { title: 'Connect your channel', body: 'Sign in on the Connections page and chat appears in the preview.' },
+        { title: 'Choose where it shows', body: 'Turn on the desktop overlay, or add a “Chatto Chat” source in OBS.' },
+      ],
+      faqTitle: 'Asked a lot',
+      faqOther: 'Something else?',
+      faqMore: 'See all questions',
+      closing: 'Download Chatto and go live',
+      latest: (version, date) => `Latest version ${version}, released ${date}.`,
+      latestMore: 'See what changed',
+      heroCaption: 'Matcha Glass, tonight’s chat',
+      heroSticky: 'The checkered part is see-through. Your game shows through it, and so do your clicks.',
+    },
+    specimen: {
+      unlocked: 'Unlocked, drag to adjust',
+      obsTitle: 'Properties for “Chatto Chat”',
+      theme: 'Theme',
+      width: 'Width',
+      height: 'Height',
+      connected: 'Connected to Chatto',
+      radius: 'Corners',
+      opacity: 'Background opacity',
+      border: 'Border color',
+      reply: 'love this song',
+      raidTitle: 'ShiroLive is raiding',
+      raidBody: 'with 42 viewers',
+      sub: 'subscribed for 3 months',
+    },
+    themes: {
+      title: 'Themes',
+      description: 'Chatto’s seven built-in chat themes and what you can change in each one.',
+      lead: 'Start from one of seven built-in themes, then adjust it until it looks right.',
+      jump: 'Themes',
+      default: 'Default',
+      colors: 'Colors',
+      shape: 'Shape',
+      motion: 'Motion',
+      blank: { name: 'Blank', body: 'No styles at all, only the structure and classes, for writing CSS from scratch.' },
+      customTitle: 'Customize',
+      customBody:
+        'The theme editor shows a sample of every element at once, so you see each change right away. The desktop overlay and OBS can each use their own theme.',
+      custom: [
+        'Padding for each side, radius for each corner, borders, shadow and blur',
+        'Nine-slice image frames (PNG, WebP, GIF)',
+        'Separate styles for moderators, VIPs and subscribers',
+        'Styles and wording for subs, raids and other events',
+        'Custom CSS with autocomplete and an inspector',
+        'Export and import, with images in a .chattotheme file',
+      ],
+      list: {
+        'matcha-glass': {
+          name: 'Matcha Glass',
+          idea: 'A glass of iced matcha with light shining through',
+          colors: 'See-through deep green, pale mint names, pale green text',
+          shape: '12px corners and a thin light border',
+          motion: 'Fade in',
+        },
+        washi: {
+          name: 'Washi',
+          idea: 'Messages written on washi paper',
+          colors: 'Rice paper, ink text, tea-brown names, vermilion accents',
+          shape: 'Almost square corners, Noto Serif TC',
+          motion: 'Fade in',
+        },
+        bubble: {
+          name: 'Bubbles',
+          idea: 'Chat bubbles on a phone',
+          colors: 'Pale coral bubbles, dark tea text, coral accents',
+          shape: 'Large corners with one tucked in; events get a border and a tilted sticker',
+          motion: 'Pop in',
+        },
+        outline: {
+          name: 'Outline',
+          idea: 'Game subtitles',
+          colors: 'White text with a black outline, mint names, gold accents',
+          shape: 'No background, only text, a little larger',
+          motion: 'Fade in',
+        },
+        noren: {
+          name: 'Noren',
+          idea: 'The curtain at a shop’s door',
+          colors: 'Indigo cloth, names on a deeper block, gold accents',
+          shape: 'Name and message as two blocks, 6px corners',
+          motion: 'Slide in from the left',
+        },
+        terminal: {
+          name: 'Terminal',
+          idea: 'A developer’s terminal',
+          colors: 'Near-black panel, light grey text, teal names',
+          shape: 'Monospace, an @ before names, timestamps, one panel',
+          motion: 'None',
+        },
+        'tea-leaf': {
+          name: 'Tea Leaf',
+          idea: 'Chatto’s own look',
+          colors: 'Dark ground, a pale matcha frame, sakura accents',
+          shape: 'A nine-slice image frame with two leaves at opposite corners',
+          motion: 'Pop in',
+        },
+      },
+    },
+    guide: {
+      title: 'Guide',
+      description: 'Install Chatto, connect your channel and put chat on your desktop and in OBS.',
+      lead: 'Install Chatto, connect your channel, and put chat on your desktop and in OBS.',
+      toc: 'On this page',
+      step: 'Step',
+      sections: [
+        {
+          id: 'install',
+          title: 'Install',
+          body: [
+            'Download the installer and run it. To use Chatto in OBS, check “Install the OBS plugin”. You can also install it later on the Outputs page.',
+          ],
+          note: 'Chatto checks for new versions by itself and tells you in the title bar. It downloads only after you agree.',
+        },
+        {
+          id: 'connect',
+          title: 'Connect your channel',
+          steps: [
+            'Open the Connections page, pick your streaming platform and click Sign in.',
+            'Your browser opens the platform’s authorization page. Enter the code Chatto shows you.',
+            'Back in Chatto, chat appears in the preview on the Chat page.',
+          ],
+        },
+        {
+          id: 'overlay',
+          title: 'Desktop overlay',
+          body: [
+            'A transparent chat just for you. It stays above every window and lets clicks pass through. Turn it on in Outputs, click Adjust, then drag it to move and drag its edges to resize. Click “Finish adjusting” when you’re done.',
+          ],
+          tips: [
+            {
+              title: 'Use borderless windowed mode',
+              body: 'Exclusive fullscreen covers every always-on-top window, including the overlay.',
+            },
+            {
+              title: 'Use game or window capture in OBS',
+              body: 'Display capture records the overlay into your stream too.',
+            },
+          ],
+        },
+        {
+          id: 'obs',
+          title: 'Add it to OBS',
+          cards: [
+            {
+              title: 'With the OBS plugin',
+              badge: 'Recommended',
+              body: 'In OBS, add a “Chatto Chat” source. There’s no URL to paste, and each source can use its own theme. While Chatto is closed, the source shows a waiting screen.',
+            },
+            {
+              title: 'With a browser source',
+              steps: [
+                'In OBS, add a “Browser” source.',
+                'Paste the URL from the Outputs page. 420 wide by 600 tall works well.',
+                'Check “Refresh browser when scene becomes active” for more stability.',
+              ],
+            },
+          ],
+        },
+        {
+          id: 'theme',
+          title: 'Tune a theme',
+          body: [
+            'On the Themes page, duplicate a built-in theme and open the editor. Pick a section on the left; the preview on the right shows samples of every element and event. Changes stay in a draft until you click Save. On the Outputs page, choose a theme for the desktop overlay and for OBS.',
+          ],
+          link: 'See all built-in themes',
+        },
+        {
+          id: 'alerts',
+          title: 'Alerts only you see',
+          cards: [
+            {
+              title: 'New message after a lull',
+              body: 'When someone writes after chat has been quiet for a while (2 minutes by default, 30 seconds to 30 minutes), the desktop overlay marks the message and plays a sound.',
+            },
+            {
+              title: 'Alert overlay',
+              body: 'Subs, raids and other events pop up as cards in the top-right corner of your desktop. Choose which events on the Alerts page.',
+            },
+          ],
+          note: 'Neither appears in OBS.',
+        },
+      ],
+      stuck: 'Still stuck?',
+      stuckBody: 'Check the FAQ, or send an email.',
+      email: 'Email us',
+    },
+    faq: {
+      title: 'FAQ',
+      description: 'Answers to common questions about Chatto’s desktop overlay, OBS plugin and themes.',
+      lead: 'Can’t find your answer? Write to support@chattolive.com.',
+      groups: [
+        {
+          id: 'basics',
+          title: 'Basics',
+          items: [
+            {
+              q: 'Does Chatto cost anything?',
+              a: 'No. Chatto is free, open source software under the GPL-3.0. All of its source code is on GitHub.',
+            },
+            { q: 'Which streaming platforms does it support?', a: 'Twitch for now. YouTube and Kick are planned.' },
+            { q: 'Does it run on macOS?', a: 'Not yet. Chatto runs on Windows 10 and later.' },
+            {
+              q: 'How do I update?',
+              a: 'Chatto checks for new versions when it starts and every six hours, and tells you in the title bar and under Settings › About. It downloads only after you agree, then installs when you click “Restart and update” or the next time you quit.',
+            },
+          ],
+        },
+        {
+          id: 'overlay',
+          title: 'Desktop overlay',
+          items: [
+            {
+              q: 'Will the overlay get in the way of my game?',
+              a: 'No. Clicks pass straight through it. You can only drag it after clicking Adjust on the Outputs page.',
+            },
+            {
+              q: 'I can’t see the overlay in fullscreen games',
+              a: 'Exclusive fullscreen covers every always-on-top window. Switch the game to borderless windowed mode.',
+            },
+            {
+              q: 'The overlay shows up in my stream',
+              a: 'Display capture records everything on screen, the overlay included. Use game capture or window capture instead.',
+            },
+          ],
+        },
+        {
+          id: 'obs',
+          title: 'OBS',
+          items: [
+            {
+              q: 'Do deleted messages stay on stream?',
+              a: 'No. When a moderator deletes a message, bans someone or clears chat, the messages leave the overlay and OBS right away.',
+            },
+            {
+              q: 'What does OBS show while Chatto is closed?',
+              a: 'The “Chatto Chat” source shows a waiting screen with the tea cup, and connects by itself once Chatto opens.',
+            },
+            {
+              q: 'The plugin installer says OBS is running',
+              a: 'Close OBS, then click Install plugin on the Outputs page again.',
+            },
+            {
+              q: 'Plugin or browser source?',
+              a: 'Use the plugin if you can: it needs no URL, each source can pick its own theme, and it shows a waiting screen while Chatto is closed. A browser source also works if you’d rather not install anything into OBS.',
+            },
+          ],
+        },
+        {
+          id: 'themes',
+          title: 'Themes',
+          items: [
+            { q: 'Can the overlay and OBS use different themes?', a: 'Yes. Choose one for each on the Outputs page.' },
+            {
+              q: 'How do I share a theme?',
+              a: 'Export it on the Themes page as JSON, or as a .chattotheme file that includes its images. The other person imports the file.',
+            },
+            {
+              q: 'Can I write my own CSS?',
+              a: 'Yes. Every element has a stable chatto-* class. The editor has autocomplete, and can open your CSS in VS Code with a reference of every class.',
+            },
+          ],
+        },
+        {
+          id: 'privacy',
+          title: 'Privacy',
+          items: [
+            {
+              q: 'Where is my streaming account sign-in kept?',
+              a: 'Only on your computer, encrypted by Windows. Chatto connects to the platform directly and never sends it anywhere else.',
+            },
+            { q: 'How do I report a problem?', a: 'Open an issue on GitHub, or write to support@chattolive.com.' },
+          ],
+        },
+      ],
+    },
+    changelog: {
+      title: 'Changelog',
+      description: 'What changed in each version of Chatto, Chatto Themes and the Chatto OBS plugin.',
+      lead: 'Chatto checks for new versions by itself and downloads only after you agree.',
+      products: { app: 'Chatto', themes: 'Chatto Themes', obs: 'Chatto OBS' },
+      intro: {
+        app: 'The desktop app: overlay, OBS output, themes and alerts.',
+        themes: 'Theme sharing: browse, install and share themes made by others.',
+        obs: 'The OBS plugin that adds the “Chatto Chat” source. It comes with the Chatto installer.',
+      },
+      kinds: { new: 'New', improved: 'Improved', fixed: 'Fixed' },
+      latest: 'Latest',
+      upcoming: 'Next version',
+      inProgress: 'In progress',
+      notReleased: 'Not released yet',
+      downloadVersion: (version) => `Download ${version}`,
+      releases: 'Every version’s full changes and installers are on',
     },
     privacy: {
       title: 'Privacy Notice',
@@ -60,45 +397,354 @@ export const CONTENT = {
     updated: 'Last updated',
     footer: {
       contact: 'Contact',
-      license: 'Chatto is free software under the GPL-3.0-or-later.',
+      license: '© 2026 Chatto, licensed under GPL-3.0-or-later.',
       unofficial: 'Not affiliated with any streaming platform or the OBS Project.',
     },
     notFound: { title: 'Page not found', body: 'This page doesn’t exist.', back: 'Go to the home page' },
   },
+
   'zh-TW': {
     lang: 'zh-Hant-TW',
     space: '',
     otherLanguage: 'English',
-    nav: { home: '首頁', privacy: '隱私說明', terms: '使用條款' },
+    darkMode: '深色模式',
+    nav: {
+      label: '主選單',
+      home: '首頁',
+      themes: '主題',
+      guide: '使用教學',
+      faq: '常見問題',
+      changelog: '更新紀錄',
+      privacy: '隱私說明',
+      terms: '使用條款',
+    },
+    download: '下載 Windows 版',
+    source: 'GitHub',
+    note: '免費開源，Windows 10 以上',
+    more: '更多',
+    sample: {
+      greeting: '晚安，今天玩什麼？',
+      hello: '晚安',
+      boss: '這個 boss 好難',
+      chest: '左邊有寶箱',
+      raid: 'ShiroLive 帶著 42 位觀眾揪團過來了',
+      raidTag: '揪團',
+    },
     home: {
       title: 'Chatto — 給實況主的聊天室 Overlay',
       description:
         'Chatto 是給實況主的聊天室工具：桌面上的透明 Overlay，加上可自訂主題的 OBS 聊天室來源。免費、開源，支援 Windows。',
-      tagline: '在桌面和 OBS 顯示聊天室',
-      lead: '將聊天室以透明浮層顯示在桌面，或加入 OBS，兩者都能使用自訂主題。',
-      download: '下載 Windows 版',
-      source: '在 GitHub 查看',
-      note: '免費開源 · Windows 10 以上',
-      previewAlt: '「泡泡」主題的聊天室：五則留言與一張揪團提醒',
-      featuresTitle: '功能',
+      tagline: '在桌面和 OBS\n顯示聊天室',
+      lead: '將聊天室以透明 Overlay 顯示在桌面，或加入 OBS，兩者都能使用自訂主題。',
+      featuresTitle: '能做什麼',
       features: [
         {
-          title: '桌面 Overlay',
-          body: '透明、置頂、滑鼠可以穿透到下面的遊戲，不用切視窗就能看聊天室。',
+          icon: 'monitor',
+          title: '疊在遊戲上，不擋操作',
+          body: 'Overlay 永遠在最上層，滑鼠直接穿過去。要移動或縮放時解鎖，拖曳邊框就好。',
         },
         {
-          title: 'OBS 聊天室來源',
-          body: '在 OBS 加入「Chatto 聊天室」來源，每個來源各自選主題。被刪除或封鎖的訊息會立刻從直播畫面消失。',
+          icon: 'obs',
+          title: 'OBS 裡選來源就好',
+          body: '新增「Chatto 聊天室」來源，不用貼網址，每個來源各選一個主題；Chatto 沒開時顯示等待畫面。',
         },
         {
-          title: '主題',
-          body: '從七個內建主題開始，再調整內距、圓角、圖片外框與身分樣式，或寫自己的 CSS。',
+          icon: 'sliders',
+          title: '每一項都能調',
+          body: '內距、圓角、框線、外框圖片、身分樣式，改了馬上看到。也能直接寫 CSS，做好的主題可以匯出給別人。',
         },
         {
-          title: '只有你看得到的聊天室提醒',
-          body: '聊天室安靜一段時間後有新訊息時通知你。',
+          icon: 'bell',
+          title: '只有你看得到的提醒',
+          body: '揪團、訂閱會在桌面角落跳出卡片；聊天室安靜一陣子後有人留言，也會提醒你。這些都不會出現在直播畫面上。',
         },
       ],
+      themesTitle: '七種內建主題，\n每一種都能再調整',
+      themesMore: '看全部主題',
+      themesLead: '挑一張貼上，覺得不對再改。桌面和 OBS 可以貼不一樣的。',
+      themesSheet: 'Chatto 主題貼紙',
+      themesBlank: '自己畫一張',
+      themesBlankNote: '自訂 CSS',
+      guideTitle: '開台前要做的事',
+      guideMore: '完整教學',
+      steps: [
+        { title: '下載並安裝', body: '要在 OBS 用，安裝時勾選「安裝 OBS 外掛」。' },
+        { title: '連上你的頻道', body: '在「連線」頁登入直播平台帳號，預覽裡就會出現聊天。' },
+        { title: '選擇顯示的地方', body: '開啟桌面 Overlay，或在 OBS 新增「Chatto 聊天室」來源。' },
+      ],
+      faqTitle: '常被問到的',
+      faqOther: '還有別的問題？',
+      faqMore: '看全部常見問題',
+      closing: '下載 Chatto，開始直播',
+      latest: (version, date) => `最新版本 ${version}，${date} 發佈。`,
+      latestMore: '看看改了什麼',
+      heroCaption: '抹茶玻璃主題，今晚的聊天室',
+      heroSticky: '格子的地方是透明的，底下的遊戲會直接透出來。滑鼠也穿得過去。',
+    },
+    specimen: {
+      unlocked: '已解鎖，拖曳調整',
+      obsTitle: '「Chatto 聊天室」的屬性',
+      theme: '主題',
+      width: '寬度',
+      height: '高度',
+      connected: '已連上 Chatto',
+      radius: '圓角',
+      opacity: '背景不透明度',
+      border: '框線顏色',
+      reply: '這首好聽',
+      raidTitle: 'ShiroLive 揪團',
+      raidBody: '帶著 42 位觀眾過來了',
+      sub: '訂閱了 3 個月',
+    },
+    themes: {
+      title: '主題',
+      description: 'Chatto 的七種內建聊天室主題，以及每一種可以調整的地方。',
+      lead: '從七種內建主題挑一個當起點，再逐項調整成你要的樣子。',
+      jump: '主題列表',
+      default: '預設',
+      colors: '色彩',
+      shape: '形狀',
+      motion: '動態',
+      blank: { name: '空白', body: '不帶任何樣式，只留結構與 class，給想從零寫 CSS 的人。' },
+      customTitle: '自訂',
+      customBody: '主題編輯器會同時顯示所有元件的範例，改了什麼立刻看得到。桌面 Overlay 和 OBS 可以各用一個主題。',
+      custom: [
+        '四邊內距、四角圓角、框線、陰影、模糊',
+        '九宮格圖片外框（PNG、WebP、GIF）',
+        '管理員、VIP、訂閱者各自的樣式',
+        '訂閱、揪團等事件的樣式與文字',
+        '自訂 CSS，附自動完成與檢查模式',
+        '匯出與匯入，可以連同圖片打包成 .chattotheme',
+      ],
+      list: {
+        'matcha-glass': {
+          name: '抹茶玻璃',
+          idea: '一杯透光的冰抹茶',
+          colors: '半透明深綠底、淡薄荷名字、淡綠文字',
+          shape: '12px 圓角、淡色細邊框',
+          motion: '淡入',
+        },
+        washi: {
+          name: '和紙',
+          idea: '寫在和紙上的留言',
+          colors: '米色紙底、墨色文字、茶褐色名字、朱紅強調',
+          shape: '近乎直角、思源宋體',
+          motion: '淡入',
+        },
+        bubble: {
+          name: '泡泡',
+          idea: '手機聊天的對話泡泡',
+          colors: '淡珊瑚底、深茶色文字、珊瑚色強調',
+          shape: '大圓角、一角收尖；事件加邊框與歪斜貼紙',
+          motion: '彈出',
+        },
+        outline: {
+          name: '極簡描邊',
+          idea: '遊戲字幕',
+          colors: '白字黑描邊、薄荷名字、金色強調',
+          shape: '沒有底，只有字，字級稍大',
+          motion: '淡入',
+        },
+        noren: {
+          name: '暖簾',
+          idea: '店門口的暖簾',
+          colors: '深藍布色、名字在更深的布塊上、金色強調',
+          shape: '名字與內容左右兩塊、6px 圓角',
+          motion: '從左滑入',
+        },
+        terminal: {
+          name: '終端機',
+          idea: '開發者的終端機',
+          colors: '近黑底、灰白文字、青綠名字與強調',
+          shape: '等寬字、@ 前綴、顯示時間、一整塊面板',
+          motion: '無',
+        },
+        'tea-leaf': {
+          name: '茶葉框',
+          idea: 'Chatto 自己的樣子',
+          colors: '深色底配淡抹茶外框、櫻色強調',
+          shape: '九宮格圖片外框，對角兩片茶葉',
+          motion: '彈出',
+        },
+      },
+    },
+    guide: {
+      title: '使用教學',
+      description: '安裝 Chatto、連上頻道，把聊天室放到桌面和 OBS。',
+      lead: '安裝 Chatto、連上頻道，把聊天室放到桌面和 OBS。',
+      toc: '本頁目錄',
+      step: 'STEP',
+      sections: [
+        {
+          id: 'install',
+          title: '安裝',
+          body: ['下載安裝檔並執行。要在 OBS 裡用的話，勾選「安裝 OBS 外掛」；之後也能在 App 的「輸出」頁安裝。'],
+          note: '裝好後 Chatto 會自動檢查新版本，有更新時在標題列提示，你同意後才下載。',
+        },
+        {
+          id: 'connect',
+          title: '連上頻道',
+          steps: [
+            '打開「連線」頁，選擇直播平台並按「登入」。',
+            '瀏覽器會開啟平台的授權頁，在那裡輸入 Chatto 顯示的代碼。',
+            '授權完成後回到 Chatto，聊天就會出現在「聊天室」頁的預覽裡。',
+          ],
+        },
+        {
+          id: 'overlay',
+          title: '桌面 Overlay',
+          body: [
+            '給自己看的透明聊天室，浮在所有視窗上方，滑鼠可以直接穿過。在「輸出」頁開啟，按「調整」後拖曳移動位置、拖曳邊緣改大小，完成後按「完成調整」。',
+          ],
+          tips: [
+            { title: '遊戲用無邊框視窗', body: '獨佔全螢幕會蓋過所有置頂視窗，Overlay 就看不到了。' },
+            { title: 'OBS 改用遊戲或視窗擷取', body: '「顯示器擷取」會把 Overlay 一起錄進直播。' },
+          ],
+        },
+        {
+          id: 'obs',
+          title: '放進 OBS',
+          cards: [
+            {
+              title: '用 OBS 外掛',
+              badge: '建議',
+              body: '在 OBS 的來源新增「Chatto 聊天室」，不用貼網址，每個來源都能選自己的主題。Chatto 沒開時，來源會顯示等待畫面。',
+            },
+            {
+              title: '手動新增瀏覽器來源',
+              steps: [
+                '在 OBS 的來源新增「瀏覽器」。',
+                '貼上 Chatto「輸出」頁的網址，建議寬 420、高 600。',
+                '勾選「場景啟用時重新整理瀏覽器」會更穩定。',
+              ],
+            },
+          ],
+        },
+        {
+          id: 'theme',
+          title: '調整主題',
+          body: [
+            '在「主題」頁複製一個內建主題，再打開編輯器。左側選區塊，右側預覽會同時顯示所有元件與事件的範例；改的是草稿，按「儲存」才會套用。在「輸出」頁替桌面 Overlay 和 OBS 各選一個主題。',
+          ],
+          link: '看所有內建主題',
+        },
+        {
+          id: 'alerts',
+          title: '只有你看得到的提醒',
+          cards: [
+            {
+              title: '新留言提醒',
+              body: '聊天室安靜一段時間後（預設 2 分鐘，可設 30 秒到 30 分鐘）有人留言，桌面 Overlay 會標出那則留言並播放提示音。',
+            },
+            { title: '事件 Overlay', body: '訂閱、揪團等事件在桌面右上角跳出卡片。在「提醒」頁選擇要提醒哪些事件。' },
+          ],
+          note: '這兩種提醒都不會出現在 OBS 的畫面上。',
+        },
+      ],
+      stuck: '還是卡住了？',
+      stuckBody: '看看常見問題，或直接寫信來問。',
+      email: '寫信聯絡',
+    },
+    faq: {
+      title: '常見問題',
+      description: '關於 Chatto 桌面 Overlay、OBS 外掛與主題的常見問題。',
+      lead: '找不到答案的話，寫信到 support@chattolive.com。',
+      groups: [
+        {
+          id: 'basics',
+          title: '基本',
+          items: [
+            { q: 'Chatto 要付費嗎？', a: '不用。Chatto 是免費的開源軟體，以 GPL-3.0 授權，原始碼都在 GitHub。' },
+            { q: '支援哪些直播平台？', a: '目前支援 Twitch，YouTube 與 Kick 正在規劃中。' },
+            { q: '支援 macOS 嗎？', a: '目前只支援 Windows 10 以上。' },
+            {
+              q: '怎麼更新？',
+              a: 'Chatto 會在啟動時和之後每 6 小時檢查新版本，有新版時在標題列和設定頁「關於」提示。你同意後才下載；下載完按「重新啟動並更新」立即安裝，或等下次結束 Chatto 時自動安裝。',
+            },
+          ],
+        },
+        {
+          id: 'overlay',
+          title: '桌面 Overlay',
+          items: [
+            {
+              q: 'Overlay 會擋到遊戲操作嗎？',
+              a: '不會。滑鼠會直接穿過 Overlay，只有在「輸出」頁按「調整」時才能拖曳它。',
+            },
+            {
+              q: '遊戲全螢幕時看不到 Overlay',
+              a: '獨佔全螢幕會蓋過所有置頂視窗。把遊戲改成「無邊框視窗」模式就看得到。',
+            },
+            {
+              q: 'Overlay 被一起錄進直播了',
+              a: '「顯示器擷取」會錄下螢幕上的所有東西，包括 Overlay。改用「遊戲擷取」或「視窗擷取」。',
+            },
+          ],
+        },
+        {
+          id: 'obs',
+          title: 'OBS',
+          items: [
+            {
+              q: '被刪除的訊息會留在直播畫面上嗎？',
+              a: '不會。管理員刪除訊息、封鎖觀眾或清除聊天室時，訊息會立刻從 Overlay 和 OBS 消失。',
+            },
+            {
+              q: 'Chatto 沒開時，OBS 會顯示什麼？',
+              a: '「Chatto 聊天室」來源會顯示茶杯的等待畫面，打開 Chatto 後會自動連上。',
+            },
+            { q: '安裝外掛時說 OBS 正在執行', a: '先關閉 OBS，再到「輸出」頁按一次「安裝外掛」。' },
+            {
+              q: '外掛和瀏覽器來源該用哪個？',
+              a: '建議用外掛：不用貼網址，每個來源能選自己的主題，Chatto 沒開時也有等待畫面。不想在 OBS 裡安裝東西的話，用瀏覽器來源也可以。',
+            },
+          ],
+        },
+        {
+          id: 'themes',
+          title: '主題',
+          items: [
+            { q: 'Overlay 和 OBS 可以用不同主題嗎？', a: '可以，在「輸出」頁各選一個。' },
+            {
+              q: '怎麼把主題分享給別人？',
+              a: '在「主題」頁匯出成 JSON，或連同圖片打包成 .chattotheme 檔，對方匯入就能用。',
+            },
+            {
+              q: '可以自己寫 CSS 嗎？',
+              a: '可以。每個元素都有固定的 chatto-* class，編輯器有自動完成；也能用 VS Code 開啟，裡面附有所有 class 的說明。',
+            },
+          ],
+        },
+        {
+          id: 'privacy',
+          title: '隱私與帳號',
+          items: [
+            {
+              q: '直播平台的登入資訊存在哪裡？',
+              a: '只存在你的電腦上，由 Windows 加密保存。Chatto 直接連到平台，不會把它傳到其他地方。',
+            },
+            { q: '遇到問題要怎麼回報？', a: '在 GitHub 開 issue，或寫信到 support@chattolive.com。' },
+          ],
+        },
+      ],
+    },
+    changelog: {
+      title: '更新紀錄',
+      description: 'Chatto、Chatto Themes 與 Chatto OBS 外掛每個版本的變更。',
+      lead: '已安裝的 Chatto 會自動檢查新版本，你同意後才下載。',
+      products: { app: 'Chatto', themes: 'Chatto Themes', obs: 'Chatto OBS' },
+      intro: {
+        app: '桌面 App：Overlay、OBS 輸出、主題與提醒。',
+        themes: '主題分享：瀏覽、安裝、分享其他人做的主題。',
+        obs: '新增「Chatto 聊天室」來源的 OBS 外掛，隨 Chatto 安裝檔附上。',
+      },
+      kinds: { new: '新功能', improved: '改進', fixed: '修正' },
+      latest: '最新',
+      upcoming: '下一版',
+      inProgress: '開發中',
+      notReleased: '尚未發佈',
+      downloadVersion: (version) => `下載 ${version}`,
+      releases: '每個版本的完整變更與安裝檔都在',
     },
     privacy: {
       title: '隱私說明',
@@ -118,7 +764,7 @@ export const CONTENT = {
     updated: '最後更新',
     footer: {
       contact: '聯絡',
-      license: 'Chatto 是以 GPL-3.0-or-later 授權的自由軟體。',
+      license: '© 2026 Chatto，以 GPL-3.0-or-later 授權。',
       unofficial: '與各直播平台及 OBS Project 沒有關聯。',
     },
     notFound: { title: '找不到這個頁面', body: '這個頁面不存在。', back: '回到首頁' },
