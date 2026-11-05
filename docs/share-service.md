@@ -16,31 +16,32 @@
 
 每個 JSON 回應都是 `ShareResult`（`{ ok: true, value }` 或 `{ ok: false, error, issues? }`），HTTP 狀態碼對應錯誤碼（`SHARE_ERROR_STATUS`）。需要帳號的呼叫帶 `Authorization: Bearer <session token>`。
 
-| 方法與路徑                                                                                                | 用途                                     | 帳號               |
-| --------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------ |
-| `GET /v1/themes?sort&category&search&page`                                                                | 列表（每頁 24）                          | 選填（標示按過讚） |
-| `GET /v1/codes/:code`                                                                                     | 用代碼找主題                             | 選填               |
-| `GET /v1/themes/:id`                                                                                      | 詳細資料＋主題 JSON                      | 選填               |
-| `POST /v1/versions` `{ ids }`                                                                             | 已安裝主題的最新版本號                   | —                  |
-| `GET /v1/assets/:file`、`PUT /v1/assets/:file`                                                            | 圖片外框（`<sha256>.<ext>`）；上傳要帳號 | 上傳要             |
-| `GET /v1/thumbnails/:file`                                                                                | 縮圖                                     | —                  |
-| `POST /v1/themes/:id/downloads` `{ clientId }`                                                            | 下載數（同一個匿名 id 每天算一次）       | —                  |
-| `PUT`／`DELETE /v1/themes/:id/like`                                                                       | 按讚、收回                               | 要                 |
-| `POST /v1/themes/:id/reports` `{ reason, note }`                                                          | 檢舉（每帳號一次）                       | 要                 |
-| `POST /v1/themes`、`PUT /v1/themes/:id`、`DELETE /v1/themes/:id`                                          | 投稿、更新、下架                         | 要                 |
-| `POST /v1/auth/sign-in` `{ provider }`、`POST /v1/auth/poll` `{ requestId }`、`POST /v1/auth/sign-out`    | 登入流程                                 | 綁定時要           |
-| `GET /v1/auth/start/:state`、`GET /v1/auth/callback/:provider`                                            | 瀏覽器那一段                             | —                  |
-| `GET`／`PATCH`／`DELETE /v1/account`、`DELETE /v1/account/identities/:provider`、`GET /v1/account/themes` | 帳號                                     | 要                 |
-| `GET /v1/moderation/reports`、`PUT /v1/moderation/themes/:id`、`PUT /v1/moderation/accounts/:id`          | 管理                                     | 管理者             |
+| 方法與路徑                                                                                                                    | 用途                                     | 帳號               |
+| ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------ |
+| `GET /v1/themes?sort&category&search&page`                                                                                    | 列表（每頁 24）                          | 選填（標示按過讚） |
+| `GET /v1/codes/:code`                                                                                                         | 用代碼找主題                             | 選填               |
+| `GET /v1/themes/:id`                                                                                                          | 詳細資料＋主題 JSON                      | 選填               |
+| `POST /v1/versions` `{ ids }`                                                                                                 | 已安裝主題的最新版本號                   | —                  |
+| `GET /v1/assets/:file`、`PUT /v1/assets/:file`                                                                                | 圖片外框（`<sha256>.<ext>`）；上傳要帳號 | 上傳要             |
+| `GET /v1/thumbnails/:file`                                                                                                    | 縮圖                                     | —                  |
+| `POST /v1/themes/:id/downloads` `{ clientId }`                                                                                | 下載數（同一個匿名 id 每天算一次）       | —                  |
+| `PUT`／`DELETE /v1/themes/:id/like`                                                                                           | 按讚、收回                               | 要                 |
+| `POST /v1/themes/:id/reports` `{ reason, note }`                                                                              | 檢舉（每帳號一次）                       | 要                 |
+| `POST /v1/themes`、`PUT /v1/themes/:id`、`DELETE /v1/themes/:id`                                                              | 投稿、更新、下架                         | 要                 |
+| `POST /v1/auth/sign-in` `{ provider, port, challenge }`、`POST /v1/auth/token` `{ code, verifier }`、`POST /v1/auth/sign-out` | 登入流程                                 | 綁定時要           |
+| `GET /v1/auth/start/:state`、`GET /v1/auth/callback/:provider`                                                                | 瀏覽器那一段                             | —                  |
+| `GET`／`PATCH`／`DELETE /v1/account`、`DELETE /v1/account/identities/:provider`、`GET /v1/account/themes`                     | 帳號                                     | 要                 |
+| `GET /v1/moderation/reports`、`PUT /v1/moderation/themes/:id`、`PUT /v1/moderation/accounts/:id`                              | 管理                                     | 管理者             |
 
 改 API 時舊版 App 要能用：只加欄位與端點，會壞掉的改動開 `/v2`。
 
 ## 重要的設計
 
-- **登入**：App 呼叫 `sign-in` 拿到 `requestId`（只有 App 知道，D1 只存雜湊）與 `url`（帶另一個隨機 `state`），開系統瀏覽器；Worker 轉到平台登入頁，平台導回 `callback`，Worker 用 client secret 換 token、讀使用者 id 與名稱，**用完就撤銷 token、不保存**。App 每 1.5 秒 `poll`，完成時拿到 session token；那一筆紀錄在被讀到後刪除。只讀 user id 與顯示名稱，不要 email（Google scope `openid profile`、Discord `identify`、Twitch 不要 scope）。
+- **登入（本機回呼＋PKCE）**：App 在 `127.0.0.1` 的隨機 port 開一個臨時頁面（`main/share-loopback.ts`），產生 PKCE verifier，呼叫 `sign-in` 送出登入方式、port 與 challenge，拿到 `url`（帶隨機 `state`）後開系統瀏覽器。Worker 轉到平台登入頁；平台導回 `callback` 時，Worker 用 client secret 換 token、讀使用者 id 與名稱（**用完就撤銷 token、不保存**），再把瀏覽器導回 `http://127.0.0.1:<port>/chatto-sign-in?code=<一次性代碼>`（失敗時是 `?error=`）。App 收到代碼後以 `token` 端點連同 verifier 換 session。**帳號的建立與綁定都在這一步才做**：把登入連結轉傳給別人沒有用，代碼會落在對方電腦上，而 verifier 只在發起的 App 裡；代碼只能用一次。只讀 user id 與顯示名稱，不要 email（Google scope `openid profile`、Discord `identify`、Twitch 不要 scope）。
 - **Session token** 是 32 bytes 隨機值，D1 只存 SHA-256；180 天沒用就失效；登出、刪除帳號時刪除。
 - **投稿**：App 先把每張圖片 `PUT /v1/assets/<sha256>.<ext>`（Worker 驗證檔名就是內容的雜湊、格式是 PNG／WebP／GIF、2 MB 以內），主題 JSON 裡只放 `asset:` 參照；Worker 拒絕主題內的 data URL（`image-inline`）與還沒上傳的圖片（`image-missing`）。接著跑和 App 相同的 `checkPublish`，再扣每日 10 次的額度。主題 JSON 存 R2 `themes/<id>.json`（只留最新版），縮圖 `thumbnails/<id>-<version>.png`，圖片 `assets/<file>`。
 - **隱藏規則**：管理者隱藏、作者被封鎖，或檢舉帳號數 ≥ 3 且 > 下載數 5%（管理者恢復時清掉當時的檢舉數）。被隱藏的主題只有作者與管理者看得到。
+- **備用網址**：App 只會跟著 `share.json` 換到 `chattolive.com` 與它的子網域（`isShareServiceUrl`），session token 不會被送到別處。
 - **隱私**：下載去重用的匿名 id 與限速用的 IP 都以 `HASH_SALT` 加鹽雜湊；`download_marks` 每天清掉（數字留在主題上），`rate_limits` 幾分鐘後清掉。
 - **排程**：每 10 分鐘清限速計數、過期登入、舊的下載標記、過期 session；每天 03:17（UTC）另外刪除超過一天沒有主題使用的圖片。
 - **快取**：沒帶帳號的 `GET /v1/themes`、`/v1/codes/:code` 在 Cloudflare 邊緣快取 60 秒；圖片與縮圖檔名含內容雜湊或版本，永久快取。

@@ -68,7 +68,7 @@ workspace package 直接提供 TypeScript 原始碼，由 Vite／electron-vite �
   - `backend.ts`：`ShareBackend`，每個方法對應一個 `/v1` API；`protocol.ts`：路徑、狀態碼、上限、`SHARE_API_URL` 與備用網址 `share.json`。
   - `@chatto/share/http`：真正服務的 HTTP 用戶端（連不到時讀 `share.json` 找新網址一次）；`@chatto/share/fake`：記憶體內的假服務與範例主題，重開就清空。
 - **服務**在 `apps/share-worker`（Cloudflare Worker＋D1＋R2），API、資料表、登入流程、部署步驟見 `docs/share-service.md`。**還沒部署**：App 預設用假服務，`MAIN_VITE_SHARE_API_URL` 可指向本機或正式服務（`main/share-backend.ts`）；開發版用假服務時登入的帳號是管理者。
-- `apps/desktop/src/shared/share/client.ts`：`ShareClient`，App 這端的流程：瀏覽器登入（輪詢）、session token、安裝（下載圖片、設定 `origin`，比 App 新的主題 schema 回 `app-outdated`）、投稿（圖片先轉成 `asset:` 檔案分別上傳，再送主題）、管理。預覽用的 `get()` 把 `asset:` 圖片換成服務上的網址（`ShareBackend.assetUrl`）。
+- `apps/desktop/src/shared/share/client.ts`：`ShareClient`，App 這端的流程：瀏覽器登入（本機回呼＋PKCE，`main/share-loopback.ts` 提供回呼頁）、session token、安裝（下載圖片、設定 `origin`，比 App 新的主題 schema 回 `app-outdated`）、投稿（圖片先轉成 `asset:` 檔案分別上傳，再送主題）、管理。預覽用的 `get()` 把 `asset:` 圖片換成服務上的網址（`ShareBackend.assetUrl`）。
 - **App 裡** `ShareClient` 在 main process（`index.ts` 建立，`SafeSessionStore` 以 `safeStorage` 加密 session token，存在 userData `share.token`），控制台透過單一 IPC `share:call`（`SHARE_METHODS` 白名單）呼叫；帳號狀態在 `AppState.share`。縮圖由 `share:capture-thumbnail` 擷取主視窗的一塊區域。
 - **網頁模式**的 mock API 在頁面裡直接建立 `ShareClient`＋假服務，圖片存在記憶體（`memoryAssets.ts`）。
 - 控制台：`services/share.ts`（`shareCall`、`useShareSession`、`useInstalledThemes`、`useShareUpdates`）、`pages/explore/`。

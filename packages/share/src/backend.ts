@@ -11,17 +11,35 @@ import type {
   ShareThemeSummary,
 } from './model';
 
-/** A sign-in started in the browser; the app polls until it finishes. */
-export interface SignInRequest {
-  requestId: string;
-  /** Page to open in the system browser; null when there is nothing to open (the fake service). */
-  url: string | null;
+/**
+ * Starting a sign-in. The app proves it is the one finishing it with PKCE: it keeps a random
+ * `verifier` and sends only `challenge` (base64url SHA-256 of the verifier). The service sends the
+ * browser back to `http://127.0.0.1:<port>` + `SHARE_LOOPBACK_PATH`, which only the app that
+ * started the sign-in listens on, so a sign-in link passed to someone else is useless.
+ */
+export interface SignInStart {
+  /** The app's loopback port; 0 for the fake service, which has no browser step. */
+  port: number;
+  challenge: string;
 }
 
-export type SignInPoll =
-  | { status: 'pending' }
-  | { status: 'done'; token: string; account: ShareAccount }
-  | { status: 'failed'; error: 'identity-taken' | 'banned' | 'cancelled' | 'unknown' };
+/** A sign-in started in the browser. */
+export interface SignInRequest {
+  /** Page to open in the system browser; null when there is nothing to open (the fake service). */
+  url: string | null;
+  /** Only the fake service: the code the browser step would have delivered. */
+  code?: string;
+}
+
+/** What finishing a sign-in gives: the session token and its account. */
+export interface SignInResult {
+  token: string;
+  account: ShareAccount;
+}
+
+/** Errors a sign-in can end with, as the service reports them to the loopback page. */
+export const SIGN_IN_ERRORS = ['identity-taken', 'banned', 'cancelled', 'unknown'] as const;
+export type SignInError = (typeof SIGN_IN_ERRORS)[number];
 
 /**
  * The sharing service as the app uses it: one method per `/v1` endpoint. Calls that act for an
@@ -51,8 +69,9 @@ export interface ShareBackend {
   recordDownload(id: string, clientId: string): Promise<ShareResult<void>>;
 
   /** Starts signing in, or linking another sign-in method when `token` is given. */
-  beginSignIn(provider: ShareProvider, token?: string): Promise<ShareResult<SignInRequest>>;
-  pollSignIn(requestId: string): Promise<ShareResult<SignInPoll>>;
+  beginSignIn(provider: ShareProvider, start: SignInStart, token?: string): Promise<ShareResult<SignInRequest>>;
+  /** Trades the code the loopback received, with the PKCE verifier, for a session. */
+  finishSignIn(code: string, verifier: string): Promise<ShareResult<SignInResult>>;
   account(token: string): Promise<ShareResult<ShareAccount>>;
   setDisplayName(token: string, name: string): Promise<ShareResult<ShareAccount>>;
   unlink(token: string, provider: ShareProvider): Promise<ShareResult<ShareAccount>>;

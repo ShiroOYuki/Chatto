@@ -75,8 +75,8 @@ function createMockApi(): ChattoApi {
   let termsAccepted = 0;
   let sessionToken: string | null = null;
   const share = new ShareClient({
-    // End-to-end tests fix the clock, so the fake sign-in must not wait on it; polling still takes a moment.
-    backend: createFakeShareBackend({ moderator: true, signInDelay: params.has('e2e') ? 0 : 1200 }),
+    // The fake sign-in has no browser step; it just takes a moment, so the waiting state shows.
+    backend: createFakeShareBackend({ moderator: true, signInDelay: params.has('e2e') ? 600 : 1200 }),
     session: {
       load: async () => sessionToken,
       save: async (token) => void (sessionToken = token),

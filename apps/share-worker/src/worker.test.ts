@@ -1,13 +1,19 @@
 import { sniffImage, assetSrc, type ChatTheme } from '@chatto/core';
 import { createTheme, getPresetTheme, mapThemeImages, themeImageSources } from '@chatto/chat-ui/themes';
 import {
+  createPkceVerifier,
   formatShareCode,
+  pkceChallenge,
   sha256Hex,
   SHARE_LIMITS,
+  SHARE_LOOPBACK_PATH,
   themeContentHash,
   type PublishInput,
   type ShareBackend,
+  type ShareErrorCode,
   type ShareProvider,
+  type ShareResult,
+  type SignInResult,
 } from '@chatto/share';
 import { createHttpShareBackend } from '@chatto/share/http';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -16,6 +22,8 @@ import { handle } from './app';
 import { cleanup } from './cleanup';
 
 const START = Date.UTC(2026, 10, 5, 12);
+/** The app's loopback port in these tests. */
+const PORT = 50123;
 const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
 
@@ -56,34 +64,48 @@ function setup() {
   });
   const get = (path: string) => serve(new Request(`${env.PUBLIC_URL}${path}`));
 
-  /** The browser part of a sign-in: open the start page, then come back from the platform. */
-  async function browse(url: string, code: string | null) {
+  /**
+   * The browser part of a sign-in: open the start page, come back from the platform (`user` signs
+   * in, or null to decline), and land on the app's loopback page. Returns that page's query.
+   */
+  async function browse(url: string, user: string | null): Promise<URLSearchParams> {
     const start = await serve(new Request(url));
     expect(start.status).toBe(302);
     const location = new URL(start.headers.get('Location')!);
     const state = location.searchParams.get('state')!;
-    const provider = new URL(url).pathname.includes('start') ? location.hostname : '';
-    const name = provider.includes('twitch') ? 'twitch' : provider.includes('google') ? 'google' : 'discord';
-    const params = new URLSearchParams({ state, ...(code ? { code } : { error: 'access_denied' }) });
-    return get(`/v1/auth/callback/${name}?${params}`);
+    const name = location.hostname.includes('twitch')
+      ? 'twitch'
+      : location.hostname.includes('google')
+        ? 'google'
+        : 'discord';
+    const params = new URLSearchParams({ state, ...(user ? { code: user } : { error: 'access_denied' }) });
+    const back = await get(`/v1/auth/callback/${name}?${params}`);
+    expect(back.status).toBe(302);
+    const loopback = new URL(back.headers.get('Location')!);
+    expect(`${loopback.origin}${loopback.pathname}`).toBe(`http://127.0.0.1:${PORT}${SHARE_LOOPBACK_PATH}`);
+    return loopback.searchParams;
   }
 
-  async function signIn(provider: ShareProvider, user: string, token?: string) {
+  async function begin(provider: ShareProvider, token?: string) {
     now += MINUTE; // keep clear of the per-minute sign-in limit
-    const begun = await backend.beginSignIn(provider, token);
+    const verifier = createPkceVerifier();
+    const begun = await backend.beginSignIn(provider, { port: PORT, challenge: await pkceChallenge(verifier) }, token);
     if (!begun.ok) throw new Error(`begin: ${begun.error}`);
-    expect(await backend.pollSignIn(begun.value.requestId)).toEqual({ ok: true, value: { status: 'pending' } });
-    const page = await browse(begun.value.url!, user);
-    expect(page.headers.get('Content-Type')).toContain('text/html');
-    const poll = await backend.pollSignIn(begun.value.requestId);
-    if (!poll.ok) throw new Error(`poll: ${poll.error}`);
-    return poll.value;
+    return { url: begun.value.url!, verifier };
+  }
+
+  async function signIn(provider: ShareProvider, user: string, token?: string): Promise<ShareResult<SignInResult>> {
+    const { url, verifier } = await begin(provider, token);
+    const back = await browse(url, user);
+    const code = back.get('code');
+    if (!code) return { ok: false, error: back.get('error') as ShareErrorCode };
+    return backend.finishSignIn(code, verifier);
   }
 
   async function account(user: string, provider: ShareProvider = 'twitch') {
     const result = await signIn(provider, user);
-    if (result.status !== 'done') throw new Error(`sign-in failed: ${JSON.stringify(result)}`);
-    return result;
+    if (!result.ok) throw new Error(`sign-in failed: ${result.error}`);
+    return result.value;
   }
 
   const makeModerator = (id: string) =>
@@ -94,6 +116,7 @@ function setup() {
     backend,
     get,
     browse,
+    begin,
     signIn,
     account,
     makeModerator,
@@ -152,37 +175,46 @@ describe('share worker: accounts', () => {
   });
 
   it('reports a declined sign-in and expired links', async () => {
-    const begun = await t.backend.beginSignIn('google');
-    if (!begun.ok) throw new Error('begin');
-    const page = await t.browse(begun.value.url!, null);
-    expect(page.status).toBe(200);
-    expect(await t.backend.pollSignIn(begun.value.requestId)).toEqual({
-      ok: true,
-      value: { status: 'failed', error: 'cancelled' },
-    });
-    const late = await t.backend.beginSignIn('discord');
-    if (!late.ok) throw new Error('begin');
+    const declined = await t.begin('google');
+    expect((await t.browse(declined.url, null)).get('error')).toBe('cancelled');
+    const late = await t.begin('discord');
     t.advance(11 * MINUTE);
-    expect((await t.get(new URL(late.value.url!).pathname)).status).toBe(410);
-    expect(await t.backend.pollSignIn(late.value.requestId)).toMatchObject({ value: { status: 'failed' } });
+    const page = await t.get(new URL(late.url).pathname);
+    expect(page.status).toBe(410);
+    expect(await page.text()).toContain('expired');
   });
 
-  it('refuses unknown or unconfigured sign-in methods', async () => {
-    expect(await t.backend.beginSignIn('myspace' as ShareProvider)).toEqual({ ok: false, error: 'invalid' });
+  it('gives a forwarded sign-in link nothing: the code needs the verifier of the app that started it', async () => {
+    // The sender starts linking to their account and passes the link on; someone else signs in.
+    const sender = await t.account('ciel');
+    const { url } = await t.begin('google', sender.token);
+    const code = (await t.browse(url, 'mika')).get('code')!;
+    // The code lands on the other person's computer; even with it, the sender's verifier is needed.
+    expect(await t.backend.finishSignIn(code, createPkceVerifier())).toEqual({ ok: false, error: 'invalid' });
+    expect(await t.backend.finishSignIn(code, 'anything')).toEqual({ ok: false, error: 'cancelled' });
+    expect(await t.backend.account(sender.token)).toMatchObject({ value: { identities: [{ provider: 'twitch' }] } });
+    expect(t.env.DB.sqlite.prepare('SELECT COUNT(*) AS n FROM identities').get()).toEqual({ n: 1 });
+  });
+
+  it('refuses unknown or unconfigured sign-in methods and bad loopbacks', async () => {
+    const start = { port: PORT, challenge: await pkceChallenge(createPkceVerifier()) };
+    expect(await t.backend.beginSignIn('myspace' as ShareProvider, start)).toEqual({ ok: false, error: 'invalid' });
+    expect(await t.backend.beginSignIn('twitch', { ...start, port: 80 })).toEqual({ ok: false, error: 'invalid' });
+    expect(await t.backend.beginSignIn('twitch', { ...start, challenge: 'short' })).toEqual({
+      ok: false,
+      error: 'invalid',
+    });
     t.env.GOOGLE_CLIENT_SECRET = undefined;
-    expect(await t.backend.beginSignIn('google')).toEqual({ ok: false, error: 'invalid' });
+    expect(await t.backend.beginSignIn('google', start)).toEqual({ ok: false, error: 'invalid' });
   });
 
   it('links and unlinks sign-in methods, without taking another account’s', async () => {
     const ciel = await t.account('ciel');
     const linked = await t.signIn('google', 'ciel', ciel.token);
-    expect(linked).toMatchObject({ status: 'done', account: { id: ciel.account.id } });
-    expect(linked.status === 'done' && linked.account.identities.map((item) => item.provider)).toEqual([
-      'google',
-      'twitch',
-    ]);
+    expect(linked).toMatchObject({ ok: true, value: { account: { id: ciel.account.id } } });
+    expect(linked.ok && linked.value.account.identities.map((item) => item.provider)).toEqual(['google', 'twitch']);
     await t.account('mika', 'discord');
-    expect(await t.signIn('discord', 'mika', ciel.token)).toEqual({ status: 'failed', error: 'identity-taken' });
+    expect(await t.signIn('discord', 'mika', ciel.token)).toEqual({ ok: false, error: 'identity-taken' });
     expect(await t.backend.unlink(ciel.token, 'google')).toMatchObject({
       ok: true,
       value: { identities: [{ provider: 'twitch' }] },
@@ -217,8 +249,9 @@ describe('share worker: accounts', () => {
   });
 
   it('limits how fast one address starts sign-ins', async () => {
+    const start = { port: PORT, challenge: await pkceChallenge(createPkceVerifier()) };
     const results = [];
-    for (let index = 0; index < 11; index++) results.push(await t.backend.beginSignIn('twitch'));
+    for (let index = 0; index < 21; index++) results.push(await t.backend.beginSignIn('twitch', start));
     expect(results.at(-2)?.ok).toBe(true);
     expect(results.at(-1)).toEqual({ ok: false, error: 'busy' });
   });
@@ -424,7 +457,7 @@ describe('share worker: reports and moderation', () => {
     await t.backend.setBanned(moderator.token, ciel.account.id, true);
     expect(await t.backend.deleteAccount(ciel.token)).toEqual({ ok: true });
     expect(await t.backend.get(published.value.id)).toEqual({ ok: false, error: 'not-found' });
-    expect(await t.signIn('twitch', 'ciel')).toEqual({ status: 'failed', error: 'banned' });
+    expect(await t.signIn('twitch', 'ciel')).toEqual({ ok: false, error: 'banned' });
   });
 
   it('does not name a hidden theme as the source of a remix', async () => {
@@ -460,10 +493,11 @@ describe('share worker: reports and moderation', () => {
     expect(await t.backend.setBanned(moderator.token, ciel.account.id, true)).toEqual({ ok: true });
     expect(await t.backend.get(published.value.id)).toEqual({ ok: false, error: 'not-found' });
     expect(await t.backend.publish(ciel.token, input(custom('again')))).toEqual({ ok: false, error: 'banned' });
-    expect(await t.signIn('twitch', 'ciel')).toEqual({ status: 'failed', error: 'banned' });
+    expect(await t.signIn('twitch', 'ciel')).toEqual({ ok: false, error: 'banned' });
     // Suspended accounts keep their identities, so they cannot come back as a new account.
     expect(await t.backend.unlink(ciel.token, 'twitch')).toEqual({ ok: false, error: 'banned' });
-    expect(await t.backend.beginSignIn('google', ciel.token)).toEqual({ ok: false, error: 'banned' });
+    const start = { port: PORT, challenge: await pkceChallenge(createPkceVerifier()) };
+    expect(await t.backend.beginSignIn('google', start, ciel.token)).toEqual({ ok: false, error: 'banned' });
     // Moderators can remove it outright.
     expect(await t.backend.unpublish(moderator.token, published.value.id)).toEqual({ ok: true });
   });

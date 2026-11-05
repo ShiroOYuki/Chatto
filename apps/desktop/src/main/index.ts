@@ -7,6 +7,7 @@ import type { ChatTheme, Locale } from '@chatto/core';
 import { IPC, isShareMethod, type AppState, type CaptureRect } from '../shared/ipc';
 import { ShareClient } from '../shared/share/client';
 import { canOpenSignInPage, createShareBackend } from './share-backend';
+import { openSignInLoopback } from './share-loopback';
 import { SafeSessionStore } from './share-session';
 import { AppController } from './app-controller';
 import { CssFiles } from './css-files';
@@ -282,6 +283,7 @@ async function bootstrap(): Promise<void> {
     saveTheme: (theme) => controller.saveTheme(theme),
     assets: controller.assets,
     onChange: () => controller.emit(),
+    loopback: openSignInLoopback,
   });
 
   controller.server = new LocalServer({

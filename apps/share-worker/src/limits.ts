@@ -4,10 +4,8 @@ import type { Context } from './env';
 
 /** Requests per minute. */
 export const RATE_LIMITS = {
-  /** Starting sign-ins, per address. */
-  signIn: 10,
-  /** Polling a sign-in, per address (the app polls every 1.5 s). */
-  poll: 120,
+  /** Starting and finishing sign-ins, per address. */
+  signIn: 20,
   /** Counting downloads, per address. */
   download: 120,
   /** Uploading frame images, per account. */

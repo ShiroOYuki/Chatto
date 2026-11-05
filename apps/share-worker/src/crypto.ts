@@ -1,11 +1,4 @@
-import { sha256Hex } from '@chatto/share';
-
-/** Unpadded base64url of some bytes. */
-export function base64Url(bytes: Uint8Array): string {
-  let text = '';
-  for (const byte of bytes) text += String.fromCharCode(byte);
-  return btoa(text).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
+import { base64Url, sha256Hex } from '@chatto/share';
 
 export const defaultRandom = (length: number) => crypto.getRandomValues(new Uint8Array(length));
 

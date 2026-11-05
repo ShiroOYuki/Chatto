@@ -15,6 +15,15 @@ export const SHARE_API_URL = 'https://api.chattolive.com';
  */
 export const SHARE_FALLBACK_URL = 'https://raw.githubusercontent.com/ShiroOYuki/Chatto/main/share.json';
 
+/** Path of the app's loopback page that the browser is sent back to after signing in. */
+export const SHARE_LOOPBACK_PATH = '/chatto-sign-in';
+
+/**
+ * Hosts the app may follow `share.json` to: session tokens go wherever the service is, so a
+ * changed fallback file cannot send them anywhere else.
+ */
+export const isShareServiceUrl = (url: string) => /^https:\/\/([a-z0-9-]+\.)*chattolive\.com(\/|$)/i.test(url);
+
 /** Themes per page of `list`. */
 export const SHARE_PAGE_SIZE = 24;
 
@@ -57,7 +66,7 @@ export const sharePaths = {
   thumbnail: (file: string) => `/v1/thumbnails/${segment(file)}`,
 
   signIn: '/v1/auth/sign-in',
-  poll: '/v1/auth/poll',
+  token: '/v1/auth/token',
   signOut: '/v1/auth/sign-out',
   /** Browser pages of the OAuth round trip. */
   authStart: (state: string) => `/v1/auth/start/${segment(state)}`,
@@ -84,9 +93,12 @@ export function listQueryString(query: ShareQuery): string {
 /** Request bodies. */
 export interface SignInBody {
   provider: string;
+  port: number;
+  challenge: string;
 }
-export interface PollBody {
-  requestId: string;
+export interface TokenBody {
+  code: string;
+  verifier: string;
 }
 export interface DisplayNameBody {
   displayName: string;

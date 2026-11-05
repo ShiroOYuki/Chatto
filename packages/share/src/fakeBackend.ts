@@ -1,5 +1,5 @@
 import type { ChatTheme } from '@chatto/core';
-import type { ShareBackend, SignInPoll } from './backend';
+import type { ShareBackend, SignInResult } from './backend';
 import { FAKE_SEED, type SeedTheme } from './fakeSeed';
 import {
   SHARE_LIMITS,
@@ -15,7 +15,15 @@ import {
   type ShareThemeDetail,
   type ShareThemeSummary,
 } from './model';
-import { autoTags, checkPublish, createShareCode, isAssetFile, normalizeTag, themeContentHash } from './rules';
+import {
+  autoTags,
+  checkPublish,
+  createShareCode,
+  isAssetFile,
+  normalizeTag,
+  pkceChallenge,
+  themeContentHash,
+} from './rules';
 
 const DAY = 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 24;
@@ -93,7 +101,8 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
   const identityOwners = new Map<string, string>();
   const sessions = new Map<string, string>();
   const themes = new Map<string, StoredTheme>();
-  const signIns = new Map<string, { provider: ShareProvider; linkTo: string | null; readyAt: number }>();
+  /** Sign-ins by the code the browser step would deliver. */
+  const signIns = new Map<string, { provider: ShareProvider; linkTo: string | null; challenge: string }>();
   /** Uploaded frame images by file name. */
   const assets = new Map<string, Uint8Array>();
   let counter = 0;
@@ -323,30 +332,31 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
       return shareOk(undefined);
     },
 
-    async beginSignIn(provider, token) {
+    async beginSignIn(provider, start, token) {
       let linkTo: string | null = null;
       if (token) {
         const account = viewerOf(token);
         if (!account) return shareFail('unauthorized');
         linkTo = account.id;
       }
-      const requestId = nextId('req');
-      signIns.set(requestId, { provider, linkTo, readyAt: now() + signInDelay });
-      return shareOk({ requestId, url: null });
+      const code = nextId('code');
+      signIns.set(code, { provider, linkTo, challenge: start.challenge });
+      return shareOk({ url: null, code });
     },
 
-    async pollSignIn(requestId) {
-      const request = signIns.get(requestId);
-      if (!request) return shareOk<SignInPoll>({ status: 'failed', error: 'cancelled' });
-      if (now() < request.readyAt) return shareOk<SignInPoll>({ status: 'pending' });
-      signIns.delete(requestId);
+    async finishSignIn(code, verifier) {
+      // Stands in for the time the browser step takes.
+      if (signInDelay > 0) await new Promise((resolve) => setTimeout(resolve, signInDelay));
+      const request = signIns.get(code);
+      signIns.delete(code);
+      if (!request) return shareFail('cancelled');
+      if ((await pkceChallenge(verifier)) !== request.challenge) return shareFail('invalid');
       const name = OWN_IDENTITIES[request.provider];
       const key = `${request.provider}:${name}`;
       const owner = identityOwners.get(key);
       let account: StoredAccount;
       if (request.linkTo) {
-        if (owner && owner !== request.linkTo)
-          return shareOk<SignInPoll>({ status: 'failed', error: 'identity-taken' });
+        if (owner && owner !== request.linkTo) return shareFail('identity-taken');
         account = accounts.get(request.linkTo)!;
         if (!owner) {
           account.identities = account.identities.filter((identity) => identity.provider !== request.provider);
@@ -360,10 +370,10 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
         account.identities.push({ provider: request.provider, name });
         identityOwners.set(key, account.id);
       }
-      if (account.banned) return shareOk<SignInPoll>({ status: 'failed', error: 'banned' });
+      if (account.banned) return shareFail('banned');
       const token = nextId('tok');
       sessions.set(token, account.id);
-      return shareOk<SignInPoll>({ status: 'done', token, account: publicAccount(account) });
+      return shareOk<SignInResult>({ token, account: publicAccount(account) });
     },
 
     async account(token) {

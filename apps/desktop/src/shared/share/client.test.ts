@@ -3,10 +3,12 @@ import { createTheme, getPresetTheme, PRESET_THEMES, themeImageSources } from '@
 import { isModifiedInstall, SHARE_TERMS_VERSION, type ShareBackend } from '@chatto/share';
 import { createFakeShareBackend } from '@chatto/share/fake';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ShareClient } from './client';
+import { ShareClient, type ShareClientOptions } from './client';
 import { createMemoryAssets } from './memoryAssets';
 
-function setup(options: { terms?: number; token?: string | null; backend?: ShareBackend } = {}) {
+function setup(
+  options: { terms?: number; token?: string | null; backend?: ShareBackend; client?: Partial<ShareClientOptions> } = {},
+) {
   const backend = options.backend ?? createFakeShareBackend({ signInDelay: 0 });
   const assets = createMemoryAssets();
   let themes: ChatTheme[] = [...PRESET_THEMES];
@@ -33,8 +35,8 @@ function setup(options: { terms?: number; token?: string | null; backend?: Share
     },
     assets,
     onChange,
-    pollInterval: 10,
     newThemeId: () => `local-${++ids}`,
+    ...options.client,
   });
   return { client, backend, assets, onChange, themes: () => themes, token: () => token };
 }
@@ -42,8 +44,8 @@ function setup(options: { terms?: number; token?: string | null; backend?: Share
 async function signIn(client: ShareClient) {
   expect(await client.signIn('twitch')).toEqual({ ok: true, value: undefined });
   expect(client.state().session.status).toBe('pending');
-  await vi.advanceTimersByTimeAsync(20);
-  expect(client.state().session.status).toBe('signed-in');
+  // PKCE hashing finishes outside the fake timers.
+  await vi.waitFor(() => expect(client.state().session.status).toBe('signed-in'));
 }
 
 describe('ShareClient', () => {
@@ -67,11 +69,68 @@ describe('ShareClient', () => {
   });
 
   it('cancels a sign-in that is still waiting', async () => {
-    const { client } = setup();
+    const { client } = setup({ backend: createFakeShareBackend({ signInDelay: 1000 }) });
     await client.signIn('discord');
     client.cancelSignIn();
-    await vi.advanceTimersByTimeAsync(50);
+    await vi.advanceTimersByTimeAsync(2000);
     expect(client.state().session.status).toBe('signed-out');
+  });
+
+  it('finishes a browser sign-in with the code its loopback receives', async () => {
+    const fake = createFakeShareBackend({ signInDelay: 0 });
+    const opened: string[] = [];
+    let started: { challenge: string; port: number } | null = null;
+    let codeForBrowser = '';
+    let deliver: (params: URLSearchParams) => void = () => undefined;
+    const closed = vi.fn();
+    // A service with a browser step: the fake's code arrives through the loopback instead.
+    const backend: ShareBackend = {
+      ...fake,
+      async beginSignIn(provider, start, token) {
+        started = start;
+        const result = await fake.beginSignIn(provider, start, token);
+        if (!result.ok) return result;
+        codeForBrowser = result.value.code!;
+        return { ok: true, value: { url: 'https://share.test/v1/auth/start/s' } };
+      },
+    };
+    const { client: loopbackClient } = setup({
+      backend,
+      client: {
+        openExternal: (url) => void opened.push(url),
+        loopback: async () => ({
+          port: 51234,
+          result: new Promise((resolve) => (deliver = resolve)),
+          close: closed,
+        }),
+      },
+    });
+    expect(await loopbackClient.signIn('twitch')).toEqual({ ok: true, value: undefined });
+    expect(started).toMatchObject({ port: 51234, challenge: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/) });
+    expect(opened).toEqual(['https://share.test/v1/auth/start/s']);
+    expect(loopbackClient.state().session.status).toBe('pending');
+    deliver(new URLSearchParams({ code: codeForBrowser }));
+    await vi.waitFor(() => expect(loopbackClient.state().session.status).toBe('signed-in'));
+    expect(closed).toHaveBeenCalled();
+  });
+
+  it('reports what the service sent back to the loopback', async () => {
+    const backend: ShareBackend = {
+      ...createFakeShareBackend({ signInDelay: 0 }),
+      beginSignIn: async () => ({ ok: true, value: { url: 'https://share.test/start' } }),
+    };
+    const { client: failing } = setup({
+      backend,
+      client: {
+        loopback: async () => ({
+          port: 51235,
+          result: Promise.resolve(new URLSearchParams({ error: 'identity-taken' })),
+          close: () => undefined,
+        }),
+      },
+    });
+    await failing.signIn('google');
+    await vi.waitFor(() => expect(failing.state().session).toEqual({ status: 'signed-out', error: 'identity-taken' }));
   });
 
   it('forgets a saved session the service no longer accepts', async () => {

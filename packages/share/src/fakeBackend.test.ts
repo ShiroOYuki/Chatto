@@ -3,18 +3,23 @@ import { describe, expect, it } from 'vitest';
 import type { ShareBackend } from './backend';
 import { createFakeShareBackend } from './fakeBackend';
 import type { ShareProvider, ShareResult } from './model';
-import { themeContentHash } from './rules';
+import { createPkceVerifier, pkceChallenge, themeContentHash } from './rules';
 
 function value<T>(result: ShareResult<T>): T {
   if (!result.ok) throw new Error(`expected ok, got ${result.error}`);
   return result.value;
 }
 
+async function begin(backend: ShareBackend, provider: ShareProvider, token?: string) {
+  const verifier = createPkceVerifier();
+  const { code } = value(
+    await backend.beginSignIn(provider, { port: 0, challenge: await pkceChallenge(verifier) }, token),
+  );
+  return backend.finishSignIn(code!, verifier);
+}
+
 async function signIn(backend: ShareBackend, provider: ShareProvider = 'twitch', token?: string) {
-  const { requestId } = value(await backend.beginSignIn(provider, token));
-  const poll = value(await backend.pollSignIn(requestId));
-  if (poll.status !== 'done') throw new Error(`sign-in ${poll.status}`);
-  return poll;
+  return value(await begin(backend, provider, token));
 }
 
 const fresh = () => createFakeShareBackend({ signInDelay: 0, random: Math.random });
@@ -51,8 +56,15 @@ describe('fake share backend', () => {
     const twitch = await signIn(backend, 'twitch');
     const google = await signIn(backend, 'google');
     expect(google.account.id).not.toBe(twitch.account.id);
-    const { requestId } = value(await backend.beginSignIn('google', twitch.token));
-    expect(value(await backend.pollSignIn(requestId))).toEqual({ status: 'failed', error: 'identity-taken' });
+    expect(await begin(backend, 'google', twitch.token)).toEqual({ ok: false, error: 'identity-taken' });
+  });
+
+  it('finishes a sign-in only with the verifier that started it', async () => {
+    const backend = fresh();
+    const { code } = value(await backend.beginSignIn('twitch', { port: 0, challenge: await pkceChallenge('right') }));
+    expect(await backend.finishSignIn(code!, 'wrong')).toEqual({ ok: false, error: 'invalid' });
+    // A code works once, even after a wrong attempt.
+    expect(await backend.finishSignIn(code!, 'right')).toEqual({ ok: false, error: 'cancelled' });
   });
 
   it('publishes, updates and unpublishes a theme', async () => {

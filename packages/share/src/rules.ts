@@ -64,6 +64,22 @@ export async function sha256Hex(bytes: Uint8Array | string): Promise<string> {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+/** Unpadded base64url. */
+export function base64Url(bytes: Uint8Array): string {
+  let text = '';
+  for (const byte of bytes) text += String.fromCharCode(byte);
+  return btoa(text).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/** A PKCE verifier: 32 random bytes as base64url (43 characters). */
+export const createPkceVerifier = () => base64Url(crypto.getRandomValues(new Uint8Array(32)));
+
+/** The PKCE `S256` challenge of a verifier. */
+export async function pkceChallenge(verifier: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return base64Url(new Uint8Array(digest));
+}
+
 /** The bytes are a PNG, WebP or GIF named `<sha256>.<ext>` after their content. */
 export async function isAssetFile(file: string, bytes: Uint8Array): Promise<boolean> {
   if (!ASSET_FILE.test(file)) return false;

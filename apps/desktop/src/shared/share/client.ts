@@ -2,7 +2,10 @@ import { assetFileOf, assetSrc, THEME_SCHEMA_VERSION, type ChatTheme } from '@ch
 import { mapThemeImages, normalizeTheme, themeImageSources } from '@chatto/chat-ui/themes';
 import {
   type ShareBackend,
-  type SignInPoll,
+  type SignInRequest,
+  SIGN_IN_ERRORS,
+  createPkceVerifier,
+  pkceChallenge,
   SHARE_TERMS_VERSION,
   shareFail,
   shareOk,
@@ -37,6 +40,17 @@ export interface ShareAssets {
   read(file: string): Uint8Array | null | Promise<Uint8Array | null>;
 }
 
+/**
+ * A page on 127.0.0.1 the browser is sent back to after signing in (`share-loopback.ts` in the
+ * app), so only the app that started a sign-in receives its code.
+ */
+export interface SignInLoopback {
+  port: number;
+  /** The query of the first visit to `SHARE_LOOPBACK_PATH`: `code`, or `error`. */
+  result: Promise<URLSearchParams>;
+  close(): void;
+}
+
 export interface ShareClientOptions {
   backend: ShareBackend;
   session: SessionStore;
@@ -51,11 +65,11 @@ export interface ShareClientOptions {
   /** Frame image files (`ThemeAssets` in the app; in memory in the browser preview). */
   assets: ShareAssets;
   onChange: () => void;
-  pollInterval?: number;
+  /** Opens the loopback page for a browser sign-in; not needed with the fake service. */
+  loopback?: () => Promise<SignInLoopback>;
   /** A sign-in left unfinished in the browser for this long gives up. */
   signInTimeout?: number;
   newThemeId?: () => string;
-  now?: () => number;
 }
 
 /**
@@ -68,8 +82,9 @@ export interface ShareClientOptions {
 export class ShareClient {
   #token: string | null = null;
   #session: ShareSession = { status: 'signed-out' };
-  #poll: ReturnType<typeof setTimeout> | null = null;
-  /** Bumped by every sign-in and cancel, so a stale poll result is ignored. */
+  /** Ends the wait for the browser of the sign-in in progress. */
+  #stopWaiting: (() => void) | null = null;
+  /** Bumped by every sign-in and cancel, so the result of a replaced sign-in is ignored. */
   #attempt = 0;
 
   constructor(private readonly options: ShareClientOptions) {}
@@ -104,49 +119,98 @@ export class ShareClient {
     if (this.#session.status === 'pending') this.cancelSignIn();
     // With a session, the new sign-in method is linked to that account.
     const linking = this.#token !== null;
-    const begun = await this.options.backend.beginSignIn(provider, this.#token ?? undefined);
-    if (!begun.ok) return shareFail(begun.error);
-    if (begun.value.url) this.options.openExternal(begun.value.url);
-    this.#setSession({ status: 'pending', provider, linking });
-    const started = (this.options.now ?? Date.now)();
-    const timeout = this.options.signInTimeout ?? 10 * 60_000;
+    const verifier = createPkceVerifier();
+    let loopback: SignInLoopback | null = null;
+    if (this.options.loopback) {
+      try {
+        loopback = await this.options.loopback();
+      } catch {
+        return shareFail('unknown');
+      }
+    }
+    const begun = await this.options.backend
+      .beginSignIn(
+        provider,
+        { port: loopback?.port ?? 0, challenge: await pkceChallenge(verifier) },
+        this.#token ?? undefined,
+      )
+      .catch(() => shareFail<SignInRequest>('network'));
+    if (!begun.ok) {
+      loopback?.close();
+      return shareFail(begun.error);
+    }
     const attempt = ++this.#attempt;
-    const tick = async () => {
-      this.#poll = null;
-      const result = await this.options.backend
-        .pollSignIn(begun.value.requestId)
-        .catch(() => shareFail<SignInPoll>('network'));
-      if (attempt !== this.#attempt) return; // cancelled or replaced meanwhile
-      if (result.ok && result.value.status === 'done') {
+    this.#setSession({ status: 'pending', provider, linking });
+    void this.#completeSignIn(attempt, begun.value, loopback, verifier);
+    return shareOk(undefined);
+  }
+
+  /** Waits for the browser, then trades its code for a session. */
+  async #completeSignIn(
+    attempt: number,
+    request: SignInRequest,
+    loopback: SignInLoopback | null,
+    verifier: string,
+  ): Promise<void> {
+    let code = request.code ?? null;
+    let error: ShareErrorCode | null = null;
+    if (!request.url) loopback?.close();
+    else {
+      if (!loopback) return void this.#endSignIn(attempt, 'unknown');
+      this.options.openExternal(request.url);
+      const params = await this.#waitForBrowser(loopback);
+      loopback.close();
+      if (attempt !== this.#attempt) return;
+      code = params?.get('code') ?? null;
+      if (!params) error = 'cancelled';
+      else if (!code) {
+        const reported = params.get('error');
+        error = (SIGN_IN_ERRORS as readonly (string | null)[]).includes(reported)
+          ? (reported as ShareErrorCode)
+          : 'unknown';
+      }
+    }
+    if (!error && code) {
+      const result = await this.options.backend.finishSignIn(code, verifier).catch(() => shareFail('network'));
+      if (attempt !== this.#attempt) return;
+      if (result.ok) {
         this.#token = result.value.token;
         await this.options.session.save(result.value.token).catch(() => undefined);
         return this.#setSession({ status: 'signed-in', account: result.value.account });
       }
-      const failed: ShareErrorCode | null = !result.ok
-        ? result.error === 'network'
-          ? null // keep trying through short outages
-          : result.error
-        : result.value.status === 'failed'
-          ? result.value.error
-          : null;
-      if (failed || (this.options.now ?? Date.now)() - started > timeout) {
-        const error = failed ?? 'cancelled';
-        const account = this.#token ? await this.options.backend.account(this.#token) : null;
-        return this.#setSession(
-          account?.ok ? { status: 'signed-in', account: account.value, error } : { status: 'signed-out', error },
-        );
-      }
-      this.#poll = setTimeout(() => void tick(), this.options.pollInterval ?? 1500);
-    };
-    this.#poll = setTimeout(() => void tick(), this.options.pollInterval ?? 1500);
-    return shareOk(undefined);
+      error = result.error;
+    }
+    await this.#endSignIn(attempt, error ?? 'unknown');
+  }
+
+  /** The loopback's answer, or null when the sign-in is cancelled or times out. */
+  #waitForBrowser(loopback: SignInLoopback): Promise<URLSearchParams | null> {
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => finish(null), this.options.signInTimeout ?? 10 * 60_000);
+      const finish = (value: URLSearchParams | null) => {
+        clearTimeout(timer);
+        this.#stopWaiting = null;
+        resolve(value);
+      };
+      this.#stopWaiting = () => finish(null);
+      void loopback.result.then(finish);
+    });
+  }
+
+  /** A failed sign-in: back to the account that was signed in, if any, with the error. */
+  async #endSignIn(attempt: number, error: ShareErrorCode): Promise<void> {
+    if (attempt !== this.#attempt) return;
+    const account = this.#token ? await this.options.backend.account(this.#token) : null;
+    if (attempt !== this.#attempt) return;
+    this.#setSession(
+      account?.ok ? { status: 'signed-in', account: account.value, error } : { status: 'signed-out', error },
+    );
   }
 
   /** Stops waiting for the browser; a link in progress goes back to the signed-in account. */
   cancelSignIn(): void {
     this.#attempt += 1;
-    if (this.#poll) clearTimeout(this.#poll);
-    this.#poll = null;
+    this.#stopWaiting?.();
     if (this.#session.status !== 'pending') return;
     void this.#refreshAccount();
   }

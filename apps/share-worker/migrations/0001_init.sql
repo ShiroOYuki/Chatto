@@ -30,15 +30,19 @@ CREATE TABLE sessions (
 );
 CREATE INDEX sessions_account ON sessions(account_id);
 
--- A sign-in in progress. The app polls with the request id (stored hashed); the browser carries
--- `state`. Once finished, `result` holds what the next poll returns, then the row is deleted.
+-- A sign-in in progress, keyed by the `state` the browser carries. When the browser comes back
+-- from the platform, the platform user and a one-time `code` (stored hashed) are filled in; the app
+-- that started the sign-in trades the code plus its PKCE verifier for a session, and the row goes.
 CREATE TABLE sign_ins (
-  request_hash TEXT PRIMARY KEY,
-  state TEXT NOT NULL UNIQUE,
+  state TEXT PRIMARY KEY,
   provider TEXT NOT NULL,
   link_to TEXT,
+  port INTEGER NOT NULL,
+  challenge TEXT NOT NULL,
   created_at INTEGER NOT NULL,
-  result TEXT
+  code_hash TEXT UNIQUE,
+  user_id TEXT,
+  user_name TEXT
 );
 
 CREATE TABLE themes (
@@ -106,4 +110,12 @@ CREATE TABLE rate_limits (
   minute INTEGER NOT NULL,
   count INTEGER NOT NULL,
   PRIMARY KEY (key, minute)
+);
+
+-- Sign-in identities of suspended accounts that were deleted, so they cannot come back as a new account.
+CREATE TABLE banned_identities (
+  provider TEXT NOT NULL,
+  provider_user_id TEXT NOT NULL,
+  banned_at INTEGER NOT NULL,
+  PRIMARY KEY (provider, provider_user_id)
 );

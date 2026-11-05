@@ -1,4 +1,4 @@
-import type { ShareBackend, SignInPoll, SignInRequest } from './backend';
+import type { ShareBackend, SignInRequest, SignInResult } from './backend';
 import {
   shareFail,
   type ShareAccount,
@@ -9,7 +9,7 @@ import {
   type ShareThemeDetail,
   type ShareThemeSummary,
 } from './model';
-import { listQueryString, SHARE_API_URL, SHARE_FALLBACK_URL, sharePaths } from './protocol';
+import { isShareServiceUrl, listQueryString, SHARE_API_URL, SHARE_FALLBACK_URL, sharePaths } from './protocol';
 
 export interface HttpShareOptions {
   /** The service; defaults to `SHARE_API_URL`. */
@@ -65,7 +65,7 @@ export function createHttpShareBackend(options: HttpShareOptions = {}): ShareBac
     try {
       const response = await doFetch(options.fallbackUrl ?? SHARE_FALLBACK_URL, { cache: 'no-store' });
       const { apiUrl } = (await response.json()) as { apiUrl?: unknown };
-      if (typeof apiUrl !== 'string' || !/^https:\/\//.test(apiUrl)) return false;
+      if (typeof apiUrl !== 'string' || !isShareServiceUrl(apiUrl)) return false;
       const next = apiUrl.replace(/\/+$/, '');
       if (next === baseUrl) return false;
       baseUrl = next;
@@ -117,8 +117,9 @@ export function createHttpShareBackend(options: HttpShareOptions = {}): ShareBac
     uploadAsset: (token, file, bytes) => call<void>('PUT', sharePaths.asset(file), { token, bytes }),
     recordDownload: (id, clientId) => call<void>('POST', sharePaths.downloads(id), { body: { clientId } }),
 
-    beginSignIn: (provider, token) => call<SignInRequest>('POST', sharePaths.signIn, { token, body: { provider } }),
-    pollSignIn: (requestId) => call<SignInPoll>('POST', sharePaths.poll, { body: { requestId } }),
+    beginSignIn: (provider, start, token) =>
+      call<SignInRequest>('POST', sharePaths.signIn, { token, body: { provider, ...start } }),
+    finishSignIn: (code, verifier) => call<SignInResult>('POST', sharePaths.token, { body: { code, verifier } }),
     account: (token) => call<ShareAccount>('GET', sharePaths.account, { token }),
     setDisplayName: (token, displayName) =>
       call<ShareAccount>('PATCH', sharePaths.account, { token, body: { displayName } }),

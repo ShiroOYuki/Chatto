@@ -29,11 +29,21 @@ describe('createHttpShareBackend', () => {
     expect(await offline.get('x')).toEqual({ ok: false, error: 'network' });
   });
 
+  it('ignores a fallback that points outside chattolive.com', async () => {
+    const fetch = vi.fn(async (input: string | URL | Request) => {
+      if (String(input) === SHARE_FALLBACK_URL) return Response.json({ apiUrl: 'https://evil.test' });
+      throw new TypeError('fetch failed');
+    });
+    const backend = createHttpShareBackend({ fetch });
+    expect(await backend.account('tok')).toEqual({ ok: false, error: 'network' });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('follows share.json once when the service cannot be reached', async () => {
     const fetch = vi.fn(async (input: string | URL | Request) => {
       const url = String(input);
-      if (url === SHARE_FALLBACK_URL) return Response.json({ apiUrl: 'https://moved.test' });
-      if (url.startsWith('https://moved.test/')) return Response.json(page);
+      if (url === SHARE_FALLBACK_URL) return Response.json({ apiUrl: 'https://api2.chattolive.com' });
+      if (url.startsWith('https://api2.chattolive.com/')) return Response.json(page);
       throw new TypeError('fetch failed');
     });
     const backend = createHttpShareBackend({ fetch });
@@ -41,8 +51,10 @@ describe('createHttpShareBackend', () => {
     expect(fetch.mock.calls.map(([url]) => String(url))).toEqual([
       'https://api.chattolive.com/v1/themes?sort=newest&category=cute&search=tea',
       SHARE_FALLBACK_URL,
-      'https://moved.test/v1/themes?sort=newest&category=cute&search=tea',
+      'https://api2.chattolive.com/v1/themes?sort=newest&category=cute&search=tea',
     ]);
-    expect(backend.assetUrl(`${'a'.repeat(64)}.png`)).toBe(`https://moved.test/v1/assets/${'a'.repeat(64)}.png`);
+    expect(backend.assetUrl(`${'a'.repeat(64)}.png`)).toBe(
+      `https://api2.chattolive.com/v1/assets/${'a'.repeat(64)}.png`,
+    );
   });
 });

@@ -13,7 +13,7 @@ import type { Context, Env } from './env';
 import { fail, ok, readJson, Router, ShareError } from './http';
 import { rateLimit } from './limits';
 import { listReports, setBanned, setHidden } from './moderation';
-import { beginSignIn, finishSignIn, pollSignIn, startSignIn } from './signin';
+import { beginSignIn, finishCallback, finishSignIn, startSignIn } from './signin';
 import {
   findByCode,
   getAsset,
@@ -65,9 +65,9 @@ const router = new Router<Context>()
   .on('GET', p.thumbnail, (c, { file }) => getThumbnail(c, file!))
 
   .on('POST', sharePaths.signIn, (c) => beginSignIn(c))
-  .on('POST', sharePaths.poll, (c) => pollSignIn(c))
+  .on('POST', sharePaths.token, (c) => finishSignIn(c))
   .on('GET', p.authStart, (c, { state }) => startSignIn(c, state!))
-  .on('GET', p.authCallback, (c, { provider }) => finishSignIn(c, provider!))
+  .on('GET', p.authCallback, (c, { provider }) => finishCallback(c, provider!))
   .on('POST', sharePaths.signOut, async (c) => {
     await signOut(c);
     return ok(undefined);

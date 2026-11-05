@@ -6,3 +6,4 @@ export * from './model';
 export * from './rules';
 export * from './backend';
 export * from './protocol';
+export * from './signInPage';
