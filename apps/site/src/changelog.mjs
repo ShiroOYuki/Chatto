@@ -16,6 +16,20 @@ const t = (en, zh) => ({ en, 'zh-TW': zh });
 export const CHANGELOG = {
   app: [
     {
+      upcoming: true,
+      sections: [
+        {
+          kind: 'new',
+          items: [
+            t(
+              'Channel points redemptions show on the overlays and in OBS, with a list in the app you can clear as you go',
+              '忠誠點數兌換會顯示在 Overlay 與 OBS，App 裡也有兌換紀錄，處理完可以逐筆關掉',
+            ),
+          ],
+        },
+      ],
+    },
+    {
       version: 'v0.2.0',
       date: '2026-11-06',
       download: true,
