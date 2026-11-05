@@ -128,6 +128,7 @@
 | `Field`、`TextInput`、`TagsField`        | 表單欄位；欄位標籤在上、說明在下                       |
 | `CopyField`                              | 唯讀值加複製按鈕（網址）                               |
 | `Badge`                                  | 狀態標籤；`neutral`／`matcha`／`sakura`／`danger`      |
+| `ActionNote`                             | 動作結果：圖示＋淡色底，`ok`／`error`，出現時淡入      |
 | `StatusDot`、`StatusPill`、`channelTone` | 連線狀態                                               |
 | `LoadingSpinner`                         | 按鈕、行內的載入中                                     |
 | `Hint`                                   | icon 按鈕的 tooltip                                    |
@@ -181,6 +182,8 @@
 - 結果顯示在動作旁邊，不用 toast。一個區塊同時最多一則提示，依優先順序挑：錯誤 → 剛完成的結果 → 一般提醒（見 `ObsPluginPanel` 的 `PanelNote`）。
 - 錯誤：`text-xs text-danger`，加 `role="alert"`；說明怎麼處理，不顯示原始錯誤（原始錯誤只寫 log）。
 - 成功：`text-xs text-matcha-strong`。
+- 使用者需要確定「做成了」的動作（安裝、檢舉、下架、管理動作）用 kit `ActionNote`：圖示＋淡色底、淡入，每次結果給新的 `key` 讓重複的結果也看得到。錯誤一樣用它（`tone="error"`，自帶 `role="alert"`）。
+- 對話框裡的動作完成後就沒事可做時（投稿、檢舉），整個對話框換成確認畫面：圓形勾勾、一句標題、一句說明，加上主要按鈕（關閉或下一步）。觸發的按鈕也改成完成狀態（例如「已檢舉」），讓關掉對話框後仍看得出結果。
 - 登入、連線的錯誤由 main 寫進 `AppState` 顯示；其他不需要等結果的動作用 `runAction`。
 
 ### 停用

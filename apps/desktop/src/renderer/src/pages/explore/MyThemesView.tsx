@@ -2,7 +2,7 @@ import { Download, Heart, LogIn, Plus, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { type ShareAccount, type ShareErrorCode, type ShareThemeSummary, formatShareCode } from '@chatto/share';
 import { Stagger, motion, riseIn } from '../../components/motion';
-import { Badge, Button, EmptyState, LoadingSpinner } from '../../components/kit';
+import { ActionNote, Badge, Button, EmptyState, LoadingSpinner } from '../../components/kit';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +36,7 @@ export function MyThemesView({
   const [error, setError] = useState<ShareErrorCode | null>(null);
   const [publishing, setPublishing] = useState<{ target?: ShareThemeSummary } | null>(null);
   const [removing, setRemoving] = useState<ShareThemeSummary | null>(null);
+  const [done, setDone] = useState<string | null>(null);
   const accountId = account?.id;
 
   const load = useCallback(() => {
@@ -59,9 +60,12 @@ export function MyThemesView({
     );
 
   const unpublish = async (summary: ShareThemeSummary) => {
+    setError(null);
+    setDone(null);
     const result = await shareCall('unpublish', summary.id);
-    if (result.ok) setItems((value) => value?.filter((item) => item.id !== summary.id) ?? null);
-    else setError(result.error);
+    if (!result.ok) return setError(result.error);
+    setItems((value) => value?.filter((item) => item.id !== summary.id) ?? null);
+    setDone(m.mine.unpublished(summary.name));
   };
 
   return (
@@ -72,7 +76,12 @@ export function MyThemesView({
         </Button>
         <span className="text-xs text-ink-faint">{m.account.publishesLeft(account.publishesLeft)}</span>
       </div>
-      {error ? <p className="rounded-xl bg-danger/10 px-4 py-2 text-sm text-danger">{errorText(m, error)}</p> : null}
+      {error ? <ActionNote tone="error">{errorText(m, error)}</ActionNote> : null}
+      {done ? (
+        <ActionNote key={done} tone="ok">
+          {done}
+        </ActionNote>
+      ) : null}
 
       {!items ? (
         <div className="grid place-items-center py-16">

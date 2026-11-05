@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { SHARE_PROVIDERS, type ShareProvider } from '@chatto/share';
-import { Button, LoadingSpinner, Modal, Toggle } from '../../components/kit';
+import { ActionNote, Button, LoadingSpinner, Modal, Toggle } from '../../components/kit';
 import { useMessages } from '../../i18n';
 import { runAction } from '../../services/run';
 import { shareCall, useShareSession } from '../../services/share';
@@ -123,7 +123,7 @@ export function SignInDialog({
           ))}
         </div>
       )}
-      {error ? <p className="rounded-xl bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p> : null}
+      {error ? <ActionNote tone="error">{error}</ActionNote> : null}
     </Modal>
   );
 }

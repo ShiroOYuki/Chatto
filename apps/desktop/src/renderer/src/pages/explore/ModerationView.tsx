@@ -2,7 +2,7 @@ import { Ban, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { ShareErrorCode, ShareReport, ShareReportReason, ShareThemeSummary } from '@chatto/share';
 import { Stagger, motion, riseIn } from '../../components/motion';
-import { Badge, Button, EmptyState, LoadingSpinner } from '../../components/kit';
+import { ActionNote, Badge, Button, EmptyState, LoadingSpinner } from '../../components/kit';
 import { useMessages } from '../../i18n';
 import { shareCall } from '../../services/share';
 import { authorName, SharePreview } from './ShareCard';
@@ -13,6 +13,8 @@ export function ModerationView({ onOpen }: { onOpen: (summary: ShareThemeSummary
   const m = useMessages().share;
   const [reports, setReports] = useState<ShareReport[] | null>(null);
   const [error, setError] = useState<ShareErrorCode | null>(null);
+  /** What the last action did, shown above the list. */
+  const [done, setDone] = useState<string | null>(null);
 
   const load = useCallback(() => {
     void shareCall('reports').then((result) => {
@@ -22,9 +24,12 @@ export function ModerationView({ onOpen }: { onOpen: (summary: ShareThemeSummary
   }, []);
   useEffect(load, [load]);
 
-  const act = async (action: Promise<{ ok: boolean; error?: ShareErrorCode }>) => {
+  const act = async (action: Promise<{ ok: boolean; error?: ShareErrorCode }>, doneText: string) => {
+    setError(null);
+    setDone(null);
     const result = await action;
-    if (!result.ok && result.error) setError(result.error);
+    if (result.ok) setDone(doneText);
+    else if (result.error) setError(result.error);
     load();
   };
 
@@ -37,7 +42,12 @@ export function ModerationView({ onOpen }: { onOpen: (summary: ShareThemeSummary
 
   return (
     <div className="flex flex-col gap-3">
-      {error ? <p className="rounded-xl bg-danger/10 px-4 py-2 text-sm text-danger">{errorText(m, error)}</p> : null}
+      {error ? <ActionNote tone="error">{errorText(m, error)}</ActionNote> : null}
+      {done ? (
+        <ActionNote key={done} tone="ok">
+          {done}
+        </ActionNote>
+      ) : null}
       {reports?.length === 0 ? (
         <EmptyState mood="happy" title={m.moderation.emptyTitle} hint={m.moderation.emptyHint} />
       ) : (
@@ -83,11 +93,21 @@ export function ModerationView({ onOpen }: { onOpen: (summary: ShareThemeSummary
                 </div>
                 <div className="flex shrink-0 flex-col gap-1">
                   {theme.hidden ? (
-                    <Button size="sm" onClick={() => void act(shareCall('setHidden', theme.id, false))}>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        void act(shareCall('setHidden', theme.id, false), m.moderation.done.restored(theme.name))
+                      }
+                    >
                       <Eye /> {m.moderation.restore}
                     </Button>
                   ) : (
-                    <Button size="sm" onClick={() => void act(shareCall('setHidden', theme.id, true))}>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        void act(shareCall('setHidden', theme.id, true), m.moderation.done.hidden(theme.name))
+                      }
+                    >
                       <EyeOff /> {m.moderation.hide}
                     </Button>
                   )}
@@ -96,7 +116,12 @@ export function ModerationView({ onOpen }: { onOpen: (summary: ShareThemeSummary
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => void act(shareCall('setBanned', theme.author!.id, false))}
+                        onClick={() =>
+                          void act(
+                            shareCall('setBanned', theme.author!.id, false),
+                            m.moderation.done.unbanned(theme.name),
+                          )
+                        }
                       >
                         <ShieldCheck /> {m.moderation.unban}
                       </Button>
@@ -104,7 +129,9 @@ export function ModerationView({ onOpen }: { onOpen: (summary: ShareThemeSummary
                       <Button
                         size="sm"
                         variant="danger"
-                        onClick={() => void act(shareCall('setBanned', theme.author!.id, true))}
+                        onClick={() =>
+                          void act(shareCall('setBanned', theme.author!.id, true), m.moderation.done.banned(theme.name))
+                        }
                       >
                         <Ban /> {m.moderation.ban}
                       </Button>

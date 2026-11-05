@@ -1,4 +1,4 @@
-import { Download, Flag, Heart, Sparkles } from 'lucide-react';
+import { Check, Download, Flag, Heart, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   SHARE_REPORT_REASONS,
@@ -9,7 +9,7 @@ import {
   isModifiedInstall,
 } from '@chatto/share';
 import { LiveThemePreview } from '../../components/ThemePreview';
-import { Badge, Button, CopyField, Field, LoadingSpinner, Modal, Select } from '../../components/kit';
+import { ActionNote, Badge, Button, CopyField, Field, LoadingSpinner, Modal, Select } from '../../components/kit';
 import { useLocale, useMessages } from '../../i18n';
 import { loadShareDetail, shareCall, useInstalledThemes, useShareAction, useShareSession } from '../../services/share';
 import { authorName } from './ShareCard';
@@ -19,64 +19,87 @@ function ReportDialog({
   summary,
   open,
   onOpenChange,
+  onReported,
 }: {
   summary: ShareThemeSummary;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onReported: () => void;
 }) {
   const m = useMessages().share;
+  const messages = useMessages();
   const [reason, setReason] = useState<ShareReportReason | ''>('');
   const [note, setNote] = useState('');
-  const [status, setStatus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const { busy, run } = useShareAction();
   useEffect(() => {
     if (open) {
       setReason('');
       setNote('');
-      setStatus(null);
+      setError(null);
+      setSent(false);
     }
   }, [open]);
   const submit = async () => {
     if (!reason) return;
+    setError(null);
     const result = await run(() => shareCall('report', summary.id, reason, note));
-    setStatus(result.ok ? m.report.sent : errorText(m, result.error));
+    if (!result.ok) return setError(errorText(m, result.error));
+    setSent(true);
+    onReported();
   };
   return (
     <Modal
       open={open}
       onOpenChange={onOpenChange}
       title={m.report.title}
-      description={m.report.description}
+      description={sent ? undefined : m.report.description}
       className="sm:max-w-md"
     >
-      <Field label={m.report.reason}>
-        <Select
-          value={reason}
-          onChange={setReason}
-          aria-label={m.report.reason}
-          options={SHARE_REPORT_REASONS.map((value) => ({ value, label: m.report.reasons[value] }))}
-        />
-      </Field>
-      <Field label={m.report.note}>
-        <textarea
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          maxLength={500}
-          rows={3}
-          className="w-full rounded-xl border border-line bg-canvas px-3 py-2 text-sm outline-none focus-visible:border-matcha"
-        />
-      </Field>
-      {status ? <p className="text-sm text-ink-soft">{status}</p> : null}
-      <div className="flex justify-end">
-        <Button
-          variant="primary"
-          aria-disabled={!reason || busy}
-          className={!reason || busy ? 'pointer-events-none opacity-50' : ''}
-          onClick={() => void submit()}
-        >
-          {busy ? <LoadingSpinner /> : <Flag />} {m.report.submit}
-        </Button>
-      </div>
+      {sent ? (
+        <div role="status" className="flex flex-col items-center gap-3 py-4 text-center">
+          <span className="grid size-12 place-items-center rounded-full bg-matcha-soft/60 text-matcha-strong">
+            <Check />
+          </span>
+          <p className="font-medium">{m.report.sentTitle}</p>
+          <p className="text-sm text-ink-soft">{m.report.sentHint}</p>
+          <Button variant="primary" onClick={() => onOpenChange(false)}>
+            {messages.common.close}
+          </Button>
+        </div>
+      ) : (
+        <>
+          <Field label={m.report.reason}>
+            <Select
+              value={reason}
+              onChange={setReason}
+              aria-label={m.report.reason}
+              options={SHARE_REPORT_REASONS.map((value) => ({ value, label: m.report.reasons[value] }))}
+            />
+          </Field>
+          <Field label={m.report.note}>
+            <textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              maxLength={500}
+              rows={3}
+              className="w-full rounded-xl border border-line bg-canvas px-3 py-2 text-sm outline-none focus-visible:border-matcha"
+            />
+          </Field>
+          {error ? <ActionNote tone="error">{error}</ActionNote> : null}
+          <div className="flex justify-end">
+            <Button
+              variant="primary"
+              aria-disabled={!reason || busy}
+              className={!reason || busy ? 'pointer-events-none opacity-50' : ''}
+              onClick={() => void submit()}
+            >
+              {busy ? <LoadingSpinner /> : <Flag />} {m.report.submit}
+            </Button>
+          </div>
+        </>
+      )}
     </Modal>
   );
 }
@@ -105,12 +128,15 @@ export function ThemeDetailDialog({
   const [current, setCurrent] = useState<ShareThemeSummary | null>(summary);
   const [note, setNote] = useState<{ text: string; tone: 'ok' | 'error' } | null>(null);
   const [reporting, setReporting] = useState(false);
+  /** Reported in this session; the service takes one report per account, so the button stays done. */
+  const [reported, setReported] = useState(false);
   const { busy, run } = useShareAction();
 
   useEffect(() => {
     setCurrent(summary);
     setDetail(null);
     setNote(null);
+    setReported(false);
     if (!summary) return;
     let active = true;
     void loadShareDetail(summary.id, summary.version).then((result) => {
@@ -217,25 +243,34 @@ export function ThemeDetailDialog({
               <Heart className={current.liked ? 'fill-sakura text-sakura' : ''} />
               {current.liked ? m.detail.liked : m.detail.like}
             </Button>
-            <Button variant="ghost" onClick={() => (signedIn ? setReporting(true) : onSignIn())}>
-              <Flag /> {m.detail.report}
-            </Button>
+            {reported ? (
+              <Button variant="ghost" aria-disabled className="pointer-events-none text-ink-faint">
+                <Check /> {m.detail.reported}
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={() => (signedIn ? setReporting(true) : onSignIn())}>
+                <Flag /> {m.detail.report}
+              </Button>
+            )}
           </div>
           {note ? (
-            <p
-              role="status"
-              className={`rounded-xl px-4 py-2 text-sm whitespace-pre-line ${
-                note.tone === 'ok' ? 'bg-matcha-soft/40 text-matcha-strong' : 'bg-danger/10 text-danger'
-              }`}
-            >
+            <ActionNote key={note.text} tone={note.tone}>
               {note.text}
-            </p>
+            </ActionNote>
           ) : null}
           {!signedIn ? <p className="text-xs text-ink-faint">{m.detail.signInFirst}</p> : null}
           <p className="mt-auto text-[11px] text-ink-faint">{m.detail.license(author)}</p>
         </div>
       </div>
-      <ReportDialog summary={current} open={reporting} onOpenChange={setReporting} />
+      <ReportDialog
+        summary={current}
+        open={reporting}
+        onOpenChange={setReporting}
+        onReported={() => {
+          setReported(true);
+          setNote({ text: m.detail.reportedNote, tone: 'ok' });
+        }}
+      />
     </Modal>
   );
 }

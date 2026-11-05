@@ -91,6 +91,22 @@ test('a custom theme is checked, published and listed under my themes', async ({
   await expect(page.getByText('公開中')).toBeVisible();
 });
 
+test('reporting a theme confirms it in the dialog and on the theme', async ({ panel, page }) => {
+  await panel.open('page=explore');
+  await signIn(page);
+  await page.getByRole('button', { name: 'Soda Bubbles' }).click();
+  const detail = page.getByRole('dialog', { name: 'Soda Bubbles' });
+  await detail.getByRole('button', { name: '檢舉' }).click();
+  const report = page.getByRole('dialog', { name: '檢舉主題' });
+  await report.getByRole('combobox', { name: '原因' }).click();
+  await page.getByRole('option', { name: '垃圾內容或重複投稿' }).click();
+  await report.getByRole('button', { name: '送出檢舉' }).click();
+  await expect(report.getByText('已收到你的檢舉')).toBeVisible();
+  await report.getByRole('button', { name: '關閉' }).first().click();
+  await expect(detail.getByText('已送出檢舉，管理者會查看這個主題')).toBeVisible();
+  await expect(detail.getByRole('button', { name: '已檢舉' })).toHaveAttribute('aria-disabled', 'true');
+});
+
 test('moderators restore hidden themes from the reports', async ({ panel, page }) => {
   await panel.open('page=explore');
   await signIn(page);
@@ -99,6 +115,7 @@ test('moderators restore hidden themes from the reports', async ({ panel, page }
   await expect(row.getByText('已隱藏')).toBeVisible();
   await row.getByRole('button', { name: '恢復' }).click();
   await expect(row.getByText('已隱藏')).toHaveCount(0);
+  await expect(page.getByText('已恢復「Copied Bubbles」')).toBeVisible();
 
   await page.getByRole('tab', { name: '瀏覽' }).click();
   await expect(page.getByRole('button', { name: 'Copied Bubbles' })).toBeVisible();

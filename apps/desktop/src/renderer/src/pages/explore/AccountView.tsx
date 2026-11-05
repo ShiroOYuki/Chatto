@@ -2,7 +2,7 @@ import { LogIn, LogOut, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SHARE_LIMITS, SHARE_PROVIDERS, type ShareAccount, type ShareProvider } from '@chatto/share';
 import { Stagger } from '../../components/motion';
-import { Badge, Button, EmptyState, Field, Modal, TextInput, Tile } from '../../components/kit';
+import { ActionNote, Badge, Button, EmptyState, Field, Modal, TextInput, Tile } from '../../components/kit';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -128,7 +128,11 @@ function SignedInAccount({ account, onLink }: { account: ShareAccount; onLink: (
             <Trash2 /> {m.account.deleteAccount}
           </Button>
         </div>
-        {error ? <p className="mt-3 rounded-xl bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p> : null}
+        {error ? (
+          <ActionNote tone="error" className="mt-3">
+            {error}
+          </ActionNote>
+        ) : null}
       </Tile>
 
       <Modal open={showTerms} onOpenChange={setShowTerms} title={m.account.viewTerms}>
