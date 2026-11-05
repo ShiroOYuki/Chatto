@@ -345,8 +345,8 @@ function themesPage(locale) {
     ${spec(theme)}
   </div>
   <div class="theme-scenes">
-    <figure><div class="scene scene-bright">${chatPreview(id, locale)}</div><figcaption>${escape(t.bright)}</figcaption></figure>
-    <figure><div class="scene scene-dark">${chatPreview(id, locale)}</div><figcaption>${escape(t.dark)}</figcaption></figure>
+    <div class="scene scene-bright">${chatPreview(id, locale)}</div>
+    <div class="scene scene-dark">${chatPreview(id, locale)}</div>
   </div>
 </article>`;
   }).join('\n');

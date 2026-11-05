@@ -100,10 +100,8 @@ export const CONTENT = {
       colors: 'Colors',
       shape: 'Shape',
       motion: 'Motion',
-      bright: 'On a bright game',
-      dark: 'On a dark scene',
       blank: { name: 'Blank', body: 'No styles at all, only the structure and classes, for writing CSS from scratch.' },
-      customTitle: 'Tune every part',
+      customTitle: 'Customize',
       customBody:
         'The theme editor shows a sample of every element at once, so you see each change right away. The desktop overlay and OBS can each use their own theme.',
       custom: [
@@ -457,10 +455,8 @@ export const CONTENT = {
       colors: '色彩',
       shape: '形狀',
       motion: '動態',
-      bright: '明亮的遊戲畫面',
-      dark: '深色的畫面',
       blank: { name: '空白', body: '不帶任何樣式，只留結構與 class，給想從零寫 CSS 的人。' },
-      customTitle: '每一處都能調',
+      customTitle: '自訂',
       customBody: '主題編輯器會同時顯示所有元件的範例，改了什麼立刻看得到。桌面 Overlay 和 OBS 可以各用一個主題。',
       custom: [
         '四邊內距、四角圓角、框線、陰影、模糊',

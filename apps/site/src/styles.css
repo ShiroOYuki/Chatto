@@ -1137,10 +1137,6 @@ dd {
   gap: 12px;
 }
 
-.theme-scenes figure {
-  margin: 0;
-}
-
 .theme-scenes .scene {
   height: 220px;
 }
@@ -1152,12 +1148,6 @@ dd {
   color: var(--muted);
   font-family: var(--mono);
   font-size: 15px;
-}
-
-figcaption {
-  margin-top: 8px;
-  font-size: 14px;
-  color: var(--muted);
 }
 
 .custom {
