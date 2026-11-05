@@ -18,6 +18,43 @@ test('every page opens from the sidebar without errors', async ({ panel, page })
   expect(errors).toEqual([]);
 });
 
+test('every clickable control shows a pointer', async ({ panel, page }) => {
+  await panel.open();
+  const CLICKABLE = [
+    'button',
+    'a[href]',
+    'summary',
+    '[role="button"]',
+    '[role="switch"]',
+    '[role="tab"]',
+    '[role="checkbox"]',
+    '[role="radio"]',
+    '[role="combobox"]:not(input)',
+  ].join(', ');
+  for (const label of [...PAGES, '探索', '提醒']) {
+    await panel.nav(label).click();
+    await expect(panel.nav(label)).toHaveAttribute('aria-current', 'page');
+    const wrong = await page.evaluate((selector) => {
+      const disabled = (el: Element) =>
+        el.matches(':disabled, [aria-disabled="true"], [data-disabled]') || el.closest('.chatto-root') !== null;
+      return [...document.querySelectorAll(selector)]
+        .filter((el) => !disabled(el) && el.getClientRects().length > 0)
+        .filter((el) => getComputedStyle(el).cursor !== 'pointer')
+        .map(
+          (el) =>
+            `${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 30)}"`,
+        );
+    }, CLICKABLE);
+    expect(wrong, label).toEqual([]);
+  }
+  // Disabled controls keep the arrow.
+  await panel.nav('連線').click();
+  await panel.setState({ auth: { status: 'signed-out' }, channel: { state: 'idle' } });
+  const connect = page.getByRole('main').getByRole('button', { name: '連線', exact: true });
+  await expect(connect).toBeDisabled();
+  expect(await connect.evaluate((el) => getComputedStyle(el).cursor)).toBe('default');
+});
+
 test('the chat log shows new messages and marks deleted ones', async ({ panel, page }) => {
   await panel.open('page=chat');
   const keep = chatMessage('這則會留著');

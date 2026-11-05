@@ -150,6 +150,7 @@
 - 「前往某頁」的按鈕在文字後面加 `ArrowRight`。
 - icon 按鈕外面包 `Hint`，按鈕本身也要有 `aria-label`（tooltip 不算名稱）。
 - 動作進行中：按鈕 `disabled`，必要時加 `LoadingSpinner`；不要讓人重複按。
+- 游標：可點的元素（按鈕、連結、開關、分頁、選單項、下拉選單、核取方塊）由 `styles.css` 的全域規則顯示 pointer，停用的（`disabled`、`aria-disabled`）維持箭頭，不必逐個加 `cursor-pointer`。可點的東西要用 `<button>` 或正確的 ARIA role；用 `div` 加 `onClick` 時要自己加 `cursor-pointer`。複製進來的 shadcn 選單項原本寫死 `cursor-default`，已改成 `cursor-pointer`。
 
 ### 設定與表單
 
