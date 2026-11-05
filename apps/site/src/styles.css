@@ -1102,7 +1102,25 @@ img {
   position: relative;
   height: 4px;
   border-radius: 2px;
-  background: linear-gradient(90deg, #27500a var(--at), rgba(29, 42, 20, 0.12) var(--at));
+  background: rgba(29, 42, 20, 0.12);
+}
+
+.track::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--at);
+  border-radius: inherit;
+  background: #27500a;
+}
+
+/* The position comes from a class: the CSP allows no style attributes. */
+.track-58 {
+  --at: 58%;
+}
+
+.track-72 {
+  --at: 72%;
 }
 
 .track i {
@@ -1123,10 +1141,17 @@ img {
   align-items: flex-end;
 }
 
+.spec-editor .tp {
+  gap: 8px;
+  font-size: 14px;
+}
+
 .spec-editor .tp-matcha-glass .m {
-  border-color: #9fe1cb;
+  width: fit-content;
+  padding: 8px 14px;
   border-radius: 14px;
-  padding: 8px 12px;
+  background: rgba(30, 70, 50, 0.72);
+  border-color: #9fe1cb;
 }
 
 .spec-alerts {

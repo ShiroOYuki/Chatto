@@ -21,7 +21,6 @@ export const CONTENT = {
     nav: {
       label: 'Main',
       home: 'Home',
-      features: 'Features',
       themes: 'Themes',
       guide: 'Guide',
       faq: 'FAQ',
@@ -104,7 +103,7 @@ export const CONTENT = {
       height: 'Height',
       connected: 'Connected to Chatto',
       radius: 'Corners',
-      padding: 'Padding',
+      opacity: 'Background opacity',
       border: 'Border color',
       reply: 'love this song',
       raidTitle: 'ShiroLive is raiding',
@@ -412,7 +411,6 @@ export const CONTENT = {
     nav: {
       label: '主選單',
       home: '首頁',
-      features: '功能',
       themes: '主題',
       guide: '使用教學',
       faq: '常見問題',
@@ -491,7 +489,7 @@ export const CONTENT = {
       height: '高度',
       connected: '已連上 Chatto',
       radius: '圓角',
-      padding: '內距',
+      opacity: '背景不透明度',
       border: '框線顏色',
       reply: '這首好聽',
       raidTitle: 'ShiroLive 揪團',

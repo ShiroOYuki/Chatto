@@ -5,9 +5,6 @@
  * Loaded in <head> so the saved choice applies before the page is drawn (the CSP allows no
  * inline scripts). Storage can be unavailable, in which case the choice lasts for this page only.
  * Where the browser has view transitions, the new colors spread out from the button.
- *
- * The Features link (`data-section`) scrolls to that section of the home page without adding
- * `#features` to the address. From another page it goes home first and scrolls once there.
  */
 (() => {
   const KEY = 'chatto-theme';
@@ -23,33 +20,10 @@
     saved = localStorage.getItem(KEY);
   } catch {}
   apply(saved === 'dark');
-  const SECTION = 'chatto-section';
   const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const scrollTo = (id) =>
-    document.getElementById(id)?.scrollIntoView({ behavior: still() ? 'auto' : 'smooth', block: 'start' });
 
   document.addEventListener('DOMContentLoaded', () => {
     apply(root.dataset.theme === 'dark');
-
-    for (const link of document.querySelectorAll('a[data-section]')) {
-      link.addEventListener('click', (event) => {
-        const id = link.dataset.section;
-        if (document.getElementById(id)) {
-          event.preventDefault();
-          scrollTo(id);
-          return;
-        }
-        try {
-          sessionStorage.setItem(SECTION, id);
-        } catch {}
-      });
-    }
-    let pending = null;
-    try {
-      pending = sessionStorage.getItem(SECTION);
-      sessionStorage.removeItem(SECTION);
-    } catch {}
-    if (pending) requestAnimationFrame(() => scrollTo(pending));
 
     const button = document.querySelector('.theme-toggle');
     button?.addEventListener('click', () => {

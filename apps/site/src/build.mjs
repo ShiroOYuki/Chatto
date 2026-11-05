@@ -3,8 +3,7 @@
  * home, themes, guide, FAQ, the changelog of each product, privacy notice, terms and a 404 page.
  * The legal texts come from `@chatto/share` (`legalText.ts`, loaded as TypeScript by Node), so
  * the site and the app say the same thing. The site is light unless the visitor switches it to
- * dark with the button in the header (`public/site.js` remembers the choice). The Features link
- * scrolls to that section of the home page without putting `#features` in the address.
+ * dark with the button in the header (`public/site.js` remembers the choice).
  *
  * The look is a streamer's notebook: grid paper, real pieces of the app taped on like photos,
  * the built-in themes as a sheet of stickers, steps as a to-do list and questions on sticky notes.
@@ -144,11 +143,18 @@ const SPECIMENS = {
     return `<div class="spec spec-obs"><p class="obs-title">${escape(s.obsTitle)}</p>${field(s.theme, CONTENT[locale].themes.list.washi.name, true)}${field(s.width, '420')}${field(s.height, '600')}<p class="obs-ok"><i></i>${escape(s.connected)}</p></div>`;
   },
   /** Two fields of the theme editor with the chat they change. */
+  /**
+   * Three fields of the theme editor and the messages they style: the preview uses exactly the
+   * values shown (14 px corners, 72% background, a mint border).
+   */
   sliders: (locale) => {
     const s = CONTENT[locale].specimen;
+    const sample = CONTENT[locale].sample;
     const slider = (label, value, at) =>
-      `<p class="slider"><span class="slider-head">${escape(label)}<span>${value}</span></span><span class="track" style="--at: ${at}%"><i></i></span></p>`;
-    return `<div class="spec spec-editor"><div class="fields">${slider(s.radius, '14 px', 58)}${slider(s.padding, locale === 'en' ? '10, 16 px' : '10、16 px', 40)}<p class="swatch">${escape(s.border)}<i></i></p></div><div class="clear">${chatPreview('matcha-glass', locale, { count: 2 })}</div></div>`;
+      `<p class="slider"><span class="slider-head">${escape(label)}<span>${value}</span></span><span class="track track-${at}"><i></i></span></p>`;
+    const message = (name, text) =>
+      `<p class="m"><span class="head"><b class="n">${name}</b><span class="sep">:</span></span><span class="t">${escape(text)}</span></p>`;
+    return `<div class="spec spec-editor"><div class="fields">${slider(s.radius, '14 px', 58)}${slider(s.opacity, '72%', 72)}<p class="swatch">${escape(s.border)}<i></i></p></div><div class="clear"><div class="tp tp-matcha-glass" aria-hidden="true">${message('Yuki', sample.hello)}${message('TeaTime', s.reply)}</div></div></div>`;
   },
   /** Event cards in the corner of the desktop. */
   bell: (locale) => {
@@ -167,16 +173,15 @@ function header(locale, page) {
   const other = locale === 'en' ? 'zh-TW' : 'en';
   const current = (key) => page === key || (key === 'changelog-app' && page?.startsWith('changelog'));
   const items = [
-    ['home', 'features', 'features'],
+    ['home', 'home'],
     ['themes', 'themes'],
     ['guide', 'guide'],
     ['faq', 'faq'],
     ['changelog-app', 'changelog'],
   ]
-    .map(([key, label, section]) =>
-      section
-        ? `<a href="${href(locale, key)}" data-section="${section}">${escape(t.nav[label])}</a>`
-        : `<a href="${href(locale, key)}"${current(key) ? ' aria-current="page"' : ''}>${current(key) ? mark : ''}${escape(t.nav[label])}</a>`,
+    .map(
+      ([key, label]) =>
+        `<a href="${href(locale, key)}"${current(key) ? ' aria-current="page"' : ''}>${current(key) ? mark : ''}${escape(t.nav[label])}</a>`,
     )
     .join('');
   return `<header class="top wrap">
