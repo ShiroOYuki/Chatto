@@ -16,29 +16,6 @@ const t = (en, zh) => ({ en, 'zh-TW': zh });
 export const CHANGELOG = {
   app: [
     {
-      upcoming: true,
-      sections: [
-        {
-          kind: 'new',
-          items: [
-            t(
-              'Channel points redemptions show on the overlays and in OBS, with a list in the app you can clear as you go',
-              '忠誠點數兌換會顯示在 Overlay 與 OBS，App 裡也有兌換紀錄，處理完可以逐筆關掉',
-            ),
-          ],
-        },
-        {
-          kind: 'improved',
-          items: [
-            t(
-              'One Accounts page for your Chatto account and your streaming platforms, opened from the card at the bottom of the sidebar',
-              '新的「帳號」頁集中管理 Chatto 帳號與直播平台，左側欄底部的帳號卡也能直接打開',
-            ),
-          ],
-        },
-      ],
-    },
-    {
       version: 'v0.2.0',
       date: '2026-11-06',
       download: true,
@@ -54,6 +31,20 @@ export const CHANGELOG = {
               'The theme editor’s preview can show just the samples for the section you’re editing',
               '主題編輯器的預覽可以只看目前區塊的範例',
             ),
+            t(
+              'Channel points redemptions show on the overlays and in OBS, with a list in the app you can clear as you go',
+              '忠誠點數兌換會顯示在 Overlay 與 OBS，App 裡也有兌換紀錄，處理完可以逐筆關掉',
+            ),
+          ],
+        },
+        {
+          kind: 'improved',
+          items: [
+            t(
+              'One Accounts page for your Chatto account and your streaming platforms, opened from the card at the bottom of the sidebar',
+              '新的「帳號」頁集中管理 Chatto 帳號與直播平台，左側欄底部的帳號卡也能直接打開',
+            ),
+            t('Fill in your own channel with one click', '一鍵填入自己的頻道'),
           ],
         },
       ],
