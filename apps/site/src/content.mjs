@@ -70,7 +70,7 @@ export const CONTENT = {
           body: 'Get notified when new messages arrive after a quiet period. Viewers never see them.',
         },
       ],
-      themesTitle: 'Seven themes,\neach with its own idea',
+      themesTitle: 'Seven built-in themes,\neach one adjustable',
       themesMore: 'See all themes',
       guideTitle: 'Start in three steps',
       guideLead: 'Once it’s set up, chat shows up wherever you put it.',
@@ -94,7 +94,7 @@ export const CONTENT = {
     themes: {
       title: 'Themes',
       description: 'The seven built-in chat themes of Chatto, and what you can tune in each of them.',
-      lead: 'Seven built-in themes, each starting from an idea. Pick one, then tune it to your own.',
+      lead: 'Start from one of seven built-in themes, then adjust it until it looks right.',
       jump: 'Themes',
       default: 'Default',
       colors: 'Colors',
@@ -159,7 +159,7 @@ export const CONTENT = {
         },
         'tea-leaf': {
           name: 'Tea Leaf',
-          idea: 'Chatto itself',
+          idea: 'Chatto’s own look',
           colors: 'Dark ground, a pale matcha frame, sakura accents',
           shape: 'A nine-slice image frame with two leaves at opposite corners',
           motion: 'Pop in',
@@ -169,7 +169,7 @@ export const CONTENT = {
     guide: {
       title: 'Guide',
       description: 'Install Chatto, connect your channel and put chat on your desktop and in OBS.',
-      lead: 'From installing to going live with chat, in about five minutes.',
+      lead: 'Install Chatto, connect your channel, and put chat on your desktop and in OBS.',
       toc: 'On this page',
       step: 'Step',
       sections: [
@@ -430,7 +430,7 @@ export const CONTENT = {
         { icon: 'sliders', title: '逐項調整的主題', body: '內距、圓角、外框圖片、身分樣式，或直接寫 CSS。' },
         { icon: 'bell', title: '只有你看得到的提醒', body: '聊天室安靜一段時間後有新訊息時通知你，觀眾不會看到。' },
       ],
-      themesTitle: '七種主題，\n每一種都有自己的意象',
+      themesTitle: '七種內建主題，\n每一種都能再調整',
       themesMore: '看全部主題',
       guideTitle: '三步開始',
       guideLead: '裝好之後，聊天室就會在你選的地方出現。',
@@ -451,7 +451,7 @@ export const CONTENT = {
     themes: {
       title: '主題',
       description: 'Chatto 的七種內建聊天室主題，以及每一種可以調整的地方。',
-      lead: '七種內建主題，每一種都從一個意象開始。挑一個當起點，再逐項調成你的樣子。',
+      lead: '從七種內建主題挑一個當起點，再逐項調整成你要的樣子。',
       jump: '主題列表',
       default: '預設',
       colors: '色彩',
@@ -515,7 +515,7 @@ export const CONTENT = {
         },
         'tea-leaf': {
           name: '茶葉框',
-          idea: 'Chatto 本身',
+          idea: 'Chatto 自己的樣子',
           colors: '深色底配淡抹茶外框、櫻色強調',
           shape: '九宮格圖片外框，對角兩片茶葉',
           motion: '彈出',
@@ -525,7 +525,7 @@ export const CONTENT = {
     guide: {
       title: '使用教學',
       description: '安裝 Chatto、連上頻道，把聊天室放到桌面和 OBS。',
-      lead: '從安裝到放進直播畫面，大約五分鐘。',
+      lead: '安裝 Chatto、連上頻道，把聊天室放到桌面和 OBS。',
       toc: '本頁目錄',
       step: 'STEP',
       sections: [
