@@ -278,12 +278,12 @@ const faqItem = (item, open = false) =>
 
 /**
  * Where an entry stands: `upcoming` (no version yet), `unreleased` (has a version, but that
- * GitHub Release is not published yet) or `released`. The OBS plugin follows the Chatto release
- * it comes with (`chatto`).
+ * GitHub Release is not published yet) or `released`. The OBS plugin and Chatto Themes follow the
+ * Chatto release they come with (`chatto`).
  */
 function statusOf(entry, product) {
   if (entry.upcoming) return 'upcoming';
-  const tag = product === 'obs' ? entry.chatto : product === 'app' ? entry.version : null;
+  const tag = product === 'app' ? entry.version : entry.chatto;
   if (!tag || PUBLISHED === null || PUBLISHED.has(tag)) return 'released';
   return 'unreleased';
 }

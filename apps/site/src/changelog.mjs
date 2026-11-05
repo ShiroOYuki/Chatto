@@ -1,8 +1,9 @@
 /**
  * The changelog of each Chatto product, newest first. An entry with `upcoming: true` is work on
  * `develop` that has not been released; it is shown without a version or date. Every text is
- * written in both languages. An OBS plugin entry names the Chatto release it comes with
- * (`chatto`): the site shows it once that release is published, and the release notes include it.
+ * written in both languages. An OBS plugin or Chatto Themes entry names the Chatto release it comes
+ * with (`chatto`): the site shows it once that release is published. The release notes include the
+ * OBS plugin's entry.
  */
 
 /** @typedef {{ en: string, 'zh-TW': string }} Text */
@@ -15,7 +16,9 @@ const t = (en, zh) => ({ en, 'zh-TW': zh });
 export const CHANGELOG = {
   app: [
     {
-      upcoming: true,
+      version: 'v0.2.0',
+      date: '2026-11-06',
+      download: true,
       sections: [
         {
           kind: 'new',
@@ -35,7 +38,6 @@ export const CHANGELOG = {
     {
       version: 'v0.1.1',
       date: '2026-11-04',
-      download: true,
       sections: [
         {
           kind: 'new',
@@ -82,10 +84,12 @@ export const CHANGELOG = {
   ],
   themes: [
     {
-      upcoming: true,
+      version: 'v1.0',
+      date: '2026-11-06',
+      chatto: 'v0.2.0',
       summary: t(
-        'Theme sharing opens with the next version of Chatto, on its Explore page.',
-        '主題分享會隨 Chatto 下一版推出，在 App 的「探索」頁使用。',
+        'Theme sharing opens with Chatto v0.2.0, on its Explore page.',
+        '主題分享隨 Chatto v0.2.0 推出，在 App 的「探索」頁使用。',
       ),
       sections: [
         {
