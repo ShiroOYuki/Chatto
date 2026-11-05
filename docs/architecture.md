@@ -62,7 +62,7 @@ workspace package 直接提供 TypeScript 原始碼，由 Vite／electron-vite �
 
 ## 主題分享（開發中，GitHub #4）
 
-控制台的「探索」頁：瀏覽、安裝、投稿、按讚與檢舉別人分享的主題，以及 Chatto 帳號與管理功能。
+控制台的「探索」頁：瀏覽、安裝、投稿、按讚與檢舉別人分享的主題，以及管理功能；Chatto 帳號在「帳號」頁（和直播平台的登入放在一起，底層仍分開）。
 
 - **共用程式**在 `packages/share`（`@chatto/share`），App 與服務都用：
   - `model.ts`：資料型別（`ShareThemeSummary`、`ShareAccount`、`ShareResult` …）、類別、建議 tag、上限、條款版本。

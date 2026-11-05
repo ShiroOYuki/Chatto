@@ -1,10 +1,8 @@
 import { defineMessages } from '../define';
 
-/** The connections page: Twitch setup and planned platforms. */
+/** Streaming platform cards on the accounts page: Twitch setup and planned platforms. */
 export default defineMessages({
   'zh-TW': {
-    title: '連線',
-    description: '管理直播平台的帳號與聊天室來源',
     channelState: {
       idle: '尚未連線',
       connecting: '連線中…',
@@ -45,8 +43,6 @@ export default defineMessages({
     planned: '規劃中',
   },
   en: {
-    title: 'Connections',
-    description: 'Manage your streaming accounts and chat sources',
     channelState: {
       idle: 'Not connected',
       connecting: 'Connecting…',

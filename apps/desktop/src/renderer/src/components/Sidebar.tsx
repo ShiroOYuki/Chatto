@@ -1,12 +1,14 @@
-import { BellRing, Cable, Compass, Home, MessagesSquare, MonitorUp, Palette, Settings } from 'lucide-react';
+import { BellRing, CircleUserRound, Compass, Home, MessagesSquare, MonitorUp, Palette, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { useMessages } from '../i18n';
+import { twitchStatus } from '../services/twitch';
 import { useChatLog } from '../store';
+import { channelTone, StatusDot } from './kit';
 import { motion, RollingNumber, spring } from './motion';
 import { TeaCup, type TeaCupMood } from './TeaCup';
 
-export type PageId = 'overview' | 'chat' | 'themes' | 'explore' | 'outputs' | 'alerts' | 'connections' | 'settings';
+export type PageId = 'overview' | 'chat' | 'themes' | 'explore' | 'outputs' | 'alerts' | 'accounts' | 'settings';
 
 /** Pages in sidebar order; their names live in `useMessages().shell.pages`. */
 export const PAGES: { id: PageId; icon: ReactNode }[] = [
@@ -16,7 +18,7 @@ export const PAGES: { id: PageId; icon: ReactNode }[] = [
   { id: 'explore', icon: <Compass /> },
   { id: 'outputs', icon: <MonitorUp /> },
   { id: 'alerts', icon: <BellRing /> },
-  { id: 'connections', icon: <Cable /> },
+  { id: 'accounts', icon: <CircleUserRound /> },
   { id: 'settings', icon: <Settings /> },
 ];
 
@@ -76,6 +78,39 @@ export function moodFor(state: AppState, rate: number): TeaCupMood {
   return rate >= 30 ? 'busy' : 'happy';
 }
 
+/** The account card above Settings: the Chatto account and each platform's connection, opening the accounts page. */
+function AccountCard({ state, active, onClick }: { state: AppState; active: boolean; onClick: () => void }) {
+  const m = useMessages().accounts.sidebar;
+  const session = state.share.session;
+  const account = session.status === 'signed-in' ? session.account : null;
+  const { connected } = twitchStatus(state);
+  const name = account?.displayName ?? (session.status === 'pending' ? m.signingIn : m.signedOut);
+
+  return (
+    <button
+      type="button"
+      data-testid="sidebar-account"
+      title={m.open}
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
+      className={`mt-2 flex w-full items-center gap-3 rounded-xl border bg-tile p-2.5 text-left transition-colors hover:bg-tile-muted ${
+        active ? 'border-matcha/50' : 'border-line'
+      }`}
+    >
+      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-matcha-soft text-sm font-medium text-matcha-strong">
+        {account ? account.displayName.slice(0, 1).toUpperCase() : <CircleUserRound className="size-5" />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className={`block truncate text-sm ${account ? 'font-medium text-ink' : 'text-ink-soft'}`}>{name}</span>
+        <span className="flex items-center gap-1.5 text-xs text-ink-faint">
+          <StatusDot tone={channelTone(state.channel.state, connected)} />
+          Twitch
+        </span>
+      </span>
+    </button>
+  );
+}
+
 export function Sidebar({
   state,
   page,
@@ -109,6 +144,8 @@ export function Sidebar({
           <p className="text-xs leading-relaxed text-ink-soft">{m.mood[mood]}</p>
         </div>
       </div>
+
+      <AccountCard state={state} active={page === 'accounts'} onClick={() => onNavigate('accounts')} />
 
       {/* Settings lives in the bottom-left corner, apart from the main pages. */}
       <div className="mt-2 flex items-center gap-2 border-t border-line pt-2">

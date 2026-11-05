@@ -15,7 +15,7 @@ import { Button, EmptyState, LoadingSpinner, Select, TextInput } from '../../com
 import { useMessages } from '../../i18n';
 import { shareCall, useInstalledThemes, useShareUpdates } from '../../services/share';
 import { ShareCard } from './ShareCard';
-import { errorText } from './shareText';
+import { errorText } from '../../components/share/shareText';
 
 interface Listing {
   items: ShareThemeSummary[];

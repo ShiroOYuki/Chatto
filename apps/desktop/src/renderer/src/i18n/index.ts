@@ -2,6 +2,7 @@ import { localizeTheme } from '@chatto/chat-ui';
 import { chatLocaleOf, DEFAULT_LOCALE, type ChatTheme, type Locale } from '@chatto/core';
 import { useCallback } from 'react';
 import { useAppState } from '../store';
+import accounts from './messages/accounts';
 import alerts from './messages/alerts';
 import chat from './messages/chat';
 import chatLog from './messages/chatLog';
@@ -27,6 +28,7 @@ import themes from './messages/themes';
  * Components read text with `const m = useMessages()`, e.g. `m.common.save`.
  */
 const NAMESPACES = {
+  accounts,
   alerts,
   chat,
   chatLog,

@@ -17,7 +17,7 @@ import { useLocale, useMessages } from '../../i18n';
 import { shareCall } from '../../services/share';
 import { PublishDialog } from './PublishDialog';
 import { SharePreview } from './ShareCard';
-import { errorText, formatCount } from './shareText';
+import { errorText, formatCount } from '../../components/share/shareText';
 
 /** The account's published themes: publish, update, unpublish. */
 export function MyThemesView({

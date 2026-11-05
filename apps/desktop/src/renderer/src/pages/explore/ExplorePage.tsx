@@ -2,21 +2,24 @@ import { LogIn, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../../shared/ipc';
 import type { ShareProvider, ShareThemeSummary } from '@chatto/share';
+import type { PageId } from '../../components/Sidebar';
 import { Button, LoadingSpinner, PageHeader, Segmented } from '../../components/kit';
 import { useMessages } from '../../i18n';
-import { AccountView } from './AccountView';
 import { BrowseView } from './BrowseView';
 import { ModerationView } from './ModerationView';
 import { MyThemesView } from './MyThemesView';
-import { SignInDialog } from './SignInDialog';
+import { SignInDialog } from '../../components/share/SignInDialog';
 import { ThemeDetailDialog } from './ThemeDetailDialog';
 
-type Tab = 'browse' | 'mine' | 'account' | 'moderation';
+type Tab = 'browse' | 'mine' | 'moderation';
 
 const initialTab = (new URLSearchParams(location.search).get('exploreTab') as Tab | null) ?? 'browse';
 
-/** Theme sharing (GitHub #4): browse and install shared themes, publish your own, manage the account. */
-export function ExplorePage({ state }: { state: AppState }) {
+/**
+ * Theme sharing (GitHub #4): browse and install shared themes, publish your own, moderate.
+ * The Chatto account itself is managed on the accounts page.
+ */
+export function ExplorePage({ state, onNavigate }: { state: AppState; onNavigate: (page: PageId) => void }) {
   const messages = useMessages();
   const m = messages.share;
   const session = state.share.session;
@@ -29,7 +32,6 @@ export function ExplorePage({ state }: { state: AppState }) {
   const tabs: { value: Tab; label: string }[] = [
     { value: 'browse', label: m.tabs.browse },
     { value: 'mine', label: m.tabs.mine },
-    { value: 'account', label: m.tabs.account },
     ...(account?.role === 'moderator' ? [{ value: 'moderation' as const, label: m.tabs.moderation }] : []),
   ];
   const current = tabs.some((item) => item.value === tab) ? tab : 'browse';
@@ -46,7 +48,7 @@ export function ExplorePage({ state }: { state: AppState }) {
               <LoadingSpinner /> {m.signingIn}
             </Button>
           ) : account ? (
-            <Button variant="ghost" onClick={() => setTab('account')}>
+            <Button variant="ghost" onClick={() => onNavigate('accounts')}>
               <UserRound /> {account.displayName}
             </Button>
           ) : (
@@ -64,8 +66,6 @@ export function ExplorePage({ state }: { state: AppState }) {
         <BrowseView onOpen={setOpen} changed={changed} />
       ) : current === 'mine' ? (
         <MyThemesView account={account} onSignIn={() => askSignIn()} onOpen={setOpen} />
-      ) : current === 'account' ? (
-        <AccountView account={account} onSignIn={askSignIn} />
       ) : (
         <ModerationView onOpen={setOpen} />
       )}

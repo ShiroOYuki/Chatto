@@ -9,7 +9,7 @@ import { runAction } from '../services/run';
 import { useShareUpdates } from '../services/share';
 import { themes } from '../services/themes';
 import { PublishDialog } from './explore/PublishDialog';
-import { SignInDialog } from './explore/SignInDialog';
+import { SignInDialog } from '../components/share/SignInDialog';
 import { motion, riseIn, Stagger } from '../components/motion';
 import { StaticThemePreview } from '../components/ThemePreview';
 import { Badge, Button, Hint, PageHeader } from '../components/kit';

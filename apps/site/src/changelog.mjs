@@ -27,6 +27,15 @@ export const CHANGELOG = {
             ),
           ],
         },
+        {
+          kind: 'improved',
+          items: [
+            t(
+              'One Accounts page for your Chatto account and your streaming platforms, opened from the card at the bottom of the sidebar',
+              '新的「帳號」頁集中管理 Chatto 帳號與直播平台，左側欄底部的帳號卡也能直接打開',
+            ),
+          ],
+        },
       ],
     },
     {

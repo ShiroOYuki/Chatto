@@ -10,7 +10,7 @@ export default defineMessages({
       explore: '探索',
       outputs: '輸出',
       alerts: '提醒',
-      connections: '連線',
+      accounts: '帳號',
       settings: '設定',
     },
     mood: {
@@ -78,7 +78,7 @@ export default defineMessages({
       explore: 'Explore',
       outputs: 'Outputs',
       alerts: 'Alerts',
-      connections: 'Connections',
+      accounts: 'Accounts',
       settings: 'Settings',
     },
     mood: {

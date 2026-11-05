@@ -1,21 +1,11 @@
 import { ChevronRight, ExternalLink, Info, KeyRound, LogIn, LogOut, Plug, PlugZap } from 'lucide-react';
 import { useState } from 'react';
-import type { AppState } from '../../../shared/ipc';
-import { useMessages } from '../i18n';
-import { redemptionAccess, twitch, twitchStatus } from '../services/twitch';
-import { Stagger } from '../components/motion';
-import { ClientIdForm } from './ClientIdForm';
-import {
-  Badge,
-  Button,
-  LoadingSpinner,
-  Field,
-  PageHeader,
-  channelTone,
-  StatusDot,
-  TextInput,
-  Tile,
-} from '../components/kit';
+import type { AppState } from '../../../../shared/ipc';
+import { useMessages } from '../../i18n';
+import { redemptionAccess, twitch, twitchStatus } from '../../services/twitch';
+import { Stagger } from '../../components/motion';
+import { ClientIdForm } from '../ClientIdForm';
+import { Badge, Button, LoadingSpinner, Field, channelTone, StatusDot, TextInput, Tile } from '../../components/kit';
 
 /** Platform glyphs from Simple Icons (CC0 1.0), drawn on a 24×24 grid. */
 const PLATFORMS = {
@@ -279,16 +269,13 @@ function ComingSoon({ name, platform }: { name: string; platform: keyof typeof P
   );
 }
 
-export function ConnectionsPage({ state }: { state: AppState }) {
-  const m = useMessages().connections;
+/** The streaming platforms Chatto reads chat from, on the accounts page. */
+export function PlatformCards({ state }: { state: AppState }) {
   return (
-    <div>
-      <PageHeader title={m.title} description={m.description} />
-      <Stagger className="grid grid-cols-2 gap-3">
-        <TwitchCard state={state} />
-        <ComingSoon name="YouTube" platform="youtube" />
-        <ComingSoon name="Kick" platform="kick" />
-      </Stagger>
-    </div>
+    <Stagger className="grid grid-cols-2 gap-3">
+      <TwitchCard state={state} />
+      <ComingSoon name="YouTube" platform="youtube" />
+      <ComingSoon name="Kick" platform="kick" />
+    </Stagger>
   );
 }

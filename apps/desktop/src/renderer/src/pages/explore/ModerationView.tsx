@@ -6,7 +6,7 @@ import { ActionNote, Badge, Button, EmptyState, LoadingSpinner } from '../../com
 import { useMessages } from '../../i18n';
 import { shareCall } from '../../services/share';
 import { authorName, SharePreview } from './ShareCard';
-import { errorText } from './shareText';
+import { errorText } from '../../components/share/shareText';
 
 /** Reported and hidden themes, for moderators: hide or restore a theme, suspend its author. */
 export function ModerationView({ onOpen }: { onOpen: (summary: ShareThemeSummary) => void }) {
