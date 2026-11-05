@@ -84,7 +84,8 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - 大頁面拆成資料夾，例如 `pages/theme-editor/`：狀態 hook（`useThemeDraft`、`usePreviewHighlight`）、純函式（`draft.ts`，有單元測試）、各區塊面板（`panels/`）、參數欄位（`fields/`）。只給單一頁面用的元件放在該頁資料夾，多處共用的才放 `components/`。
 - 主題草稿用型別化的 `set('author', 'box')(value)`（`PathSetter`）更新，路徑或值的型別錯了會直接編譯失敗。
 
-- 贊助連結（Ko-fi、綠界）集中在 `apps/desktop/src/shared/support.ts`，改動時同步 `README.md` 與 `.github/FUNDING.yml`。
+- 贊助連結（Ko-fi、綠界）集中在 `apps/desktop/src/shared/support.ts`，改動時同步 `README.md`、`README.zh-TW.md` 與 `.github/FUNDING.yml`。
+- 說明文件分兩種、各有英文與繁中：`README.md`／`README.zh-TW.md` 給一般使用者（功能、下載、開始使用，詳細教學連到網站），`CONTRIBUTING.md`／`CONTRIBUTING.zh-TW.md` 給開發者（環境、指令、結構、分支與 CI、發佈）。改動時兩種語言一起改。
 
 ## 多語系
 

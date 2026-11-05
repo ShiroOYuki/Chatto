@@ -1,6 +1,6 @@
 /**
  * Where people can support Chatto. The settings page and the title bar read
- * from here; keep README.md and .github/FUNDING.yml in step when this changes.
+ * from here; keep README.md, README.zh-TW.md and .github/FUNDING.yml in step when this changes.
  */
 import type { Localized } from '@chatto/core';
 
