@@ -58,6 +58,23 @@ workspace package 直接提供 TypeScript 原始碼，由 Vite／electron-vite �
 - 自訂 CSS 檔案的路徑由主題 id 產生，id 只接受 `[\w-]+`；外部編輯器指令只來自使用者自己的設定。
 - 自動更新（main `updater.ts`，`electron-updater`）只讀 `ShiroOYuki/Chatto` 已發佈的 GitHub Release，下載後以 `latest.yml` 的 SHA-512 驗證才安裝。只會提示，下載與安裝都等使用者決定，不會在直播中自動重開。開發版不檢查。
 
+## 主題分享（開發中，GitHub #4）
+
+控制台的「探索」頁：瀏覽、安裝、投稿、按讚與檢舉別人分享的主題，以及 Chatto 帳號與管理功能。
+
+- **共用程式**在 `packages/share`（`@chatto/share`），App 與服務都用：
+  - `model.ts`：資料型別（`ShareThemeSummary`、`ShareAccount`、`ShareResult` …）、類別、建議 tag、上限、條款版本。
+  - `rules.ts`：純函式：主題代碼（8 碼 Crockford Base32）、tag 正規化、自動 tag、`themeContentHash`、`checkPublish`（自訂 CSS 禁止外部 `url()`／`@import`、大小與圖片數上限）、`isAssetFile`。服務跑同樣的檢查。
+  - `backend.ts`：`ShareBackend`，每個方法對應一個 `/v1` API；`protocol.ts`：路徑、狀態碼、上限、`SHARE_API_URL` 與備用網址 `share.json`。
+  - `@chatto/share/http`：真正服務的 HTTP 用戶端（連不到時讀 `share.json` 找新網址一次）；`@chatto/share/fake`：記憶體內的假服務與範例主題，重開就清空。
+- **服務**在 `apps/share-worker`（Cloudflare Worker＋D1＋R2），API、資料表、登入流程、部署步驟見 `docs/share-service.md`。已部署在 `api.chattolive.com`：打包版連正式服務，開發版預設用假服務（登入的帳號是管理者），`MAIN_VITE_SHARE_API_URL`／`CHATTO_SHARE_API` 可改（`main/share-backend.ts`）。
+- `apps/desktop/src/shared/share/client.ts`：`ShareClient`，App 這端的流程：瀏覽器登入（本機回呼＋PKCE，`main/share-loopback.ts` 提供回呼頁）、session token、安裝（下載圖片、設定 `origin`，比 App 新的主題 schema 回 `app-outdated`）、投稿（圖片先轉成 `asset:` 檔案分別上傳，再送主題）、管理。預覽用的 `get()` 把 `asset:` 圖片換成服務上的網址（`ShareBackend.assetUrl`）。
+- **App 裡** `ShareClient` 在 main process（`index.ts` 建立，`SafeSessionStore` 以 `safeStorage` 加密 session token，存在 userData `share.token`），控制台透過單一 IPC `share:call`（`SHARE_METHODS` 白名單）呼叫；帳號狀態在 `AppState.share`。縮圖由 `share:capture-thumbnail` 擷取主視窗的一塊區域。
+- **網頁模式**的 mock API 在頁面裡直接建立 `ShareClient`＋假服務，圖片存在記憶體（`memoryAssets.ts`）。
+- 控制台：`services/share.ts`（`shareCall`、`useShareSession`、`useInstalledThemes`、`useShareUpdates`）、`pages/explore/`。
+- 登入和聊天室連線完全分開，不使用聊天平台的 token；登入方式（Twitch、Google、Discord）由服務代理 OAuth。
+- 設定：`settings.share.clientId`（匿名下載計數）、`settings.share.termsAccepted`（同意過的條款版本，`SHARE_TERMS_VERSION`）。
+
 ## 路線圖
 
 - [x] 主題編輯器（視覺化調整、版型切換、自訂 CSS、即時預覽）

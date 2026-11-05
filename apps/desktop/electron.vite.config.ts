@@ -4,7 +4,7 @@ import { defineConfig } from 'electron-vite';
 import { resolve } from 'node:path';
 
 // Workspace packages ship TypeScript sources, so they are bundled instead of externalized.
-const workspacePackages = ['@chatto/core', '@chatto/provider-twitch', '@chatto/chat-ui'];
+const workspacePackages = ['@chatto/core', '@chatto/provider-twitch', '@chatto/chat-ui', '@chatto/share'];
 
 export default defineConfig({
   main: {

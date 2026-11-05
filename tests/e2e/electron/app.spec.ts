@@ -32,7 +32,8 @@ test.beforeEach(async () => {
   app = await electron.launch({
     executablePath: electronPath,
     args: [appDir],
-    env: { ...process.env, CHATTO_USER_DATA: userData, ELECTRON_RENDERER_URL: '' },
+    // The built app would talk to the real sharing service; tests keep to the in-memory fake.
+    env: { ...process.env, CHATTO_USER_DATA: userData, ELECTRON_RENDERER_URL: '', CHATTO_SHARE_API: 'fake' },
   });
   mainWindow = await app.firstWindow();
   await mainWindow.waitForLoadState('domcontentloaded');

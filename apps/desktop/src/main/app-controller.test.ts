@@ -90,6 +90,7 @@ function fakeSettings(initial: Partial<Settings> = {}) {
       chatLocale: 'auto',
       obsPluginPromptDismissed: false,
     },
+    share: { clientId: 'client', termsAccepted: 0 },
     ...initial,
   };
   return {

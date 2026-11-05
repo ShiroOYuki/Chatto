@@ -4,7 +4,11 @@ import { execFile } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ChatTheme, Locale } from '@chatto/core';
-import { IPC, type AppState } from '../shared/ipc';
+import { IPC, isShareMethod, type AppState, type CaptureRect } from '../shared/ipc';
+import { ShareClient } from '../shared/share/client';
+import { canOpenSignInPage, createShareBackend } from './share-backend';
+import { openSignInLoopback } from './share-loopback';
+import { SafeSessionStore } from './share-session';
 import { AppController } from './app-controller';
 import { CssFiles } from './css-files';
 import { mainMessages } from './messages';
@@ -194,6 +198,21 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.checkForUpdate, () => updater.check());
   ipcMain.handle(IPC.downloadUpdate, () => updater.download());
   ipcMain.handle(IPC.installUpdate, () => updater.install());
+  ipcMain.handle(IPC.share, (_e, method: unknown, ...args: unknown[]) => {
+    if (!isShareMethod(method) || !controller.share) throw new Error('Unknown share call');
+    const call = controller.share[method] as (...params: unknown[]) => unknown;
+    return call.apply(controller.share, args);
+  });
+  ipcMain.handle(IPC.captureThumbnail, async (_e, rect: CaptureRect) => {
+    if (!mainWindow || mainWindow.isDestroyed()) return null;
+    const image = await mainWindow.webContents.capturePage({
+      x: Math.round(rect.x),
+      y: Math.round(rect.y),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    });
+    return image.isEmpty() ? null : image.toDataURL();
+  });
 }
 
 /** The OBS plugin as this build ships it: packaged with the app, or the local CMake install in development. */
@@ -248,6 +267,24 @@ async function bootstrap(): Promise<void> {
   });
   controller.onCssFileChanged = (change) => send(IPC.cssFileChanged, change);
   controller.cssFiles.start();
+  controller.share = new ShareClient({
+    backend: createShareBackend({ version: app.getVersion(), isDev }),
+    session: new SafeSessionStore(),
+    clientId: () => settings.get().share.clientId,
+    termsAccepted: () => settings.get().share.termsAccepted,
+    setTermsAccepted: (version) =>
+      settings.update((draft) => {
+        draft.share.termsAccepted = version;
+      }),
+    openExternal: (url) => {
+      if (canOpenSignInPage(url, isDev)) void shell.openExternal(url);
+    },
+    themes: () => controller.themes(),
+    saveTheme: (theme) => controller.saveTheme(theme),
+    assets: controller.assets,
+    onChange: () => controller.emit(),
+    loopback: openSignInLoopback,
+  });
 
   controller.server = new LocalServer({
     port: settings.get().serverPort,
@@ -306,6 +343,7 @@ async function bootstrap(): Promise<void> {
     tray?.setContextMenu(trayMenu(locale));
   };
   await controller.init();
+  void controller.share?.init();
   updater.start();
 
   app.on('second-instance', showMainWindow);

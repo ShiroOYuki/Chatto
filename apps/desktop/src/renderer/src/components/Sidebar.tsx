@@ -1,4 +1,4 @@
-import { BellRing, Cable, Home, MessagesSquare, MonitorUp, Palette, Settings } from 'lucide-react';
+import { BellRing, Cable, Compass, Home, MessagesSquare, MonitorUp, Palette, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { useMessages } from '../i18n';
@@ -6,13 +6,14 @@ import { useChatLog } from '../store';
 import { motion, RollingNumber, spring } from './motion';
 import { TeaCup, type TeaCupMood } from './TeaCup';
 
-export type PageId = 'overview' | 'chat' | 'themes' | 'outputs' | 'alerts' | 'connections' | 'settings';
+export type PageId = 'overview' | 'chat' | 'themes' | 'explore' | 'outputs' | 'alerts' | 'connections' | 'settings';
 
 /** Pages in sidebar order; their names live in `useMessages().shell.pages`. */
 export const PAGES: { id: PageId; icon: ReactNode }[] = [
   { id: 'overview', icon: <Home /> },
   { id: 'chat', icon: <MessagesSquare /> },
   { id: 'themes', icon: <Palette /> },
+  { id: 'explore', icon: <Compass /> },
   { id: 'outputs', icon: <MonitorUp /> },
   { id: 'alerts', icon: <BellRing /> },
   { id: 'connections', icon: <Cable /> },

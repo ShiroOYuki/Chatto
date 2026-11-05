@@ -14,6 +14,7 @@ export default defineMessages({
     exportPackage: '匯出主題包',
     exportJson: '匯出 JSON',
     duplicate: '建立副本',
+    publish: '投稿到探索',
     deleteTheme: '刪除主題',
     deleteTitle: (name: string) => `刪除「${name}」？`,
     deleteDescription: '刪除後無法復原。正在使用這個主題的 Overlay 或 OBS 會改回預設主題。',
@@ -44,6 +45,7 @@ export default defineMessages({
     exportPackage: 'Export theme package',
     exportJson: 'Export JSON',
     duplicate: 'Duplicate',
+    publish: 'Publish to Explore',
     deleteTheme: 'Delete theme',
     deleteTitle: (name: string) => `Delete "${name}"?`,
     deleteDescription:

@@ -207,6 +207,10 @@
 - 單一 JSON 檔帶不了圖片，匯入時 `asset:` 外框會被移除，`data:` 外框保留。
 - 匯入的主題一律存成新的自訂主題（新的 id）。
 
+## 來自分享平台的主題 `origin`
+
+從「探索」安裝的主題帶有 `origin: { shareId, version, contentHash }`：分享平台上的 id、安裝的版本，以及安裝當下的內容雜湊（`themeContentHash`，不含 `id`、`builtIn`、`origin`）。內容和雜湊不同就表示使用者改過，之後不再提示更新；沒改過且平台上有更新的版本時，主題頁與探索頁會提示「有新版」。自己投稿的主題也會記下對應的 `origin`，以便之後發佈新版本。`normalizeTheme` 只保留欄位完整的 `origin`。這是選填欄位，不影響 schema 版本。
+
 ## 版本與遷移
 
 - **v2 新增欄位**（2026-11-02，非破壞性）：`eventText`（自訂事件文字，預設 `{}`，`normalizeTheme()` 只保留非空字串）。

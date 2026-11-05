@@ -1,6 +1,9 @@
 import { createMockMessage, createMockNotice, PRESET_THEMES } from '@chatto/chat-ui';
-import { defaultAlertSettings, type ChatEvent, type SoundSetting } from '@chatto/core';
+import { defaultAlertSettings, type ChatEvent, type ChatTheme, type SoundSetting } from '@chatto/core';
 import type { AppState, ChattoApi, CssFileChange, ObsPluginStatus } from '../../shared/ipc';
+import { ShareClient } from '../../shared/share/client';
+import { createMemoryAssets } from '../../shared/share/memoryAssets';
+import { createFakeShareBackend } from '@chatto/share/fake';
 
 declare global {
   interface Window {
@@ -48,6 +51,7 @@ function createMockApi(): ChattoApi {
     server: { port: 4820, embedUrl: 'http://127.0.0.1:4820/embed', overlayUrl: 'http://127.0.0.1:4820/overlay' },
     themes: PRESET_THEMES,
     selectedThemes: { overlay: 'matcha-glass', embed: 'washi', alerts: 'bubble' },
+    share: { session: { status: 'signed-out' }, termsAccepted: 0 },
   };
   const stateListeners = new Set<(state: AppState) => void>();
   const chatListeners = new Set<(event: ChatEvent) => void>();
@@ -58,6 +62,37 @@ function createMockApi(): ChattoApi {
     stateListeners.forEach((listener) => listener(state));
   };
   const emitChat = (event: ChatEvent) => chatListeners.forEach((listener) => listener(event));
+  const saveTheme = (theme: ChatTheme) => {
+    const exists = state.themes.some((item) => item.id === theme.id);
+    set({
+      themes: exists
+        ? state.themes.map((item) => (item.id === theme.id ? theme : item))
+        : [...state.themes, { ...theme, builtIn: false }],
+    });
+  };
+
+  // Theme sharing runs in the page against the fake service; the signed-in account moderates it.
+  let termsAccepted = 0;
+  let sessionToken: string | null = null;
+  const share = new ShareClient({
+    // The fake sign-in has no browser step; it just takes a moment, so the waiting state shows.
+    backend: createFakeShareBackend({ moderator: true, signInDelay: params.has('e2e') ? 600 : 1200 }),
+    session: {
+      load: async () => sessionToken,
+      save: async (token) => void (sessionToken = token),
+      clear: async () => void (sessionToken = null),
+    },
+    clientId: () => 'web-preview',
+    termsAccepted: () => termsAccepted,
+    setTermsAccepted: (version) => void (termsAccepted = version),
+    openExternal: (url) => void window.open(url, '_blank'),
+    themes: () => state.themes,
+    saveTheme,
+    // The browser preview has no asset folder: images live in memory, and themes installed with
+    // `asset:` images show without them. Seed themes keep their images as data URLs.
+    assets: createMemoryAssets(),
+    onChange: () => set({ share: share.state() }),
+  });
 
   if (params.has('e2e')) {
     window.__chattoMock = {
@@ -129,14 +164,7 @@ function createMockApi(): ChattoApi {
     // The browser preview cannot copy files; pretend the user cancelled.
     importSound: async () => null,
     selectTheme: async (target, themeId) => set({ selectedThemes: { ...state.selectedThemes, [target]: themeId } }),
-    saveTheme: async (theme) => {
-      const exists = state.themes.some((item) => item.id === theme.id);
-      set({
-        themes: exists
-          ? state.themes.map((item) => (item.id === theme.id ? theme : item))
-          : [...state.themes, { ...theme, builtIn: false }],
-      });
-    },
+    saveTheme: async (theme) => saveTheme(theme),
     deleteTheme: async (themeId) => set({ themes: state.themes.filter((item) => item.id !== themeId) }),
     // The browser preview has no asset folder: frames keep the picked image as a data URL.
     importThemeAsset: () => pickImageAsDataUrl(),
@@ -176,6 +204,12 @@ function createMockApi(): ChattoApi {
       step(0);
     },
     installUpdate: async () => undefined,
+    share: (method, ...args) => {
+      const call = share[method] as (...params: unknown[]) => unknown;
+      return Promise.resolve(call.apply(share, args)) as never;
+    },
+    // The browser cannot capture the page; published themes get no thumbnail here.
+    captureThumbnail: async () => null,
   };
 }
 
