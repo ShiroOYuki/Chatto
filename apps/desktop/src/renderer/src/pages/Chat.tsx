@@ -3,7 +3,7 @@ import { ArrowDown, Eraser, Pause, Play, Search, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
-import { redemptionColumn, RedemptionsTile } from '../components/RedemptionsTile';
+import { redemptionColumn, RedemptionsTile } from './RedemptionsTile';
 import { RollingNumber, Stagger } from '../components/motion';
 import { Button, EmptyState, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/kit';
 import { useMessages } from '../i18n';

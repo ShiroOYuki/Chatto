@@ -103,7 +103,7 @@ export function useAppState(): AppState | null {
   return useContext(AppStateContext);
 }
 
-/** This session's channel points redemptions, shared by the overview and the chat page. */
+/** This session's channel points redemptions, collected even while the chat page is closed. */
 export function useRedemptions(): RedemptionsValue {
   const value = useContext(RedemptionsContext);
   if (!value) throw new Error('useRedemptions must be used inside StoreProvider');

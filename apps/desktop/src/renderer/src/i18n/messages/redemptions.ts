@@ -1,6 +1,6 @@
 import { defineMessages } from '../define';
 
-/** Channel points redemptions: the list on the overview and chat pages, and the permission notes. */
+/** Channel points redemptions: the list on the chat page, and the permission notes. */
 export default defineMessages({
   'zh-TW': {
     title: '兌換紀錄',

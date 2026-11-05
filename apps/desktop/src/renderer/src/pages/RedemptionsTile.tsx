@@ -5,14 +5,14 @@ import { useLocale, useMessages } from '../i18n';
 import { redemptionDetails } from '../redemptionLog';
 import { redemptionAccess, twitch } from '../services/twitch';
 import { useRedemptions, type RedemptionEntry } from '../store';
-import { formatClock } from './ChatLine';
-import { Badge, Button, Hint, Tile } from './kit';
-import { motion } from './motion';
+import { formatClock } from '../components/ChatLine';
+import { Badge, Button, Hint, Tile } from '../components/kit';
+import { motion } from '../components/motion';
 
 /**
- * How the redemption tile shares a page column with the tile below it. Tall
- * windows show both; below 760 px of height the column holds one: the
- * redemptions when there are any, otherwise the other tile.
+ * How the redemption tile shares the chat page's side column with the tile
+ * below it. Tall windows show both; below 760 px of height the column holds
+ * one: the redemptions when there are any, otherwise the other tile.
  */
 export function redemptionColumn(hasEntries: boolean): { tile: string; other: string } {
   return hasEntries
@@ -24,9 +24,9 @@ export function redemptionColumn(hasEntries: boolean): { tile: string; other: st
 }
 
 /**
- * This session's channel points redemptions, newest first, each closable.
- * The overview and the chat page show the same list. Hidden when redemptions
- * cannot arrive (signed out, someone else's channel) and none came earlier.
+ * This session's channel points redemptions on the chat page, newest first,
+ * each closable. Hidden when redemptions cannot arrive (signed out, someone
+ * else's channel) and none came earlier.
  */
 export function RedemptionsTile({ state, className = '' }: { state: AppState; className?: string }) {
   const m = useMessages().redemptions;

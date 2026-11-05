@@ -1,12 +1,9 @@
 import { sampleEvent } from '@chatto/chat-ui';
 import { expect, test } from '../fixtures';
 
-test('redemptions list on the overview and the chat page, and closing one closes it on both', async ({
-  panel,
-  page,
-}) => {
+test('redemptions list on the chat page, kept while other pages are open', async ({ panel, page }) => {
   await page.setViewportSize({ width: 1280, height: 820 });
-  await panel.open('page=overview');
+  await panel.open('page=chat');
   const list = page.getByTestId('redemptions');
   await expect(page.getByText('還沒有人兌換獎勵')).toBeVisible();
 
@@ -21,18 +18,20 @@ test('redemptions list on the overview and the chat page, and closing one closes
   await list.getByRole('button', { name: '關閉「點一首歌」' }).click();
   await expect(list.getByRole('listitem')).toHaveCount(1);
 
-  await panel.nav('聊天室').click();
-  await expect(list.getByRole('listitem')).toHaveCount(1);
-  await expect(list.getByText('點一首歌')).toHaveCount(0);
-  await list.getByRole('button', { name: '關閉「隨機解鎖表情符號」' }).click();
-  await expect(page.getByText('還沒有人兌換獎勵')).toBeVisible();
-
+  // The overview has no list; redemptions arriving meanwhile wait on the chat page.
   await panel.nav('總覽').click();
+  await expect(page.getByRole('heading', { name: '兌換紀錄' })).toHaveCount(0);
+  await panel.emit(sampleEvent('twitch:redemption'));
+  await panel.nav('聊天室').click();
+  await expect(list.getByRole('listitem')).toHaveCount(2);
+  await expect(list.getByRole('listitem').first()).toContainText('點一首歌');
+  await list.getByRole('button', { name: '關閉「點一首歌」' }).click();
+  await list.getByRole('button', { name: '關閉「隨機解鎖表情符號」' }).click();
   await expect(page.getByText('還沒有人兌換獎勵')).toBeVisible();
 });
 
 test('an older sign-in is asked to sign in again for redemptions', async ({ panel, page }) => {
-  await panel.open('page=overview');
+  await panel.open('page=chat');
   await panel.setState({ auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: false } });
   await expect(page.getByText('重新登入以啟用兌換提醒')).toBeVisible();
 
@@ -47,9 +46,9 @@ test('an older sign-in is asked to sign in again for redemptions', async ({ pane
 });
 
 test("watching someone else's channel explains that redemptions only come to the streamer", async ({ panel, page }) => {
-  await panel.open('page=overview');
+  await panel.open('page=chat');
   await panel.setState({ channel: { login: 'okome_rice', state: 'connected' } });
-  // Nothing can arrive, so the overview leaves the list out.
+  // Nothing can arrive, so the chat page leaves the list out.
   await expect(page.getByTestId('redemptions')).toHaveCount(0);
   await expect(page.getByText('還沒有人兌換獎勵')).toHaveCount(0);
 
@@ -76,16 +75,16 @@ test('redemptions have one alert switch and can stay out of OBS', async ({ panel
 
 test('in a short window the redemptions take the column only while there are some', async ({ panel, page }) => {
   await page.setViewportSize({ width: 960, height: 640 });
-  await panel.open('page=overview');
-  const activity = page.getByRole('heading', { name: '最近活動' });
+  await panel.open('page=chat');
+  const topChatters = page.getByRole('heading', { name: '最活躍' });
   const redemptions = page.getByRole('heading', { name: '兌換紀錄' });
-  await expect(activity).toBeVisible();
+  await expect(topChatters).toBeVisible();
   await expect(redemptions).toBeHidden();
 
   await panel.emit(sampleEvent('twitch:redemption'));
   await expect(redemptions).toBeVisible();
-  await expect(activity).toBeHidden();
+  await expect(topChatters).toBeHidden();
 
   await page.getByRole('button', { name: '關閉「點一首歌」' }).click();
-  await expect(activity).toBeVisible();
+  await expect(topChatters).toBeVisible();
 });

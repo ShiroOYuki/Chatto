@@ -3,14 +3,13 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { AppState } from '../../../shared/ipc';
 import { overlay } from '../services/overlay';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
-import { redemptionColumn, RedemptionsTile } from '../components/RedemptionsTile';
 import type { PageId } from '../components/Sidebar';
 import { moodFor } from '../components/Sidebar';
 import { RollingNumber, Stagger } from '../components/motion';
 import { TeaCup } from '../components/TeaCup';
 import { Button, CopyField, EmptyState, Sparkline, channelTone, StatusDot, Tile, Toggle } from '../components/kit';
 import { useMessages, useThemeName } from '../i18n';
-import { useChatLog, useRedemptions, type LogEntry } from '../store';
+import { useChatLog, type LogEntry } from '../store';
 
 /** Enough to fill a 4K-tall tile; the rest is clipped. */
 const RECENT_MESSAGES = 60;
@@ -66,7 +65,6 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
   const m = useMessages().overview;
   const nameOf = useThemeName();
   const { entries, stats } = useChatLog();
-  const column = redemptionColumn(useRedemptions().entries.length > 0);
   const connected = state.channel.state === 'connected';
   // Render more than fits; the chat tile clips what does not fit, so bigger windows show more.
   const recentMessages = entries.filter((entry) => entry.kind === 'message').slice(-RECENT_MESSAGES);
@@ -189,17 +187,13 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         )}
       </Tile>
 
-      {/* Redemptions sit on top of the activity; with none to show, the activity takes the whole column. */}
-      <div className="col-span-2 flex min-h-0 flex-col gap-3">
-        <RedemptionsTile state={state} className={column.tile} />
-        <Tile title={m.recentActivity} icon={<Gift />} className={`min-h-24 flex-1 overflow-hidden ${column.other}`}>
-          {recentNotices.length === 0 ? (
-            <EmptyState mood="happy" title={m.noActivity} hint={m.noActivityHint} />
-          ) : (
-            <RecentNotices entries={recentNotices} />
-          )}
-        </Tile>
-      </div>
+      <Tile title={m.recentActivity} icon={<Gift />} className="col-span-2 min-h-0 overflow-hidden">
+        {recentNotices.length === 0 ? (
+          <EmptyState mood="happy" title={m.noActivity} hint={m.noActivityHint} />
+        ) : (
+          <RecentNotices entries={recentNotices} />
+        )}
+      </Tile>
     </Stagger>
   );
 }
