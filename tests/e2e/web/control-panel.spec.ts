@@ -331,6 +331,24 @@ test('sign-in shows the device code', async ({ panel, page }) => {
   await expect(page.getByText('MATCHA42')).toBeVisible();
 });
 
+test('the channel field fills in the signed-in account’s own channel', async ({ panel, page }) => {
+  await panel.open('page=accounts');
+  const channel = page.getByRole('textbox', { name: '頻道名稱' });
+  await channel.fill('someone_else');
+  await page.getByRole('button', { name: '填入我的頻道' }).click();
+  await expect(channel).toHaveValue('shiraine_ciel');
+
+  await panel.open('compact');
+  const compact = page.getByPlaceholder('shiraine_ciel');
+  await compact.fill('someone_else');
+  await page.getByRole('button', { name: '填入我的頻道' }).click();
+  await expect(compact).toHaveValue('shiraine_ciel');
+
+  // Signed out, there is no channel of your own to fill in.
+  await panel.setState({ auth: { status: 'signed-out' } });
+  await expect(page.getByRole('button', { name: '填入我的頻道' })).toHaveCount(0);
+});
+
 test('a built-in Client ID stays under advanced settings and can be swapped and restored', async ({ panel, page }) => {
   await panel.open('page=accounts');
   await expect(page.getByRole('heading', { name: '1. 登入' })).toBeVisible();

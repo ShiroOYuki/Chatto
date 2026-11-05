@@ -1,4 +1,4 @@
-import { ChevronRight, ExternalLink, Info, KeyRound, LogIn, LogOut, Plug, PlugZap } from 'lucide-react';
+import { ChevronRight, ExternalLink, Info, KeyRound, LogIn, LogOut, Plug, PlugZap, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../../shared/ipc';
 import { useMessages } from '../../i18n';
@@ -213,12 +213,20 @@ function TwitchCard({ state }: { state: AppState }) {
             }}
           >
             <Field label={m.channelName} hint={m.channelHint}>
-              <TextInput
-                value={login}
-                onChange={(event) => setLogin(event.target.value)}
-                placeholder="shiraine_ciel"
-                disabled={!signedIn}
-              />
+              <div className="flex gap-2">
+                <TextInput
+                  aria-label={m.channelName}
+                  value={login}
+                  onChange={(event) => setLogin(event.target.value)}
+                  placeholder="shiraine_ciel"
+                  disabled={!signedIn}
+                />
+                {signedIn && auth.login ? (
+                  <Button size="sm" variant="raised" className="h-9 shrink-0" onClick={() => setLogin(auth.login!)}>
+                    <UserRound /> {m.useMyChannel}
+                  </Button>
+                ) : null}
+              </div>
             </Field>
             {connected ? (
               <Button className="self-start" variant="raised" onClick={() => twitch.disconnect()}>
