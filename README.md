@@ -90,6 +90,7 @@ packages/share            主題分享的資料格式、檢查規則與 API 用�
 apps/viewer               /overlay 與 /embed 頁面
 apps/desktop              Electron 桌面 App（控制台、本機伺服器、Overlay 視窗）
 apps/share-worker         主題分享服務（Cloudflare Worker）
+apps/site                 chattolive.com 網站（首頁、隱私說明、使用條款）
 obs-plugin                OBS 外掛「Chatto 聊天室」（C++，CMake）
 docs/                     架構、訊息格式、主題、測試、控制台設計、美術與視覺識別、分享服務文件
 ```

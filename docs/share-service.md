@@ -74,6 +74,18 @@ npm run dev -w @chatto/share-worker      # http://localhost:8787
 6. **管理者帳號**：在 App 登入一次後，`npx wrangler d1 execute chatto-share --remote --command "UPDATE accounts SET role = 'moderator' WHERE id = '<帳號 id>'"`（帳號 id 可用 `SELECT a.id, a.display_name, i.provider, i.name FROM accounts a JOIN identities i ON i.account_id = a.id` 查）。
 7. **App 改用真正的服務**：`main/share-backend.ts` 的預設從假服務改成 `SHARE_API_URL`（開發版仍可用 `MAIN_VITE_SHARE_API_URL` 指向本機），發新版。
 
+## 網站 chattolive.com
+
+`apps/site` 是純靜態網站（Workers 靜態資源，沒有 Worker 程式）：英文在 `/`、`/privacy`、`/terms`，繁中在 `/zh-tw/`。`src/build.mjs` 把 `packages/share/src/legalText.ts` 的條款與免責聲明、`src/content.mjs` 的首頁文案組成 HTML，字型（粉圓）從 `@fontsource/huninn` 複製，標誌從 `assets/` 複製並拿掉 C2PA metadata。
+
+```bash
+npm run build -w @chatto/site      # 產生 apps/site/dist
+npm run dev -w @chatto/site        # 本機預覽
+npm run deploy -w @chatto/site     # 部署；第一次會建立 chattolive.com 與 www.chattolive.com 的 Custom Domain
+```
+
+Google OAuth 同意畫面的首頁、隱私權政策、服務條款填 `https://chattolive.com/`、`https://chattolive.com/privacy`、`https://chattolive.com/terms`。
+
 ## 資料怎麼刪
 
 - 使用者刪除帳號：帳號、登入方式、session、按讚與檢舉都刪除（計數同步扣掉），主題保留、作者顯示為匿名。

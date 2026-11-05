@@ -1,0 +1,13 @@
+# chattolive.com: static pages only (no Worker script). Built into dist/ by `npm run build`.
+name = "chatto-site"
+compatibility_date = "2026-10-01"
+workers_dev = false
+routes = [
+  { pattern = "chattolive.com", custom_domain = true },
+  { pattern = "www.chattolive.com", custom_domain = true },
+]
+
+[assets]
+directory = "./dist"
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"

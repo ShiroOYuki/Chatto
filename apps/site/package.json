@@ -1,0 +1,17 @@
+{
+  "name": "@chatto/site",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "description": "chattolive.com: Chatto's home page, privacy notice and terms (static, on Cloudflare)",
+  "type": "module",
+  "scripts": {
+    "build": "node src/build.mjs",
+    "dev": "node src/build.mjs && wrangler dev",
+    "deploy": "node src/build.mjs && wrangler deploy"
+  },
+  "devDependencies": {
+    "@fontsource/huninn": "^5.3.1",
+    "wrangler": "^4.157.0"
+  }
+}
