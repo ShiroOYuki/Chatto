@@ -52,7 +52,7 @@ export const CONTENT = {
         {
           icon: 'monitor',
           title: 'Desktop overlay',
-          body: 'A transparent, always-on-top chat that the mouse clicks through, so you can read chat while you play.',
+          body: 'A transparent chat that stays on top of your game and lets clicks pass through, so you can read chat while you play.',
         },
         {
           icon: 'obs',
@@ -70,7 +70,7 @@ export const CONTENT = {
           body: 'Get notified when new messages arrive after a quiet period. Viewers never see them.',
         },
       ],
-      themesTitle: 'Seven built-in themes,\neach one adjustable',
+      themesTitle: 'Seven built-in themes,\nall of them adjustable',
       themesMore: 'See all themes',
       guideTitle: 'Start in three steps',
       guideLead: 'Once it’s set up, chat shows up wherever you put it.',
@@ -93,7 +93,7 @@ export const CONTENT = {
     },
     themes: {
       title: 'Themes',
-      description: 'The seven built-in chat themes of Chatto, and what you can tune in each of them.',
+      description: 'Chatto’s seven built-in chat themes and what you can change in each one.',
       lead: 'Start from one of seven built-in themes, then adjust it until it looks right.',
       jump: 'Themes',
       default: 'Default',
@@ -107,7 +107,7 @@ export const CONTENT = {
       customBody:
         'The theme editor shows a sample of every element at once, so you see each change right away. The desktop overlay and OBS can each use their own theme.',
       custom: [
-        'Padding per side, corners per corner, borders, shadow, blur',
+        'Padding for each side, radius for each corner, borders, shadow and blur',
         'Nine-slice image frames (PNG, WebP, GIF)',
         'Separate styles for moderators, VIPs and subscribers',
         'Styles and wording for subs, raids and other events',
@@ -194,7 +194,7 @@ export const CONTENT = {
           id: 'overlay',
           title: 'Desktop overlay',
           body: [
-            'A transparent chat just for you. It floats above every window and the mouse clicks through it. Turn it on in Outputs, click Adjust, then drag it to move and drag its edges to resize. Click “Finish adjusting” when you’re done.',
+            'A transparent chat just for you. It stays above every window and lets clicks pass through. Turn it on in Outputs, click Adjust, then drag it to move and drag its edges to resize. Click “Finish adjusting” when you’re done.',
           ],
           tips: [
             {
@@ -230,7 +230,7 @@ export const CONTENT = {
           id: 'theme',
           title: 'Tune a theme',
           body: [
-            'On the Themes page, duplicate a built-in theme and open the editor. Pick a part on the left; the preview on the right shows samples of every element and event. You edit a draft, and Save applies it. On the Outputs page, choose a theme for the desktop overlay and for OBS.',
+            'On the Themes page, duplicate a built-in theme and open the editor. Pick a section on the left; the preview on the right shows samples of every element and event. Changes stay in a draft until you click Save. On the Outputs page, choose a theme for the desktop overlay and for OBS.',
           ],
           link: 'See all built-in themes',
         },
@@ -251,7 +251,7 @@ export const CONTENT = {
         },
       ],
       stuck: 'Still stuck?',
-      stuckBody: 'Check the FAQ, or write to us.',
+      stuckBody: 'Check the FAQ, or send an email.',
       email: 'Email us',
     },
     faq: {
@@ -281,7 +281,7 @@ export const CONTENT = {
           items: [
             {
               q: 'Will the overlay get in the way of my game?',
-              a: 'No. The mouse clicks straight through it. You can only drag it after clicking Adjust on the Outputs page.',
+              a: 'No. Clicks pass straight through it. You can only drag it after clicking Adjust on the Outputs page.',
             },
             {
               q: 'I can’t see the overlay in fullscreen games',
@@ -311,7 +311,7 @@ export const CONTENT = {
             },
             {
               q: 'Plugin or browser source?',
-              a: 'The plugin needs no URL, lets each source pick its own theme and shows a waiting screen. A browser source works too if you’d rather not install anything into OBS.',
+              a: 'Use the plugin if you can: it needs no URL, each source can pick its own theme, and it shows a waiting screen while Chatto is closed. A browser source also works if you’d rather not install anything into OBS.',
             },
           ],
         },

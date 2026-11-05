@@ -24,7 +24,7 @@ export const CHANGELOG = {
               '新增「探索」頁：瀏覽、安裝、分享其他人做的主題',
             ),
             t(
-              'The theme editor’s preview can show only the samples of the current part',
+              'The theme editor’s preview can show just the samples for the section you’re editing',
               '主題編輯器的預覽可以只看目前區塊的範例',
             ),
           ],
@@ -49,7 +49,10 @@ export const CHANGELOG = {
         {
           kind: 'fixed',
           items: [
-            t('A busy port is explained instead of closing Chatto', '連接埠被占用時說明原因，不再直接關閉'),
+            t(
+              'When the port is already in use, Chatto explains why instead of closing',
+              '連接埠被占用時說明原因，不再直接關閉',
+            ),
             t('Update errors show a short explanation', '更新失敗時顯示簡短的說明'),
           ],
         },
@@ -64,7 +67,7 @@ export const CHANGELOG = {
           kind: 'new',
           items: [
             t(
-              'A transparent, always-on-top desktop overlay the mouse clicks through',
+              'A transparent, always-on-top desktop overlay that lets clicks pass through',
               '透明、置頂、滑鼠可穿透的桌面 Overlay',
             ),
             t('OBS browser source and the “Chatto Chat” plugin', 'OBS 瀏覽器來源與「Chatto 聊天室」外掛'),
@@ -92,7 +95,7 @@ export const CHANGELOG = {
               '依類別與標籤瀏覽主題，或輸入 8 碼代碼直接開啟',
             ),
             t(
-              'Install with one click, and get told when a theme you installed is updated',
+              'Install with one click and get a notice when an installed theme is updated',
               '一鍵安裝，安裝過的主題有新版時提示',
             ),
             t('Share your own themes, and update them later', '分享自己做的主題，之後也能更新'),
