@@ -25,6 +25,10 @@ export const CHANGELOG = {
               'Themes from Chatto’s official account show an Official badge on the Explore page',
               '探索頁上，Chatto 官方帳號分享的主題會顯示「官方」徽章',
             ),
+            t(
+              'The quiet-spell label can have its own text for each chat language',
+              '沉寂後新留言的標籤可以為每種聊天室語言各設一段文字',
+            ),
           ],
         },
         {

@@ -241,6 +241,18 @@ describe('attention after a quiet spell', () => {
     expect(css).toContain(`:where(.s) ${calm} .chatto-body {\n  animation: chatto-attention-glow 0.9s ease-in-out 3;`);
   });
 
+  it('switches the label text with the chat language', () => {
+    const theme = createTheme('t', 't', { attention: { label: 'Hey', labels: { 'zh-TW': '嘿', en: 'Hey' } } });
+    const css = themeToCss(theme, '.s');
+    expect(css).toContain('content: "Hey"');
+    expect(css).toContain(`:where(.s:lang(zh-TW)) ${calm}::after {\n  content: "嘿";`);
+    // Same as the default: no extra rule.
+    expect(css).not.toContain(':lang(en)');
+    // Only translations: one of them becomes the default.
+    const only = themeToCss(createTheme('t', 't', { attention: { label: '', labels: { en: 'New' } } }), '.s');
+    expect(only).toContain('content: "New"');
+  });
+
   it('keeps the row enter animation when the effect runs on the row', () => {
     const css = themeToCss(getPresetTheme('matcha-glass')!, '.s');
     expect(css).toContain(`:where(.s) .chatto-list > li${calm} {\n  animation: chatto-enter-slide-up 260ms`);

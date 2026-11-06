@@ -555,13 +555,16 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root', options: Th
   const { attention } = theme;
   const calm = `.chatto-message[data-highlight~=${cssString(AFTER_SILENCE)}]`;
   const surface = surfaceIsBody ? `${calm} .chatto-body` : calm;
-  if (attention.effect !== 'none' || attention.label) {
+  const labels = attention.labels ?? {};
+  // A language without its own text shows the default label, or failing that any translation.
+  const label = attention.label || Object.values(labels).find(Boolean) || '';
+  if (attention.effect !== 'none' || label) {
     rule(surface, ['position: relative', `--chatto-attention: ${attention.color}`]);
   }
-  if (attention.label) {
+  if (label) {
     if (message.arrangement === 'columns') unclipColumns(rule, calm, radii);
     rule(`${surface}::after`, [
-      `content: ${cssString(attention.label)}`,
+      `content: ${cssString(label)}`,
       ...cornerPill(attention.color, attention.labelColor),
       'font-size: 0.65em',
       'position: absolute',
@@ -569,6 +572,11 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root', options: Th
       'right: 8px',
       'transform: translateY(-55%) rotate(-4deg)',
     ]);
+    // The chat root carries the chat language (`lang`). Kept inside :where() like the rest.
+    for (const [locale, text] of Object.entries(labels)) {
+      if (!text || text === label) continue;
+      rules.push(`:where(${scope}:lang(${locale})) ${surface}::after {\n  content: ${cssString(text)};\n}`);
+    }
   }
   if (attention.effect !== 'none' && attention.repeat > 0) {
     rules.push(`@keyframes chatto-attention-${attention.effect} { ${ATTENTION_KEYFRAMES[attention.effect]} }`);
