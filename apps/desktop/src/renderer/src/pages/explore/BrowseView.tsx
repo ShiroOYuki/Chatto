@@ -28,7 +28,7 @@ export function BrowseView({
   changed,
 }: {
   onOpen: (summary: ShareThemeSummary) => void;
-  /** A theme whose summary changed elsewhere (a like in the detail view). */
+  /** A theme whose summary changed elsewhere (a like or an install in the detail view). */
   changed: ShareThemeSummary | null;
 }) {
   const m = useMessages().share;

@@ -44,6 +44,21 @@ test('shared themes can be browsed, filtered, opened by code and installed', asy
   await expect(page.getByRole('heading', { level: 3, name: 'Neon Arcade' })).toBeVisible();
 });
 
+test('installing a theme counts the download on its card right away, once', async ({ panel, page }) => {
+  await panel.open('page=explore');
+  const card = page.getByRole('button', { name: 'Shop Curtain' });
+  await expect(card.getByLabel('下載')).toHaveText('150');
+  await card.click();
+  const detail = page.getByRole('dialog', { name: 'Shop Curtain' });
+  await detail.getByRole('button', { name: '安裝' }).click();
+  await expect(detail.getByRole('status')).toContainText('已安裝為「Shop Curtain」');
+  // Another copy the same day is not another download.
+  await detail.getByRole('button', { name: '再安裝一份' }).click();
+  await expect(detail.getByRole('status')).toContainText('已安裝為');
+  await page.keyboard.press('Escape');
+  await expect(card.getByLabel('下載')).toHaveText('151');
+});
+
 test('liking and reporting ask for an account first', async ({ panel, page }) => {
   await panel.open('page=explore');
   await page.getByRole('button', { name: 'Soda Bubbles' }).click();
@@ -115,6 +130,35 @@ test('a custom theme is checked, published and listed under my themes', async ({
 
   await expect(page.getByRole('heading', { level: 3, name: '我的抹茶' })).toBeVisible();
   await expect(page.getByText('公開中')).toBeVisible();
+});
+
+test('publishing starts from a theme of your own, and flags an unchanged copy before sending', async ({
+  panel,
+  page,
+}) => {
+  await panel.open('page=explore');
+  await signIn(page);
+  // Install someone else's theme, then add a theme of your own after it.
+  await page.getByRole('button', { name: 'Shop Curtain' }).click();
+  const detail = page.getByRole('dialog', { name: 'Shop Curtain' });
+  await detail.getByRole('button', { name: '安裝' }).click();
+  await expect(detail.getByRole('status')).toContainText('已安裝為');
+  await page.keyboard.press('Escape');
+  const installed = await page.evaluate(() => window.__chattoMock!.getState().themes.filter((t) => !t.builtIn));
+  await panel.setState({
+    themes: [...PRESET_THEMES, ...installed, { ...createTheme('mine', '抹茶草稿'), builtIn: false }],
+  });
+
+  await page.getByRole('tab', { name: '我的主題' }).click();
+  await page.getByRole('button', { name: '投稿主題' }).click();
+  const dialog = page.getByRole('dialog', { name: '投稿主題' });
+  // The copy comes first in the list, but your own theme is picked.
+  await expect(dialog.getByRole('textbox', { name: '名稱' })).toHaveValue('抹茶草稿');
+
+  await dialog.getByRole('combobox', { name: '要投稿的主題' }).click();
+  await page.getByRole('option', { name: 'Shop Curtain' }).click();
+  await expect(dialog.getByText('這是別人分享的主題，修改後才能以改作投稿')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: '投稿' })).toHaveAttribute('aria-disabled', 'true');
 });
 
 test('reporting a theme confirms it in the dialog and on the theme', async ({ panel, page }) => {

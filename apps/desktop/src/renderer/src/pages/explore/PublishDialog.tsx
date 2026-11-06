@@ -11,6 +11,8 @@ import {
   autoTags,
   checkPublish,
   formatShareCode,
+  isModifiedInstall,
+  isUnchangedCopy,
   normalizeTag,
 } from '@chatto/share';
 import { StaticThemePreview } from '../../components/ThemePreview';
@@ -33,11 +35,16 @@ import { failureText, issueText } from '../../components/share/shareText';
 
 const ALL_SUGGESTED = Object.values(SUGGESTED_TAGS).flat();
 
-/** The local theme to start from: the one already linked to the shared theme, the one asked for, or the first custom one. */
+/**
+ * The local theme to start from: the one already linked to the shared theme, the one asked for,
+ * or the first custom theme that is not an unchanged install (an unchanged copy of someone else's
+ * theme cannot be published, and one of the account's own is already shared).
+ */
 function defaultThemeId(custom: ChatTheme[], target?: ShareThemeSummary, themeId?: string): string {
   return (
     custom.find((theme) => target && theme.origin?.shareId === target.id)?.id ??
     custom.find((theme) => theme.id === themeId)?.id ??
+    custom.find((theme) => !theme.origin || isModifiedInstall(theme))?.id ??
     custom[0]?.id ??
     ''
   );
@@ -70,8 +77,22 @@ export function PublishDialog({
   const [meta, setMeta] = useState<PublishMeta>({ name: '', description: '', category: '', tags: [] });
   const [error, setError] = useState<string | null>(null);
   const [published, setPublished] = useState<ShareThemeSummary | null>(null);
+  /** The account's own shared themes; null until known, and then unchanged copies are not flagged. */
+  const [ownShareIds, setOwnShareIds] = useState<ReadonlySet<string> | null>(null);
   const preview = useRef<HTMLDivElement>(null);
   const { busy, run } = useShareAction();
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    setOwnShareIds(null);
+    void shareCall('mine').then((result) => {
+      if (active && result.ok) setOwnShareIds(new Set(result.value.map((item) => item.id)));
+    });
+    return () => {
+      active = false;
+    };
+  }, [open]);
 
   // A fresh form every time the dialog opens.
   useEffect(() => {
@@ -90,7 +111,8 @@ export function PublishDialog({
   }, [open]);
 
   const theme = custom.find((item) => item.id === selected);
-  const issues = theme ? checkPublish(theme, meta) : [];
+  const unchangedCopy = Boolean(theme && ownShareIds && isUnchangedCopy(theme, ownShareIds));
+  const issues = theme ? checkPublish(theme, meta, { unchangedCopy }) : [];
   const extraTags = theme ? autoTags(theme).filter((tag) => !meta.tags.includes(tag)) : [];
   const set = (patch: Partial<PublishMeta>) => setMeta((value) => ({ ...value, ...patch }));
 

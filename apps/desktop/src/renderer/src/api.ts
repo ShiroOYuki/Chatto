@@ -12,6 +12,7 @@ declare global {
     __chattoMock?: {
       emitChat(event: ChatEvent): void;
       setState(patch: Partial<AppState>): void;
+      getState(): AppState;
       playAlertSound(sound: SoundSetting): void;
       /** Simulates saving a theme's CSS file outside Chatto (does not save the theme). */
       changeCssFile(change: CssFileChange): void;
@@ -98,6 +99,7 @@ function createMockApi(): ChattoApi {
     window.__chattoMock = {
       emitChat,
       setState: set,
+      getState: () => state,
       playAlertSound: (sound) => soundListeners.forEach((listener) => listener(sound)),
       changeCssFile: (change) => cssFileListeners.forEach((listener) => listener(change)),
     };

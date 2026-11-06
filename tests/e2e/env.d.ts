@@ -5,7 +5,11 @@ import type { AppState, ChattoApi } from '../../apps/desktop/src/shared/ipc';
 declare global {
   interface Window {
     chatto?: ChattoApi;
-    __chattoMock?: { emitChat(event: ChatEvent): void; setState(patch: Partial<AppState>): void };
+    __chattoMock?: {
+      emitChat(event: ChatEvent): void;
+      setState(patch: Partial<AppState>): void;
+      getState(): AppState;
+    };
   }
 }
 
