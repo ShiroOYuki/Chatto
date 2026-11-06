@@ -25,7 +25,7 @@
 | `line`            | 框線、分隔線、未開啟的開關                          | `#e1e8d9` | `#2c3429` |
 | `ink`             | 主要文字                                            | `#1d2a14` | `#eaf3de` |
 | `ink-soft`        | 次要文字、Tile 標題、未選中的導覽                   | `#55634a` | `#b3c0a6` |
-| `ink-faint`       | 提示、caption、未選中的圖示                         | `#8d9884` | `#7b8773` |
+| `ink-faint`       | 提示、caption、未選中的圖示                         | `#646f5b` | `#8f9b86` |
 | `matcha`          | 強調：選中的圖示、開關開啟、滑桿、focus ring        | `#6b9b2e` | `#97c459` |
 | `matcha-strong`   | 主要按鈕、Hero tile 底色、成功訊息文字              | `#27500a` | `#c0dd97` |
 | `matcha-soft`     | 淡強調底：徽章、hover、選中卡片（常搭配透明度）     | `#c0dd97` | `#3b6d11` |
@@ -35,6 +35,7 @@
 
 - shadcn/ui 的語意 token（`primary`、`muted`、`destructive`、`border`、`ring` …）已對應到上表，CLI 加進來的元件會自動符合配色。
 - 外觀設定（`prefs.appearance`）是 `system`／`light`／`dark`，`App.tsx` 把結果寫進 `<html data-theme>`；`dark:` variant 跟著 `data-theme`。
+- 對比：`ink-faint` 在 `tile` 上約 5:1，是文字能用的最淡顏色；`matcha` 上不放文字，要放文字的強調底用 `matcha-strong`＋`on-matcha`。
 - 透明度用 Tailwind 的 `/` 寫法調 token（`bg-matcha-soft/50`、`bg-danger/10`），不要另外調色。
 - 新增 token 時，亮色、暗色（兩個區塊）都要補，必要時也對應到 shadcn 的語意 token。
 - 目前寫死顏色的地方只有：連線彩紙的三個綠色、Hero 裡茶杯底的 `#f4f9ee`（暗色時也維持淺底）、連線中的琥珀色 spinner。不要再增加。

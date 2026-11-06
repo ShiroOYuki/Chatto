@@ -105,7 +105,7 @@ function UpdateBadge({ update }: { update: AppState['update'] }) {
       <button
         type="button"
         onClick={() => (ready ? updater.install() : updater.download())}
-        className={`${pill} transition-colors hover:bg-matcha hover:text-white`}
+        className={`${pill} transition-colors hover:bg-matcha-strong hover:text-on-matcha`}
       >
         {ready ? <RotateCw /> : <Download />}
         {ready ? m.updateReady : m.updateAvailable(update.version ?? '')}
@@ -162,7 +162,7 @@ function ObsPluginBadge({ dismissed }: { dismissed: boolean }) {
           type="button"
           disabled={busy}
           onClick={() => void install()}
-          className={`${PILL} bg-matcha-soft text-matcha-strong transition-colors hover:bg-matcha hover:text-white disabled:opacity-60`}
+          className={`${PILL} bg-matcha-soft text-matcha-strong transition-colors hover:bg-matcha-strong hover:text-on-matcha disabled:opacity-60`}
         >
           <Puzzle /> {outdated ? m.updateObsPlugin : m.installObsPlugin}
         </button>
