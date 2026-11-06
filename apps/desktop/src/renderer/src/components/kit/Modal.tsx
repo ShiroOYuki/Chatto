@@ -10,6 +10,7 @@ export function Modal({
   title,
   description,
   children,
+  actions,
   className = '',
 }: {
   open: boolean;
@@ -17,6 +18,8 @@ export function Modal({
   title: string;
   description?: string;
   children: ReactNode;
+  /** Small icon buttons in the title bar, left of the close button. */
+  actions?: ReactNode;
   className?: string;
 }) {
   const m = useMessages().common;
@@ -33,12 +36,15 @@ export function Modal({
               <DialogDescription className="mt-1 text-xs text-ink-faint">{description}</DialogDescription>
             ) : null}
           </div>
+          {/* The close button comes first so the dialog opens focused on it, not on an action whose
+              tooltip would then swallow the first Escape; `order-last` keeps it at the far right. */}
           <DialogClose
             aria-label={m.close}
-            className="grid size-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-tile-muted hover:text-ink [&>svg]:size-4"
+            className="order-last grid size-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-tile-muted hover:text-ink [&>svg]:size-4"
           >
             <X />
           </DialogClose>
+          {actions ? <div className="-mr-2 flex">{actions}</div> : null}
         </div>
         {children}
       </DialogContent>

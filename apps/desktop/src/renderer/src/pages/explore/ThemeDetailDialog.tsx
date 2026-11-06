@@ -9,7 +9,8 @@ import {
   isModifiedInstall,
 } from '@chatto/share';
 import { LiveThemePreview } from '../../components/ThemePreview';
-import { ActionNote, Badge, Button, CopyField, Field, LoadingSpinner, Modal, Select } from '../../components/kit';
+import { cn } from '@/lib/utils';
+import { ActionNote, Badge, Button, CopyField, Field, Hint, LoadingSpinner, Modal, Select } from '../../components/kit';
 import { useLocale, useMessages } from '../../i18n';
 import { loadShareDetail, shareCall, useInstalledThemes, useShareAction, useShareSession } from '../../services/share';
 import { exportTheme } from '../themeIO';
@@ -207,6 +208,27 @@ export function ThemeDetailDialog({
       title={current.name}
       description={m.byAuthor(author)}
       className="sm:max-w-4xl"
+      actions={
+        // Out of the way of the main actions, but always at hand: a small red flag by the close button.
+        <Hint label={reported ? m.detail.reported : m.detail.report}>
+          <button
+            type="button"
+            aria-label={reported ? m.detail.reported : m.detail.report}
+            aria-disabled={reported || undefined}
+            onClick={() => {
+              if (reported) return;
+              if (signedIn) setReporting(true);
+              else onSignIn();
+            }}
+            className={cn(
+              'grid size-8 place-items-center rounded-full text-danger transition-colors [&>svg]:size-4',
+              reported ? 'cursor-default opacity-60' : 'hover:bg-danger/10',
+            )}
+          >
+            <Flag className={reported ? 'fill-current' : ''} />
+          </button>
+        </Hint>
+      }
     >
       <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
         <div className="h-80 overflow-hidden rounded-xl border border-line md:h-[26rem]">
@@ -270,15 +292,6 @@ export function ThemeDetailDialog({
               <Heart className={current.liked ? 'fill-sakura text-sakura' : ''} />
               {current.liked ? m.detail.liked : m.detail.like}
             </Button>
-            {reported ? (
-              <Button variant="ghost" aria-disabled className="pointer-events-none text-ink-faint">
-                <Check /> {m.detail.reported}
-              </Button>
-            ) : (
-              <Button variant="ghost" onClick={() => (signedIn ? setReporting(true) : onSignIn())}>
-                <Flag /> {m.detail.report}
-              </Button>
-            )}
           </div>
           {note ? (
             <ActionNote key={note.text} tone={note.tone}>
