@@ -17,8 +17,8 @@ export function FieldRow({
   inline?: boolean;
   children: ReactNode;
 }) {
-  // A hint squeezed into the 136px label column wraps into a tall strip in narrow windows, so stack it there.
-  const stack = hint && !inline ? 'max-[1180px]:grid-cols-1 max-[1180px]:gap-2' : '';
+  // A hint squeezed into the 136px label column wraps into a tall strip, so rows with one stack.
+  const stack = hint && !inline ? 'grid-cols-1! gap-2' : '';
   return (
     <div className={`grid grid-cols-[136px_minmax(0,1fr)] items-center gap-3 py-1.5 ${stack}`}>
       <div className="text-xs font-medium text-ink-soft">

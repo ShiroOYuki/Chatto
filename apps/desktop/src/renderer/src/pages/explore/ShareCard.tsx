@@ -1,5 +1,5 @@
 import type { ChatTheme } from '@chatto/core';
-import { BadgeCheck, Download, Heart } from 'lucide-react';
+import { BadgeCheck, Check, Download, Heart, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ShareThemeSummary } from '@chatto/share';
 import { motion, riseIn } from '../../components/motion';
@@ -69,11 +69,19 @@ export function ShareCard({
           <SharePreview summary={summary} />
           <div className="absolute top-2 left-2 flex gap-1">
             {updatable ? (
-              <Badge tone="sakura">{m.updateAvailable}</Badge>
+              <Badge solid tone="sakura">
+                <RefreshCw /> {m.updateAvailable}
+              </Badge>
             ) : installed ? (
-              <Badge tone="matcha">{m.installed}</Badge>
+              <Badge solid tone="matcha">
+                <Check /> {m.installed}
+              </Badge>
             ) : null}
-            {summary.hidden ? <Badge tone="danger">{m.hidden}</Badge> : null}
+            {summary.hidden ? (
+              <Badge solid tone="danger">
+                {m.hidden}
+              </Badge>
+            ) : null}
           </div>
         </div>
         <div className="flex flex-col gap-1.5 p-4">

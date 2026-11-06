@@ -3,10 +3,25 @@
  * animated building blocks so every page moves the same way.
  */
 import { AnimatePresence, motion, useReducedMotion, type Transition, type Variants } from 'motion/react';
-import type { ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 
 export const spring: Transition = { type: 'spring', stiffness: 420, damping: 32, mass: 0.8 };
 export const softSpring: Transition = { type: 'spring', stiffness: 260, damping: 28 };
+
+/**
+ * The highlight that slides to the active item of a nav or segmented control (shared `layoutId`).
+ * Memoized on purpose: a layout-animated element measures the page every time it re-renders,
+ * and its parents re-render on every chat message.
+ */
+export const SlidingHighlight = memo(function SlidingHighlight({
+  layoutId,
+  className,
+}: {
+  layoutId: string;
+  className: string;
+}) {
+  return <motion.span layoutId={layoutId} transition={spring} className={className} />;
+});
 
 /** Child variants for anything placed inside a <Stagger>. */
 export const riseIn: Variants = {

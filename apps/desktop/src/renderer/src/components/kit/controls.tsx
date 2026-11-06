@@ -8,7 +8,7 @@ import {
   ChoiceboxItemHeader,
   ChoiceboxItemTitle,
 } from '../kibo-ui/choicebox';
-import { motion, spring } from '../motion';
+import { SlidingHighlight } from '../motion';
 import {
   Select as SelectRoot,
   SelectContent,
@@ -74,9 +74,8 @@ export function Segmented<T extends string>({
               )}
             >
               {active ? (
-                <motion.span
+                <SlidingHighlight
                   layoutId={`segmented-${group}`}
-                  transition={spring}
                   className="absolute inset-0 rounded-lg bg-tile shadow-sm"
                 />
               ) : null}

@@ -214,19 +214,17 @@ body {
     opacity: 0;
   }
 }
+
+/* Starts hidden so the wisps do not flash before their delayed start. */
 .steam {
+  opacity: 0;
   animation: steam 2.4s ease-in-out infinite;
-}
-.steam:nth-child(2) {
-  animation-delay: 0.8s;
-}
-.steam:nth-child(3) {
-  animation-delay: 1.6s;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .steam {
     animation: none;
+    opacity: 0.8;
   }
 }
 

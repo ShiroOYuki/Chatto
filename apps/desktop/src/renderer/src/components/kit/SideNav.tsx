@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { motion, spring } from '../motion';
+import { SlidingHighlight } from '../motion';
 
 /**
  * One entry of a page's left menu (theme editor sections, settings tabs). The active
@@ -36,9 +36,7 @@ export function SideNavItem({
         active ? 'font-medium text-ink' : 'text-ink-soft hover:text-ink'
       }`}
     >
-      {active ? (
-        <motion.span layoutId={group} transition={spring} className="absolute inset-0 rounded-xl bg-tile shadow-sm" />
-      ) : null}
+      {active ? <SlidingHighlight layoutId={group} className="absolute inset-0 rounded-xl bg-tile shadow-sm" /> : null}
       <span className={`relative [&>svg]:size-4 ${active ? 'text-matcha' : 'text-ink-faint'}`}>{icon}</span>
       <span className="relative min-w-0 flex-1 truncate">{label}</span>
       {trailing ? <span className="relative flex">{trailing}</span> : null}

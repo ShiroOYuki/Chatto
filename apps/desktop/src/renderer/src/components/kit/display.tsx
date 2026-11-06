@@ -7,9 +7,12 @@ import { motion, softSpring } from '../motion';
 export function Badge({
   children,
   tone = 'neutral',
+  solid = false,
 }: {
   children: ReactNode;
   tone?: 'neutral' | 'matcha' | 'sakura' | 'danger';
+  /** Opaque fill, for badges laid over a picture (theme previews) where a tint would wash out. */
+  solid?: boolean;
 }) {
   const tones = {
     neutral: 'bg-tile-muted text-ink-soft [.bg-tile-muted_&]:bg-tile',
@@ -17,7 +20,23 @@ export function Badge({
     sakura: 'bg-sakura/40 text-ink',
     danger: 'bg-danger/10 text-danger',
   };
-  return <Pill className={cn('gap-1 px-2 py-0.5 text-[11px] font-medium', tones[tone])}>{children}</Pill>;
+  const solidTones = {
+    neutral: 'bg-tile text-ink',
+    matcha: 'bg-matcha-strong text-on-matcha',
+    sakura: 'bg-sakura text-ink',
+    danger: 'bg-danger text-on-danger',
+  };
+  return (
+    <Pill
+      className={cn(
+        'gap-1 px-2 py-0.5 text-[11px] font-medium [&>svg]:size-3',
+        // The tile-colored ring keeps a solid badge apart from a preview of the same hue.
+        solid ? ['shadow-sm ring-2 ring-tile', solidTones[tone]] : tones[tone],
+      )}
+    >
+      {children}
+    </Pill>
+  );
 }
 
 /** Minimal bar sparkline for message rate history. */
