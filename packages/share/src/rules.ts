@@ -122,6 +122,14 @@ export function themeContentHash(theme: ChatTheme): string {
 export const isModifiedInstall = (theme: ChatTheme) =>
   theme.origin ? themeContentHash(theme) !== theme.origin.contentHash : false;
 
+/**
+ * Installed from someone else's shared theme and not changed since, which the service refuses to
+ * publish (`unchanged-copy`). `ownShareIds` are the account's own shared themes; their unchanged
+ * local copies are not copies of someone else's.
+ */
+export const isUnchangedCopy = (theme: ChatTheme, ownShareIds: ReadonlySet<string>) =>
+  Boolean(theme.origin) && !isModifiedInstall(theme) && !ownShareIds.has(theme.origin!.shareId);
+
 // ---------- checks ----------
 
 /**

@@ -8,8 +8,8 @@ describe('theme base', () => {
   it('every styled preset is generated from the same base', () => {
     for (const theme of PRESET_THEMES.filter((item) => item.base === 'styled')) {
       const css = themeToCss(theme, '.s');
-      expect(css).toContain('.s .chatto-message');
-      expect(css).toContain('.s .chatto-author');
+      expect(css).toContain(':where(.s) .chatto-message');
+      expect(css).toContain(':where(.s) .chatto-author');
       // Same structural keys as the base: presets only change values.
       const keys = (value: object) =>
         Object.keys(value)
@@ -22,7 +22,7 @@ describe('theme base', () => {
   it('the parametric blank zeroes every visual parameter', () => {
     const css = themeToCss(PLAIN_PRESET, '.s');
     expect(PLAIN_PRESET.base).toBe('styled');
-    expect(css).toContain('.s .chatto-message');
+    expect(css).toContain(':where(.s) .chatto-message');
     for (const fill of ['rgba(', 'border-left', '@keyframes', 'backdrop-filter']) expect(css).not.toContain(fill);
     expect(css).not.toMatch(/background: (?!transparent)/);
     expect(css).not.toMatch(/padding: (?!0px 0px 0px 0px|0;)/);
@@ -31,12 +31,12 @@ describe('theme base', () => {
 
   it('rows never shrink when the list overflows', () => {
     for (const theme of PRESET_THEMES.filter((item) => item.base === 'styled')) {
-      expect(themeToCss(theme, '.s')).toContain('.s .chatto-list > li {\n  flex-shrink: 0;\n}');
+      expect(themeToCss(theme, '.s')).toContain(':where(.s) .chatto-list > li {\n  flex-shrink: 0;\n}');
     }
   });
 
   it('clips the oldest rows when chat overflows', () => {
-    const list = (theme: ChatTheme) => themeToCss(theme, '.s').split('.s .chatto-list {')[1]!.split('}')[0]!;
+    const list = (theme: ChatTheme) => themeToCss(theme, '.s').split(':where(.s) .chatto-list {')[1]!.split('}')[0]!;
     expect(list(BASE_THEME)).toContain('justify-content: flex-end');
     expect(list(createTheme('t', 't', { list: { direction: 'top-down' } }))).toContain('justify-content: flex-start');
   });
@@ -44,7 +44,7 @@ describe('theme base', () => {
   it('styles regular viewers without outranking other roles', () => {
     const css = themeToCss(createTheme('t', 't', { roles: { viewer: { nameColor: '#123456' } } }), '.s');
     expect(css).toContain(
-      '.s .chatto-message:where(:not([data-roles~="broadcaster"]):not([data-roles~="moderator"]):not([data-roles~="vip"]):not([data-roles~="subscriber"]):not([data-roles~="founder"])) .chatto-author',
+      ':where(.s) .chatto-message:where(:not([data-roles~="broadcaster"]):not([data-roles~="moderator"]):not([data-roles~="vip"]):not([data-roles~="subscriber"]):not([data-roles~="founder"])) .chatto-author',
     );
   });
 
@@ -100,30 +100,30 @@ describe('event message frame', () => {
 
   it('wrap frames the whole message', () => {
     const css = themeToCss({ ...bubble, notice: { ...bubble.notice, messageFrame: 'wrap' } }, '.s');
-    expect(rulesFor(css, '.s .chatto-message[data-event]')).toContain('background: #FAECE7');
+    expect(rulesFor(css, ':where(.s) .chatto-message[data-event]')).toContain('background: #FAECE7');
   });
 
   it('surface restyles the bubble instead of drawing a frame around it', () => {
     const css = themeToCss(bubble, '.s');
     expect(bubble.notice.messageFrame).toBe('surface');
-    expect(rulesFor(css, '.s .chatto-message[data-event]')).toBe('');
-    const body = rulesFor(css, '.s .chatto-message[data-event] .chatto-body');
+    expect(rulesFor(css, ':where(.s) .chatto-message[data-event]')).toBe('');
+    const body = rulesFor(css, ':where(.s) .chatto-message[data-event] .chatto-body');
     expect(body).toContain('background: #FAECE7');
     // Keeps the bubble's own shape.
     expect(body).not.toContain('border-radius');
     expect(body).not.toContain('padding');
     // System notices still get the whole box.
-    expect(rulesFor(css, '.s .chatto-notice')).toContain('border-radius: 16px 16px 16px 16px');
+    expect(rulesFor(css, ':where(.s) .chatto-notice')).toContain('border-radius: 16px 16px 16px 16px');
   });
 
   it('surface falls back to the message box when the body has no fill', () => {
     const glass = getPresetTheme('matcha-glass')!;
     const css = themeToCss({ ...glass, notice: { ...glass.notice, messageFrame: 'surface' } }, '.s');
-    expect(rulesFor(css, '.s .chatto-message[data-event]')).toContain('rgba(30, 70, 50, 0.72)');
+    expect(rulesFor(css, ':where(.s) .chatto-message[data-event]')).toContain('rgba(30, 70, 50, 0.72)');
   });
 
   it('an event with its own mode undoes what the generic style set', () => {
-    const cheer = '.s .chatto-message[data-event="twitch:cheer"]';
+    const cheer = ':where(.s) .chatto-message[data-event="twitch:cheer"]';
     const wrapped = themeToCss(
       {
         ...bubble,
@@ -153,7 +153,7 @@ describe('event message frame', () => {
 });
 
 describe('event title', () => {
-  const title = '.s .chatto-message[data-event] .chatto-event-title';
+  const title = ':where(.s) .chatto-message[data-event] .chatto-event-title';
   const block = (css: string, selector: string) =>
     css
       .split('}')
@@ -177,22 +177,26 @@ describe('event title', () => {
     expect(sticker).toContain('background: #F0997B');
     expect(sticker).toContain('grid-row: 3');
     expect(sticker).toContain('rotate(4deg)');
-    expect(block(css, '.s .chatto-message[data-event] .chatto-body')).toContain('grid-row: 3');
+    expect(block(css, ':where(.s) .chatto-message[data-event] .chatto-body')).toContain('grid-row: 3');
   });
 
   it('pins the sticker to the message box when the message is the surface', () => {
     const glass = getPresetTheme('matcha-glass')!;
     const css = themeToCss({ ...glass, notice: { ...glass.notice, titlePlacement: 'sticker' } }, '.s');
     expect(block(css, title)).toContain('position: absolute');
-    expect(block(css, '.s .chatto-message[data-event]')).toContain('position: relative');
+    expect(block(css, ':where(.s) .chatto-message[data-event]')).toContain('position: relative');
   });
 
   it('columns stop clipping so the sticker can sit on the edge, rounding the tag per part', () => {
     const noren = getPresetTheme('noren')!;
     const css = themeToCss({ ...noren, notice: { ...noren.notice, titlePlacement: 'sticker' } }, '.s');
-    expect(block(css, '.s .chatto-message[data-event]')).toContain('overflow: visible');
-    expect(block(css, '.s .chatto-message[data-event] .chatto-header')).toContain('border-radius: 6px 0px 0px 6px');
-    expect(block(css, '.s .chatto-message[data-event] .chatto-body')).toContain('border-radius: 0px 6px 6px 0px');
+    expect(block(css, ':where(.s) .chatto-message[data-event]')).toContain('overflow: visible');
+    expect(block(css, ':where(.s) .chatto-message[data-event] .chatto-header')).toContain(
+      'border-radius: 6px 0px 0px 6px',
+    );
+    expect(block(css, ':where(.s) .chatto-message[data-event] .chatto-body')).toContain(
+      'border-radius: 0px 6px 6px 0px',
+    );
   });
 
   it('an event on a line undoes the generic sticker', () => {
@@ -201,7 +205,7 @@ describe('event title', () => {
       { ...bubble, events: { 'twitch:cheer': { linked: false, style: { ...bubble.notice, titlePlacement: 'line' } } } },
       '.s',
     );
-    const cheer = '.s .chatto-message[data-event="twitch:cheer"]';
+    const cheer = ':where(.s) .chatto-message[data-event="twitch:cheer"]';
     expect(block(css, `${cheer} .chatto-event-title`)).toContain('transform: none');
     expect(block(css, `${cheer} .chatto-content`)).toContain('display: flex');
   });
@@ -220,7 +224,7 @@ describe('motion', () => {
     const css = themeToCss(theme, '.s');
     expect(css).toContain('@keyframes chatto-exit-zoom');
     expect(css).toContain(
-      '.s[data-leaving] .chatto-list > li {\n  animation: chatto-exit-zoom 300ms ease-in forwards;',
+      ':where(.s)[data-leaving] .chatto-list > li {\n  animation: chatto-exit-zoom 300ms ease-in forwards;',
     );
     expect(exitDurationMs(theme)).toBe(300);
     expect(exitDurationMs(createTheme('t', 't', { animation: { exit: 'none' } }))).toBe(0);
@@ -232,14 +236,26 @@ describe('attention after a quiet spell', () => {
 
   it('labels and lights up the bubble in stacked themes', () => {
     const css = themeToCss(getPresetTheme('bubble')!, '.s');
-    expect(css).toContain(`.s ${calm} .chatto-body::after`);
+    expect(css).toContain(`:where(.s) ${calm} .chatto-body::after`);
     expect(css).toContain('content: "新留言"');
-    expect(css).toContain(`.s ${calm} .chatto-body {\n  animation: chatto-attention-glow 0.9s ease-in-out 3;`);
+    expect(css).toContain(`:where(.s) ${calm} .chatto-body {\n  animation: chatto-attention-glow 0.9s ease-in-out 3;`);
+  });
+
+  it('switches the label text with the chat language', () => {
+    const theme = createTheme('t', 't', { attention: { label: 'Hey', labels: { 'zh-TW': '嘿', en: 'Hey' } } });
+    const css = themeToCss(theme, '.s');
+    expect(css).toContain('content: "Hey"');
+    expect(css).toContain(`:where(.s:lang(zh-TW)) ${calm}::after {\n  content: "嘿";`);
+    // Same as the default: no extra rule.
+    expect(css).not.toContain(':lang(en)');
+    // Only translations: one of them becomes the default.
+    const only = themeToCss(createTheme('t', 't', { attention: { label: '', labels: { en: 'New' } } }), '.s');
+    expect(only).toContain('content: "New"');
   });
 
   it('keeps the row enter animation when the effect runs on the row', () => {
     const css = themeToCss(getPresetTheme('matcha-glass')!, '.s');
-    expect(css).toContain(`.s .chatto-list > li${calm} {\n  animation: chatto-enter-slide-up 260ms`);
+    expect(css).toContain(`:where(.s) .chatto-list > li${calm} {\n  animation: chatto-enter-slide-up 260ms`);
     expect(css).toContain(', chatto-attention-glow 0.9s ease-in-out 3;');
   });
 

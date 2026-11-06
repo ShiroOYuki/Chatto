@@ -113,6 +113,9 @@ export default defineMessages({
       emptyHint: '在主題頁做好自訂主題，就能分享給其他實況主',
       signInHint: '登入後就能投稿自己的主題',
       update: '更新',
+      getCopy: '取得到本機',
+      getCopyHint: '這台電腦上還沒有這個主題，先取得一份再修改',
+      gotCopy: (name: string) => `已存成本機主題「${name}」。在主題頁修改後，回來按「更新」發佈新版本。`,
       unpublish: '下架',
       unpublishTitle: (name: string) => `下架「${name}」？`,
       unpublishDescription: '其他人已經安裝的副本不受影響。下架後無法復原，代碼也會失效。',
@@ -123,6 +126,8 @@ export default defineMessages({
     publish: {
       title: '投稿主題',
       updateTitle: (name: string) => `更新「${name}」`,
+      replaces: (theme: string, target: string) =>
+        `「${theme}」不是從「${target}」來的，發佈後會用它的內容取代「${target}」。`,
       theme: '要投稿的主題',
       themePlaceholder: '選擇自訂主題',
       noCustomThemes: '只能投稿自訂主題。先在主題頁複製一個內建主題並修改。',
@@ -304,6 +309,10 @@ export default defineMessages({
       emptyHint: 'Make a custom theme on the Themes page to share it with other streamers',
       signInHint: 'Sign in to publish your own themes',
       update: 'Update',
+      getCopy: 'Get a copy',
+      getCopyHint: 'This computer has no copy of this theme yet; get one to change it',
+      gotCopy: (name: string) =>
+        `Saved "${name}" as a local theme. Change it on the Themes page, then come back and choose Update.`,
       unpublish: 'Unpublish',
       unpublishTitle: (name: string) => `Unpublish "${name}"?`,
       unpublishDescription: 'Copies people already installed stay. This can’t be undone, and its code stops working.',
@@ -314,6 +323,8 @@ export default defineMessages({
     publish: {
       title: 'Publish a theme',
       updateTitle: (name: string) => `Update "${name}"`,
+      replaces: (theme: string, target: string) =>
+        `"${theme}" isn’t linked to "${target}". Publishing replaces "${target}" with its content.`,
       theme: 'Theme to publish',
       themePlaceholder: 'Choose a custom theme',
       noCustomThemes:

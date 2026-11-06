@@ -25,6 +25,10 @@ export const CHANGELOG = {
               'Themes from Chatto’s official account show an Official badge on the Explore page',
               '探索頁上，Chatto 官方帳號分享的主題會顯示「官方」徽章',
             ),
+            t(
+              'The quiet-spell label can have its own text for each chat language',
+              '沉寂後新留言的標籤可以為每種聊天室語言各設一段文字',
+            ),
           ],
         },
         {
@@ -34,6 +38,25 @@ export const CHANGELOG = {
               'Custom CSS can switch the words it adds to the chat language with :lang()',
               '自訂 CSS 加上的文字可以用 :lang() 跟著聊天室語言切換',
             ),
+            t(
+              'Custom CSS overrides a theme’s styles with the same selector, without a .chatto-root prefix',
+              '自訂 CSS 用相同的選擇器就能覆蓋主題樣式，不必加 .chatto-root 前綴',
+            ),
+            t(
+              'My Themes can fetch a theme you published from another computer, so you can change and update it here',
+              '「我的主題」可以把在別台電腦發佈的主題取得到本機，在這裡修改並更新',
+            ),
+            t(
+              'Publishing starts from a theme you made, and warns before sending an unchanged copy of someone else’s theme',
+              '投稿時預設選你自己做的主題，並在送出別人主題的未修改副本前提醒',
+            ),
+          ],
+        },
+        {
+          kind: 'fixed',
+          items: [
+            t('Uploaded frame images now show in the control panel’s previews', '控制台的預覽現在會顯示上傳的外框圖片'),
+            t('Installing a shared theme updates its download count right away', '安裝分享主題後，下載次數會立即更新'),
           ],
         },
       ],

@@ -324,15 +324,19 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root', options: Th
     notice,
     animation,
   } = theme;
+  // The root selector adds no specificity, so custom CSS like `.chatto-author { … }` beats the
+  // generated `.chatto-author` without repeating `.chatto-root`. Parts keep their own weight,
+  // so a role's style still wins over the plain one.
+  const at = `:where(${scope})`;
   const rules: string[] = [];
   const rule = (selector: string, declarations: string[]) => {
     const selectors = selector
       .split(',')
-      .map((part) => `${scope} ${part.trim()}`.trimEnd())
+      .map((part) => `${at} ${part.trim()}`.trimEnd())
       .join(',\n');
     rules.push(`${selectors} {\n  ${declarations.join(';\n  ')};\n}`);
   };
-  const root = (declarations: string[]) => rules.push(`${scope} {\n  ${declarations.join(';\n  ')};\n}`);
+  const root = (declarations: string[]) => rules.push(`${at} {\n  ${declarations.join(';\n  ')};\n}`);
 
   // Root: typography and the stroke/shadow every text inherits.
   root([
@@ -538,12 +542,12 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root', options: Th
   const enter = enterKind ? `chatto-enter-${enterKind} ${animation.duration}ms ${ENTER_EASING[enterKind]} both` : null;
   if (enterKind) {
     rules.push(`@keyframes chatto-enter-${enterKind} { ${ENTER_KEYFRAMES[enterKind]} }`);
-    motion.push(`${scope} .chatto-list > li {\n  animation: ${enter};\n}`);
+    motion.push(`${at} .chatto-list > li {\n  animation: ${enter};\n}`);
   }
   if (animation.exit !== 'none' && animation.duration > 0) {
     rules.push(`@keyframes chatto-exit-${animation.exit} { ${EXIT_KEYFRAMES[animation.exit]} }`);
     motion.push(
-      `${scope}[data-leaving] .chatto-list > li {\n  animation: chatto-exit-${animation.exit} ${animation.duration}ms ease-in forwards;\n}`,
+      `${at}[data-leaving] .chatto-list > li {\n  animation: chatto-exit-${animation.exit} ${animation.duration}ms ease-in forwards;\n}`,
     );
   }
 
@@ -551,13 +555,16 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root', options: Th
   const { attention } = theme;
   const calm = `.chatto-message[data-highlight~=${cssString(AFTER_SILENCE)}]`;
   const surface = surfaceIsBody ? `${calm} .chatto-body` : calm;
-  if (attention.effect !== 'none' || attention.label) {
+  const labels = attention.labels ?? {};
+  // A language without its own text shows the default label, or failing that any translation.
+  const label = attention.label || Object.values(labels).find(Boolean) || '';
+  if (attention.effect !== 'none' || label) {
     rule(surface, ['position: relative', `--chatto-attention: ${attention.color}`]);
   }
-  if (attention.label) {
+  if (label) {
     if (message.arrangement === 'columns') unclipColumns(rule, calm, radii);
     rule(`${surface}::after`, [
-      `content: ${cssString(attention.label)}`,
+      `content: ${cssString(label)}`,
       ...cornerPill(attention.color, attention.labelColor),
       'font-size: 0.65em',
       'position: absolute',
@@ -565,13 +572,18 @@ export function themeToCss(theme: ChatTheme, scope = '.chatto-root', options: Th
       'right: 8px',
       'transform: translateY(-55%) rotate(-4deg)',
     ]);
+    // The chat root carries the chat language (`lang`). Kept inside :where() like the rest.
+    for (const [locale, text] of Object.entries(labels)) {
+      if (!text || text === label) continue;
+      rules.push(`:where(${scope}:lang(${locale})) ${surface}::after {\n  content: ${cssString(text)};\n}`);
+    }
   }
   if (attention.effect !== 'none' && attention.repeat > 0) {
     rules.push(`@keyframes chatto-attention-${attention.effect} { ${ATTENTION_KEYFRAMES[attention.effect]} }`);
     const effect = `chatto-attention-${attention.effect} 0.9s ease-in-out ${Math.round(attention.repeat)}`;
-    if (surfaceIsBody) motion.push(`${scope} ${surface} {\n  animation: ${effect};\n}`);
+    if (surfaceIsBody) motion.push(`${at} ${surface} {\n  animation: ${effect};\n}`);
     // On the row itself, keep the row's enter animation alongside the effect.
-    else motion.push(`${scope} .chatto-list > li${calm} {\n  animation: ${enter ? `${enter}, ${effect}` : effect};\n}`);
+    else motion.push(`${at} .chatto-list > li${calm} {\n  animation: ${enter ? `${enter}, ${effect}` : effect};\n}`);
   }
   if (motion.length > 0) {
     rules.push(`@media (prefers-reduced-motion: no-preference) {\n${motion.join('\n')}\n}`);

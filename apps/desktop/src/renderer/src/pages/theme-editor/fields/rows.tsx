@@ -88,6 +88,7 @@ export function TextRow({
   return (
     <FieldRow label={label} hint={hint}>
       <Input
+        aria-label={label}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}

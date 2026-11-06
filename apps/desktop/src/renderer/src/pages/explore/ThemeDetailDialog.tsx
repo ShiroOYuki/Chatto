@@ -116,7 +116,7 @@ export function ThemeDetailDialog({
 }: {
   summary: ShareThemeSummary | null;
   onOpenChange: (open: boolean) => void;
-  /** The theme's counts changed (liked); lists can show the new summary. */
+  /** The theme's counts changed (liked, or installed for the first time); lists can show the new summary. */
   onChanged?: (summary: ShareThemeSummary) => void;
   onSignIn: () => void;
 }) {
@@ -165,7 +165,12 @@ export function ThemeDetailDialog({
       text: replaceId ? m.detail.updated(result.value.name) : m.detail.installedAs(result.value.name),
       tone: 'ok',
     });
-    if (!replaceId) setCurrent({ ...current, downloads: current.downloads + 1 });
+    // The service counts one download per client a day, so only the first copy adds to the count.
+    if (!replaceId && copies.length === 0) {
+      const counted = { ...current, downloads: current.downloads + 1 };
+      setCurrent(counted);
+      onChanged?.(counted);
+    }
   };
 
   const toggleLike = async () => {

@@ -20,6 +20,24 @@ describe('theme languages', () => {
     expect(copy.attention.label).toBe('New');
     expect(copy.builtIn).toBe(false);
     expect(localizeTheme(copy, 'zh-TW').attention.label).toBe('New');
+    // The default label comes along in every language.
+    expect(copy.attention.labels).toEqual({ 'zh-TW': '新留言', en: 'New' });
+    // A custom theme is copied as written.
+    expect(
+      duplicateTheme({ ...copy, attention: { ...copy.attention, labels: undefined } }, 'again').attention.labels,
+    ).toBe(undefined);
+  });
+
+  it('keeps per-language label texts only for known languages with text', () => {
+    const theme = normalizeTheme({
+      ...structuredClone(BASE_THEME),
+      attention: { ...BASE_THEME.attention, labels: { en: 'Hi', 'zh-TW': ' ', fr: 'Salut' } },
+    });
+    expect(theme.attention.labels).toEqual({ en: 'Hi' });
+    // Left out entirely when there is none, so older themes keep the same content.
+    const none = normalizeTheme({ ...structuredClone(BASE_THEME), attention: { ...BASE_THEME.attention, labels: {} } });
+    expect('labels' in none.attention).toBe(false);
+    expect('labels' in normalizeTheme(structuredClone(BASE_THEME)).attention).toBe(false);
   });
 
   it('keeps only non-empty custom event texts', () => {

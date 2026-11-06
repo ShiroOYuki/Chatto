@@ -12,6 +12,8 @@
  * Colours are any CSS colour string; use `transparent` to disable a fill.
  */
 
+import type { Locale } from './i18n';
+
 export const THEME_SCHEMA_VERSION = 2 as const;
 
 /** [top, right, bottom, left] in px. */
@@ -365,8 +367,13 @@ export interface ChatTheme {
     color: string;
     /** How many times the effect plays. */
     repeat: number;
-    /** Small tag on the message's corner; empty for none. */
+    /** Small tag on the message's corner; empty for none. Shown in a chat language without its own text. */
     label: string;
+    /**
+     * The tag's text per chat language, chosen with `:lang()`. Optional and left out when empty, so
+     * themes saved before it existed keep their content hash.
+     */
+    labels?: Partial<Record<Locale, string>>;
     labelColor: string;
   };
 
