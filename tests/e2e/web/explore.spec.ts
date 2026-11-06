@@ -41,7 +41,7 @@ test('shared themes can be browsed, filtered, opened by code and installed', asy
   await expect(page.getByRole('button', { name: 'Soda Bubbles' })).toHaveCount(0);
 
   await panel.nav('主題').click();
-  await expect(page.getByRole('heading', { level: 3, name: 'Neon Arcade' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Neon Arcade' })).toBeVisible();
 });
 
 test('installing a theme counts the download on its card right away, once', async ({ panel, page }) => {
@@ -100,7 +100,7 @@ test('a theme file is published straight from the publish dialog', async ({ pane
   await expect(dialog.getByRole('textbox', { name: '名稱' })).toHaveValue('檔案裡的主題');
   await page.keyboard.press('Escape');
   await panel.nav('主題').click();
-  await expect(page.getByRole('heading', { level: 3, name: '檔案裡的主題' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: '檔案裡的主題' })).toBeVisible();
 });
 
 test('liking and reporting ask for an account first', async ({ panel, page }) => {
@@ -172,7 +172,7 @@ test('a custom theme is checked, published and listed under my themes', async ({
   await expect(dialog.getByText('已發佈')).toBeVisible();
   await page.keyboard.press('Escape');
 
-  await expect(page.getByRole('heading', { level: 3, name: '我的抹茶' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: '我的抹茶' })).toBeVisible();
   await expect(page.getByText('公開中')).toBeVisible();
 });
 

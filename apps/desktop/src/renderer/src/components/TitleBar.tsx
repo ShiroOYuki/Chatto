@@ -188,7 +188,9 @@ function ObsPluginBadge({ dismissed }: { dismissed: boolean }) {
  * layout switch and integrated minimize / maximize / close buttons.
  */
 export function TitleBar({ state, title }: { state: AppState; title?: string }) {
-  const m = useMessages().shell.titleBar;
+  const messages = useMessages();
+  const m = messages.shell.titleBar;
+  const { channelState } = messages.connections;
   const compact = state.prefs.uiMode === 'compact';
   const connected = state.channel.state === 'connected';
 
@@ -207,7 +209,12 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
 
       <div data-channel-status className="ml-4 flex items-center gap-2 text-xs text-ink-soft">
         <StatusDot tone={channelTone(state.channel.state, connected)} />
-        {connected ? (state.channel.login ?? m.connected) : m.notConnected}
+        {/* Says what is happening while it is not connected (connecting, reconnecting, failed), not just "not connected". */}
+        {connected
+          ? (state.channel.login ?? m.connected)
+          : state.channel.state === 'idle'
+            ? m.notConnected
+            : channelState[state.channel.state]}
       </div>
 
       <div className="ml-auto flex h-full items-center">

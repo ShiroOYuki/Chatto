@@ -28,8 +28,11 @@ export function SoundPicker({
   };
   const SoundIcon = value.enabled ? Volume2 : VolumeX;
   // Still adjustable while muted, but faded so it does not look like it will play.
+  // Text stays readable (4.5:1): the sound name fades less, the volume readout not at all.
   const muted = value.enabled ? undefined : '';
-  const fade = 'transition-opacity data-muted:opacity-50';
+  const fadeText = 'transition-opacity data-muted:opacity-70';
+  const fadeVolume =
+    'data-muted:[&_[data-slot=slider]]:opacity-50 data-muted:[&_button]:opacity-50 [&_[data-slot=slider]]:transition-opacity';
   return (
     // Wraps in narrow tiles: the volume and preview move to a line of their own.
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -38,7 +41,7 @@ export function SoundPicker({
         <SoundIcon aria-hidden className={`size-4 ${value.enabled ? 'text-matcha' : 'text-ink-faint'}`} />
         <Toggle checked={value.enabled} label={label} onChange={(enabled) => onChange({ ...value, enabled })} />
       </span>
-      <div data-muted={muted} className={`flex shrink-0 items-center gap-3 ${fade}`}>
+      <div data-muted={muted} className={`flex shrink-0 items-center gap-3 ${fadeText}`}>
         <Select
           className="w-36 shrink-0"
           value={soundValue(value.sound)}
@@ -53,7 +56,7 @@ export function SoundPicker({
           </Hint>
         ) : null}
       </div>
-      <div data-muted={muted} className={`flex min-w-0 flex-1 basis-44 items-center gap-3 ${fade}`}>
+      <div data-muted={muted} className={`flex min-w-0 flex-1 basis-44 items-center gap-3 ${fadeVolume}`}>
         <div className="min-w-20 flex-1">
           <Slider
             value={Math.round(value.volume * 100)}

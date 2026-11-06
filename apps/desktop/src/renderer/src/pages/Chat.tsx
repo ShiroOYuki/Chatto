@@ -2,7 +2,7 @@ import type { UserRole } from '@chatto/core';
 import { ArrowDown, Eraser, Pause, Play, Search, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
-import { ChatLine, NoticeLine } from '../components/ChatLine';
+import { ChatLine, NoticeLine, userColor } from '../components/ChatLine';
 import { redemptionColumn, RedemptionsTile } from './RedemptionsTile';
 import { RollingNumber, Stagger } from '../components/motion';
 import { Button, EmptyState, Hint, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/kit';
@@ -170,7 +170,10 @@ export function ChatPage({ state }: { state: AppState }) {
                 {topChatters.map((chatter, index) => (
                   <li key={chatter.name} className="flex items-center gap-3 text-sm">
                     <span className="w-4 text-right font-mono text-xs text-ink-faint">{index + 1}</span>
-                    <span className="min-w-0 flex-1 truncate font-medium" style={{ color: chatter.color }}>
+                    <span
+                      className={`min-w-0 flex-1 truncate font-medium ${chatter.color ? 'user-color' : ''}`}
+                      style={userColor(chatter.color)}
+                    >
                       {chatter.name}
                     </span>
                     <span className="font-mono text-xs text-ink-soft">{chatter.count}</span>

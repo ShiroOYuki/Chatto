@@ -22,6 +22,7 @@
   --color-on-matcha: var(--c-on-matcha);
   --color-sakura: var(--c-sakura);
   --color-danger: var(--c-danger);
+  --color-on-danger: var(--c-on-danger);
   --color-sidebar: var(--c-sidebar);
 
   --radius-tile: 20px;
@@ -70,6 +71,7 @@
   --c-on-matcha: #f4f9ee;
   --c-sakura: #f4c0d1;
   --c-danger: #c2412d;
+  --c-on-danger: #ffffff;
   --c-sidebar: #e9efe2;
   color-scheme: light;
 }
@@ -86,10 +88,11 @@
     --c-ink-faint: #8f9b86;
     --c-matcha: #97c459;
     --c-matcha-strong: #c0dd97;
-    --c-matcha-soft: #3b6d11;
+    --c-matcha-soft: #356310;
     --c-on-matcha: #10200a;
     --c-sakura: #993556;
     --c-danger: #f09595;
+    --c-on-danger: #2a0b0b;
     --c-sidebar: #161a15;
     color-scheme: dark;
   }
@@ -104,10 +107,11 @@
   --c-ink-faint: #8f9b86;
   --c-matcha: #97c459;
   --c-matcha-strong: #c0dd97;
-  --c-matcha-soft: #3b6d11;
+  --c-matcha-soft: #356310;
   --c-on-matcha: #10200a;
   --c-sakura: #993556;
   --c-danger: #f09595;
+  --c-on-danger: #2a0b0b;
   --c-sidebar: #161a15;
   color-scheme: dark;
 }
@@ -182,6 +186,18 @@ body {
   color: var(--c-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Viewer name colors in the control panel's own chat lines (not the chat previews).
+ * Platforms pick them for dark chat, so pale ones (mint, light blue) vanish on white:
+ * light mode mixes them toward the ink color. Set with `userColor()` from ChatLine.
+ */
+.user-color {
+  color: color-mix(in oklab, var(--user-color) 45%, var(--c-ink));
+}
+[data-theme='dark'] .user-color {
+  color: var(--user-color);
 }
 
 /* Tea steam for the mascot. */

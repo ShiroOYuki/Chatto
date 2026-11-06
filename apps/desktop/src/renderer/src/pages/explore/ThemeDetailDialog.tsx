@@ -77,6 +77,7 @@ function ReportDialog({
               value={reason}
               onChange={setReason}
               aria-label={m.report.reason}
+              placeholder={m.report.reasonPlaceholder}
               options={SHARE_REPORT_REASONS.map((value) => ({ value, label: m.report.reasons[value] }))}
             />
           </Field>
