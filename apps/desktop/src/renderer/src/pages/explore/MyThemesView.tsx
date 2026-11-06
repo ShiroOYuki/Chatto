@@ -17,7 +17,7 @@ import { useLocale, useMessages } from '../../i18n';
 import { shareCall } from '../../services/share';
 import { PublishDialog } from './PublishDialog';
 import { SharePreview } from './ShareCard';
-import { errorText, formatCount } from '../../components/share/shareText';
+import { errorText, formatCount, publishesLeftText } from '../../components/share/shareText';
 
 /** The account's published themes: publish, update, unpublish. */
 export function MyThemesView({
@@ -74,7 +74,7 @@ export function MyThemesView({
         <Button variant="primary" onClick={() => setPublishing({})}>
           <Plus /> {m.mine.publish}
         </Button>
-        <span className="text-xs text-ink-faint">{m.account.publishesLeft(account.publishesLeft)}</span>
+        <span className="text-xs text-ink-faint">{publishesLeftText(m, account)}</span>
       </div>
       {error ? <ActionNote tone="error">{errorText(m, error)}</ActionNote> : null}
       {done ? (

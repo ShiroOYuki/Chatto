@@ -2,6 +2,7 @@ import type { ChatTheme } from '@chatto/core';
 import type { ShareBackend, SignInResult } from './backend';
 import { FAKE_SEED, type SeedTheme } from './fakeSeed';
 import {
+  hasDailyPublishLimit,
   SHARE_LIMITS,
   shareFail,
   shareOk,
@@ -34,6 +35,7 @@ interface StoredAccount {
   identities: ShareIdentity[];
   role: ShareAccount['role'];
   banned: boolean;
+  official: boolean;
   publishes: { day: number; count: number };
 }
 
@@ -122,6 +124,7 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
       identities: [],
       role,
       banned: false,
+      official: false,
       publishes: { day: 0, count: 0 },
     };
     accounts.set(account.id, account);
@@ -136,6 +139,7 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
       author = addAccount(seed.author);
       seedAuthors.set(seed.author, author);
     }
+    if (seed.official) author.official = true;
     const at = now() - seed.daysAgo * DAY;
     const stored: StoredTheme = {
       id: nextId('thm'),
@@ -188,7 +192,9 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
       category: theme.category,
       tags: [...theme.tags],
       autoTags: autoTags(theme.theme),
-      author: author ? { id: author.id, name: author.displayName } : null,
+      author: author
+        ? { id: author.id, name: author.displayName, ...(author.official ? { official: true } : {}) }
+        : null,
       likes: theme.baseLikes + theme.likedBy.size,
       downloads: downloads(theme),
       version: theme.version,
@@ -207,7 +213,8 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
 
   const publicAccount = (account: StoredAccount): ShareAccount => {
     const today = Math.floor(now() / DAY);
-    const used = account.publishes.day === today ? account.publishes.count : 0;
+    const counted = hasDailyPublishLimit(account.role) && account.publishes.day === today;
+    const used = counted ? account.publishes.count : 0;
     return {
       id: account.id,
       displayName: account.displayName,
@@ -228,7 +235,8 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
   const preparePublish = (account: StoredAccount, input: PublishInput, updating?: StoredTheme) => {
     const today = Math.floor(now() / DAY);
     if (account.publishes.day !== today) account.publishes = { day: today, count: 0 };
-    if (account.publishes.count >= SHARE_LIMITS.dailyPublishes) return shareFail('rate-limited');
+    const limited = hasDailyPublishLimit(account.role);
+    if (limited && account.publishes.count >= SHARE_LIMITS.dailyPublishes) return shareFail('rate-limited');
     const tags = [...new Set(input.tags.map(normalizeTag).filter(Boolean))];
     const origin = input.theme.origin ? themes.get(input.theme.origin.shareId) : undefined;
     const unchangedCopy = Boolean(
@@ -239,7 +247,7 @@ export function createFakeShareBackend(options: FakeShareOptions = {}): ShareBac
     );
     const issues = checkPublish(input.theme, { ...input, tags }, { unchangedCopy });
     if (issues.length) return shareFail('invalid', issues);
-    account.publishes.count += 1;
+    if (limited) account.publishes.count += 1;
     const remixOf = origin && origin.authorId !== account.id && origin.id !== updating?.id ? origin.id : null;
     return shareOk({ tags, remixOf });
   };

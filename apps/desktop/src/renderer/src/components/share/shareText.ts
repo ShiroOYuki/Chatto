@@ -1,4 +1,10 @@
-import type { ShareErrorCode, ShareIssue, ShareResult } from '@chatto/share';
+import {
+  hasDailyPublishLimit,
+  type ShareAccount,
+  type ShareErrorCode,
+  type ShareIssue,
+  type ShareResult,
+} from '@chatto/share';
 import type { Messages } from '../../i18n';
 
 type ShareMessages = Messages['share'];
@@ -8,6 +14,11 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** How many publishes the account has left today, or that it has no daily limit. */
+export function publishesLeftText(m: ShareMessages, account: ShareAccount): string {
+  return hasDailyPublishLimit(account.role) ? m.account.publishesLeft(account.publishesLeft) : m.account.noDailyLimit;
 }
 
 export function issueText(m: ShareMessages, issue: ShareIssue): string {

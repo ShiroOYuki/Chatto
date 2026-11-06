@@ -16,6 +16,20 @@ const t = (en, zh) => ({ en, 'zh-TW': zh });
 export const CHANGELOG = {
   app: [
     {
+      upcoming: true,
+      sections: [
+        {
+          kind: 'new',
+          items: [
+            t(
+              'Themes from Chatto’s official account show an Official badge on the Explore page',
+              '探索頁上，Chatto 官方帳號分享的主題會顯示「官方」徽章',
+            ),
+          ],
+        },
+      ],
+    },
+    {
       version: 'v0.2.0',
       date: '2026-11-06',
       download: true,

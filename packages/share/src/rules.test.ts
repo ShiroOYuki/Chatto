@@ -1,6 +1,6 @@
 import { createTheme, DEFAULT_BOX_IMAGE, getPresetTheme, normalizeTheme } from '@chatto/chat-ui/themes';
 import { describe, expect, it } from 'vitest';
-import { SHARE_LIMITS, type PublishMeta } from './model';
+import { hasDailyPublishLimit, SHARE_LIMITS, type PublishMeta } from './model';
 import {
   autoTags,
   checkPublish,
@@ -21,6 +21,13 @@ const meta = (patch: Partial<PublishMeta> = {}): PublishMeta => ({
   category: 'minimal',
   tags: [],
   ...patch,
+});
+
+describe('hasDailyPublishLimit', () => {
+  it('limits members and not moderators', () => {
+    expect(hasDailyPublishLimit('member')).toBe(true);
+    expect(hasDailyPublishLimit('moderator')).toBe(false);
+  });
 });
 
 describe('theme codes', () => {

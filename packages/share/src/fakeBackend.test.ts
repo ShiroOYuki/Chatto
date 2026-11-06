@@ -2,7 +2,7 @@ import { createTheme } from '@chatto/chat-ui/themes';
 import { describe, expect, it } from 'vitest';
 import type { ShareBackend } from './backend';
 import { createFakeShareBackend } from './fakeBackend';
-import type { ShareProvider, ShareResult } from './model';
+import { SHARE_LIMITS, type ShareProvider, type ShareResult } from './model';
 import { createPkceVerifier, pkceChallenge, themeContentHash } from './rules';
 
 function value<T>(result: ShareResult<T>): T {
@@ -79,6 +79,19 @@ describe('fake share backend', () => {
     expect(updated).toMatchObject({ version: 2, name: 'Mine 2', code: published.code });
     value(await backend.unpublish(token, published.id));
     expect(await backend.get(published.id)).toEqual({ ok: false, error: 'not-found' });
+  });
+
+  it('marks official authors and gives moderators no daily publish limit', async () => {
+    const backend = createFakeShareBackend({ signInDelay: 0, moderator: true });
+    const found = value(await backend.list({ sort: 'popular', search: 'tea garden' }));
+    expect(found.items[0]?.author).toMatchObject({ name: 'Chatto', official: true });
+    const neon = value(await backend.list({ sort: 'popular', search: 'neon' }));
+    expect(neon.items[0]?.author?.official).toBeUndefined();
+
+    const { token } = await signIn(backend);
+    for (let index = 0; index <= SHARE_LIMITS.dailyPublishes; index++)
+      value(await backend.publish(token, { ...meta, theme: createTheme(`local-${index}`, 'Mine') }));
+    expect(value(await backend.account(token)).publishesLeft).toBe(SHARE_LIMITS.dailyPublishes);
   });
 
   it('rejects invalid themes with their issues', async () => {

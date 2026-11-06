@@ -30,6 +30,7 @@ export default defineMessages({
     retry: '重試',
     byAuthor: (name: string) => `by ${name}`,
     anonymous: '匿名',
+    official: '官方',
     installed: '已安裝',
     updateAvailable: '有新版',
     hidden: '已隱藏',
@@ -104,6 +105,7 @@ export default defineMessages({
       viewTerms: '使用條款與隱私說明',
       moderator: '管理者',
       publishesLeft: (count: number) => `今天還能投稿 ${count} 次`,
+      noDailyLimit: '投稿不限每日次數',
     },
     mine: {
       publish: '投稿主題',
@@ -219,6 +221,7 @@ export default defineMessages({
     retry: 'Retry',
     byAuthor: (name: string) => `by ${name}`,
     anonymous: 'Anonymous',
+    official: 'Official',
     installed: 'Installed',
     updateAvailable: 'Update',
     hidden: 'Hidden',
@@ -293,6 +296,7 @@ export default defineMessages({
       viewTerms: 'Terms of Use and Privacy Notice',
       moderator: 'Moderator',
       publishesLeft: (count: number) => `${count} ${count === 1 ? 'publish' : 'publishes'} left today`,
+      noDailyLimit: 'No daily publish limit',
     },
     mine: {
       publish: 'Publish a theme',

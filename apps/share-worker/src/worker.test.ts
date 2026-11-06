@@ -351,6 +351,30 @@ describe('share worker: themes', () => {
     expect((await t.backend.publish(ciel.token, input(custom('tomorrow')))).ok).toBe(true);
   });
 
+  it('gives moderators no daily publish limit', async () => {
+    const ciel = await t.account('ciel');
+    t.makeModerator(ciel.account.id);
+    for (let index = 0; index <= SHARE_LIMITS.dailyPublishes; index++)
+      expect((await t.backend.publish(ciel.token, input(custom(`t${index}`)))).ok).toBe(true);
+    expect(await t.backend.account(ciel.token)).toMatchObject({
+      value: { publishesLeft: SHARE_LIMITS.dailyPublishes },
+    });
+  });
+
+  it('marks themes from official accounts', async () => {
+    const chatto = await t.account('mika');
+    const ciel = await t.account('ciel');
+    t.env.DB.sqlite.prepare('UPDATE accounts SET official = 1 WHERE id = ?').run(chatto.account.id);
+    const official = await t.backend.publish(chatto.token, input(custom('official')));
+    const member = await t.backend.publish(ciel.token, input(custom('member')));
+    if (!official.ok || !member.ok) throw new Error('publish failed');
+    expect(official.value.author).toEqual({ id: chatto.account.id, name: chatto.account.displayName, official: true });
+    expect(member.value.author).toEqual({ id: ciel.account.id, name: ciel.account.displayName });
+    const listed = await t.backend.list({ sort: 'newest' });
+    if (!listed.ok) throw new Error('list failed');
+    expect(listed.value.items.find((item) => item.id === official.value.id)?.author?.official).toBe(true);
+  });
+
   it('updates and unpublishes only the author’s own themes', async () => {
     const ciel = await t.account('ciel');
     const mika = await t.account('mika');

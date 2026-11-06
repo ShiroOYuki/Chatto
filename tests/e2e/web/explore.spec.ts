@@ -17,6 +17,9 @@ test('shared themes can be browsed, filtered, opened by code and installed', asy
   await panel.open('page=explore');
   await expect(page.getByRole('heading', { level: 1, name: '探索' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Soda Bubbles' })).toBeVisible();
+  // Themes from Chatto's own account carry the official badge; others do not.
+  await expect(page.getByRole('button', { name: 'Tea Garden' }).getByText('官方')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Soda Bubbles' }).getByText('官方')).toHaveCount(0);
 
   await page.getByRole('button', { name: '復古', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Green Phosphor' })).toBeVisible();
@@ -95,6 +98,8 @@ test('a custom theme is checked, published and listed under my themes', async ({
   await signIn(page);
 
   await page.getByRole('tab', { name: '我的主題' }).click();
+  // The fake service signs in as a moderator, who has no daily publish limit.
+  await expect(page.getByText('投稿不限每日次數')).toBeVisible();
   await page.getByRole('button', { name: '投稿主題' }).click();
   const dialog = page.getByRole('dialog', { name: '投稿主題' });
   await expect(dialog.getByText('請選擇類別')).toBeVisible();

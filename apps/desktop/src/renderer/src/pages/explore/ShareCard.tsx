@@ -1,5 +1,5 @@
 import type { ChatTheme } from '@chatto/core';
-import { Download, Heart } from 'lucide-react';
+import { BadgeCheck, Download, Heart } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ShareThemeSummary } from '@chatto/share';
 import { motion, riseIn } from '../../components/motion';
@@ -30,6 +30,18 @@ export function SharePreview({ summary }: { summary: ShareThemeSummary }) {
 /** Author line: their name, or "anonymous" once they deleted their account. */
 export function authorName(summary: ShareThemeSummary, anonymous: string): string {
   return summary.author?.name ?? anonymous;
+}
+
+/** Marks themes from Chatto's own account. */
+export function OfficialBadge({ summary }: { summary: ShareThemeSummary }) {
+  const m = useMessages().share;
+  if (!summary.author?.official) return null;
+  return (
+    <Badge tone="matcha">
+      <BadgeCheck className="size-3" aria-hidden="true" />
+      {m.official}
+    </Badge>
+  );
 }
 
 export function ShareCard({
@@ -66,7 +78,10 @@ export function ShareCard({
         </div>
         <div className="flex flex-col gap-1.5 p-4">
           <h3 className="truncate font-medium">{summary.name}</h3>
-          <p className="truncate text-xs text-ink-faint">{m.byAuthor(authorName(summary, m.anonymous))}</p>
+          <div className="flex h-5 min-w-0 items-center gap-1.5">
+            <p className="truncate text-xs text-ink-faint">{m.byAuthor(authorName(summary, m.anonymous))}</p>
+            <OfficialBadge summary={summary} />
+          </div>
           <div className="mt-1 flex items-center gap-3 text-xs text-ink-soft">
             <Badge>{m.categories[summary.category]}</Badge>
             <span className="ml-auto inline-flex items-center gap-1" aria-label={m.likes}>

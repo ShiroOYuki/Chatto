@@ -5,7 +5,7 @@ import { Stagger, motion, riseIn } from '../../components/motion';
 import { ActionNote, Badge, Button, EmptyState, LoadingSpinner } from '../../components/kit';
 import { useMessages } from '../../i18n';
 import { shareCall } from '../../services/share';
-import { authorName, SharePreview } from './ShareCard';
+import { authorName, OfficialBadge, SharePreview } from './ShareCard';
 import { errorText } from '../../components/share/shareText';
 
 /** Reported and hidden themes, for moderators: hide or restore a theme, suspend its author. */
@@ -72,6 +72,7 @@ export function ModerationView({ onOpen }: { onOpen: (summary: ShareThemeSummary
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="truncate font-medium">{theme.name}</h3>
                     <span className="text-xs text-ink-faint">{m.byAuthor(authorName(theme, m.anonymous))}</span>
+                    <OfficialBadge summary={theme} />
                     {theme.hidden ? <Badge tone="danger">{m.hidden}</Badge> : null}
                     {report.authorBanned ? <Badge tone="danger">{m.moderation.banned}</Badge> : null}
                   </div>

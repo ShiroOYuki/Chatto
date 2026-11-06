@@ -12,7 +12,7 @@ import { LiveThemePreview } from '../../components/ThemePreview';
 import { ActionNote, Badge, Button, CopyField, Field, LoadingSpinner, Modal, Select } from '../../components/kit';
 import { useLocale, useMessages } from '../../i18n';
 import { loadShareDetail, shareCall, useInstalledThemes, useShareAction, useShareSession } from '../../services/share';
-import { authorName } from './ShareCard';
+import { authorName, OfficialBadge } from './ShareCard';
 import { errorText, failureText, formatCount } from '../../components/share/shareText';
 
 function ReportDialog({
@@ -200,6 +200,7 @@ export function ThemeDetailDialog({
             <p className="text-sm whitespace-pre-line text-ink-soft">{current.description}</p>
           ) : null}
           <div className="flex flex-wrap gap-1.5">
+            <OfficialBadge summary={current} />
             <Badge tone="matcha">{m.categories[current.category]}</Badge>
             {current.tags.map((tag) => (
               <Badge key={tag}>{tag}</Badge>
