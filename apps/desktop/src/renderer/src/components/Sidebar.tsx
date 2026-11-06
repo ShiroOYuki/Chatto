@@ -6,7 +6,7 @@ import { twitchStatus } from '../services/twitch';
 import { useChatLog } from '../store';
 import { channelTone, StatusDot } from './kit';
 import { motion, RollingNumber, spring } from './motion';
-import { TeaCup, type TeaCupMood } from './TeaCup';
+import type { TeaCupMood } from './TeaCup';
 
 export type PageId = 'overview' | 'chat' | 'themes' | 'explore' | 'outputs' | 'alerts' | 'accounts' | 'settings';
 
@@ -95,7 +95,7 @@ function AccountCard({ state, active, onClick }: { state: AppState; active: bool
       title={m.open}
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      className={`mt-2 flex w-full items-center gap-3 rounded-xl border bg-tile p-2.5 text-left transition-colors hover:bg-tile-muted ${
+      className={`mt-auto flex w-full items-center gap-3 rounded-xl border bg-tile p-2.5 text-left transition-colors hover:bg-tile-muted ${
         active ? 'border-matcha/50' : 'border-line'
       }`}
     >
@@ -123,9 +123,7 @@ export function Sidebar({
   page: PageId;
   onNavigate: (page: PageId) => void;
 }) {
-  const m = useMessages().shell;
   const { stats } = useChatLog();
-  const mood = moodFor(state, stats.rate);
 
   return (
     <nav className="flex w-56 shrink-0 flex-col gap-1 border-r border-line bg-sidebar p-3">
@@ -138,15 +136,6 @@ export function Sidebar({
           badge={item.id === 'chat' && stats.rate > 0 ? stats.rate : undefined}
         />
       ))}
-
-      <div className="mt-auto rounded-xl border border-line bg-tile p-3">
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-tile-muted p-1">
-            <TeaCup mood={mood} size={40} />
-          </div>
-          <p className="text-xs leading-relaxed text-ink-soft">{m.mood[mood]}</p>
-        </div>
-      </div>
 
       <AccountCard state={state} active={page === 'accounts'} onClick={() => onNavigate('accounts')} />
 
