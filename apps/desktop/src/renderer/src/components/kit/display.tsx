@@ -12,7 +12,7 @@ export function Badge({
   tone?: 'neutral' | 'matcha' | 'sakura' | 'danger';
 }) {
   const tones = {
-    neutral: 'bg-tile-muted text-ink-soft',
+    neutral: 'bg-tile-muted text-ink-soft [.bg-tile-muted_&]:bg-tile',
     matcha: 'bg-matcha-soft/50 text-matcha-strong',
     sakura: 'bg-sakura/40 text-ink',
     danger: 'bg-danger/10 text-danger',

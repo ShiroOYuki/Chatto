@@ -61,6 +61,7 @@ export default defineMessages({
       title: '檢舉主題',
       description: '檢舉會送給管理者處理，被多人檢舉的主題會先隱藏',
       reason: '原因',
+      reasonPlaceholder: '選擇原因',
       reasons: {
         inappropriate: '不當內容',
         copyright: '侵權或盜用',
@@ -262,6 +263,7 @@ export default defineMessages({
       title: 'Report theme',
       description: 'Reports go to the moderators. A theme many people report is hidden until they review it.',
       reason: 'Reason',
+      reasonPlaceholder: 'Choose a reason',
       reasons: {
         inappropriate: 'Inappropriate content',
         copyright: 'Copied or infringing',

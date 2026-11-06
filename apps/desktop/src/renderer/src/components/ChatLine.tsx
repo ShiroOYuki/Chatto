@@ -1,7 +1,7 @@
 import { noticeText } from '@chatto/chat-ui';
 import type { ChatMessage, ChatNotice, MessageFragment, UserRole } from '@chatto/core';
 import { ChevronRight, Gift, Megaphone, PartyPopper, Swords } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { motion } from './motion';
 import { Badge } from './kit';
 import { useLocale, useMessages } from '../i18n';
@@ -14,6 +14,14 @@ const ROLE_TONE: Record<LabelledRole, 'matcha' | 'sakura' | 'neutral'> = {
   subscriber: 'neutral',
 };
 const isLabelled = (role: UserRole): role is LabelledRole => role in ROLE_TONE;
+
+/**
+ * A viewer's name color, for the `user-color` class: platform colors are picked for dark chat,
+ * so `styles.css` darkens them toward the ink color in light mode to keep them readable.
+ */
+export function userColor(color: string | undefined): CSSProperties | undefined {
+  return color ? ({ '--user-color': color } as CSSProperties) : undefined;
+}
 
 export function formatClock(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -36,19 +44,19 @@ export function Fragments({ fragments }: { fragments: MessageFragment[] }) {
             );
           case 'mention':
             return (
-              <span key={index} className="font-medium text-matcha">
+              <span key={index} className="font-medium text-matcha-strong dark:text-matcha">
                 {fragment.text}
               </span>
             );
           case 'link':
             return (
-              <span key={index} className="text-matcha underline decoration-dotted">
+              <span key={index} className="text-matcha-strong underline decoration-dotted dark:text-matcha">
                 {fragment.text}
               </span>
             );
           case 'cheer':
             return (
-              <span key={index} className="font-semibold text-matcha">
+              <span key={index} className="font-semibold text-matcha-strong dark:text-matcha">
                 {fragment.text}
               </span>
             );
@@ -90,7 +98,10 @@ export function ChatLine({
             <Badge tone={ROLE_TONE[role]}>{m.roles[role]}</Badge>
           </span>
         ) : null}
-        <span className="font-semibold" style={{ color: message.author.color }}>
+        <span
+          className={`font-semibold ${message.author.color ? 'user-color' : ''}`}
+          style={userColor(message.author.color)}
+        >
           {message.author.displayName}
         </span>
         <span className="text-ink-faint">{m.separator}</span>

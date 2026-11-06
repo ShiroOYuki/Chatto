@@ -104,10 +104,17 @@ function AccountCard({ state, active, onClick }: { state: AppState; active: bool
       </span>
       <span className="min-w-0 flex-1">
         <span className={`block truncate text-sm ${account ? 'font-medium text-ink' : 'text-ink-soft'}`}>{name}</span>
-        {/* Name the platform's own state, so its dot does not read as the Chatto account's. */}
-        <span className="flex min-w-0 items-center gap-1.5 text-xs text-ink-faint">
-          <StatusDot tone={channelTone(state.channel.state, connected)} />
-          <span className="truncate">Twitch · {channelState[state.channel.state]}</span>
+        {/* Name the platform's own state, so its dot does not read as the Chatto account's.
+            It wraps rather than cuts: long states ("Connection failed") must stay readable. */}
+        <span className="flex min-w-0 items-start gap-1.5 text-xs text-ink-faint">
+          <span className="mt-[3px] flex shrink-0">
+            <StatusDot tone={channelTone(state.channel.state, connected)} />
+          </span>
+          {/* Breaks only between the platform and its state, never inside the state. */}
+          <span className="flex min-w-0 flex-wrap gap-x-1">
+            <span className="whitespace-nowrap">Twitch ·</span>
+            <span className="whitespace-nowrap">{channelState[state.channel.state]}</span>
+          </span>
         </span>
       </span>
     </button>

@@ -28,14 +28,16 @@
 | `ink-faint`       | 提示、caption、未選中的圖示                         | `#646f5b` | `#8f9b86` |
 | `matcha`          | 強調：選中的圖示、開關開啟、滑桿、focus ring        | `#6b9b2e` | `#97c459` |
 | `matcha-strong`   | 主要按鈕、Hero tile 底色、成功訊息文字              | `#27500a` | `#c0dd97` |
-| `matcha-soft`     | 淡強調底：徽章、hover、選中卡片（常搭配透明度）     | `#c0dd97` | `#3b6d11` |
+| `matcha-soft`     | 淡強調底：徽章、hover、選中卡片（常搭配透明度）     | `#c0dd97` | `#356310` |
 | `on-matcha`       | `matcha-strong` 上的文字                            | `#f4f9ee` | `#10200a` |
 | `sakura`          | 點綴：吉祥物腮紅、「有新版本」這類提醒徽章          | `#f4c0d1` | `#993556` |
 | `danger`          | 錯誤、刪除                                          | `#c2412d` | `#f09595` |
+| `on-danger`       | `danger` 底上的文字（刪除確認按鈕）                 | `#ffffff` | `#2a0b0b` |
 
 - shadcn/ui 的語意 token（`primary`、`muted`、`destructive`、`border`、`ring` …）已對應到上表，CLI 加進來的元件會自動符合配色。
 - 外觀設定（`prefs.appearance`）是 `system`／`light`／`dark`，`App.tsx` 把結果寫進 `<html data-theme>`；`dark:` variant 跟著 `data-theme`。
 - 對比：`ink-faint` 在 `tile` 上約 5:1，是文字能用的最淡顏色；`matcha` 上不放文字，要放文字的強調底用 `matcha-strong`＋`on-matcha`。
+- 觀眾名稱用平台給的顏色時（控制台自己的聊天紀錄），加 `user-color` class 並用 `userColor()` 帶入顏色：亮色會往 `ink` 混深，暗色照原色。聊天預覽（`.chatto-root`）不套用，維持和 OBS 一樣。
 - 透明度用 Tailwind 的 `/` 寫法調 token（`bg-matcha-soft/50`、`bg-danger/10`），不要另外調色。
 - 新增 token 時，亮色、暗色（兩個區塊）都要補，必要時也對應到 shadcn 的語意 token。
 - 目前寫死顏色的地方只有：連線彩紙的三個綠色、Hero 裡茶杯底的 `#f4f9ee`（暗色時也維持淺底）、連線中的琥珀色 spinner。不要再增加。
@@ -50,7 +52,7 @@
 | ------------- | ----------------------------------------- | -------------------- |
 | 頁面標題      | `text-2xl font-semibold tracking-tight`   | `PageHeader`         |
 | 頁面說明      | `text-sm text-ink-soft`                   | `PageHeader`         |
-| Tile 標題     | `text-sm font-medium text-ink-soft`＋圖示 | `Tile title`         |
+| Tile 標題     | `text-sm font-medium text-ink-soft`＋圖示 | `Tile title`（h2）   |
 | 區塊、列標題  | `text-sm font-medium`                     | 設定頁的列、外掛面板 |
 | 內文          | `text-sm`                                 |                      |
 | 提示、caption | `text-xs text-ink-faint`                  | 欄位說明、空狀態提示 |
@@ -199,7 +201,8 @@
 
 ### 空狀態與載入
 
-- 空狀態用 `EmptyState`：茶杯（通常是 `sleepy`，有正面意味時用 `happy`）＋「還沒有…」＋一句說明東西什麼時候會出現。
+- 空狀態用 `EmptyState`：茶杯（通常是 `sleepy`，有正面意味時用 `happy`）＋「還沒有…」＋一句說明東西什麼時候會出現。放在矮的 Tile 裡時加 `compact`，視窗矮（640 高）時拿掉茶杯，讓文字放得下。
+- 沒連線、連線失敗這類狀態要說在哪裡處理（總覽 Hero 的「到帳號頁重新連線」），不只說出了問題。
 - 整個 App 還沒拿到狀態時，顯示開心的茶杯和「載入中」。
 
 ## 動畫

@@ -95,15 +95,14 @@ export function ColorField({
         </PopoverContent>
       </Popover>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-xs font-medium text-ink-soft">{label}</span>
-          <input
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            onBlur={() => (parseColor(text) ? onChange(text.trim()) : setText(value))}
-            className="w-24 min-w-0 shrink bg-transparent text-right font-mono text-[11px] text-ink-faint outline-none focus:text-ink"
-          />
-        </div>
+        {/* The row beside it already names the field, so the value gets the whole line. */}
+        <input
+          value={text}
+          aria-label={label}
+          onChange={(event) => setText(event.target.value)}
+          onBlur={() => (parseColor(text) ? onChange(text.trim()) : setText(value))}
+          className="w-full min-w-0 bg-transparent font-mono text-xs text-ink-soft outline-none focus:text-ink"
+        />
         <input
           type="range"
           min={0}

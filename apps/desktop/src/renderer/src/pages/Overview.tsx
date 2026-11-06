@@ -78,6 +78,17 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
               {m.channelState[state.channel.state]}
             </div>
             <div className="mt-1 truncate text-xl font-semibold">{state.channel.login ?? m.noChannel}</div>
+            {/* Not connected and not trying: say where to fix it. */}
+            {['idle', 'error', 'closed'].includes(state.channel.state) ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="mt-2 -ml-2 text-on-matcha hover:bg-on-matcha/15 hover:text-on-matcha"
+                onClick={() => onNavigate('accounts')}
+              >
+                {state.channel.state === 'idle' ? m.goConnect : m.goReconnect} <ArrowRight />
+              </Button>
+            ) : null}
           </div>
           <div className="shrink-0 rounded-full bg-[#f4f9ee] p-2 max-[1180px]:hidden">
             <TeaCup mood={moodFor(state, stats.rate)} size={64} />
@@ -92,7 +103,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
             values={stats.history}
             className="mt-3 h-14 [&>span]:bg-on-matcha/30! [&>span:last-child]:bg-on-matcha!"
           />
-          <div className="mt-1 flex justify-between text-[11px] opacity-60">
+          <div className="mt-1 flex justify-between text-[11px] opacity-75">
             <span>{m.thirtyMinutesAgo}</span>
             <span>{m.now}</span>
           </div>
@@ -159,7 +170,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         }
       >
         {recentMessages.length === 0 ? (
-          <EmptyState title={m.noMessages} hint={m.noMessagesHint} />
+          <EmptyState compact title={m.noMessages} hint={m.noMessagesHint} />
         ) : (
           <div
             data-testid="recent-messages"
@@ -176,7 +187,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
 
       <Tile title={m.recentActivity} icon={<Gift />} className="col-span-2 min-h-0 overflow-hidden">
         {recentNotices.length === 0 ? (
-          <EmptyState mood="happy" title={m.noActivity} hint={m.noActivityHint} />
+          <EmptyState compact mood="happy" title={m.noActivity} hint={m.noActivityHint} />
         ) : (
           <RecentNotices entries={recentNotices} />
         )}

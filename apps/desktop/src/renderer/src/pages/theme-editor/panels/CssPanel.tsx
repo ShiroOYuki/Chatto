@@ -124,7 +124,7 @@ export function CssPanel({
                     onFocus={() => onHoverSelector(highlight)}
                     onBlur={() => onHoverSelector(null)}
                     onClick={() => onInsertRule(insert)}
-                    className="rounded-md bg-tile-muted px-2 py-0.5 font-mono text-[11px] text-ink-soft transition-colors hover:bg-matcha-soft/50 hover:text-ink"
+                    className="min-h-6 rounded-md bg-tile-muted px-2 py-0.5 font-mono text-[11px] text-ink-soft transition-colors hover:bg-matcha-soft/50 hover:text-ink"
                   >
                     {item.selector}
                   </button>

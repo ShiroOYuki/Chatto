@@ -77,7 +77,7 @@ export function ShareCard({
           </div>
         </div>
         <div className="flex flex-col gap-1.5 p-4">
-          <h3 className="truncate font-medium">{summary.name}</h3>
+          <h2 className="truncate font-medium">{summary.name}</h2>
           <div className="flex h-5 min-w-0 items-center gap-1.5">
             <p className="truncate text-xs text-ink-faint">{m.byAuthor(authorName(summary, m.anonymous))}</p>
             <OfficialBadge summary={summary} />
