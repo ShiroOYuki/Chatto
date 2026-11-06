@@ -1,5 +1,5 @@
 import type { ChatTheme } from '@chatto/core';
-import { Check, CircleAlert, Send } from 'lucide-react';
+import { Check, CircleAlert, FileUp, Send } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SHARE_CATEGORIES,
@@ -30,6 +30,8 @@ import {
 } from '../../components/kit';
 import { useMessages, useThemeName } from '../../i18n';
 import { captureThumbnail, shareCall, useShareAction } from '../../services/share';
+import { themes as themeService } from '../../services/themes';
+import { asImportedTheme, readPickedThemeFile } from '../themeIO';
 import { useAppState } from '../../store';
 import { failureText, issueText } from '../../components/share/shareText';
 
@@ -69,7 +71,9 @@ export function PublishDialog({
   themeId?: string;
   onPublished?: (summary: ShareThemeSummary) => void;
 }) {
-  const m = useMessages().share;
+  const messages = useMessages();
+  const m = messages.share;
+  const io = messages.themes.io;
   const themeName = useThemeName();
   const themes = useAppState()?.themes;
   const custom = useMemo(() => (themes ?? []).filter((theme) => !theme.builtIn), [themes]);
@@ -126,6 +130,28 @@ export function PublishDialog({
     onPublished?.(result.value);
   };
 
+  /**
+   * Publishing straight from a `.chattotheme` (or JSON) file: it is saved as a local theme under
+   * its own name and picked, so a later update finds the theme it was published from.
+   */
+  const fromFile = async () => {
+    setError(null);
+    try {
+      const file = await readPickedThemeFile(io);
+      const local = { ...asImportedTheme(file, io), name: file.name || io.untitledImport };
+      await themeService.save(local);
+      setSelected(local.id);
+      if (!target) set({ name: local.name });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    }
+  };
+  const fileButton = (
+    <Button onClick={() => void fromFile()} title={m.publish.fromFileHint} aria-disabled={busy}>
+      <FileUp /> {m.publish.fromFile}
+    </Button>
+  );
+
   return (
     <Modal
       open={open}
@@ -145,18 +171,27 @@ export function PublishDialog({
           </div>
         </div>
       ) : custom.length === 0 ? (
-        <p className="rounded-xl bg-tile-muted px-4 py-3 text-sm text-ink-soft">{m.publish.noCustomThemes}</p>
+        <div className="flex flex-col items-start gap-3">
+          <p className="rounded-xl bg-tile-muted px-4 py-3 text-sm text-ink-soft">{m.publish.noCustomThemes}</p>
+          {fileButton}
+          {error ? <ActionNote tone="error">{error}</ActionNote> : null}
+        </div>
       ) : (
         <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="flex min-w-0 flex-col gap-3">
             <Field label={m.publish.theme}>
-              <Select
-                value={selected}
-                onChange={setSelected}
-                aria-label={m.publish.theme}
-                placeholder={m.publish.themePlaceholder}
-                options={custom.map((item) => ({ value: item.id, label: themeName(item) }))}
-              />
+              <div className="flex gap-2">
+                <div className="min-w-0 flex-1">
+                  <Select
+                    value={selected}
+                    onChange={setSelected}
+                    aria-label={m.publish.theme}
+                    placeholder={m.publish.themePlaceholder}
+                    options={custom.map((item) => ({ value: item.id, label: themeName(item) }))}
+                  />
+                </div>
+                {fileButton}
+              </div>
             </Field>
             {target && theme && theme.origin?.shareId !== target.id ? (
               <p className="flex gap-1.5 rounded-xl bg-tile-muted px-3 py-2 text-xs text-ink-soft">

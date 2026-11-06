@@ -4,7 +4,7 @@ import { strToU8, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { mainMessages } from './messages';
 import { MAX_ASSET_BYTES } from './theme-assets';
-import { packTheme, themeAssetFiles, unpackTheme } from './theme-package';
+import { packageFileName, packTheme, themeAssetFiles, unpackTheme } from './theme-package';
 
 const A = `${'a'.repeat(64)}.png`;
 const B = `${'b'.repeat(64)}.gif`;
@@ -19,6 +19,12 @@ const theme: ChatTheme = {
 };
 
 describe('theme packages', () => {
+  it('suggests a file name from the theme name that Windows accepts', () => {
+    expect(packageFileName({ id: 't', name: '抹茶玻璃' })).toBe('抹茶玻璃.chattotheme');
+    expect(packageFileName({ id: 't', name: ' a/b:c*?"<>| . ' })).toBe('abc.chattotheme');
+    expect(packageFileName({ id: 'custom-1', name: '///' })).toBe('chatto-theme-custom-1.chattotheme');
+  });
+
   it('lists the stored assets a theme uses', () => {
     expect(themeAssetFiles(theme).sort()).toEqual([A, B]);
   });

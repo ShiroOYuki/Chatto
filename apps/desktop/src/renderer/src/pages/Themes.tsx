@@ -31,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
 import { ThemeEditor } from './theme-editor/ThemeEditor';
-import { exportTheme, needsPackage, pickThemeFile } from './themeIO';
+import { exportTheme, pickThemeFile } from './themeIO';
 import { describeTheme } from './themeLabels';
 
 export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate: (page: PageId) => void }) {
@@ -165,7 +165,7 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44 rounded-xl">
                             <DropdownMenuItem onSelect={() => runAction('exportTheme', exportTheme(theme))}>
-                              <Download /> {needsPackage(theme) ? m.exportPackage : m.exportJson}
+                              <Download /> {m.exportPackage}
                             </DropdownMenuItem>
                             {!theme.builtIn ? (
                               <DropdownMenuItem onSelect={() => void duplicate(theme)}>

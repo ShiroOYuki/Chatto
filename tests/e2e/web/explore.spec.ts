@@ -59,6 +59,50 @@ test('installing a theme counts the download on its card right away, once', asyn
   await expect(card.getByLabel('下載')).toHaveText('151');
 });
 
+test('a shared theme is saved as a .chattotheme file without installing it', async ({ panel, page }) => {
+  await panel.open('page=explore');
+  const card = page.getByRole('button', { name: 'Shop Curtain' });
+  await expect(card.getByLabel('下載')).toHaveText('150');
+  await card.click();
+  const detail = page.getByRole('dialog', { name: 'Shop Curtain' });
+  await detail.getByRole('button', { name: '下載檔案' }).click();
+  await expect(detail.getByText('已把「Shop Curtain」存成主題檔')).toBeVisible();
+  const exported = await page.evaluate(() => window.__chattoMock!.exportedPackages().map((theme) => theme.name));
+  expect(exported).toEqual(['Shop Curtain']);
+  // Not installed, and installing afterwards is the same download.
+  await expect(detail.getByRole('button', { name: '安裝', exact: true })).toBeVisible();
+  await detail.getByRole('button', { name: '安裝', exact: true }).click();
+  await expect(detail.getByRole('status')).toContainText('已安裝為');
+  await page.keyboard.press('Escape');
+  await expect(card.getByLabel('下載')).toHaveText('151');
+});
+
+test('a theme file is published straight from the publish dialog', async ({ panel, page }) => {
+  await panel.open('page=explore');
+  await signIn(page);
+  await page.getByRole('tab', { name: '我的主題' }).click();
+  await page.getByRole('button', { name: '投稿主題' }).click();
+  const dialog = page.getByRole('dialog', { name: '投稿主題' });
+  await expect(dialog.getByText('只能投稿自訂主題')).toBeVisible();
+
+  const chooser = page.waitForEvent('filechooser');
+  await dialog.getByRole('button', { name: '從檔案選擇' }).click();
+  const file = { ...createTheme('from-file', '檔案裡的主題'), builtIn: false };
+  await (
+    await chooser
+  ).setFiles({
+    name: 'theme.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(file)),
+  });
+  // Saved under its own name, picked, and named after it.
+  await expect(dialog.getByRole('combobox', { name: '要投稿的主題' })).toHaveText('檔案裡的主題');
+  await expect(dialog.getByRole('textbox', { name: '名稱' })).toHaveValue('檔案裡的主題');
+  await page.keyboard.press('Escape');
+  await panel.nav('主題').click();
+  await expect(page.getByRole('heading', { level: 3, name: '檔案裡的主題' })).toBeVisible();
+});
+
 test('liking and reporting ask for an account first', async ({ panel, page }) => {
   await panel.open('page=explore');
   await page.getByRole('button', { name: 'Soda Bubbles' }).click();

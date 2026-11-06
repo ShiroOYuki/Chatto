@@ -13,6 +13,8 @@ declare global {
       emitChat(event: ChatEvent): void;
       setState(patch: Partial<AppState>): void;
       getState(): AppState;
+      /** Themes "saved" as `.chattotheme` packages, in order. */
+      exportedPackages(): ChatTheme[];
       playAlertSound(sound: SoundSetting): void;
       /** Simulates saving a theme's CSS file outside Chatto (does not save the theme). */
       changeCssFile(change: CssFileChange): void;
@@ -58,6 +60,7 @@ function createMockApi(): ChattoApi {
   const chatListeners = new Set<(event: ChatEvent) => void>();
   const soundListeners = new Set<(sound: SoundSetting) => void>();
   const cssFileListeners = new Set<(change: CssFileChange) => void>();
+  const exportedPackages: ChatTheme[] = [];
   const set = (patch: Partial<AppState>) => {
     state = { ...state, ...patch };
     stateListeners.forEach((listener) => listener(state));
@@ -100,6 +103,7 @@ function createMockApi(): ChattoApi {
       emitChat,
       setState: set,
       getState: () => state,
+      exportedPackages: () => exportedPackages,
       playAlertSound: (sound) => soundListeners.forEach((listener) => listener(sound)),
       changeCssFile: (change) => cssFileListeners.forEach((listener) => listener(change)),
     };
@@ -170,7 +174,12 @@ function createMockApi(): ChattoApi {
     deleteTheme: async (themeId) => set({ themes: state.themes.filter((item) => item.id !== themeId) }),
     // The browser preview has no asset folder: frames keep the picked image as a data URL.
     importThemeAsset: () => pickImageAsDataUrl(),
-    exportThemePackage: async () => false,
+    // The browser preview cannot build packages; e2e tests read what would have been saved.
+    exportThemePackage: async (theme) => {
+      if (!params.has('e2e')) return false;
+      exportedPackages.push(theme);
+      return true;
+    },
     importThemePackage: async () => {
       throw new Error('Theme packages are not supported in the web preview. Import them in the desktop app.');
     },

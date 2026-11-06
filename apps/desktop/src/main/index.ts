@@ -17,7 +17,7 @@ import { OverlayWindow } from './overlay-window';
 import { LocalServer } from './server';
 import { BUILT_IN_CLIENT_ID, SettingsStore, type Rect } from './settings';
 import { ThemeAssets } from './theme-assets';
-import { THEME_PACKAGE_EXTENSION } from './theme-package';
+import { packageFileName, THEME_PACKAGE_EXTENSION } from './theme-package';
 import { Updater } from './updater';
 
 const isDev = !app.isPackaged;
@@ -181,7 +181,7 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
     const m = controller.messages().dialogs;
     const options = {
       title: m.exportThemePackage,
-      defaultPath: `chatto-theme-${theme.id}.${THEME_PACKAGE_EXTENSION}`,
+      defaultPath: packageFileName(theme),
       filters: [{ name: m.themePackageFiles, extensions: [THEME_PACKAGE_EXTENSION] }],
     };
     const result = mainWindow ? await dialog.showSaveDialog(mainWindow, options) : await dialog.showSaveDialog(options);

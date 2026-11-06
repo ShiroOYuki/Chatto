@@ -132,7 +132,7 @@ export const CONTENT = {
         'Separate styles for moderators, VIPs and subscribers',
         'Styles and wording for subs, raids and other events',
         'Custom CSS with autocomplete and an inspector',
-        'Export and import, with images in a .chattotheme file',
+        'Export and import .chattotheme files, images included',
       ],
       list: {
         'matcha-glass': {
@@ -342,7 +342,7 @@ export const CONTENT = {
             { q: 'Can the overlay and OBS use different themes?', a: 'Yes. Choose one for each on the Outputs page.' },
             {
               q: 'How do I share a theme?',
-              a: 'Export it on the Themes page as JSON, or as a .chattotheme file that includes its images. The other person imports the file.',
+              a: 'Export it on the Themes page as a .chattotheme file, which includes its images. The other person imports the file. Themes on the Explore page can be downloaded as the same file from their details.',
             },
             {
               q: 'Can I write my own CSS?',
@@ -517,7 +517,7 @@ export const CONTENT = {
         '管理員、VIP、訂閱者各自的樣式',
         '訂閱、揪團等事件的樣式與文字',
         '自訂 CSS，附自動完成與檢查模式',
-        '匯出與匯入，可以連同圖片打包成 .chattotheme',
+        '匯出與匯入 .chattotheme 主題檔，圖片一起打包',
       ],
       list: {
         'matcha-glass': {
@@ -710,7 +710,7 @@ export const CONTENT = {
             { q: 'Overlay 和 OBS 可以用不同主題嗎？', a: '可以，在「輸出」頁各選一個。' },
             {
               q: '怎麼把主題分享給別人？',
-              a: '在「主題」頁匯出成 JSON，或連同圖片打包成 .chattotheme 檔，對方匯入就能用。',
+              a: '在「主題」頁匯出成 .chattotheme 檔（圖片會一起打包），對方匯入就能用。分享到探索頁的主題，也可以在詳細頁下載成同樣的檔案。',
             },
             {
               q: '可以自己寫 CSS 嗎？',
