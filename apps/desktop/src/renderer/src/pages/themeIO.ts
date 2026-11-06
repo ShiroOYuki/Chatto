@@ -1,4 +1,4 @@
-import { mapThemeImages, normalizeTheme, themeImageSources } from '@chatto/chat-ui';
+import { mapThemeImages, normalizeTheme } from '@chatto/chat-ui';
 import { assetFileOf, type ChatTheme } from '@chatto/core';
 import type { Messages } from '../i18n';
 import { themes } from '../services/themes';
@@ -9,26 +9,13 @@ export type ThemeIOMessages = Messages['themes']['io'];
 /** File extension of theme packages (a theme plus its frame images). */
 export const THEME_PACKAGE_EXTENSION = 'chattotheme';
 
-/** Whether a theme uses images from the asset folder, so it has to travel as a package. */
-export const needsPackage = (theme: ChatTheme) => themeImageSources(theme).some((src) => assetFileOf(src) !== null);
-
 /**
- * Shares a theme as a file: a `.chattotheme` package when it uses frame images
- * from the asset folder, otherwise a plain JSON download.
+ * Shares a theme as a file. Always a `.chattotheme` package (a zip with `theme.json` and the
+ * frame images it uses), with or without images, so there is one format to pass around.
+ * Resolves false when the user cancels the save dialog.
  */
-export async function exportTheme(theme: ChatTheme): Promise<void> {
-  if (needsPackage(theme)) {
-    await themes.exportPackage(theme);
-    return;
-  }
-  const { builtIn: _builtIn, ...data } = theme;
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `chatto-theme-${theme.id}.json`;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+export function exportTheme(theme: ChatTheme): Promise<boolean> {
+  return themes.exportPackage(theme);
 }
 
 /**
@@ -50,6 +37,11 @@ export function asImportedTheme(theme: ChatTheme, m: ThemeIOMessages): ChatTheme
  * point at the asset folder are dropped; data URL frames are kept.
  */
 export function parseThemeFile(text: string, m: ThemeIOMessages): ChatTheme {
+  return asImportedTheme(parseThemeJson(text, m), m);
+}
+
+/** A theme JSON file's theme as written (normalized, unsaved), without the frames it cannot carry. */
+function parseThemeJson(text: string, m: ThemeIOMessages): ChatTheme {
   let theme: ChatTheme;
   try {
     theme = normalizeTheme(JSON.parse(text));
@@ -57,14 +49,19 @@ export function parseThemeFile(text: string, m: ThemeIOMessages): ChatTheme {
     if (error instanceof SyntaxError) throw error;
     throw new Error(m.unsupported);
   }
-  return asImportedTheme(
-    mapThemeImages(theme, (image) => (assetFileOf(image.src) ? null : image)),
-    m,
-  );
+  return mapThemeImages(theme, (image) => (assetFileOf(image.src) ? null : image));
 }
 
 /** Lets the user pick a theme JSON or package and returns it, ready to save. */
-export function pickThemeFile(m: ThemeIOMessages): Promise<ChatTheme> {
+export async function pickThemeFile(m: ThemeIOMessages): Promise<ChatTheme> {
+  return asImportedTheme(await readPickedThemeFile(m), m);
+}
+
+/**
+ * Lets the user pick a theme JSON or package and returns its theme as written: normalized,
+ * images stored, but with the file's id and name. Give it a fresh id (`asImportedTheme`) to save.
+ */
+export function readPickedThemeFile(m: ThemeIOMessages): Promise<ChatTheme> {
   return new Promise((resolve, reject) => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -74,9 +71,9 @@ export function pickThemeFile(m: ThemeIOMessages): Promise<ChatTheme> {
       if (!file) return reject(new Error(m.noFile));
       try {
         if (file.name.toLowerCase().endsWith(`.${THEME_PACKAGE_EXTENSION}`)) {
-          resolve(asImportedTheme(await themes.importPackage(new Uint8Array(await file.arrayBuffer())), m));
+          resolve(await themes.importPackage(new Uint8Array(await file.arrayBuffer())));
         } else {
-          resolve(parseThemeFile(await file.text(), m));
+          resolve(parseThemeJson(await file.text(), m));
         }
       } catch (error) {
         reject(error instanceof SyntaxError ? new Error(m.invalidJson) : error);

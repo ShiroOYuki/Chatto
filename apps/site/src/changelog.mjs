@@ -26,6 +26,10 @@ export const CHANGELOG = {
               '探索頁上，Chatto 官方帳號分享的主題會顯示「官方」徽章',
             ),
             t(
+              'Download a theme from the Explore page as a .chattotheme file, or publish straight from one',
+              '探索頁的主題可以下載成 .chattotheme 檔，投稿時也能直接選一個 .chattotheme 檔',
+            ),
+            t(
               'The quiet-spell label can have its own text for each chat language',
               '沉寂後新留言的標籤可以為每種聊天室語言各設一段文字',
             ),
@@ -41,6 +45,10 @@ export const CHANGELOG = {
             t(
               'Custom CSS overrides a theme’s styles with the same selector, without a .chatto-root prefix',
               '自訂 CSS 用相同的選擇器就能覆蓋主題樣式，不必加 .chatto-root 前綴',
+            ),
+            t(
+              'Themes always export as a .chattotheme file, named after the theme; old .json files still import',
+              '主題一律匯出成 .chattotheme 檔，檔名就是主題名稱；舊的 .json 檔仍然可以匯入',
             ),
             t(
               'My Themes can fetch a theme you published from another computer, so you can change and update it here',

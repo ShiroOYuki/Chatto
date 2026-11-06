@@ -30,6 +30,7 @@ export const SHARE_METHODS = [
   'get',
   'versions',
   'install',
+  'download',
   'setLiked',
   'report',
   'mine',

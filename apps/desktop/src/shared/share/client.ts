@@ -278,6 +278,40 @@ export class ShareClient {
    * place. Frame images are fetched into the asset folder. Resolves to the saved theme.
    */
   async install(id: string, replaceId?: string): Promise<ShareResult<ChatTheme>> {
+    const replacing = replaceId ? this.options.themes().find((theme) => theme.id === replaceId) : undefined;
+    const fetched = await this.#fetchTheme(
+      id,
+      replacing?.id ?? this.options.newThemeId?.() ?? `custom-${Date.now().toString(36)}`,
+    );
+    if (!fetched.ok) return fetched;
+    const { theme, version } = fetched.value;
+    const installed: ChatTheme = {
+      ...theme,
+      origin: { shareId: id, version, contentHash: themeContentHash(theme) },
+    };
+    try {
+      this.options.saveTheme(installed);
+    } catch {
+      return shareFail('unknown');
+    }
+    void this.options.backend.recordDownload(id, this.options.clientId());
+    return shareOk(installed);
+  }
+
+  /**
+   * A shared theme ready to save as a `.chattotheme` file, without installing it: frame images
+   * are fetched into the asset folder (where the package is built from), nothing else is saved.
+   * Counts as a download, like installing.
+   */
+  async download(id: string): Promise<ShareResult<ChatTheme>> {
+    const fetched = await this.#fetchTheme(id, `shared-${id}`);
+    if (!fetched.ok) return fetched;
+    void this.options.backend.recordDownload(id, this.options.clientId());
+    return shareOk(fetched.value.theme);
+  }
+
+  /** A shared theme with its frame images in the asset folder, normalized under the given id. */
+  async #fetchTheme(id: string, themeId: string): Promise<ShareResult<{ theme: ChatTheme; version: number }>> {
     const detail = await this.#detail(id);
     if (!detail.ok) return detail;
     if ((detail.value.theme.schemaVersion as number) > THEME_SCHEMA_VERSION) return shareFail('app-outdated');
@@ -292,24 +326,8 @@ export class ShareClient {
         return shareFail('invalid');
       }
     }
-    const replacing = replaceId ? this.options.themes().find((theme) => theme.id === replaceId) : undefined;
-    const theme = normalizeTheme({
-      ...detail.value.theme,
-      id: replacing?.id ?? this.options.newThemeId?.() ?? `custom-${Date.now().toString(36)}`,
-      name: detail.value.name,
-      builtIn: false,
-    });
-    const installed: ChatTheme = {
-      ...theme,
-      origin: { shareId: id, version: detail.value.version, contentHash: themeContentHash(theme) },
-    };
-    try {
-      this.options.saveTheme(installed);
-    } catch {
-      return shareFail('unknown');
-    }
-    void this.options.backend.recordDownload(id, this.options.clientId());
-    return shareOk(installed);
+    const theme = normalizeTheme({ ...detail.value.theme, id: themeId, name: detail.value.name, builtIn: false });
+    return shareOk({ theme, version: detail.value.version });
   }
 
   // ---------- publishing ----------

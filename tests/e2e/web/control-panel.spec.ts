@@ -154,6 +154,16 @@ test('switching the interface to English, with chat texts following it', async (
   );
 });
 
+test('a theme without images is exported as a package too', async ({ panel, page }) => {
+  await panel.open('page=themes');
+  await page.getByRole('button', { name: '更多動作' }).first().click();
+  await expect(page.getByRole('menuitem', { name: 'JSON' })).toHaveCount(0);
+  await page.getByRole('menuitem', { name: '匯出主題包' }).click();
+  await expect
+    .poll(() => page.evaluate(() => window.__chattoMock!.exportedPackages().map((theme) => theme.id)))
+    .toEqual(['matcha-glass']);
+});
+
 test("a theme's own event text shows in the editor preview", async ({ panel, page }) => {
   await panel.open('page=themes');
   await page.getByRole('button', { name: '複製並編輯' }).first().click();
