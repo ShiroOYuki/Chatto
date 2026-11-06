@@ -40,7 +40,7 @@
 - 觀眾名稱用平台給的顏色時（控制台自己的聊天紀錄），加 `user-color` class 並用 `userColor()` 帶入顏色：亮色會往 `ink` 混深，暗色照原色。聊天預覽（`.chatto-root`）不套用，維持和 OBS 一樣。
 - 透明度用 Tailwind 的 `/` 寫法調 token（`bg-matcha-soft/50`、`bg-danger/10`），不要另外調色。
 - 新增 token 時，亮色、暗色（兩個區塊）都要補，必要時也對應到 shadcn 的語意 token。
-- 目前寫死顏色的地方只有：連線彩紙的三個綠色、Hero 裡茶杯底的 `#f4f9ee`（暗色時也維持淺底）、連線中的琥珀色 spinner。不要再增加。
+- 目前寫死顏色的地方只有：茶杯吉祥物的品牌色（`TeaCup.tsx`，暗色也不變）、連線彩紙的三個綠色、Hero 裡茶杯底的 `#f4f9ee`（暗色時也維持淺底）、連線中的琥珀色 spinner。不要再增加。
 
 ## 字型與字級
 
@@ -209,20 +209,24 @@
 
 用 Motion（`motion/react`），共用設定在 `components/motion.tsx`。不使用 Animate UI（授權與 GPL 不相容）。
 
-| 用途                       | 寫法                                              |
-| -------------------------- | ------------------------------------------------- |
-| 一般互動（高亮滑動、按下） | `spring`（stiffness 420、damping 32）             |
-| 進場、數值變化             | `softSpring`（stiffness 260、damping 28）         |
-| 頁面切換                   | `PageTransition`：0.18 秒淡入、上移 8px、輕微模糊 |
-| Tile 進場                  | `Stagger` ＋ `Tile`（`riseIn`），間隔 0.035 秒    |
-| 選中項目的高亮             | 共用 `layoutId` 的背景在項目之間滑動              |
-| 數字變化                   | `RollingNumber`                                   |
-| 圖示切換（複製 → 打勾）    | `SwapIcon`                                        |
-| 按下按鈕                   | `whileTap={{ scale: 0.97 }}`                      |
+| 用途                       | 寫法                                                |
+| -------------------------- | --------------------------------------------------- |
+| 一般互動（高亮滑動、按下） | `spring`（stiffness 420、damping 32）               |
+| 進場、數值變化             | `softSpring`（stiffness 260、damping 28）           |
+| 頁面切換                   | `PageTransition`：0.18 秒淡入、上移 8px、輕微模糊   |
+| Tile 進場                  | `Stagger` ＋ `Tile`（`riseIn`），間隔 0.035 秒      |
+| 選中項目的高亮             | `SlidingHighlight`（共用 `layoutId`）在項目之間滑動 |
+| 數字變化                   | `RollingNumber`                                     |
+| 圖示切換（複製 → 打勾）    | `SwapIcon`                                          |
+| 按下按鈕                   | `whileTap={{ scale: 0.97 }}`                        |
 
 - **hover 只改顏色**，不位移、不放大、不發光（唯一的例外見下方）。
 - 不做常駐的動畫，例外是吉祥物的茶煙（表示「活著」）。
 - 尊重 `prefers-reduced-motion`：頁面切換不做位移、彩紙不放、茶煙停止。新的動畫也要處理。
+- 效能：聊天訊息每秒可能有好幾則，會跟著重繪的地方要注意。
+  - 有 `layout`／`layoutId` 的元素每次重繪都會量整頁版面，一律用 memo 過的元件包起來（`SlidingHighlight`），不要直接寫在會隨聊天更新的元件裡。
+  - 聊天紀錄的每一行（`ChatLine`、`NoticeLine`）是 memo 元件，紀錄項目要保持同一個物件，只有新增或改變的那行才重繪。
+  - 常駐動畫只動 HTML 元素的 `transform`／`opacity`，讓合成器處理；不要動 SVG 內部的 path（會整張重畫）。茶煙每縷是獨立的 `<svg>`。
 - 已經拿掉、不要加回來的：border beam、spotlight 光暈、hover 上浮、空狀態漂浮、吉祥物搖晃、大面積彩紙。
 - 例外：左側主導覽的圖示在 hover 時小晃動（`Sidebar.tsx` 的 `NavItem`），是刻意保留的唯一 hover 動態，不要套到其他元件。
 

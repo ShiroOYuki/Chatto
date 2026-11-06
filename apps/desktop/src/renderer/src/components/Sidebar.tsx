@@ -5,7 +5,7 @@ import { useMessages } from '../i18n';
 import { twitchStatus } from '../services/twitch';
 import { useChatLog } from '../store';
 import { channelTone, StatusDot } from './kit';
-import { motion, RollingNumber, spring } from './motion';
+import { motion, RollingNumber, SlidingHighlight } from './motion';
 import type { TeaCupMood } from './TeaCup';
 
 export type PageId = 'overview' | 'chat' | 'themes' | 'explore' | 'outputs' | 'alerts' | 'accounts' | 'settings';
@@ -49,11 +49,7 @@ function NavItem({
     >
       {/* One shared highlight slides between items. */}
       {active ? (
-        <motion.span
-          layoutId="nav-active"
-          transition={spring}
-          className="absolute inset-0 rounded-xl bg-tile shadow-sm"
-        />
+        <SlidingHighlight layoutId="nav-active" className="absolute inset-0 rounded-xl bg-tile shadow-sm" />
       ) : null}
       <motion.span
         variants={{ hover: { rotate: [0, -14, 10, 0], scale: 1.12 } }}
