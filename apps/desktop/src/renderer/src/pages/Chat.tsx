@@ -5,7 +5,7 @@ import type { AppState } from '../../../shared/ipc';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
 import { redemptionColumn, RedemptionsTile } from './RedemptionsTile';
 import { RollingNumber, Stagger } from '../components/motion';
-import { Button, EmptyState, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/kit';
+import { Button, EmptyState, Hint, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/kit';
 import { useMessages } from '../i18n';
 import { useChatLog, useRedemptions } from '../store';
 
@@ -80,28 +80,40 @@ export function ChatPage({ state }: { state: AppState }) {
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none"
               />
             </div>
-            <Segmented
-              size="sm"
-              value={role}
-              onChange={setRole}
-              options={[
-                { value: 'all', label: m.roles.all },
-                { value: 'moderator', label: m.roles.moderator },
-                { value: 'subscriber', label: m.roles.subscriber },
-                { value: 'vip', label: m.roles.vip },
-              ]}
-            />
-            <label className="flex items-center gap-2 text-xs whitespace-nowrap text-ink-soft">
+            {/* Narrow windows: the filters move to a second line, pause and clear stay beside the search as icons. */}
+            <div className="max-[1180px]:order-last">
+              <Segmented
+                size="sm"
+                value={role}
+                onChange={setRole}
+                options={[
+                  { value: 'all', label: m.roles.all },
+                  { value: 'moderator', label: m.roles.moderator },
+                  { value: 'subscriber', label: m.roles.subscriber },
+                  { value: 'vip', label: m.roles.vip },
+                ]}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-xs whitespace-nowrap text-ink-soft max-[1180px]:order-last">
               <Toggle checked={showDeleted} onChange={setShowDeleted} label={m.showDeleted} />
               {m.deleted}
             </label>
-            <Button size="sm" variant={paused ? 'primary' : 'secondary'} onClick={() => setPaused(!paused)}>
-              {paused ? <Play /> : <Pause />}
-              {paused ? m.resume : m.pause}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={clear} title={m.clearHint} aria-label={m.clear}>
-              <Eraser />
-            </Button>
+            <Hint label={paused ? m.resume : m.pause}>
+              <Button
+                size="sm"
+                variant={paused ? 'primary' : 'secondary'}
+                aria-label={paused ? m.resume : m.pause}
+                onClick={() => setPaused(!paused)}
+              >
+                {paused ? <Play /> : <Pause />}
+                <span className="max-[1180px]:sr-only">{paused ? m.resume : m.pause}</span>
+              </Button>
+            </Hint>
+            <Hint label={m.clearHint}>
+              <Button size="sm" variant="ghost" onClick={clear} aria-label={m.clear}>
+                <Eraser />
+              </Button>
+            </Hint>
           </div>
 
           <div className="relative min-h-0 flex-1">

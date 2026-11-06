@@ -183,7 +183,7 @@ function RedemptionOptions({ state }: { state: AppState }) {
   const access = redemptionAccess(state);
   const note = access === 'not-broadcaster' ? m.notBroadcaster : access === 'reauth' ? m.reauth : null;
   return (
-    <div className="col-span-3 flex items-start gap-3 pl-14">
+    <div className="col-span-3 flex items-start gap-3 pl-14 max-[1180px]:col-span-2">
       <Toggle
         checked={settings.redemptions.showInObs}
         label={m.showInObs}
@@ -227,18 +227,18 @@ function RuleRow({
   return (
     <div
       data-alert-rule={ruleKey}
-      className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.6fr)] items-center gap-6 border-b border-line py-3 last:border-b-0"
+      className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.6fr)] items-center gap-6 border-b border-line py-3 last:border-b-0 max-[1180px]:grid-cols-[minmax(0,1fr)_auto] max-[1180px]:gap-x-4 max-[1180px]:gap-y-2"
     >
       <div className="flex min-w-0 items-center gap-3">
         <Toggle checked={rule.enabled} label={m.toggle(label)} onChange={(enabled) => update({ enabled })} />
         <div className="min-w-0">
-          <div className="truncate text-sm font-medium">{label}</div>
-          <div className="truncate text-xs text-ink-faint">{description}</div>
+          <div className="truncate text-sm font-medium max-[1180px]:whitespace-normal">{label}</div>
+          <div className="truncate text-xs text-ink-faint max-[1180px]:whitespace-normal">{description}</div>
         </div>
       </div>
-      <div className="w-44">
+      <div className="w-44 max-[1180px]:w-auto">
         {amountLabel ? (
-          <span className="flex items-center gap-2 text-xs text-ink-faint">
+          <span className="flex items-center gap-2 text-xs whitespace-nowrap text-ink-faint">
             {m.atLeast}
             <NumberInput
               label={m.minimum(label, amountLabel)}
@@ -251,7 +251,10 @@ function RuleRow({
           </span>
         ) : null}
       </div>
-      <SoundPicker label={m.sound(label)} port={port} value={rule.sound} onChange={(sound) => update({ sound })} />
+      {/* Narrow windows: the sound controls get their own line under the event's name. */}
+      <div className="min-w-0 max-[1180px]:col-span-2 max-[1180px]:pl-14">
+        <SoundPicker label={m.sound(label)} port={port} value={rule.sound} onChange={(sound) => update({ sound })} />
+      </div>
       {children}
     </div>
   );

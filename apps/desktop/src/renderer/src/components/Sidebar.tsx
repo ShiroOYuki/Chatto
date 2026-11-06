@@ -80,7 +80,9 @@ export function moodFor(state: AppState, rate: number): TeaCupMood {
 
 /** The account card above Settings: the Chatto account and each platform's connection, opening the accounts page. */
 function AccountCard({ state, active, onClick }: { state: AppState; active: boolean; onClick: () => void }) {
-  const m = useMessages().accounts.sidebar;
+  const messages = useMessages();
+  const m = messages.accounts.sidebar;
+  const { channelState } = messages.connections;
   const session = state.share.session;
   const account = session.status === 'signed-in' ? session.account : null;
   const { connected } = twitchStatus(state);
@@ -102,9 +104,10 @@ function AccountCard({ state, active, onClick }: { state: AppState; active: bool
       </span>
       <span className="min-w-0 flex-1">
         <span className={`block truncate text-sm ${account ? 'font-medium text-ink' : 'text-ink-soft'}`}>{name}</span>
-        <span className="flex items-center gap-1.5 text-xs text-ink-faint">
+        {/* Name the platform's own state, so its dot does not read as the Chatto account's. */}
+        <span className="flex min-w-0 items-center gap-1.5 text-xs text-ink-faint">
           <StatusDot tone={channelTone(state.channel.state, connected)} />
-          Twitch
+          <span className="truncate">Twitch · {channelState[state.channel.state]}</span>
         </span>
       </span>
     </button>

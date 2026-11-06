@@ -1,5 +1,6 @@
 /**
  * Choicebox from Kibo UI (https://www.kibo-ui.com/components/choicebox), MIT © shadcnblocks.
+ * Chatto changes: the item label draws no border or fill of its own (the item's className does).
  */
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
@@ -33,7 +34,11 @@ export type ChoiceboxItemProps = ComponentProps<typeof RadioGroupItem>;
 
 export const ChoiceboxItem = ({ className, children, value, id }: ChoiceboxItemProps) => (
   <ChoiceboxItemContext.Provider value={{ value, id }}>
-    <FieldLabel htmlFor={id}>
+    {/* Chatto: the item's own className draws the card, so drop the label's second border and fill. */}
+    <FieldLabel
+      htmlFor={id}
+      className="has-[>[data-slot=field]]:rounded-xl has-[>[data-slot=field]]:border-0 has-data-[state=checked]:bg-transparent dark:has-data-[state=checked]:bg-transparent"
+    >
       <Field className={className} orientation="horizontal">
         {children}
       </Field>

@@ -125,7 +125,8 @@ export function BrowseView({
           />
         </div>
       </div>
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label={m.categories.all}>
+      {/* Slightly tighter chips in narrow windows keep every category on one line. */}
+      <div className="flex flex-wrap gap-1.5 max-[1180px]:gap-1" role="group" aria-label={m.categories.all}>
         {[undefined, ...SHARE_CATEGORIES].map((value) => {
           const active = value === category;
           return (
@@ -134,7 +135,7 @@ export function BrowseView({
               type="button"
               aria-pressed={active}
               onClick={() => setCategory(value)}
-              className={`rounded-full px-3 py-1 text-xs transition-colors ${
+              className={`rounded-full px-3 py-1 text-xs transition-colors max-[1180px]:px-2.5 ${
                 active ? 'bg-matcha text-white' : 'bg-tile-muted text-ink-soft hover:text-ink'
               }`}
             >
