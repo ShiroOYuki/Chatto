@@ -134,7 +134,7 @@ export function ThemeEditor({
       </header>
 
       {/* Narrow windows swap the side menu for a dropdown so the panel keeps a usable width. */}
-      <div className="grid min-h-0 flex-1 grid-cols-[168px_minmax(0,1fr)_minmax(300px,380px)] gap-3 max-[1180px]:grid-cols-[minmax(0,1fr)_minmax(260px,40%)]">
+      <div className="grid min-h-0 flex-1 grid-cols-[196px_minmax(0,1fr)_minmax(300px,380px)] gap-3 max-[1180px]:grid-cols-[minmax(0,1fr)_minmax(260px,40%)]">
         <div className="flex min-h-0 flex-col max-[1180px]:hidden">
           <EditorNav
             sections={resolved.sections}

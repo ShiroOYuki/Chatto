@@ -1,5 +1,5 @@
 import { ArrowRight, Gift, MessageCircle, MonitorUp, Palette } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useMoreBelow } from '../components/useMoreBelow';
 import type { AppState } from '../../../shared/ipc';
 import { overlay } from '../services/overlay';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
@@ -30,26 +30,13 @@ function Stat({ label, value }: { label: string; value: number }) {
  * there is more below, so a cut-off row reads as "scroll for more".
  */
 function RecentNotices({ entries }: { entries: LogEntry[] }) {
-  const [moreBelow, setMoreBelow] = useState(false);
-  const list = useRef<HTMLDivElement>(null);
-  const measure = useCallback(() => {
-    const el = list.current;
-    if (el) setMoreBelow(el.scrollHeight - el.scrollTop - el.clientHeight > 4);
-  }, []);
-  useLayoutEffect(measure, [measure, entries]);
-  useEffect(() => {
-    const el = list.current;
-    if (!el) return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [measure]);
+  const { ref, moreBelow, onScroll } = useMoreBelow<HTMLDivElement>([entries]);
 
   return (
     <div
-      ref={list}
+      ref={ref}
       data-testid="recent-notices"
-      onScroll={measure}
+      onScroll={onScroll}
       className={`-mx-2 -mb-2 flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2 ${
         moreBelow ? 'mask-b-from-[calc(100%-2rem)]' : ''
       }`}
