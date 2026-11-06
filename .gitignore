@@ -19,3 +19,6 @@ test-results/
 playwright-report/
 blob-report/
 coverage/
+
+# Seed themes for the sharing platform (GitHub #23), kept out of git
+seed-themes/
