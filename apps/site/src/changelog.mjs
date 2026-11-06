@@ -27,6 +27,15 @@ export const CHANGELOG = {
             ),
           ],
         },
+        {
+          kind: 'improved',
+          items: [
+            t(
+              'Custom CSS can switch the words it adds to the chat language with :lang()',
+              '自訂 CSS 加上的文字可以用 :lang() 跟著聊天室語言切換',
+            ),
+          ],
+        },
       ],
     },
     {

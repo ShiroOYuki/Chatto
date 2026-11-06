@@ -128,7 +128,7 @@
 ## HTML 結構（公開 API）
 
 ```
-.chatto-root[data-base][data-arrangement][data-direction][data-theme-id]
+.chatto-root[lang][data-base][data-arrangement][data-direction][data-theme-id]
   <style>（產生的 CSS ＋ customCss）
   .chatto-list
     .chatto-message[data-platform][data-roles][data-user][data-action][data-highlight][data-event]
@@ -151,6 +151,8 @@
 
 改名或移除以上任一項都屬於破壞性變更，需要遞增 `THEME_SCHEMA_VERSION`。頭像、時間、徽章只有在對應的 `show` 開啟時才會輸出（Blank 也一樣）。
 
+`lang` 是聊天室語言（`zh-TW` 或 `en`，和事件文字同一個設定），2026-11-06 加入。自訂 CSS 自己寫的文字（`content`）可以用 `:lang()` 依語言切換；舊版 Chatto 沒有這個屬性，所以把英文寫成預設、中文寫在 `:lang(zh)` 裡，舊版就會顯示英文。
+
 ## 自訂 CSS 範例
 
 ```css
@@ -167,6 +169,14 @@
 /* 只改大量贈訂的外框 */
 .chatto-notice[data-event='twitch:community-gift'] {
   border: 2px dashed gold;
+}
+
+/* 自己加的文字跟著聊天室語言：英文寫成預設，中文用 :lang(zh) 覆蓋 */
+.chatto-notice .chatto-body::after {
+  content: ' Thank you!';
+}
+.chatto-notice .chatto-body:lang(zh)::after {
+  content: ' 感謝！';
 }
 
 /* 整個聊天室加上漸層遮罩，讓舊訊息淡出 */
