@@ -132,6 +132,37 @@ test('a custom theme is checked, published and listed under my themes', async ({
   await expect(page.getByText('公開中')).toBeVisible();
 });
 
+test('a theme published elsewhere is fetched to this computer to update it', async ({ panel, page }) => {
+  await panel.open('page=explore');
+  await panel.setState({ themes: [...PRESET_THEMES, { ...createTheme('mine', '抹茶草稿'), builtIn: false }] });
+  await signIn(page);
+  await page.getByRole('tab', { name: '我的主題' }).click();
+  await page.getByRole('button', { name: '投稿主題' }).click();
+  const publish = page.getByRole('dialog', { name: '投稿主題' });
+  await publish.getByRole('textbox', { name: '名稱' }).fill('遠方的抹茶');
+  await publish.getByRole('combobox', { name: '類別' }).click();
+  await page.getByRole('option', { name: '自然' }).click();
+  await publish.getByRole('button', { name: '投稿' }).click();
+  await expect(publish.getByText('已發佈')).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  // As if it had been published from another computer: no local theme is linked to it.
+  await panel.setState({ themes: [...PRESET_THEMES, { ...createTheme('other', '別的草稿'), builtIn: false }] });
+  const row = page.getByRole('article').filter({ hasText: '遠方的抹茶' });
+  await row.getByRole('button', { name: '更新' }).click();
+  const update = page.getByRole('dialog', { name: '更新「遠方的抹茶」' });
+  await expect(update.getByText('「別的草稿」不是從「遠方的抹茶」來的')).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await row.getByRole('button', { name: '取得到本機' }).click();
+  await expect(page.getByText('已存成本機主題「遠方的抹茶」')).toBeVisible();
+  await expect(row.getByRole('button', { name: '取得到本機' })).toHaveCount(0);
+  await row.getByRole('button', { name: '更新' }).click();
+  // The fetched copy is picked, so nothing gets replaced by mistake.
+  await expect(update.getByRole('combobox', { name: '要投稿的主題' })).toHaveText('遠方的抹茶');
+  await expect(update.getByText('不是從')).toHaveCount(0);
+});
+
 test('publishing starts from a theme of your own, and flags an unchanged copy before sending', async ({
   panel,
   page,

@@ -158,6 +158,12 @@ export function PublishDialog({
                 options={custom.map((item) => ({ value: item.id, label: themeName(item) }))}
               />
             </Field>
+            {target && theme && theme.origin?.shareId !== target.id ? (
+              <p className="flex gap-1.5 rounded-xl bg-tile-muted px-3 py-2 text-xs text-ink-soft">
+                <CircleAlert className="mt-0.5 size-3.5 shrink-0" />
+                <span>{m.publish.replaces(themeName(theme), target.name)}</span>
+              </p>
+            ) : null}
             <Field label={m.publish.name}>
               <TextInput
                 value={meta.name}

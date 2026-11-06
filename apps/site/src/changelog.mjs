@@ -43,6 +43,10 @@ export const CHANGELOG = {
               '自訂 CSS 用相同的選擇器就能覆蓋主題樣式，不必加 .chatto-root 前綴',
             ),
             t(
+              'My Themes can fetch a theme you published from another computer, so you can change and update it here',
+              '「我的主題」可以把在別台電腦發佈的主題取得到本機，在這裡修改並更新',
+            ),
+            t(
               'Publishing starts from a theme you made, and warns before sending an unchanged copy of someone else’s theme',
               '投稿時預設選你自己做的主題，並在送出別人主題的未修改副本前提醒',
             ),

@@ -1,4 +1,4 @@
-import { Download, Heart, LogIn, Plus, Trash2, Upload } from 'lucide-react';
+import { Download, FolderDown, Heart, LogIn, Plus, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { type ShareAccount, type ShareErrorCode, type ShareThemeSummary, formatShareCode } from '@chatto/share';
 import { Stagger, motion, riseIn } from '../../components/motion';
@@ -15,6 +15,7 @@ import {
 } from '../../components/ui/alert-dialog';
 import { useLocale, useMessages } from '../../i18n';
 import { shareCall } from '../../services/share';
+import { useAppState } from '../../store';
 import { PublishDialog } from './PublishDialog';
 import { SharePreview } from './ShareCard';
 import { errorText, formatCount, publishesLeftText } from '../../components/share/shareText';
@@ -37,6 +38,8 @@ export function MyThemesView({
   const [publishing, setPublishing] = useState<{ target?: ShareThemeSummary } | null>(null);
   const [removing, setRemoving] = useState<ShareThemeSummary | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [fetching, setFetching] = useState<string | null>(null);
+  const themes = useAppState()?.themes;
   const accountId = account?.id;
 
   const load = useCallback(() => {
@@ -66,6 +69,19 @@ export function MyThemesView({
     if (!result.ok) return setError(result.error);
     setItems((value) => value?.filter((item) => item.id !== summary.id) ?? null);
     setDone(m.mine.unpublished(summary.name));
+  };
+
+  // A theme published from another computer (or by a script) has no local copy to change and update.
+  const hasLocalCopy = (summary: ShareThemeSummary) =>
+    Boolean(themes?.some((theme) => !theme.builtIn && theme.origin?.shareId === summary.id));
+  const getCopy = async (summary: ShareThemeSummary) => {
+    setError(null);
+    setDone(null);
+    setFetching(summary.id);
+    const result = await shareCall('install', summary.id);
+    setFetching(null);
+    if (!result.ok) return setError(result.error);
+    setDone(m.mine.gotCopy(summary.name));
   };
 
   return (
@@ -126,6 +142,16 @@ export function MyThemesView({
                 </p>
               </div>
               <div className="flex shrink-0 gap-1">
+                {hasLocalCopy(summary) ? null : (
+                  <Button
+                    size="sm"
+                    title={m.mine.getCopyHint}
+                    disabled={fetching !== null}
+                    onClick={() => void getCopy(summary)}
+                  >
+                    {fetching === summary.id ? <LoadingSpinner /> : <FolderDown />} {m.mine.getCopy}
+                  </Button>
+                )}
                 <Button size="sm" onClick={() => setPublishing({ target: summary })}>
                   <Upload /> {m.mine.update}
                 </Button>
