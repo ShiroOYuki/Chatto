@@ -136,7 +136,7 @@ export function BrowseView({
               aria-pressed={active}
               onClick={() => setCategory(value)}
               className={`rounded-full px-3 py-1 text-xs transition-colors max-[1180px]:px-2.5 ${
-                active ? 'bg-matcha text-white' : 'bg-tile-muted text-ink-soft hover:text-ink'
+                active ? 'bg-matcha-strong text-on-matcha' : 'bg-tile-muted text-ink-soft hover:text-ink'
               }`}
             >
               {value ? m.categories[value] : m.categories.all}
