@@ -34,6 +34,21 @@ export const CHANGELOG = {
               'Custom CSS can switch the words it adds to the chat language with :lang()',
               '自訂 CSS 加上的文字可以用 :lang() 跟著聊天室語言切換',
             ),
+            t(
+              'Custom CSS overrides a theme’s styles with the same selector, without a .chatto-root prefix',
+              '自訂 CSS 用相同的選擇器就能覆蓋主題樣式，不必加 .chatto-root 前綴',
+            ),
+            t(
+              'Publishing starts from a theme you made, and warns before sending an unchanged copy of someone else’s theme',
+              '投稿時預設選你自己做的主題，並在送出別人主題的未修改副本前提醒',
+            ),
+          ],
+        },
+        {
+          kind: 'fixed',
+          items: [
+            t('Uploaded frame images now show in the control panel’s previews', '控制台的預覽現在會顯示上傳的外框圖片'),
+            t('Installing a shared theme updates its download count right away', '安裝分享主題後，下載次數會立即更新'),
           ],
         },
       ],

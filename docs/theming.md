@@ -12,6 +12,8 @@
 
 最後輸出的 CSS 順序：產生的樣式 → `customCss`（以 `@scope` 限定在該聊天室，`.chatto-root` 會自動對應到 `:scope`）。
 
+產生的樣式把聊天室根選擇器包在 `:where()` 裡，根本身不增加權重，所以 `customCss` 寫和產生規則相同的選擇器就能覆蓋，例如 `.chatto-body { color: red }` 會蓋過產生的 `.chatto-body`，不必再加 `.chatto-root` 前綴。產生規則之間仍保留各自的權重：身分、事件等較具體的規則（例如 `.chatto-message[data-roles~="moderator"] .chatto-author`）要用同樣具體的選擇器才能覆蓋。
+
 ## 參數一覽
 
 單位：長度為 px，標示 em 的欄位以字級為基準。顏色可以是任何 CSS 顏色，`transparent` 代表不填色。
