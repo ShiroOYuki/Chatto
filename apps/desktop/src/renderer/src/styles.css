@@ -20,6 +20,9 @@
   --color-matcha-strong: var(--c-matcha-strong);
   --color-matcha-soft: var(--c-matcha-soft);
   --color-on-matcha: var(--c-on-matcha);
+  /* Same in light and dark: solid badges laid over theme previews (pictures, not the UI). */
+  --color-matcha-bright: #c0dd97;
+  --color-on-matcha-bright: #27500a;
   --color-sakura: var(--c-sakura);
   --color-danger: var(--c-danger);
   --color-on-danger: var(--c-on-danger);

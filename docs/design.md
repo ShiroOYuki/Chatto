@@ -16,23 +16,25 @@
 
 主色系是抹茶綠，亮色與暗色都要支援。顏色一律用 token（`styles.css`），不要在元件裡寫色碼。
 
-| Token（Tailwind） | 用途                                                | 亮色      | 暗色      |
-| ----------------- | --------------------------------------------------- | --------- | --------- |
-| `canvas`          | 頁面底色；輸入框、選擇卡片的底色                    | `#f3f6ef` | `#121512` |
-| `tile`            | Tile、對話框、選單的底色；選中項目的浮起高亮        | `#ffffff` | `#1b201a` |
-| `tile-muted`      | Tile 內的次要區塊、segmented 底、徽章底、hover 底色 | `#eaf1e2` | `#232a21` |
-| `sidebar`         | 左側導覽底色                                        | `#e9efe2` | `#161a15` |
-| `line`            | 框線、分隔線、未開啟的開關                          | `#e1e8d9` | `#2c3429` |
-| `ink`             | 主要文字                                            | `#1d2a14` | `#eaf3de` |
-| `ink-soft`        | 次要文字、Tile 標題、未選中的導覽                   | `#55634a` | `#b3c0a6` |
-| `ink-faint`       | 提示、caption、未選中的圖示                         | `#646f5b` | `#8f9b86` |
-| `matcha`          | 強調：選中的圖示、開關開啟、滑桿、focus ring        | `#6b9b2e` | `#97c459` |
-| `matcha-strong`   | 主要按鈕、Hero tile 底色、成功訊息文字              | `#27500a` | `#c0dd97` |
-| `matcha-soft`     | 淡強調底：徽章、hover、選中卡片（常搭配透明度）     | `#c0dd97` | `#356310` |
-| `on-matcha`       | `matcha-strong` 上的文字                            | `#f4f9ee` | `#10200a` |
-| `sakura`          | 點綴：吉祥物腮紅、「有新版本」這類提醒徽章          | `#f4c0d1` | `#993556` |
-| `danger`          | 錯誤、刪除                                          | `#c2412d` | `#f09595` |
-| `on-danger`       | `danger` 底上的文字（刪除確認按鈕）                 | `#ffffff` | `#2a0b0b` |
+| Token（Tailwind）  | 用途                                                                                      | 亮色      | 暗色      |
+| ------------------ | ----------------------------------------------------------------------------------------- | --------- | --------- |
+| `canvas`           | 頁面底色；輸入框、選擇卡片的底色                                                          | `#f3f6ef` | `#121512` |
+| `tile`             | Tile、對話框、選單的底色；選中項目的浮起高亮                                              | `#ffffff` | `#1b201a` |
+| `tile-muted`       | Tile 內的次要區塊、segmented 底、徽章底、hover 底色                                       | `#eaf1e2` | `#232a21` |
+| `sidebar`          | 左側導覽底色                                                                              | `#e9efe2` | `#161a15` |
+| `line`             | 框線、分隔線、未開啟的開關                                                                | `#e1e8d9` | `#2c3429` |
+| `ink`              | 主要文字                                                                                  | `#1d2a14` | `#eaf3de` |
+| `ink-soft`         | 次要文字、Tile 標題、未選中的導覽                                                         | `#55634a` | `#b3c0a6` |
+| `ink-faint`        | 提示、caption、未選中的圖示                                                               | `#646f5b` | `#8f9b86` |
+| `matcha`           | 強調：選中的圖示、開關開啟、滑桿、focus ring                                              | `#6b9b2e` | `#97c459` |
+| `matcha-strong`    | 主要按鈕、Hero tile 底色、成功訊息文字                                                    | `#27500a` | `#c0dd97` |
+| `matcha-soft`      | 淡強調底：徽章、hover、選中卡片（常搭配透明度）                                           | `#c0dd97` | `#356310` |
+| `on-matcha`        | `matcha-strong` 上的文字                                                                  | `#f4f9ee` | `#10200a` |
+| `sakura`           | 點綴：吉祥物腮紅、「有新版本」這類提醒徽章                                                | `#f4c0d1` | `#993556` |
+| `danger`           | 錯誤、刪除                                                                                | `#c2412d` | `#f09595` |
+| `on-danger`        | `danger` 底上的文字（刪除確認按鈕）                                                       | `#ffffff` | `#2a0b0b` |
+| `matcha-bright`    | 疊在主題預覽上的實心徽章（`Badge solid tone="matcha"`，例：探索頁「已安裝」），亮暗色相同 | `#c0dd97` | `#c0dd97` |
+| `on-matcha-bright` | `matcha-bright` 上的文字                                                                  | `#27500a` | `#27500a` |
 
 - shadcn/ui 的語意 token（`primary`、`muted`、`destructive`、`border`、`ring` …）已對應到上表，CLI 加進來的元件會自動符合配色。
 - 外觀設定（`prefs.appearance`）是 `system`／`light`／`dark`，`App.tsx` 把結果寫進 `<html data-theme>`；`dark:` variant 跟著 `data-theme`。

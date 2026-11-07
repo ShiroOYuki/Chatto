@@ -22,7 +22,7 @@ export function Badge({
   };
   const solidTones = {
     neutral: 'bg-tile text-ink',
-    matcha: 'bg-matcha-strong text-on-matcha',
+    matcha: 'bg-matcha-bright text-on-matcha-bright',
     sakura: 'bg-sakura text-ink',
     danger: 'bg-danger text-on-danger',
   };
