@@ -73,7 +73,7 @@ describe('frame CSS', () => {
     const theme = createTheme('t', 't', {
       message: { box: { image: frame(), shadow, border: { width: 2, style: 'solid', color: 'blue' } } },
     });
-    const message = themeToCss(theme, '.s').split('.s .chatto-message {')[1]!.split('}')[0]!;
+    const message = themeToCss(theme, '.s').split(':where(.s) .chatto-message {')[1]!.split('}')[0]!;
     expect(message).toContain('filter: drop-shadow(1px 2px 3px red)');
     expect(message).toContain('box-shadow: none');
     expect(message).not.toContain('2px solid blue');

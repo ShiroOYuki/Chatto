@@ -212,4 +212,16 @@ test('a theme package brings its frame image, which the server and previews use'
   await mainWindow.getByRole('button', { name: /^主題/ }).click();
   const card = mainWindow.locator('.chatto-root[data-theme-id="framed"] .chatto-message').first();
   await expect(card).toHaveCSS('border-image-source', `url("http://localhost:${port}/theme-assets/${file}")`);
+  // The control panel's CSP must let the image load, not just name it.
+  const loads = await mainWindow.evaluate(
+    (src) =>
+      new Promise<boolean>((done) => {
+        const img = new Image();
+        img.onload = () => done(true);
+        img.onerror = () => done(false);
+        img.src = src;
+      }),
+    `http://localhost:${port}/theme-assets/${file}`,
+  );
+  expect(loads).toBe(true);
 });

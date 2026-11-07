@@ -5,9 +5,22 @@ import { Select, Toggle } from '../../../components/kit';
 import { Input } from '../../../components/ui/input';
 import { useMessages } from '../../../i18n';
 
-export function FieldRow({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+export function FieldRow({
+  label,
+  hint,
+  inline = false,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  /** Keep the control beside the label even in narrow windows (switches). */
+  inline?: boolean;
+  children: ReactNode;
+}) {
+  // A hint squeezed into the 136px label column wraps into a tall strip, so rows with one stack.
+  const stack = hint && !inline ? 'grid-cols-1! gap-2' : '';
   return (
-    <div className="grid grid-cols-[136px_minmax(0,1fr)] items-center gap-3 py-1.5">
+    <div className={`grid grid-cols-[136px_minmax(0,1fr)] items-center gap-3 py-1.5 ${stack}`}>
       <div className="text-xs font-medium text-ink-soft">
         {label}
         {hint ? <div className="mt-0.5 font-normal text-ink-faint">{hint}</div> : null}
@@ -88,6 +101,7 @@ export function TextRow({
   return (
     <FieldRow label={label} hint={hint}>
       <Input
+        aria-label={label}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
@@ -112,7 +126,7 @@ export function ToggleRow({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <FieldRow label={label} hint={hint}>
+    <FieldRow label={label} hint={hint} inline>
       <Toggle checked={value} label={label} onChange={onChange} />
     </FieldRow>
   );

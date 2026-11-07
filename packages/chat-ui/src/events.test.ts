@@ -94,9 +94,9 @@ describe('platform events', () => {
     expect(own.titleColor).toBe('#123456');
 
     const css = themeToCss(theme, '.s');
-    expect(css).toContain('.s .chatto-notice[data-event="twitch:raid"]');
+    expect(css).toContain(':where(.s) .chatto-notice[data-event="twitch:raid"]');
     expect(css).toContain('#ff0000');
-    expect(css).toContain('.s .chatto-message[data-event] .chatto-event-title');
+    expect(css).toContain(':where(.s) .chatto-message[data-event] .chatto-event-title');
 
     theme = linkEvent(theme, 'twitch:raid');
     expect(themeToCss(theme, '.s')).not.toContain('[data-event="twitch:raid"]');

@@ -9,6 +9,8 @@ export interface SeedTheme {
   category: ShareCategory;
   tags: string[];
   author: string;
+  /** The author is an official account (shown with a badge). */
+  official?: boolean;
   likes: number;
   downloads: number;
   /** How long ago it was published. */
@@ -84,7 +86,8 @@ export const FAKE_SEED: SeedTheme[] = [
     description: 'Leafy frames around every message.',
     category: 'nature',
     tags: ['frame', 'colorful'],
-    author: 'stillwater',
+    author: 'Chatto',
+    official: true,
     likes: 64,
     downloads: 288,
     daysAgo: 8,

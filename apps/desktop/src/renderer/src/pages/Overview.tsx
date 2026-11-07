@@ -1,5 +1,5 @@
 import { ArrowRight, Gift, MessageCircle, MonitorUp, Palette } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useMoreBelow } from '../components/useMoreBelow';
 import type { AppState } from '../../../shared/ipc';
 import { overlay } from '../services/overlay';
 import { ChatLine, NoticeLine } from '../components/ChatLine';
@@ -30,26 +30,13 @@ function Stat({ label, value }: { label: string; value: number }) {
  * there is more below, so a cut-off row reads as "scroll for more".
  */
 function RecentNotices({ entries }: { entries: LogEntry[] }) {
-  const [moreBelow, setMoreBelow] = useState(false);
-  const list = useRef<HTMLDivElement>(null);
-  const measure = useCallback(() => {
-    const el = list.current;
-    if (el) setMoreBelow(el.scrollHeight - el.scrollTop - el.clientHeight > 4);
-  }, []);
-  useLayoutEffect(measure, [measure, entries]);
-  useEffect(() => {
-    const el = list.current;
-    if (!el) return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [measure]);
+  const { ref, moreBelow, onScroll } = useMoreBelow<HTMLDivElement>([entries]);
 
   return (
     <div
-      ref={list}
+      ref={ref}
       data-testid="recent-notices"
-      onScroll={measure}
+      onScroll={onScroll}
       className={`-mx-2 -mb-2 flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2 ${
         moreBelow ? 'mask-b-from-[calc(100%-2rem)]' : ''
       }`}
@@ -91,6 +78,17 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
               {m.channelState[state.channel.state]}
             </div>
             <div className="mt-1 truncate text-xl font-semibold">{state.channel.login ?? m.noChannel}</div>
+            {/* Not connected and not trying: say where to fix it. */}
+            {['idle', 'error', 'closed'].includes(state.channel.state) ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="mt-2 -ml-2 text-on-matcha hover:bg-on-matcha/15 hover:text-on-matcha"
+                onClick={() => onNavigate('accounts')}
+              >
+                {state.channel.state === 'idle' ? m.goConnect : m.goReconnect} <ArrowRight />
+              </Button>
+            ) : null}
           </div>
           <div className="shrink-0 rounded-full bg-[#f4f9ee] p-2 max-[1180px]:hidden">
             <TeaCup mood={moodFor(state, stats.rate)} size={64} />
@@ -105,7 +103,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
             values={stats.history}
             className="mt-3 h-14 [&>span]:bg-on-matcha/30! [&>span:last-child]:bg-on-matcha!"
           />
-          <div className="mt-1 flex justify-between text-[11px] opacity-60">
+          <div className="mt-1 flex justify-between text-[11px] opacity-75">
             <span>{m.thirtyMinutesAgo}</span>
             <span>{m.now}</span>
           </div>
@@ -172,7 +170,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
         }
       >
         {recentMessages.length === 0 ? (
-          <EmptyState title={m.noMessages} hint={m.noMessagesHint} />
+          <EmptyState compact title={m.noMessages} hint={m.noMessagesHint} />
         ) : (
           <div
             data-testid="recent-messages"
@@ -189,7 +187,7 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
 
       <Tile title={m.recentActivity} icon={<Gift />} className="col-span-2 min-h-0 overflow-hidden">
         {recentNotices.length === 0 ? (
-          <EmptyState mood="happy" title={m.noActivity} hint={m.noActivityHint} />
+          <EmptyState compact mood="happy" title={m.noActivity} hint={m.noActivityHint} />
         ) : (
           <RecentNotices entries={recentNotices} />
         )}

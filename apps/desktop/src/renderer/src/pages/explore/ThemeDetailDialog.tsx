@@ -1,4 +1,4 @@
-import { Check, Download, Flag, Heart, Sparkles } from 'lucide-react';
+import { Check, Download, FileDown, Flag, Heart, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   SHARE_REPORT_REASONS,
@@ -9,10 +9,12 @@ import {
   isModifiedInstall,
 } from '@chatto/share';
 import { LiveThemePreview } from '../../components/ThemePreview';
-import { ActionNote, Badge, Button, CopyField, Field, LoadingSpinner, Modal, Select } from '../../components/kit';
+import { cn } from '@/lib/utils';
+import { ActionNote, Badge, Button, CopyField, Field, Hint, LoadingSpinner, Modal, Select } from '../../components/kit';
 import { useLocale, useMessages } from '../../i18n';
 import { loadShareDetail, shareCall, useInstalledThemes, useShareAction, useShareSession } from '../../services/share';
-import { authorName } from './ShareCard';
+import { exportTheme } from '../themeIO';
+import { authorName, OfficialBadge } from './ShareCard';
 import { errorText, failureText, formatCount } from '../../components/share/shareText';
 
 function ReportDialog({
@@ -75,6 +77,7 @@ function ReportDialog({
               value={reason}
               onChange={setReason}
               aria-label={m.report.reason}
+              placeholder={m.report.reasonPlaceholder}
               options={SHARE_REPORT_REASONS.map((value) => ({ value, label: m.report.reasons[value] }))}
             />
           </Field>
@@ -116,7 +119,7 @@ export function ThemeDetailDialog({
 }: {
   summary: ShareThemeSummary | null;
   onOpenChange: (open: boolean) => void;
-  /** The theme's counts changed (liked); lists can show the new summary. */
+  /** The theme's counts changed (liked, or installed for the first time); lists can show the new summary. */
   onChanged?: (summary: ShareThemeSummary) => void;
   onSignIn: () => void;
 }) {
@@ -130,6 +133,8 @@ export function ThemeDetailDialog({
   const [reporting, setReporting] = useState(false);
   /** Reported in this session; the service takes one report per account, so the button stays done. */
   const [reported, setReported] = useState(false);
+  /** This dialog already added this client's download to the count. */
+  const [counted, setCounted] = useState(false);
   const { busy, run } = useShareAction();
 
   useEffect(() => {
@@ -137,6 +142,7 @@ export function ThemeDetailDialog({
     setDetail(null);
     setNote(null);
     setReported(false);
+    setCounted(false);
     if (!summary) return;
     let active = true;
     void loadShareDetail(summary.id, summary.version).then((result) => {
@@ -165,7 +171,26 @@ export function ThemeDetailDialog({
       text: replaceId ? m.detail.updated(result.value.name) : m.detail.installedAs(result.value.name),
       tone: 'ok',
     });
-    if (!replaceId) setCurrent({ ...current, downloads: current.downloads + 1 });
+    if (!replaceId) countDownload();
+  };
+
+  // The service counts one download per client a day, so only the first copy or file adds to the count.
+  const countDownload = () => {
+    if (counted || copies.length > 0) return;
+    setCounted(true);
+    const next = { ...current, downloads: current.downloads + 1 };
+    setCurrent(next);
+    onChanged?.(next);
+  };
+
+  /** Saves the theme as a `.chattotheme` file without installing it. */
+  const downloadFile = async () => {
+    if (busy) return;
+    setNote(null);
+    const result = await run(() => shareCall('download', current.id));
+    if (!result.ok) return setNote({ text: failureText(m, result) ?? '', tone: 'error' });
+    countDownload();
+    if (await exportTheme(result.value)) setNote({ text: m.detail.downloaded(result.value.name), tone: 'ok' });
   };
 
   const toggleLike = async () => {
@@ -184,6 +209,27 @@ export function ThemeDetailDialog({
       title={current.name}
       description={m.byAuthor(author)}
       className="sm:max-w-4xl"
+      actions={
+        // Out of the way of the main actions, but always at hand: a small red flag by the close button.
+        <Hint label={reported ? m.detail.reported : m.detail.report}>
+          <button
+            type="button"
+            aria-label={reported ? m.detail.reported : m.detail.report}
+            aria-disabled={reported || undefined}
+            onClick={() => {
+              if (reported) return;
+              if (signedIn) setReporting(true);
+              else onSignIn();
+            }}
+            className={cn(
+              'grid size-8 place-items-center rounded-full text-danger transition-colors [&>svg]:size-4',
+              reported ? 'cursor-default opacity-60' : 'hover:bg-danger/10',
+            )}
+          >
+            <Flag className={reported ? 'fill-current' : ''} />
+          </button>
+        </Hint>
+      }
     >
       <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
         <div className="h-80 overflow-hidden rounded-xl border border-line md:h-[26rem]">
@@ -200,6 +246,7 @@ export function ThemeDetailDialog({
             <p className="text-sm whitespace-pre-line text-ink-soft">{current.description}</p>
           ) : null}
           <div className="flex flex-wrap gap-1.5">
+            <OfficialBadge summary={current} />
             <Badge tone="matcha">{m.categories[current.category]}</Badge>
             {current.tags.map((tag) => (
               <Badge key={tag}>{tag}</Badge>
@@ -239,19 +286,13 @@ export function ThemeDetailDialog({
                 {busy ? <LoadingSpinner /> : <Download />} {copies.length ? m.detail.installAgain : m.detail.install}
               </Button>
             )}
+            <Button onClick={() => void downloadFile()} title={m.detail.downloadHint} aria-disabled={busy}>
+              <FileDown /> {m.detail.download}
+            </Button>
             <Button onClick={() => void toggleLike()} aria-pressed={Boolean(current.liked)} aria-disabled={busy}>
               <Heart className={current.liked ? 'fill-sakura text-sakura' : ''} />
               {current.liked ? m.detail.liked : m.detail.like}
             </Button>
-            {reported ? (
-              <Button variant="ghost" aria-disabled className="pointer-events-none text-ink-faint">
-                <Check /> {m.detail.reported}
-              </Button>
-            ) : (
-              <Button variant="ghost" onClick={() => (signedIn ? setReporting(true) : onSignIn())}>
-                <Flag /> {m.detail.report}
-              </Button>
-            )}
           </div>
           {note ? (
             <ActionNote key={note.text} tone={note.tone}>

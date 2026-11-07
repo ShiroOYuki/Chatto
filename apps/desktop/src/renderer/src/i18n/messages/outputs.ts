@@ -46,6 +46,13 @@ export default defineMessages({
     resetAlertsPosition: '移回右上角',
     alertsAdjustingHint: '直接拖曳事件 Overlay 移動位置、拖曳邊緣調整大小，完成後按「完成調整」',
     alertRules: '提醒規則',
+    look: {
+      title: '視窗外觀',
+      hint: '只影響這個桌面視窗，OBS 看到的畫面不變',
+      backgroundColor: '背景顏色',
+      backgroundOpacity: '背景不透明度',
+      chatOpacity: '聊天室不透明度',
+    },
   },
   en: {
     title: 'Outputs',
@@ -93,5 +100,12 @@ export default defineMessages({
     alertsAdjustingHint:
       'Drag the alert overlay to move it and drag its edges to resize. Click “Finish adjusting” when you’re done.',
     alertRules: 'Alert rules',
+    look: {
+      title: 'Window look',
+      hint: 'Only changes this desktop window. OBS stays the same.',
+      backgroundColor: 'Background color',
+      backgroundOpacity: 'Background opacity',
+      chatOpacity: 'Chat opacity',
+    },
   },
 });

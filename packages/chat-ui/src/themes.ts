@@ -1,6 +1,7 @@
 import {
   DEFAULT_LOCALE,
   isValidImageSrc,
+  LOCALES,
   type Locale,
   type Localized,
   THEME_SCHEMA_VERSION,
@@ -480,8 +481,12 @@ export function localizeTheme(theme: ChatTheme, locale: Locale): ChatTheme {
  * in the given language, so its texts stay as the user saw them.
  */
 export function duplicateTheme(theme: ChatTheme, name: string, locale: Locale = DEFAULT_LOCALE): ChatTheme {
+  const copy = structuredClone(localizeTheme(theme, locale));
+  // A built-in label is the default text, so the copy keeps it in every language.
+  const builtInLabel = (theme.builtIn || theme.id === PLAIN_PRESET.id) && copy.attention.label;
   return {
-    ...structuredClone(localizeTheme(theme, locale)),
+    ...copy,
+    ...(builtInLabel ? { attention: { ...copy.attention, labels: { ...ATTENTION_LABEL } } } : {}),
     id: `custom-${Date.now().toString(36)}`,
     name,
     builtIn: false,
@@ -608,10 +613,13 @@ function normalizeSchema(raw: unknown): ChatTheme {
   }
   const { origin: _origin, ...rest } = theme;
   const origin = sanitizeOrigin(data.origin);
+  const { labels: rawLabels, ...attention } = theme.attention;
+  const labels = sanitizeLabels(rawLabels);
   return mapThemeImages(
     {
       ...rest,
       ...(origin ? { origin } : {}),
+      attention: labels ? { ...attention, labels } : attention,
       roles,
       events,
       eventText,
@@ -620,6 +628,17 @@ function normalizeSchema(raw: unknown): ChatTheme {
     },
     sanitizeBoxImage,
   );
+}
+
+/** Per-language label texts: known languages with text only; none at all is left out. */
+function sanitizeLabels(raw: unknown): Partial<Record<Locale, string>> | undefined {
+  if (!isPlainObject(raw)) return undefined;
+  const labels: Partial<Record<Locale, string>> = {};
+  for (const locale of LOCALES) {
+    const text = (raw as Record<string, unknown>)[locale];
+    if (typeof text === 'string' && text.trim()) labels[locale] = text;
+  }
+  return Object.keys(labels).length > 0 ? labels : undefined;
 }
 
 /** Keeps a theme's sharing origin only when it is complete. */

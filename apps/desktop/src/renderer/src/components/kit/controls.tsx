@@ -8,7 +8,7 @@ import {
   ChoiceboxItemHeader,
   ChoiceboxItemTitle,
 } from '../kibo-ui/choicebox';
-import { motion, spring } from '../motion';
+import { SlidingHighlight } from '../motion';
 import {
   Select as SelectRoot,
   SelectContent,
@@ -74,9 +74,8 @@ export function Segmented<T extends string>({
               )}
             >
               {active ? (
-                <motion.span
+                <SlidingHighlight
                   layoutId={`segmented-${group}`}
-                  transition={spring}
                   className="absolute inset-0 rounded-lg bg-tile shadow-sm"
                 />
               ) : null}
@@ -188,6 +187,7 @@ export function Slider({
   max,
   step = 1,
   unit = '',
+  label,
   onChange,
 }: {
   value: number;
@@ -195,11 +195,14 @@ export function Slider({
   max: number;
   step?: number;
   unit?: string;
+  /** Accessible name of the slider; the visible label usually sits beside it. */
+  label?: string;
   onChange: (value: number) => void;
 }) {
   return (
     <div className="flex items-center gap-3">
       <SliderRoot
+        aria-label={label}
         value={[value]}
         min={min}
         max={max}

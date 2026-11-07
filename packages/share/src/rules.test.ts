@@ -1,6 +1,6 @@
 import { createTheme, DEFAULT_BOX_IMAGE, getPresetTheme, normalizeTheme } from '@chatto/chat-ui/themes';
 import { describe, expect, it } from 'vitest';
-import { SHARE_LIMITS, type PublishMeta } from './model';
+import { hasDailyPublishLimit, SHARE_LIMITS, type PublishMeta } from './model';
 import {
   autoTags,
   checkPublish,
@@ -10,6 +10,7 @@ import {
   formatShareCode,
   imageSlotCount,
   isModifiedInstall,
+  isUnchangedCopy,
   normalizeTag,
   parseShareCode,
   themeContentHash,
@@ -21,6 +22,13 @@ const meta = (patch: Partial<PublishMeta> = {}): PublishMeta => ({
   category: 'minimal',
   tags: [],
   ...patch,
+});
+
+describe('hasDailyPublishLimit', () => {
+  it('limits members and not moderators', () => {
+    expect(hasDailyPublishLimit('member')).toBe(true);
+    expect(hasDailyPublishLimit('moderator')).toBe(false);
+  });
 });
 
 describe('theme codes', () => {
@@ -89,6 +97,15 @@ describe('content hash', () => {
     expect(isModifiedInstall(installed)).toBe(false);
     expect(isModifiedInstall({ ...installed, name: 'Renamed' })).toBe(true);
     expect(isModifiedInstall(theme)).toBe(false);
+  });
+
+  it('flags unchanged copies of someone else’s theme, not the account’s own or changed ones', () => {
+    const theme = getPresetTheme('washi')!;
+    const installed = { ...theme, origin: { shareId: 's', version: 1, contentHash: themeContentHash(theme) } };
+    expect(isUnchangedCopy(installed, new Set())).toBe(true);
+    expect(isUnchangedCopy(installed, new Set(['s']))).toBe(false);
+    expect(isUnchangedCopy({ ...installed, name: 'Renamed' }, new Set())).toBe(false);
+    expect(isUnchangedCopy(theme, new Set())).toBe(false);
   });
 });
 

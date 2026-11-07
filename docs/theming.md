@@ -12,6 +12,8 @@
 
 最後輸出的 CSS 順序：產生的樣式 → `customCss`（以 `@scope` 限定在該聊天室，`.chatto-root` 會自動對應到 `:scope`）。
 
+產生的樣式把聊天室根選擇器包在 `:where()` 裡，根本身不增加權重，所以 `customCss` 寫和產生規則相同的選擇器就能覆蓋，例如 `.chatto-body { color: red }` 會蓋過產生的 `.chatto-body`，不必再加 `.chatto-root` 前綴。產生規則之間仍保留各自的權重：身分、事件等較具體的規則（例如 `.chatto-message[data-roles~="moderator"] .chatto-author`）要用同樣具體的選擇器才能覆蓋。
+
 ## 參數一覽
 
 單位：長度為 px，標示 em 的欄位以字級為基準。顏色可以是任何 CSS 顏色，`transparent` 代表不填色。
@@ -29,29 +31,29 @@
 
 ### 主題欄位
 
-| 欄位        | 說明                                                                                                                                                                                                                                                                                                  |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `base`      | `styled`（參數樣式）或 `blank`（不產生樣式）                                                                                                                                                                                                                                                          |
-| `font`      | `family`、`size`、`lineHeight`、`letterSpacing`（em）、`weight`                                                                                                                                                                                                                                       |
-| `text`      | `color`、`mutedColor`、`accentColor`、`strokeWidth`、`strokeColor`、`shadow`                                                                                                                                                                                                                          |
-| `list`      | 包住所有訊息的面板：`box`、`gap`、`direction`（bottom-up／top-down）、`align`（stretch／start／end）                                                                                                                                                                                                  |
-| `message`   | 單則訊息：`box`、`arrangement`、`gap`、`maxWidth`（0 為不限）、`align`（頭像垂直對齊）                                                                                                                                                                                                                |
-| `author`    | 名稱：`color`、`useUserColor`、`weight`、`size`（em）、`transform`、`prefix`、`suffix`、`separator`、`box`（時間＋徽章＋名稱的外框）                                                                                                                                                                  |
-| `body`      | 內容：`color`（空字串＝沿用文字色）、`size`、`weight`、`italic`、`box`（例如對話泡泡）                                                                                                                                                                                                                |
-| `avatar`    | `show`、`size`、`radius`（%）                                                                                                                                                                                                                                                                         |
-| `badges`    | `show`、`size`（em）、`gap`、`radius`                                                                                                                                                                                                                                                                 |
-| `timestamp` | `show`、`hour12`、`color`、`size`（em）                                                                                                                                                                                                                                                               |
-| `emote`     | `size`（em）                                                                                                                                                                                                                                                                                          |
-| `mention`   | 提及與連結：`color`、`background`、`weight`                                                                                                                                                                                                                                                           |
-| `reply`     | `show`、`color`                                                                                                                                                                                                                                                                                       |
-| `notice`    | **通用事件訊息**（所有平台事件共用）：`box`、`accentColor`、`accentWidth`（左側色條）、`titleColor`、`bodyColor`（空字串＝沿用）、`icon`（標題前文字）、`messageFrame`（聊天訊息事件的外框位置）、`titlePlacement`（聊天訊息事件的標題位置）、`sticker`（標題貼紙的 `background`、`color`、`rotate`） |
-| `events`    | 各平台事件的樣式，鍵為 `平台:事件`（例如 `twitch:cheer`），值為 `{ linked, style }`；見下方「平台事件」                                                                                                                                                                                               |
-| `eventText` | 自訂事件文字模板，鍵為 `平台:事件`；空的用內建文字。見下方「事件文字」                                                                                                                                                                                                                                |
-| `roles`     | 依身分覆蓋：鍵為 viewer（一般觀眾：沒有 broadcaster、moderator、vip、subscriber、founder 身分）／broadcaster／moderator／vip／subscriber／first-message，值為 `nameColor`、`nameBackground`、`surfaceBackground`、`borderColor`、`frame`（`BoxImage`，套在訊息看得見的底色上），皆可省略              |
-| `animation` | `enter`（none／fade／slide-up／slide-left／slide-right／pop／bounce／shake／zoom）、`duration`（ms）、`exit`（none／fade／slide-up／slide-left／slide-right／pop／zoom，事件 Overlay 的卡片離場時使用）                                                                                               |
-| `attention` | 沉寂後新留言（`data-highlight~="after-silence"`，只在桌面 Overlay）：`effect`（none／glow／pulse／shake）、`color`、`repeat`（次數）、`label`（右上角標籤，空字串＝不顯示）、`labelColor`                                                                                                             |
-| `options`   | 顯示規則：`messageLifetime`（秒，0 為永久）、`maxMessages`、`hiddenUsers`、`hiddenPrefixes`                                                                                                                                                                                                           |
-| `customCss` | 自訂 CSS                                                                                                                                                                                                                                                                                              |
+| 欄位        | 說明                                                                                                                                                                                                                                                                                                                          |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `base`      | `styled`（參數樣式）或 `blank`（不產生樣式）                                                                                                                                                                                                                                                                                  |
+| `font`      | `family`、`size`、`lineHeight`、`letterSpacing`（em）、`weight`                                                                                                                                                                                                                                                               |
+| `text`      | `color`、`mutedColor`、`accentColor`、`strokeWidth`、`strokeColor`、`shadow`                                                                                                                                                                                                                                                  |
+| `list`      | 包住所有訊息的面板：`box`、`gap`、`direction`（bottom-up／top-down）、`align`（stretch／start／end）                                                                                                                                                                                                                          |
+| `message`   | 單則訊息：`box`、`arrangement`、`gap`、`maxWidth`（0 為不限）、`align`（頭像垂直對齊）                                                                                                                                                                                                                                        |
+| `author`    | 名稱：`color`、`useUserColor`、`weight`、`size`（em）、`transform`、`prefix`、`suffix`、`separator`、`box`（時間＋徽章＋名稱的外框）                                                                                                                                                                                          |
+| `body`      | 內容：`color`（空字串＝沿用文字色）、`size`、`weight`、`italic`、`box`（例如對話泡泡）                                                                                                                                                                                                                                        |
+| `avatar`    | `show`、`size`、`radius`（%）                                                                                                                                                                                                                                                                                                 |
+| `badges`    | `show`、`size`（em）、`gap`、`radius`                                                                                                                                                                                                                                                                                         |
+| `timestamp` | `show`、`hour12`、`color`、`size`（em）                                                                                                                                                                                                                                                                                       |
+| `emote`     | `size`（em）                                                                                                                                                                                                                                                                                                                  |
+| `mention`   | 提及與連結：`color`、`background`、`weight`                                                                                                                                                                                                                                                                                   |
+| `reply`     | `show`、`color`                                                                                                                                                                                                                                                                                                               |
+| `notice`    | **通用事件訊息**（所有平台事件共用）：`box`、`accentColor`、`accentWidth`（左側色條）、`titleColor`、`bodyColor`（空字串＝沿用）、`icon`（標題前文字）、`messageFrame`（聊天訊息事件的外框位置）、`titlePlacement`（聊天訊息事件的標題位置）、`sticker`（標題貼紙的 `background`、`color`、`rotate`）                         |
+| `events`    | 各平台事件的樣式，鍵為 `平台:事件`（例如 `twitch:cheer`），值為 `{ linked, style }`；見下方「平台事件」                                                                                                                                                                                                                       |
+| `eventText` | 自訂事件文字模板，鍵為 `平台:事件`；空的用內建文字。見下方「事件文字」                                                                                                                                                                                                                                                        |
+| `roles`     | 依身分覆蓋：鍵為 viewer（一般觀眾：沒有 broadcaster、moderator、vip、subscriber、founder 身分）／broadcaster／moderator／vip／subscriber／first-message，值為 `nameColor`、`nameBackground`、`surfaceBackground`、`borderColor`、`frame`（`BoxImage`，套在訊息看得見的底色上），皆可省略                                      |
+| `animation` | `enter`（none／fade／slide-up／slide-left／slide-right／pop／bounce／shake／zoom）、`duration`（ms）、`exit`（none／fade／slide-up／slide-left／slide-right／pop／zoom，事件 Overlay 的卡片離場時使用）                                                                                                                       |
+| `attention` | 沉寂後新留言（`data-highlight~="after-silence"`，只在桌面 Overlay）：`effect`（none／glow／pulse／shake）、`color`、`repeat`（次數）、`label`（右上角標籤，空字串＝不顯示）、`labels`（選填，各語言的標籤文字，例如 `{ "zh-TW": "新留言", "en": "New" }`；依聊天室語言以 `:lang()` 切換，沒有的語言用 `label`）、`labelColor` |
+| `options`   | 顯示規則：`messageLifetime`（秒，0 為永久）、`maxMessages`、`hiddenUsers`、`hiddenPrefixes`                                                                                                                                                                                                                                   |
+| `customCss` | 自訂 CSS                                                                                                                                                                                                                                                                                                                      |
 
 ### 排列方式 `message.arrangement`
 
@@ -98,7 +100,7 @@
   - `[ … ]` 裡的變數都有值才顯示，例如 `[，連續 {streak} 個月]`。
   - 方括號外的變數沒有值時，整個模板視為失敗。
 - 可用變數：`user`（發出事件的人；匿名時為「匿名觀眾」）、`tier`（`Tier 1`、`Prime`）、`months`、`streak`、`duration`、`recipient`、`gifter`、`count`、`totalGifts`、`viewers`、`raider`、`bitsTier`、`charity`、`donation`（含貨幣）、`watchStreak`（連續觀看場數）、`channelPoints`（觀看連勝獲得的忠誠點數）；事件訊息另有 `amount`（小奇點數量）。各事件能用哪些見 `EVENT_CATALOG` 的 `variables`，資料來源見 `docs/message-format.md`「事件欄位」。
-- 內建主題的名稱與預設文字（`attention.label`「新留言」）跟著語言（`localizeTheme()`）；自訂主題裡的文字照寫的顯示。複製內建主題時，複製當下語言的文字。
+- 內建主題的名稱與預設文字（`attention.label`「新留言」）跟著語言（`localizeTheme()`）；自訂主題裡的文字照寫的顯示，標籤可以用 `attention.labels` 為每種語言各寫一份。複製內建主題時，名稱與 `label` 取當下語言，`labels` 則帶上兩種語言的預設標籤。
 
 ## 沉寂後新留言與事件 Overlay
 
@@ -128,7 +130,7 @@
 ## HTML 結構（公開 API）
 
 ```
-.chatto-root[data-base][data-arrangement][data-direction][data-theme-id]
+.chatto-root[lang][data-base][data-arrangement][data-direction][data-theme-id]
   <style>（產生的 CSS ＋ customCss）
   .chatto-list
     .chatto-message[data-platform][data-roles][data-user][data-action][data-highlight][data-event]
@@ -151,6 +153,8 @@
 
 改名或移除以上任一項都屬於破壞性變更，需要遞增 `THEME_SCHEMA_VERSION`。頭像、時間、徽章只有在對應的 `show` 開啟時才會輸出（Blank 也一樣）。
 
+`lang` 是聊天室語言（`zh-TW` 或 `en`，和事件文字同一個設定），2026-11-06 加入。自訂 CSS 自己寫的文字（`content`）可以用 `:lang()` 依語言切換；舊版 Chatto 沒有這個屬性，所以把英文寫成預設、中文寫在 `:lang(zh)` 裡，舊版就會顯示英文。
+
 ## 自訂 CSS 範例
 
 ```css
@@ -167,6 +171,14 @@
 /* 只改大量贈訂的外框 */
 .chatto-notice[data-event='twitch:community-gift'] {
   border: 2px dashed gold;
+}
+
+/* 自己加的文字跟著聊天室語言：英文寫成預設，中文用 :lang(zh) 覆蓋 */
+.chatto-notice .chatto-body::after {
+  content: ' Thank you!';
+}
+.chatto-notice .chatto-body:lang(zh)::after {
+  content: ' 感謝！';
 }
 
 /* 整個聊天室加上漸層遮罩，讓舊訊息淡出 */
@@ -201,11 +213,12 @@
 
 ### 主題包 `.chattotheme`
 
-用到 `asset:` 圖片的主題匯出成主題包：一個 zip，內含 `theme.json` 與 `assets/<sha256>.<副檔名>`。沒有用到的主題維持匯出 JSON。匯入兩種都接受：
+主題一律匯出成主題包（#32）：一個 zip，內含 `theme.json` 與用到的 `assets/<sha256>.<副檔名>`（沒有圖片時只有 `theme.json`）。預設檔名是主題名稱（去掉 Windows 不允許的字元，`packageFileName()`）。想看或手改 JSON 時解壓縮即可。匯入接受主題包，也接受舊版匯出的 `.json`：
 
 - 主題包的圖片依內容重新計算雜湊後存入，名稱對不上或不是支援的圖片時，用到它的外框會被移除。
 - 單一 JSON 檔帶不了圖片，匯入時 `asset:` 外框會被移除，`data:` 外框保留。
-- 匯入的主題一律存成新的自訂主題（新的 id）。
+- 在主題頁匯入的主題一律存成新的自訂主題（新的 id，名稱加「（匯入）」）。
+- 探索頁：主題詳情的「下載檔案」把分享的主題（連同圖片）存成主題包，不安裝、不帶 `origin`，和安裝一樣算一次下載（`ShareClient.download`）。投稿對話框的「從檔案選擇」把選的檔案存成本機主題（保留原名稱）並選它，之後照一般流程投稿；發佈後這個本機主題就連到分享主題。服務端不變，仍是主題 JSON 與圖片分開上傳。
 
 ## 來自分享平台的主題 `origin`
 
@@ -213,6 +226,7 @@
 
 ## 版本與遷移
 
+- **v2 新增欄位**（2026-11-06，非破壞性）：`attention.labels`（選填，各語言的標籤文字）。沒有內容時整個欄位不存在，所以舊主題的內容雜湊不變；`normalizeTheme()` 只保留已知語言的非空字串。舊版 App 會忽略這個欄位，只顯示 `label`。
 - **v2 新增欄位**（2026-11-02，非破壞性）：`eventText`（自訂事件文字，預設 `{}`，`normalizeTheme()` 只保留非空字串）。
 - **v2 新增欄位**（2026-11-02，非破壞性）：`BoxStyle.image`（九宮格圖片外框，預設 `null`）、`roles.<身分>.frame`；新增主題包 `.chattotheme`。`normalizeTheme()` 會補齊預設並移除無效的圖片來源。
 - **v2 新增欄位**（2026-11-01，非破壞性）：`animation.exit`、`attention`；`animation.enter` 新增 bounce、shake、zoom。`normalizeTheme()` 會補齊預設。

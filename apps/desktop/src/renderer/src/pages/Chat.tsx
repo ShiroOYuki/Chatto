@@ -2,10 +2,10 @@ import type { UserRole } from '@chatto/core';
 import { ArrowDown, Eraser, Pause, Play, Search, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
-import { ChatLine, NoticeLine } from '../components/ChatLine';
+import { ChatLine, NoticeLine, userColor } from '../components/ChatLine';
 import { redemptionColumn, RedemptionsTile } from './RedemptionsTile';
 import { RollingNumber, Stagger } from '../components/motion';
-import { Button, EmptyState, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/kit';
+import { Button, EmptyState, Hint, PageHeader, Segmented, Sparkline, Tile, Toggle } from '../components/kit';
 import { useMessages } from '../i18n';
 import { useChatLog, useRedemptions } from '../store';
 
@@ -80,28 +80,40 @@ export function ChatPage({ state }: { state: AppState }) {
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none"
               />
             </div>
-            <Segmented
-              size="sm"
-              value={role}
-              onChange={setRole}
-              options={[
-                { value: 'all', label: m.roles.all },
-                { value: 'moderator', label: m.roles.moderator },
-                { value: 'subscriber', label: m.roles.subscriber },
-                { value: 'vip', label: m.roles.vip },
-              ]}
-            />
-            <label className="flex items-center gap-2 text-xs whitespace-nowrap text-ink-soft">
+            {/* Narrow windows: the filters move to a second line, pause and clear stay beside the search as icons. */}
+            <div className="max-[1180px]:order-last">
+              <Segmented
+                size="sm"
+                value={role}
+                onChange={setRole}
+                options={[
+                  { value: 'all', label: m.roles.all },
+                  { value: 'moderator', label: m.roles.moderator },
+                  { value: 'subscriber', label: m.roles.subscriber },
+                  { value: 'vip', label: m.roles.vip },
+                ]}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-xs whitespace-nowrap text-ink-soft max-[1180px]:order-last">
               <Toggle checked={showDeleted} onChange={setShowDeleted} label={m.showDeleted} />
               {m.deleted}
             </label>
-            <Button size="sm" variant={paused ? 'primary' : 'secondary'} onClick={() => setPaused(!paused)}>
-              {paused ? <Play /> : <Pause />}
-              {paused ? m.resume : m.pause}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={clear} title={m.clearHint} aria-label={m.clear}>
-              <Eraser />
-            </Button>
+            <Hint label={paused ? m.resume : m.pause}>
+              <Button
+                size="sm"
+                variant={paused ? 'primary' : 'secondary'}
+                aria-label={paused ? m.resume : m.pause}
+                onClick={() => setPaused(!paused)}
+              >
+                {paused ? <Play /> : <Pause />}
+                <span className="max-[1180px]:sr-only">{paused ? m.resume : m.pause}</span>
+              </Button>
+            </Hint>
+            <Hint label={m.clearHint}>
+              <Button size="sm" variant="ghost" onClick={clear} aria-label={m.clear}>
+                <Eraser />
+              </Button>
+            </Hint>
           </div>
 
           <div className="relative min-h-0 flex-1">
@@ -158,7 +170,10 @@ export function ChatPage({ state }: { state: AppState }) {
                 {topChatters.map((chatter, index) => (
                   <li key={chatter.name} className="flex items-center gap-3 text-sm">
                     <span className="w-4 text-right font-mono text-xs text-ink-faint">{index + 1}</span>
-                    <span className="min-w-0 flex-1 truncate font-medium" style={{ color: chatter.color }}>
+                    <span
+                      className={`min-w-0 flex-1 truncate font-medium ${chatter.color ? 'user-color' : ''}`}
+                      style={userColor(chatter.color)}
+                    >
                       {chatter.name}
                     </span>
                     <span className="font-mono text-xs text-ink-soft">{chatter.count}</span>

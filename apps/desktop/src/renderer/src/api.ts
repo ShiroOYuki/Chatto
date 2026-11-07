@@ -1,6 +1,7 @@
 import { createMockMessage, createMockNotice, PRESET_THEMES } from '@chatto/chat-ui';
 import { defaultAlertSettings, type ChatEvent, type ChatTheme, type SoundSetting } from '@chatto/core';
 import type { AppState, ChattoApi, CssFileChange, ObsPluginStatus } from '../../shared/ipc';
+import { DEFAULT_OVERLAY_LOOK, normalizeOverlayLook } from '../../shared/overlayLook';
 import { ShareClient } from '../../shared/share/client';
 import { createMemoryAssets } from '../../shared/share/memoryAssets';
 import { createFakeShareBackend } from '@chatto/share/fake';
@@ -12,6 +13,9 @@ declare global {
     __chattoMock?: {
       emitChat(event: ChatEvent): void;
       setState(patch: Partial<AppState>): void;
+      getState(): AppState;
+      /** Themes "saved" as `.chattotheme` packages, in order. */
+      exportedPackages(): ChatTheme[];
       playAlertSound(sound: SoundSetting): void;
       /** Simulates saving a theme's CSS file outside Chatto (does not save the theme). */
       changeCssFile(change: CssFileChange): void;
@@ -45,8 +49,8 @@ function createMockApi(): ChattoApi {
     clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true },
     channel: { login: 'shiraine_ciel', state: 'connected' },
-    overlay: { enabled: true, editing: false },
-    alertsOverlay: { enabled: false, editing: false },
+    overlay: { enabled: true, editing: false, look: DEFAULT_OVERLAY_LOOK },
+    alertsOverlay: { enabled: false, editing: false, look: DEFAULT_OVERLAY_LOOK },
     alerts: defaultAlertSettings(),
     server: { port: 4820, embedUrl: 'http://127.0.0.1:4820/embed', overlayUrl: 'http://127.0.0.1:4820/overlay' },
     themes: PRESET_THEMES,
@@ -57,6 +61,7 @@ function createMockApi(): ChattoApi {
   const chatListeners = new Set<(event: ChatEvent) => void>();
   const soundListeners = new Set<(sound: SoundSetting) => void>();
   const cssFileListeners = new Set<(change: CssFileChange) => void>();
+  const exportedPackages: ChatTheme[] = [];
   const set = (patch: Partial<AppState>) => {
     state = { ...state, ...patch };
     stateListeners.forEach((listener) => listener(state));
@@ -98,6 +103,8 @@ function createMockApi(): ChattoApi {
     window.__chattoMock = {
       emitChat,
       setState: set,
+      getState: () => state,
+      exportedPackages: () => exportedPackages,
       playAlertSound: (sound) => soundListeners.forEach((listener) => listener(sound)),
       changeCssFile: (change) => cssFileListeners.forEach((listener) => listener(change)),
     };
@@ -161,6 +168,10 @@ function createMockApi(): ChattoApi {
     setAlertsOverlayEnabled: async (enabled) => set({ alertsOverlay: { ...state.alertsOverlay, enabled } }),
     setAlertsOverlayEditing: async (editing) => set({ alertsOverlay: { ...state.alertsOverlay, editing } }),
     resetAlertsOverlayBounds: async () => undefined,
+    setOverlayLook: async (window, look) => {
+      const key = window === 'overlay' ? 'overlay' : 'alertsOverlay';
+      set({ [key]: { ...state[key], look: normalizeOverlayLook(look) } });
+    },
     // The browser preview cannot copy files; pretend the user cancelled.
     importSound: async () => null,
     selectTheme: async (target, themeId) => set({ selectedThemes: { ...state.selectedThemes, [target]: themeId } }),
@@ -168,7 +179,12 @@ function createMockApi(): ChattoApi {
     deleteTheme: async (themeId) => set({ themes: state.themes.filter((item) => item.id !== themeId) }),
     // The browser preview has no asset folder: frames keep the picked image as a data URL.
     importThemeAsset: () => pickImageAsDataUrl(),
-    exportThemePackage: async () => false,
+    // The browser preview cannot build packages; e2e tests read what would have been saved.
+    exportThemePackage: async (theme) => {
+      if (!params.has('e2e')) return false;
+      exportedPackages.push(theme);
+      return true;
+    },
     importThemePackage: async () => {
       throw new Error('Theme packages are not supported in the web preview. Import them in the desktop app.');
     },

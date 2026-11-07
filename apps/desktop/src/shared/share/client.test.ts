@@ -198,6 +198,16 @@ describe('ShareClient', () => {
     const installed = await viewer.client.install(published.value.id);
     expect(installed.ok && themeImageSources(installed.value)[0]).toBe(`asset:${file}`);
     expect(viewer.assets.files.has(file!)).toBe(true);
+
+    // Downloading as a file fetches the images too, but saves no theme.
+    const downloader = setup({ backend });
+    const downloaded = await downloader.client.download(published.value.id);
+    if (!downloaded.ok) throw new Error(`download failed: ${downloaded.error}`);
+    expect(downloaded.value).toMatchObject({ name: 'Framed', builtIn: false });
+    expect(downloaded.value.origin).toBeUndefined();
+    expect(themeImageSources(downloaded.value)[0]).toBe(`asset:${file}`);
+    expect(downloader.assets.files.has(file!)).toBe(true);
+    expect(downloader.themes()).toEqual([...PRESET_THEMES]);
   });
 
   it('refuses themes made for a newer Chatto', async () => {

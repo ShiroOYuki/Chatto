@@ -148,6 +148,8 @@ export default defineMessages({
       label: '標籤文字',
       labelHint: '貼在訊息右上角，留空就不顯示',
       labelPlaceholder: '例如 新留言',
+      labelIn: (language: string) => `標籤文字：${language}`,
+      labelInHint: '聊天室是這個語言時改用這段文字，留空就用上面的標籤文字',
       labelColor: '標籤文字顏色',
     },
     roles: {
@@ -375,6 +377,8 @@ export default defineMessages({
       label: 'Label text',
       labelHint: 'Pinned to the top-right corner of the message; leave empty to hide',
       labelPlaceholder: 'e.g. New',
+      labelIn: (language: string) => `Label text: ${language}`,
+      labelInHint: 'Used instead when the chat is in this language; leave empty to use the label text above',
       labelColor: 'Label text color',
     },
     roles: {

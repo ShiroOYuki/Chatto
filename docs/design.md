@@ -16,28 +16,33 @@
 
 主色系是抹茶綠，亮色與暗色都要支援。顏色一律用 token（`styles.css`），不要在元件裡寫色碼。
 
-| Token（Tailwind） | 用途                                                | 亮色      | 暗色      |
-| ----------------- | --------------------------------------------------- | --------- | --------- |
-| `canvas`          | 頁面底色；輸入框、選擇卡片的底色                    | `#f3f6ef` | `#121512` |
-| `tile`            | Tile、對話框、選單的底色；選中項目的浮起高亮        | `#ffffff` | `#1b201a` |
-| `tile-muted`      | Tile 內的次要區塊、segmented 底、徽章底、hover 底色 | `#eaf1e2` | `#232a21` |
-| `sidebar`         | 左側導覽底色                                        | `#e9efe2` | `#161a15` |
-| `line`            | 框線、分隔線、未開啟的開關                          | `#e1e8d9` | `#2c3429` |
-| `ink`             | 主要文字                                            | `#1d2a14` | `#eaf3de` |
-| `ink-soft`        | 次要文字、Tile 標題、未選中的導覽                   | `#55634a` | `#b3c0a6` |
-| `ink-faint`       | 提示、caption、未選中的圖示                         | `#8d9884` | `#7b8773` |
-| `matcha`          | 強調：選中的圖示、開關開啟、滑桿、focus ring        | `#6b9b2e` | `#97c459` |
-| `matcha-strong`   | 主要按鈕、Hero tile 底色、成功訊息文字              | `#27500a` | `#c0dd97` |
-| `matcha-soft`     | 淡強調底：徽章、hover、選中卡片（常搭配透明度）     | `#c0dd97` | `#3b6d11` |
-| `on-matcha`       | `matcha-strong` 上的文字                            | `#f4f9ee` | `#10200a` |
-| `sakura`          | 點綴：吉祥物腮紅、「有新版本」這類提醒徽章          | `#f4c0d1` | `#993556` |
-| `danger`          | 錯誤、刪除                                          | `#c2412d` | `#f09595` |
+| Token（Tailwind）  | 用途                                                                                      | 亮色      | 暗色      |
+| ------------------ | ----------------------------------------------------------------------------------------- | --------- | --------- |
+| `canvas`           | 頁面底色；輸入框、選擇卡片的底色                                                          | `#f3f6ef` | `#121512` |
+| `tile`             | Tile、對話框、選單的底色；選中項目的浮起高亮                                              | `#ffffff` | `#1b201a` |
+| `tile-muted`       | Tile 內的次要區塊、segmented 底、徽章底、hover 底色                                       | `#eaf1e2` | `#232a21` |
+| `sidebar`          | 左側導覽底色                                                                              | `#e9efe2` | `#161a15` |
+| `line`             | 框線、分隔線、未開啟的開關                                                                | `#e1e8d9` | `#2c3429` |
+| `ink`              | 主要文字                                                                                  | `#1d2a14` | `#eaf3de` |
+| `ink-soft`         | 次要文字、Tile 標題、未選中的導覽                                                         | `#55634a` | `#b3c0a6` |
+| `ink-faint`        | 提示、caption、未選中的圖示                                                               | `#646f5b` | `#8f9b86` |
+| `matcha`           | 強調：選中的圖示、開關開啟、滑桿、focus ring                                              | `#6b9b2e` | `#97c459` |
+| `matcha-strong`    | 主要按鈕、Hero tile 底色、成功訊息文字                                                    | `#27500a` | `#c0dd97` |
+| `matcha-soft`      | 淡強調底：徽章、hover、選中卡片（常搭配透明度）                                           | `#c0dd97` | `#356310` |
+| `on-matcha`        | `matcha-strong` 上的文字                                                                  | `#f4f9ee` | `#10200a` |
+| `sakura`           | 點綴：吉祥物腮紅、「有新版本」這類提醒徽章                                                | `#f4c0d1` | `#993556` |
+| `danger`           | 錯誤、刪除                                                                                | `#c2412d` | `#f09595` |
+| `on-danger`        | `danger` 底上的文字（刪除確認按鈕）                                                       | `#ffffff` | `#2a0b0b` |
+| `matcha-bright`    | 疊在主題預覽上的實心徽章（`Badge solid tone="matcha"`，例：探索頁「已安裝」），亮暗色相同 | `#c0dd97` | `#c0dd97` |
+| `on-matcha-bright` | `matcha-bright` 上的文字                                                                  | `#27500a` | `#27500a` |
 
 - shadcn/ui 的語意 token（`primary`、`muted`、`destructive`、`border`、`ring` …）已對應到上表，CLI 加進來的元件會自動符合配色。
 - 外觀設定（`prefs.appearance`）是 `system`／`light`／`dark`，`App.tsx` 把結果寫進 `<html data-theme>`；`dark:` variant 跟著 `data-theme`。
+- 對比：`ink-faint` 在 `tile` 上約 5:1，是文字能用的最淡顏色；`matcha` 上不放文字，要放文字的強調底用 `matcha-strong`＋`on-matcha`。
+- 觀眾名稱用平台給的顏色時（控制台自己的聊天紀錄），加 `user-color` class 並用 `userColor()` 帶入顏色：亮色會往 `ink` 混深，暗色照原色。聊天預覽（`.chatto-root`）不套用，維持和 OBS 一樣。
 - 透明度用 Tailwind 的 `/` 寫法調 token（`bg-matcha-soft/50`、`bg-danger/10`），不要另外調色。
 - 新增 token 時，亮色、暗色（兩個區塊）都要補，必要時也對應到 shadcn 的語意 token。
-- 目前寫死顏色的地方只有：連線彩紙的三個綠色、Hero 裡茶杯底的 `#f4f9ee`（暗色時也維持淺底）、連線中的琥珀色 spinner。不要再增加。
+- 目前寫死顏色的地方只有：茶杯吉祥物的品牌色（`TeaCup.tsx`，暗色也不變）、連線彩紙的三個綠色、Hero 裡茶杯底的 `#f4f9ee`（暗色時也維持淺底）、連線中的琥珀色 spinner。不要再增加。
 
 ## 字型與字級
 
@@ -49,7 +54,7 @@
 | ------------- | ----------------------------------------- | -------------------- |
 | 頁面標題      | `text-2xl font-semibold tracking-tight`   | `PageHeader`         |
 | 頁面說明      | `text-sm text-ink-soft`                   | `PageHeader`         |
-| Tile 標題     | `text-sm font-medium text-ink-soft`＋圖示 | `Tile title`         |
+| Tile 標題     | `text-sm font-medium text-ink-soft`＋圖示 | `Tile title`（h2）   |
 | 區塊、列標題  | `text-sm font-medium`                     | 設定頁的列、外掛面板 |
 | 內文          | `text-sm`                                 |                      |
 | 提示、caption | `text-xs text-ink-faint`                  | 欄位說明、空狀態提示 |
@@ -101,7 +106,7 @@
 - 頁面用 CSS grid 排 `Tile`，外層包 `Stagger`，Tile 依序浮現。
 - **填滿視窗的頁面**（總覽、聊天室、主題）：grid 設 `h-full` 和 `min-h-[...]`，用 `grid-rows-[...]` 讓內容列取內容高度、主要列吃掉剩下的空間；低於最小高度時整頁捲動，不擠壓 Tile。這類頁面要加進 `App.tsx` 的 `fillsViewport`。
 - **一般頁面**：內容多就整頁捲動。
-- 長清單在 Tile 內捲動（`min-h-0 flex-1 overflow-y-auto`），還有內容被切掉的那一側用 mask 淡出（`mask-b-from-[calc(100%-2rem)]`、`mask-t-from-...`），讓人知道可以捲。
+- 長清單在 Tile 內捲動（`min-h-0 flex-1 overflow-y-auto`），還有內容被切掉的那一側用 mask 淡出（`mask-b-from-[calc(100%-2rem)]`、`mask-t-from-...`），讓人知道可以捲。下方是否還有內容用 `components/useMoreBelow.ts` 判斷。
 - 有左側選單的頁面（設定、主題編輯器）用 kit `SideNavItem`，內容在內層捲動。
 
 ### 窄視窗
@@ -109,7 +114,9 @@
 - 斷點是 `max-[1180px]:`，處理 960～1180 寬的視窗。
 - 窄的時候先收掉裝飾（例如 Hero 的茶杯），再收 padding、改直排，最後才換元件（主題編輯器的左側選單換成下拉選單 `EditorNavSelect`）。
 - 文字用 `truncate` 處理過長的頻道名稱、主題名稱，容器要有 `min-w-0`。
-- 一排按鈕放不下時，次要的按鈕可以只留圖示（文字包 `max-[1180px]:sr-only`，按鈕加 `Hint`），例如帳號頁的「刪除帳號」。
+- 一排按鈕放不下時，次要的按鈕可以只留圖示（文字包 `max-[1180px]:sr-only`，按鈕加 `Hint`），例如帳號頁的「刪除帳號」、聊天室的「暫停」。
+- 一列塞了很多控制項時（提醒頁的事件規則），窄視窗改成兩行：第一行名稱與主要設定，第二行其餘控制項，和名稱對齊。
+- 主題編輯器的欄位列有說明時，窄視窗改成標籤在上、控制項在下（開關除外）。
 
 ## 元件
 
@@ -192,39 +199,45 @@
 
 - 不能用的控制項維持在原位、變淡，tooltip 說明為什麼不能用；不要直接藏起來讓人找不到。
 - 要讓 tooltip 能顯示的停用按鈕用 `aria-disabled`（原生 `disabled` 不觸發 hover）。
+- 被另一個開關關掉、但仍可預先調整的控制項（關閉音效後的音效選單、音量）只變淡（`opacity-50`），不停用；開關旁加圖示說明它管的是什麼（喇叭）。
 
 ### 空狀態與載入
 
-- 空狀態用 `EmptyState`：茶杯（通常是 `sleepy`，有正面意味時用 `happy`）＋「還沒有…」＋一句說明東西什麼時候會出現。
+- 空狀態用 `EmptyState`：茶杯（通常是 `sleepy`，有正面意味時用 `happy`）＋「還沒有…」＋一句說明東西什麼時候會出現。放在矮的 Tile 裡時加 `compact`，視窗矮（640 高）時拿掉茶杯，讓文字放得下。
+- 沒連線、連線失敗這類狀態要說在哪裡處理（總覽 Hero 的「到帳號頁重新連線」），不只說出了問題。
 - 整個 App 還沒拿到狀態時，顯示開心的茶杯和「載入中」。
 
 ## 動畫
 
 用 Motion（`motion/react`），共用設定在 `components/motion.tsx`。不使用 Animate UI（授權與 GPL 不相容）。
 
-| 用途                       | 寫法                                              |
-| -------------------------- | ------------------------------------------------- |
-| 一般互動（高亮滑動、按下） | `spring`（stiffness 420、damping 32）             |
-| 進場、數值變化             | `softSpring`（stiffness 260、damping 28）         |
-| 頁面切換                   | `PageTransition`：0.18 秒淡入、上移 8px、輕微模糊 |
-| Tile 進場                  | `Stagger` ＋ `Tile`（`riseIn`），間隔 0.035 秒    |
-| 選中項目的高亮             | 共用 `layoutId` 的背景在項目之間滑動              |
-| 數字變化                   | `RollingNumber`                                   |
-| 圖示切換（複製 → 打勾）    | `SwapIcon`                                        |
-| 按下按鈕                   | `whileTap={{ scale: 0.97 }}`                      |
+| 用途                       | 寫法                                                |
+| -------------------------- | --------------------------------------------------- |
+| 一般互動（高亮滑動、按下） | `spring`（stiffness 420、damping 32）               |
+| 進場、數值變化             | `softSpring`（stiffness 260、damping 28）           |
+| 頁面切換                   | `PageTransition`：0.18 秒淡入、上移 8px、輕微模糊   |
+| Tile 進場                  | `Stagger` ＋ `Tile`（`riseIn`），間隔 0.035 秒      |
+| 選中項目的高亮             | `SlidingHighlight`（共用 `layoutId`）在項目之間滑動 |
+| 數字變化                   | `RollingNumber`                                     |
+| 圖示切換（複製 → 打勾）    | `SwapIcon`                                          |
+| 按下按鈕                   | `whileTap={{ scale: 0.97 }}`                        |
 
 - **hover 只改顏色**，不位移、不放大、不發光（唯一的例外見下方）。
 - 不做常駐的動畫，例外是吉祥物的茶煙（表示「活著」）。
 - 尊重 `prefers-reduced-motion`：頁面切換不做位移、彩紙不放、茶煙停止。新的動畫也要處理。
+- 效能：聊天訊息每秒可能有好幾則，會跟著重繪的地方要注意。
+  - 有 `layout`／`layoutId` 的元素每次重繪都會量整頁版面，一律用 memo 過的元件包起來（`SlidingHighlight`），不要直接寫在會隨聊天更新的元件裡。
+  - 聊天紀錄的每一行（`ChatLine`、`NoticeLine`）是 memo 元件，紀錄項目要保持同一個物件，只有新增或改變的那行才重繪。
+  - 常駐動畫只動 HTML 元素的 `transform`／`opacity`，讓合成器處理；不要動 SVG 內部的 path（會整張重畫）。茶煙每縷是獨立的 `<svg>`。
 - 已經拿掉、不要加回來的：border beam、spotlight 光暈、hover 上浮、空狀態漂浮、吉祥物搖晃、大面積彩紙。
 - 例外：左側主導覽的圖示在 hover 時小晃動（`Sidebar.tsx` 的 `NavItem`），是刻意保留的唯一 hover 動態，不要套到其他元件。
 
 ## 吉祥物與可愛元素
 
 - 茶杯（`TeaCup`）的表情反映連線狀態（`moodFor`）：`sleepy` 未連線、`happy` 已連線、`busy` 每分鐘 30 則以上、`worried` 錯誤。
-- 出現的位置：左側導覽底部（加一句心情文字）、總覽 Hero、空狀態、載入畫面、OBS 外掛的連線中畫面。不要放進表單、設定列、對話框。
+- 出現的位置：總覽 Hero、精簡模式 Hero、空狀態、載入畫面、OBS 外掛的連線中畫面。不要放進表單、設定列、對話框。
 - 第一次連線成功時，從標題列的狀態點冒出一小團茶葉彩紙（22 片），之後不再出現。
-- 親切的語氣只用在狀態與空狀態的文字（「還沒連上，先泡杯茶」）；按鈕、欄位標籤、錯誤說明保持直接。
+- 親切的語氣只用在空狀態的文字（「還沒有人說話」）；狀態文字直接說狀態，不用比喻（側欄的茶杯心情文字看不出意思，2026-11 已移除）；按鈕、欄位標籤、錯誤說明保持直接。
 
 ## 圖示
 

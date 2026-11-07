@@ -90,13 +90,13 @@ function ClientIdStep({ configured }: { configured: boolean }) {
 function AdvancedSettings({ clientId }: { clientId: AppState['clientId'] }) {
   const m = useMessages().connections;
   return (
-    <details className="group rounded-xl border border-line">
+    <details className="group rounded-xl bg-tile-muted">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
         <ChevronRight className="size-4 text-ink-faint transition-transform group-open:rotate-90" />
         {m.advanced}
         <span className="ml-auto text-xs font-normal text-ink-faint">{m.clientIdSource[clientId.source]}</span>
       </summary>
-      <div className="border-t border-line p-4">
+      <div className="px-4 pb-4">
         <ClientIdForm clientId={clientId} />
       </div>
     </details>

@@ -107,6 +107,14 @@ export const ATTRIBUTE_REFERENCE: SelectorReference[] = [
     L('提醒卡片離場', 'Alert card leaving'),
     L('事件 Overlay 的卡片時間到、正在離場', 'An alert card whose time is up, on its way out'),
   ),
+  entry(
+    '.chatto-root:lang(zh)',
+    L('聊天室語言', 'Chat language'),
+    L(
+      '根元素帶有聊天室語言（lang="zh-TW" 或 "en"），裡面任何元素都能用 :lang() 切換自訂文字',
+      'The root carries the chat language (lang="zh-TW" or "en"); anything inside can use :lang() to switch your own words',
+    ),
+  ),
   entry('[data-action]', L('/me 動作', '/me action'), L('用 /me 發送的訊息', 'A message sent with /me')),
   entry('[data-user="login"]', L('特定使用者', 'One user'), L('以登入名稱指定使用者', 'Pick a user by login name')),
   entry(

@@ -55,6 +55,16 @@ describe('ChatView', () => {
     expect(root.getAttribute('data-theme-id')).toBe('matcha-glass');
   });
 
+  it('marks the root with the chat language, so custom CSS can use :lang()', () => {
+    const { container, rerender } = render(<ChatView theme={theme()} items={[]} locale="en" />);
+    const root = container.querySelector('.chatto-root')!;
+    expect(root.getAttribute('lang')).toBe('en');
+    expect(root.matches(':lang(zh)')).toBe(false);
+    rerender(<ChatView theme={theme()} items={[]} locale="zh-TW" />);
+    expect(root.getAttribute('lang')).toBe('zh-TW');
+    expect(root.matches(':lang(zh)')).toBe(true);
+  });
+
   it('every preset renders the specimen without throwing', () => {
     for (const preset of PRESET_THEMES) {
       const { unmount, container } = render(<ChatView theme={preset} items={toItems(createSpecimenEvents())} />);

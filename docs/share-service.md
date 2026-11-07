@@ -39,7 +39,9 @@
 
 - **登入（本機回呼＋PKCE）**：App 在 `127.0.0.1` 的隨機 port 開一個臨時頁面（`main/share-loopback.ts`），產生 PKCE verifier，呼叫 `sign-in` 送出登入方式、port 與 challenge，拿到 `url`（帶隨機 `state`）後開系統瀏覽器。Worker 轉到平台登入頁；平台導回 `callback` 時，Worker 用 client secret 換 token、讀使用者 id 與名稱（**用完就撤銷 token、不保存**），再把瀏覽器導回 `http://127.0.0.1:<port>/chatto-sign-in?code=<一次性代碼>`（失敗時是 `?error=`）。App 收到代碼後以 `token` 端點連同 verifier 換 session。**帳號的建立與綁定都在這一步才做**：把登入連結轉傳給別人沒有用，代碼會落在對方電腦上，而 verifier 只在發起的 App 裡；代碼只能用一次。只讀 user id 與顯示名稱，不要 email（Google scope `openid profile`、Discord `identify`、Twitch 不要 scope）。
 - **Session token** 是 32 bytes 隨機值，D1 只存 SHA-256；180 天沒用就失效；登出、刪除帳號時刪除。
-- **投稿**：App 先把每張圖片 `PUT /v1/assets/<sha256>.<ext>`（Worker 驗證檔名就是內容的雜湊、格式是 PNG／WebP／GIF、2 MB 以內），主題 JSON 裡只放 `asset:` 參照；Worker 拒絕主題內的 data URL（`image-inline`）與還沒上傳的圖片（`image-missing`）。接著跑和 App 相同的 `checkPublish`，再扣每日 10 次的額度。主題 JSON 存 R2 `themes/<id>.json`（只留最新版），縮圖 `thumbnails/<id>-<version>.png`，圖片 `assets/<file>`。
+- **投稿**：App 先把每張圖片 `PUT /v1/assets/<sha256>.<ext>`（Worker 驗證檔名就是內容的雜湊、格式是 PNG／WebP／GIF、2 MB 以內），主題 JSON 裡只放 `asset:` 參照；Worker 拒絕主題內的 data URL（`image-inline`）與還沒上傳的圖片（`image-missing`）。接著跑和 App 相同的 `checkPublish`，再扣每日 10 次的額度（管理者不受每日次數限制，見 `hasDailyPublishLimit`；大小與內容檢查照常。投稿與更新本身沒有每分鐘限速）。主題 JSON 存 R2 `themes/<id>.json`（只留最新版），縮圖 `thumbnails/<id>-<version>.png`，圖片 `assets/<file>`。
+- **更新**：`PUT /v1/themes/:id` 接受作者選的任何本機主題。App 投稿或安裝後，本機主題的 `origin.shareId` 會連到分享主題，「我的主題」的更新對話框預設選它；選到沒連結的主題時，會先提醒將以它的內容取代。在別台電腦（或用腳本）發佈、這台電腦沒有連結副本的主題，「我的主題」會多一個「取得到本機」按鈕：把自己的主題安裝成連結的本機主題，修改後再更新。
+- **官方帳號**：`accounts.official = 1` 的帳號（Chatto 自己的帳號，#23），它的主題在 API 的作者欄位帶 `official: true`，App 的卡片、詳細頁與管理頁顯示「官方」徽章（顯示名稱任何人都能取，只有徽章能分辨）。和 `role` 無關，用 SQL 設定（見上線步驟）。
 - **隱藏規則**：管理者隱藏、作者被封鎖，或檢舉帳號數 ≥ 3 且 > 下載數 5%（管理者恢復時清掉當時的檢舉數）。被隱藏的主題只有作者與管理者看得到。
 - **備用網址**：App 只會跟著 `share.json` 換到 `chattolive.com` 與它的子網域（`isShareServiceUrl`），session token 不會被送到別處。
 - **隱私**：下載去重用的匿名 id 與限速用的 IP 都以 `HASH_SALT` 加鹽雜湊；`download_marks` 每天清掉（數字留在主題上），`rate_limits` 幾分鐘後清掉。
@@ -72,6 +74,7 @@ npm run dev -w @chatto/share-worker      # http://localhost:8787
 4. **第一次部署**：`npm run deploy -w @chatto/share-worker`（套用 migration 後部署，Custom Domain `api.chattolive.com` 會自動建立）。確認 `https://api.chattolive.com/v1/themes` 回 `{"ok":true,...}`。
 5. **GitHub 自動部署**：repository secrets `CLOUDFLARE_API_TOKEN`（權限：Workers Scripts Edit、D1 Edit、Workers R2 Storage Edit、Workers Routes／Custom Domains）、`CLOUDFLARE_ACCOUNT_ID`；repository variable `SHARE_DEPLOY=true`。之後推到 `main` 且 Worker 相關檔案有改時，`.github/workflows/share-worker.yml` 會測試並部署。
 6. **管理者帳號**：在 App 登入一次後，`npx wrangler d1 execute chatto-share --remote --command "UPDATE accounts SET role = 'moderator' WHERE id = '<帳號 id>'"`（帳號 id 可用 `SELECT a.id, a.display_name, i.provider, i.name FROM accounts a JOIN identities i ON i.account_id = a.id` 查）。
+   - 官方帳號另外設 `official`：`UPDATE accounts SET official = 1 WHERE id = '<帳號 id>'`。
 7. **App 改用真正的服務**：已完成，打包版預設連 `SHARE_API_URL`。
 
 ## 網站 chattolive.com

@@ -1,5 +1,5 @@
 import type { ChatTheme } from '@chatto/core';
-import { Check, CircleAlert, Send } from 'lucide-react';
+import { Check, CircleAlert, FileUp, Send } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SHARE_CATEGORIES,
@@ -11,6 +11,8 @@ import {
   autoTags,
   checkPublish,
   formatShareCode,
+  isModifiedInstall,
+  isUnchangedCopy,
   normalizeTag,
 } from '@chatto/share';
 import { StaticThemePreview } from '../../components/ThemePreview';
@@ -28,16 +30,23 @@ import {
 } from '../../components/kit';
 import { useMessages, useThemeName } from '../../i18n';
 import { captureThumbnail, shareCall, useShareAction } from '../../services/share';
+import { themes as themeService } from '../../services/themes';
+import { asImportedTheme, readPickedThemeFile } from '../themeIO';
 import { useAppState } from '../../store';
 import { failureText, issueText } from '../../components/share/shareText';
 
 const ALL_SUGGESTED = Object.values(SUGGESTED_TAGS).flat();
 
-/** The local theme to start from: the one already linked to the shared theme, the one asked for, or the first custom one. */
+/**
+ * The local theme to start from: the one already linked to the shared theme, the one asked for,
+ * or the first custom theme that is not an unchanged install (an unchanged copy of someone else's
+ * theme cannot be published, and one of the account's own is already shared).
+ */
 function defaultThemeId(custom: ChatTheme[], target?: ShareThemeSummary, themeId?: string): string {
   return (
     custom.find((theme) => target && theme.origin?.shareId === target.id)?.id ??
     custom.find((theme) => theme.id === themeId)?.id ??
+    custom.find((theme) => !theme.origin || isModifiedInstall(theme))?.id ??
     custom[0]?.id ??
     ''
   );
@@ -62,7 +71,9 @@ export function PublishDialog({
   themeId?: string;
   onPublished?: (summary: ShareThemeSummary) => void;
 }) {
-  const m = useMessages().share;
+  const messages = useMessages();
+  const m = messages.share;
+  const io = messages.themes.io;
   const themeName = useThemeName();
   const themes = useAppState()?.themes;
   const custom = useMemo(() => (themes ?? []).filter((theme) => !theme.builtIn), [themes]);
@@ -70,8 +81,22 @@ export function PublishDialog({
   const [meta, setMeta] = useState<PublishMeta>({ name: '', description: '', category: '', tags: [] });
   const [error, setError] = useState<string | null>(null);
   const [published, setPublished] = useState<ShareThemeSummary | null>(null);
+  /** The account's own shared themes; null until known, and then unchanged copies are not flagged. */
+  const [ownShareIds, setOwnShareIds] = useState<ReadonlySet<string> | null>(null);
   const preview = useRef<HTMLDivElement>(null);
   const { busy, run } = useShareAction();
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    setOwnShareIds(null);
+    void shareCall('mine').then((result) => {
+      if (active && result.ok) setOwnShareIds(new Set(result.value.map((item) => item.id)));
+    });
+    return () => {
+      active = false;
+    };
+  }, [open]);
 
   // A fresh form every time the dialog opens.
   useEffect(() => {
@@ -90,7 +115,8 @@ export function PublishDialog({
   }, [open]);
 
   const theme = custom.find((item) => item.id === selected);
-  const issues = theme ? checkPublish(theme, meta) : [];
+  const unchangedCopy = Boolean(theme && ownShareIds && isUnchangedCopy(theme, ownShareIds));
+  const issues = theme ? checkPublish(theme, meta, { unchangedCopy }) : [];
   const extraTags = theme ? autoTags(theme).filter((tag) => !meta.tags.includes(tag)) : [];
   const set = (patch: Partial<PublishMeta>) => setMeta((value) => ({ ...value, ...patch }));
 
@@ -103,6 +129,28 @@ export function PublishDialog({
     setPublished(result.value);
     onPublished?.(result.value);
   };
+
+  /**
+   * Publishing straight from a `.chattotheme` (or JSON) file: it is saved as a local theme under
+   * its own name and picked, so a later update finds the theme it was published from.
+   */
+  const fromFile = async () => {
+    setError(null);
+    try {
+      const file = await readPickedThemeFile(io);
+      const local = { ...asImportedTheme(file, io), name: file.name || io.untitledImport };
+      await themeService.save(local);
+      setSelected(local.id);
+      if (!target) set({ name: local.name });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    }
+  };
+  const fileButton = (
+    <Button onClick={() => void fromFile()} title={m.publish.fromFileHint} aria-disabled={busy}>
+      <FileUp /> {m.publish.fromFile}
+    </Button>
+  );
 
   return (
     <Modal
@@ -123,19 +171,34 @@ export function PublishDialog({
           </div>
         </div>
       ) : custom.length === 0 ? (
-        <p className="rounded-xl bg-tile-muted px-4 py-3 text-sm text-ink-soft">{m.publish.noCustomThemes}</p>
+        <div className="flex flex-col items-start gap-3">
+          <p className="rounded-xl bg-tile-muted px-4 py-3 text-sm text-ink-soft">{m.publish.noCustomThemes}</p>
+          {fileButton}
+          {error ? <ActionNote tone="error">{error}</ActionNote> : null}
+        </div>
       ) : (
         <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="flex min-w-0 flex-col gap-3">
             <Field label={m.publish.theme}>
-              <Select
-                value={selected}
-                onChange={setSelected}
-                aria-label={m.publish.theme}
-                placeholder={m.publish.themePlaceholder}
-                options={custom.map((item) => ({ value: item.id, label: themeName(item) }))}
-              />
+              <div className="flex gap-2">
+                <div className="min-w-0 flex-1">
+                  <Select
+                    value={selected}
+                    onChange={setSelected}
+                    aria-label={m.publish.theme}
+                    placeholder={m.publish.themePlaceholder}
+                    options={custom.map((item) => ({ value: item.id, label: themeName(item) }))}
+                  />
+                </div>
+                {fileButton}
+              </div>
             </Field>
+            {target && theme && theme.origin?.shareId !== target.id ? (
+              <p className="flex gap-1.5 rounded-xl bg-tile-muted px-3 py-2 text-xs text-ink-soft">
+                <CircleAlert className="mt-0.5 size-3.5 shrink-0" />
+                <span>{m.publish.replaces(themeName(theme), target.name)}</span>
+              </p>
+            ) : null}
             <Field label={m.publish.name}>
               <TextInput
                 value={meta.name}

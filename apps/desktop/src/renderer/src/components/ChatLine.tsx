@@ -1,7 +1,7 @@
 import { noticeText } from '@chatto/chat-ui';
 import type { ChatMessage, ChatNotice, MessageFragment, UserRole } from '@chatto/core';
 import { ChevronRight, Gift, Megaphone, PartyPopper, Swords } from 'lucide-react';
-import { useState } from 'react';
+import { memo, useState, type CSSProperties } from 'react';
 import { motion } from './motion';
 import { Badge } from './kit';
 import { useLocale, useMessages } from '../i18n';
@@ -15,8 +15,19 @@ const ROLE_TONE: Record<LabelledRole, 'matcha' | 'sakura' | 'neutral'> = {
 };
 const isLabelled = (role: UserRole): role is LabelledRole => role in ROLE_TONE;
 
+/**
+ * A viewer's name color, for the `user-color` class: platform colors are picked for dark chat,
+ * so `styles.css` darkens them toward the ink color in light mode to keep them readable.
+ */
+export function userColor(color: string | undefined): CSSProperties | undefined {
+  return color ? ({ '--user-color': color } as CSSProperties) : undefined;
+}
+
+// One shared formatter: creating an Intl formatter per line is slow when the log re-renders.
+const CLOCK = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
 export function formatClock(timestamp: number): string {
-  return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  return CLOCK.format(timestamp);
 }
 
 export function Fragments({ fragments }: { fragments: MessageFragment[] }) {
@@ -36,19 +47,19 @@ export function Fragments({ fragments }: { fragments: MessageFragment[] }) {
             );
           case 'mention':
             return (
-              <span key={index} className="font-medium text-matcha">
+              <span key={index} className="font-medium text-matcha-strong dark:text-matcha">
                 {fragment.text}
               </span>
             );
           case 'link':
             return (
-              <span key={index} className="text-matcha underline decoration-dotted">
+              <span key={index} className="text-matcha-strong underline decoration-dotted dark:text-matcha">
                 {fragment.text}
               </span>
             );
           case 'cheer':
             return (
-              <span key={index} className="font-semibold text-matcha">
+              <span key={index} className="font-semibold text-matcha-strong dark:text-matcha">
                 {fragment.text}
               </span>
             );
@@ -60,8 +71,11 @@ export function Fragments({ fragments }: { fragments: MessageFragment[] }) {
   );
 }
 
-/** One chat message in the control panel's log (not themed — themes are for viewers). */
-export function ChatLine({
+/**
+ * One chat message in the control panel's log (not themed — themes are for viewers).
+ * Memoized: log entries keep their identity, so only new or changed lines render when a message arrives.
+ */
+export const ChatLine = memo(function ChatLine({
   message,
   deleted,
   showTime = true,
@@ -90,7 +104,10 @@ export function ChatLine({
             <Badge tone={ROLE_TONE[role]}>{m.roles[role]}</Badge>
           </span>
         ) : null}
-        <span className="font-semibold" style={{ color: message.author.color }}>
+        <span
+          className={`font-semibold ${message.author.color ? 'user-color' : ''}`}
+          style={userColor(message.author.color)}
+        >
           {message.author.displayName}
         </span>
         <span className="text-ink-faint">{m.separator}</span>
@@ -105,7 +122,7 @@ export function ChatLine({
       </div>
     </motion.div>
   );
-}
+});
 
 const NOTICE_ICON = {
   raid: Swords,
@@ -114,10 +131,18 @@ const NOTICE_ICON = {
 } as const;
 
 /** Who a merged notice's members went to (gift recipients), falling back to their own text. */
+const NO_MEMBERS: ChatNotice[] = [];
+
 const memberLabel = (member: ChatNotice) =>
   typeof member.meta.recipient === 'string' ? member.meta.recipient : (member.author?.displayName ?? member.systemText);
 
-export function NoticeLine({ notice, members = [] }: { notice: ChatNotice; members?: ChatNotice[] }) {
+export const NoticeLine = memo(function NoticeLine({
+  notice,
+  members = NO_MEMBERS,
+}: {
+  notice: ChatNotice;
+  members?: ChatNotice[];
+}) {
   const Icon = NOTICE_ICON[notice.kind as keyof typeof NOTICE_ICON] ?? PartyPopper;
   const [open, setOpen] = useState(false);
   const m = useMessages().chatLog;
@@ -163,4 +188,4 @@ export function NoticeLine({ notice, members = [] }: { notice: ChatNotice; membe
       <time className="ml-auto shrink-0 font-mono text-[11px] text-ink-faint">{formatClock(notice.timestamp)}</time>
     </motion.div>
   );
-}
+});

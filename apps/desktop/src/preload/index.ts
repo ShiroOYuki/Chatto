@@ -29,6 +29,7 @@ const api: ChattoApi = {
   setAlertsOverlayEnabled: (enabled) => ipcRenderer.invoke(IPC.setAlertsOverlayEnabled, enabled),
   setAlertsOverlayEditing: (editing) => ipcRenderer.invoke(IPC.setAlertsOverlayEditing, editing),
   resetAlertsOverlayBounds: () => ipcRenderer.invoke(IPC.resetAlertsOverlayBounds),
+  setOverlayLook: (window, look) => ipcRenderer.invoke(IPC.setOverlayLook, window, look),
   importSound: () => ipcRenderer.invoke(IPC.importSound),
   selectTheme: (target, themeId) => ipcRenderer.invoke(IPC.selectTheme, target, themeId),
   saveTheme: (theme) => ipcRenderer.invoke(IPC.saveTheme, theme),

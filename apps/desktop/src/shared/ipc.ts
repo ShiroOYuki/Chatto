@@ -15,6 +15,17 @@ import type {
 } from '@chatto/core';
 import type { ShareClient } from './share/client';
 import type { ShareState } from '@chatto/share';
+import type { OverlayLook } from './overlayLook';
+
+/** The two desktop windows: the chat overlay and the event alert overlay. */
+export type OverlayWindowId = 'overlay' | 'alerts';
+
+export interface OverlayWindowState {
+  enabled: boolean;
+  editing: boolean;
+  /** Backdrop and chat opacity of the window; never applies to OBS. */
+  look: OverlayLook;
+}
 
 /** Theme sharing calls the control panel may make; they run on the main process's `ShareClient`. */
 export const SHARE_METHODS = [
@@ -30,6 +41,7 @@ export const SHARE_METHODS = [
   'get',
   'versions',
   'install',
+  'download',
   'setLiked',
   'report',
   'mine',
@@ -137,9 +149,9 @@ export interface AppState {
     error?: string;
   };
   channel: { login?: string; state: ConnectionState; detail?: string };
-  overlay: { enabled: boolean; editing: boolean };
+  overlay: OverlayWindowState;
   /** The event alert overlay window. */
-  alertsOverlay: { enabled: boolean; editing: boolean };
+  alertsOverlay: OverlayWindowState;
   alerts: AlertSettings;
   server: { port: number; embedUrl: string; overlayUrl: string };
   themes: ChatTheme[];
@@ -178,6 +190,8 @@ export interface ChattoApi {
   setAlertsOverlayEnabled(enabled: boolean): Promise<void>;
   setAlertsOverlayEditing(editing: boolean): Promise<void>;
   resetAlertsOverlayBounds(): Promise<void>;
+  /** Sets a desktop window's backdrop and chat opacity; applies live. */
+  setOverlayLook(window: OverlayWindowId, look: OverlayLook): Promise<void>;
   /** Lets the user pick an audio file and copies it into Chatto's sounds folder; null when cancelled. */
   importSound(): Promise<SoundRef | null>;
 
@@ -256,6 +270,7 @@ export const IPC = {
   setAlertsOverlayEnabled: 'alerts-overlay:set-enabled',
   setAlertsOverlayEditing: 'alerts-overlay:set-editing',
   resetAlertsOverlayBounds: 'alerts-overlay:reset-bounds',
+  setOverlayLook: 'overlay:set-look',
   importSound: 'alerts:import-sound',
   selectTheme: 'theme:select',
   saveTheme: 'theme:save',
