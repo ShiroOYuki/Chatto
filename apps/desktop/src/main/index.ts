@@ -4,7 +4,8 @@ import { execFile } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ChatTheme, Locale } from '@chatto/core';
-import { IPC, isShareMethod, type AppState, type CaptureRect } from '../shared/ipc';
+import { IPC, isShareMethod, type AppState, type CaptureRect, type OverlayWindowId } from '../shared/ipc';
+import type { OverlayLook } from '../shared/overlayLook';
 import { ShareClient } from '../shared/share/client';
 import { canOpenSignInPage, createShareBackend } from './share-backend';
 import { openSignInLoopback } from './share-loopback';
@@ -152,6 +153,9 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.setAlertsOverlayEnabled, (_e, enabled: boolean) => controller.setAlertsOverlayEnabled(enabled));
   ipcMain.handle(IPC.setAlertsOverlayEditing, (_e, editing: boolean) => controller.setAlertsOverlayEditing(editing));
   ipcMain.handle(IPC.resetAlertsOverlayBounds, () => controller.resetAlertsOverlayBounds());
+  ipcMain.handle(IPC.setOverlayLook, (_e, window: OverlayWindowId, look: OverlayLook) =>
+    controller.setOverlayLook(window, look),
+  );
   ipcMain.handle(IPC.importSound, async () => {
     const m = controller.messages().dialogs;
     const options = {

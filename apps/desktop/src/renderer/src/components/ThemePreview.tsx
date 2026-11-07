@@ -11,6 +11,7 @@ import type { ChatEvent, ChatTheme } from '@chatto/core';
 import { useEffect, useMemo } from 'react';
 import { useChatLocale, useOutputTheme } from '../i18n';
 import { useThemeAssetUrl } from '../services/themes';
+import { backdropColor, type OverlayLook } from '../../../shared/overlayLook';
 
 export type Backdrop = 'game' | 'dark' | 'light' | 'checker';
 
@@ -50,17 +51,38 @@ export function StaticThemePreview({ theme, backdrop = 'game' }: { theme: ChatTh
   );
 }
 
-/** Streaming preview used by the theme editor and outputs page. */
-export function LiveThemePreview({ theme, backdrop = 'game' }: { theme: ChatTheme; backdrop?: Backdrop }) {
+/**
+ * Streaming preview used by the theme editor and outputs page. `look` shows a desktop
+ * window's backdrop and chat opacity on top of the backdrop picture.
+ */
+export function LiveThemePreview({
+  theme,
+  backdrop = 'game',
+  look,
+}: {
+  theme: ChatTheme;
+  backdrop?: Backdrop;
+  look?: OverlayLook;
+}) {
   const feed = useChatFeed(theme.options);
   const { push } = feed;
   useEffect(() => startMockStream(push, 1500), [push]);
   const assetUrl = useThemeAssetUrl();
   const outputTheme = useOutputTheme();
   const locale = useChatLocale();
+  const tint = look ? backdropColor(look) : 'transparent';
   return (
-    <div className="h-full overflow-hidden p-3 transition-[background]" style={{ background: BACKDROPS[backdrop] }}>
-      <ChatView theme={outputTheme(theme)} items={feed.items} assetUrl={assetUrl} locale={locale} />
+    <div
+      data-testid="live-theme-preview"
+      className="h-full overflow-hidden transition-[background]"
+      style={{ background: BACKDROPS[backdrop] }}
+    >
+      {/* Like the window: the backdrop fills it, and only the chat fades. */}
+      <div className="h-full p-3" style={{ background: tint }}>
+        <div className="h-full" style={{ opacity: look?.chatOpacity ?? 1 }}>
+          <ChatView theme={outputTheme(theme)} items={feed.items} assetUrl={assetUrl} locale={locale} />
+        </div>
+      </div>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import type { PageId } from '../components/Sidebar';
 import { Stagger } from '../components/motion';
 import { LiveThemePreview } from '../components/ThemePreview';
 import { ObsPluginPanel } from './outputs/ObsPluginPanel';
+import { OverlayLookFields } from './outputs/OverlayLookFields';
 import { Badge, Button, CopyField, Field, Hint, PageHeader, Select, Tile, Toggle } from '../components/kit';
 
 function ThemeSelect({ state, target }: { state: AppState; target: ViewerTarget }) {
@@ -84,7 +85,7 @@ export function OutputsPage({ state, onNavigate }: { state: AppState; onNavigate
           >
             <p className="text-sm text-ink-soft">{m.overlayIntro}</p>
             <div className="my-4 h-64 overflow-hidden rounded-xl">
-              <LiveThemePreview theme={themeOf(state, 'overlay')} />
+              <LiveThemePreview theme={themeOf(state, 'overlay')} look={state.overlay.look} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <ThemeSelect state={state} target="overlay" />
@@ -101,6 +102,7 @@ export function OutputsPage({ state, onNavigate }: { state: AppState; onNavigate
                 {m.adjustingHint}
               </p>
             ) : null}
+            <OverlayLookFields window="overlay" look={state.overlay.look} />
             <p className="mt-3 flex gap-2 text-xs text-ink-faint">
               <Info className="size-4 shrink-0" />
               {m.borderlessHint}
@@ -134,6 +136,7 @@ export function OutputsPage({ state, onNavigate }: { state: AppState; onNavigate
                 {m.alertsAdjustingHint}
               </p>
             ) : null}
+            <OverlayLookFields window="alerts" look={alertsOverlay.look} />
             <Button size="sm" variant="ghost" className="mt-2 -ml-3 self-start" onClick={() => onNavigate('alerts')}>
               {m.alertRules} <ArrowRight />
             </Button>

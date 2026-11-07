@@ -187,6 +187,7 @@ export function Slider({
   max,
   step = 1,
   unit = '',
+  label,
   onChange,
 }: {
   value: number;
@@ -194,11 +195,14 @@ export function Slider({
   max: number;
   step?: number;
   unit?: string;
+  /** Accessible name of the slider; the visible label usually sits beside it. */
+  label?: string;
   onChange: (value: number) => void;
 }) {
   return (
     <div className="flex items-center gap-3">
       <SliderRoot
+        aria-label={label}
         value={[value]}
         min={min}
         max={max}
