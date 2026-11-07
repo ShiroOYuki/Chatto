@@ -58,11 +58,30 @@ export const CHANGELOG = {
               'Publishing starts from a theme you made, and warns before sending an unchanged copy of someone else’s theme',
               '投稿時預設選你自己做的主題，並在送出別人主題的未修改副本前提醒',
             ),
+            t('The control panel uses much less CPU while chat is busy', '聊天熱絡時，控制台佔用的 CPU 大幅降低'),
+            t(
+              'Faint text, viewer names, mentions and links are easier to read in light and dark mode',
+              '亮色與暗色模式下，淡色文字、觀眾名稱、提及與連結都更容易閱讀',
+            ),
+            t(
+              'In narrow or short windows, rows wrap instead of crowding, and the theme editor puts hints under their labels',
+              '視窗較窄或較矮時，各頁的列會換行而不擠在一起，主題編輯器的說明改放在標籤下方',
+            ),
+            t(
+              'The overview and title bar say when chat is connecting, reconnecting or failed, with a button to fix it',
+              '總覽與標題列會顯示聊天室正在連線、重新連線或連線失敗，並提供前往處理的按鈕',
+            ),
+            t(
+              'Installed and update badges on Explore cards stand out on any theme preview',
+              '探索頁卡片上的「已安裝」「有更新」徽章，在任何主題預覽上都看得清楚',
+            ),
+            t('The tea cup keeps its brand colors in dark mode', '茶杯在暗色模式也維持品牌配色'),
           ],
         },
         {
           kind: 'fixed',
           items: [
+            t('The delete confirmation button is readable in dark mode', '暗色模式下，刪除確認按鈕的文字看得清楚'),
             t('Uploaded frame images now show in the control panel’s previews', '控制台的預覽現在會顯示上傳的外框圖片'),
             t('Installing a shared theme updates its download count right away', '安裝分享主題後，下載次數會立即更新'),
           ],
