@@ -13,12 +13,6 @@ export default defineMessages({
       accounts: '帳號',
       settings: '設定',
     },
-    mood: {
-      sleepy: '還沒連上，先泡杯茶',
-      happy: '聊天室很溫暖',
-      busy: '大家好熱情，茶要續杯了',
-      worried: '連線好像出了點狀況',
-    },
     teaCup: 'Chatto 茶杯',
     titleBar: {
       compactMode: '精簡模式',
@@ -80,12 +74,6 @@ export default defineMessages({
       alerts: 'Alerts',
       accounts: 'Accounts',
       settings: 'Settings',
-    },
-    mood: {
-      sleepy: 'Not connected yet, so brew some tea',
-      happy: 'Chat feels cozy',
-      busy: 'Chat is lively. Time for a refill',
-      worried: 'The connection seems to be having trouble',
     },
     teaCup: 'Chatto tea cup',
     titleBar: {

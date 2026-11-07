@@ -18,7 +18,7 @@ import { useMessages } from '../../i18n';
 import { runAction } from '../../services/run';
 import { shareCall, useShareAction } from '../../services/share';
 import { TermsText } from '../../components/share/SignInDialog';
-import { errorText } from '../../components/share/shareText';
+import { errorText, publishesLeftText } from '../../components/share/shareText';
 
 function SignedInAccount({ account, onLink }: { account: ShareAccount; onLink: (provider: ShareProvider) => void }) {
   const messages = useMessages();
@@ -81,7 +81,7 @@ function SignedInAccount({ account, onLink }: { account: ShareAccount; onLink: (
             <Badge tone="matcha">{m.account.moderator}</Badge>
           </div>
         ) : null}
-        <p className="mt-3 text-xs text-ink-faint">{m.account.publishesLeft(account.publishesLeft)}</p>
+        <p className="mt-3 text-xs text-ink-faint">{publishesLeftText(m, account)}</p>
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
           <Button size="sm" variant="raised" onClick={() => runAction('share.signOut', shareCall('signOut'))}>
             <LogOut /> {m.account.signOut}

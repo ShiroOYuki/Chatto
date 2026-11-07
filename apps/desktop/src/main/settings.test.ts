@@ -17,7 +17,10 @@ describe('SettingsStore', () => {
   it('starts from defaults when no file exists', () => {
     const settings = new SettingsStore().get();
     expect(settings.serverPort).toBe(4820);
-    expect(settings.overlay).toEqual({ enabled: false });
+    expect(settings.overlay).toEqual({
+      enabled: false,
+      look: { color: '#000000', backgroundOpacity: 0, chatOpacity: 1 },
+    });
     expect(settings.customThemes).toEqual([]);
     expect(settings.prefs).toEqual({
       uiMode: 'full',
@@ -68,6 +71,24 @@ describe('SettingsStore', () => {
     expect(settings.prefs.closeToTray).toBe(true);
     expect(settings.selectedThemes.embed).toBe('washi');
     expect(settings.selectedThemes.overlay).toBeTruthy();
+  });
+
+  it('gives overlay windows saved by older versions the default look and keeps their place', () => {
+    const bounds = { x: 1, y: 2, width: 300, height: 400 };
+    writeFileSync(
+      join(userData.dir, 'settings.json'),
+      JSON.stringify({
+        overlay: { enabled: true, bounds },
+        alertsOverlay: { enabled: false, look: { color: '#ABCDEF', backgroundOpacity: 0.5, chatOpacity: 0 } },
+      }),
+    );
+    const settings = new SettingsStore().get();
+    expect(settings.overlay).toEqual({
+      enabled: true,
+      bounds,
+      look: { color: '#000000', backgroundOpacity: 0, chatOpacity: 1 },
+    });
+    expect(settings.alertsOverlay.look).toEqual({ color: '#abcdef', backgroundOpacity: 0.5, chatOpacity: 0.1 });
   });
 
   it('persists updates and leaves no temp file behind', () => {

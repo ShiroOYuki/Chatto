@@ -54,10 +54,24 @@ export function PageHeader({
   );
 }
 
-export function EmptyState({ mood = 'sleepy', title, hint }: { mood?: TeaCupMood; title: string; hint?: string }) {
+export function EmptyState({
+  mood = 'sleepy',
+  title,
+  hint,
+  compact = false,
+}: {
+  mood?: TeaCupMood;
+  title: string;
+  hint?: string;
+  /** In a short tile: on short windows the tea cup gives way so the text still fits. */
+  compact?: boolean;
+}) {
+  const short = compact ? '[@media(max-height:720px)]:py-2' : '';
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10 text-center">
-      <TeaCup mood={mood} size={64} />
+    <div className={`flex flex-1 flex-col items-center justify-center gap-2 py-10 text-center ${short}`}>
+      <div className={compact ? '[@media(max-height:720px)]:hidden' : ''}>
+        <TeaCup mood={mood} size={64} />
+      </div>
       <p className="text-sm font-medium text-ink-soft">{title}</p>
       {hint ? <p className="max-w-xs text-xs text-ink-faint">{hint}</p> : null}
     </div>

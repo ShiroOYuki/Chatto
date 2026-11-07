@@ -16,9 +16,95 @@ const t = (en, zh) => ({ en, 'zh-TW': zh });
 export const CHANGELOG = {
   app: [
     {
+      version: 'v0.3.0',
+      date: '2026-11-07',
+      download: true,
+      sections: [
+        {
+          kind: 'new',
+          items: [
+            t(
+              'Themes from Chatto’s official account show an Official badge on the Explore page',
+              '探索頁上，Chatto 官方帳號分享的主題會顯示「官方」徽章',
+            ),
+            t(
+              'Download a theme from the Explore page as a .chattotheme file, or publish straight from one',
+              '探索頁的主題可以下載成 .chattotheme 檔，投稿時也能直接選一個 .chattotheme 檔',
+            ),
+            t(
+              'The quiet-spell label can have its own text for each chat language',
+              '沉寂後新留言的標籤可以為每種聊天室語言各設一段文字',
+            ),
+            t(
+              'Give the desktop overlay and the alert overlay a background color and opacity, and fade the chat, on the Outputs page',
+              '輸出頁可以替桌面 Overlay 和事件 Overlay 加上背景顏色與不透明度，也能調淡聊天室',
+            ),
+            t(
+              'Apply a theme to the alert overlay straight from its card on the Themes page, or from compact mode',
+              '主題頁的卡片和精簡模式可以直接把主題套用到事件 Overlay',
+            ),
+          ],
+        },
+        {
+          kind: 'improved',
+          items: [
+            t(
+              'Custom CSS can switch the words it adds to the chat language with :lang()',
+              '自訂 CSS 加上的文字可以用 :lang() 跟著聊天室語言切換',
+            ),
+            t(
+              'Custom CSS overrides a theme’s styles with the same selector, without a .chatto-root prefix',
+              '自訂 CSS 用相同的選擇器就能覆蓋主題樣式，不必加 .chatto-root 前綴',
+            ),
+            t(
+              'Themes always export as a .chattotheme file, named after the theme; old .json files still import',
+              '主題一律匯出成 .chattotheme 檔，檔名就是主題名稱；舊的 .json 檔仍然可以匯入',
+            ),
+            t(
+              'My Themes can fetch a theme you published from another computer, so you can change and update it here',
+              '「我的主題」可以把在別台電腦發佈的主題取得到本機，在這裡修改並更新',
+            ),
+            t(
+              'Publishing starts from a theme you made, and warns before sending an unchanged copy of someone else’s theme',
+              '投稿時預設選你自己做的主題，並在送出別人主題的未修改副本前提醒',
+            ),
+            t('The control panel uses much less CPU while chat is busy', '聊天熱絡時，控制台佔用的 CPU 大幅降低'),
+            t(
+              'Faint text, viewer names, mentions and links are easier to read in light and dark mode',
+              '亮色與暗色模式下，淡色文字、觀眾名稱、提及與連結都更容易閱讀',
+            ),
+            t(
+              'In narrow or short windows, rows wrap instead of crowding, and the theme editor puts hints under their labels',
+              '視窗較窄或較矮時，各頁的列會換行而不擠在一起，主題編輯器的說明改放在標籤下方',
+            ),
+            t(
+              'The overview and title bar say when chat is connecting, reconnecting or failed, with a button to fix it',
+              '總覽與標題列會顯示聊天室正在連線、重新連線或連線失敗，並提供前往處理的按鈕',
+            ),
+            t(
+              'Installed and update badges on Explore cards stand out on any theme preview',
+              '探索頁卡片上的「已安裝」「有更新」徽章，在任何主題預覽上都看得清楚',
+            ),
+            t('The tea cup keeps its brand colors in dark mode', '茶杯在暗色模式也維持品牌配色'),
+          ],
+        },
+        {
+          kind: 'fixed',
+          items: [
+            t('The delete confirmation button is readable in dark mode', '暗色模式下，刪除確認按鈕的文字看得清楚'),
+            t('Uploaded frame images now show in the control panel’s previews', '控制台的預覽現在會顯示上傳的外框圖片'),
+            t('Installing a shared theme updates its download count right away', '安裝分享主題後，下載次數會立即更新'),
+            t(
+              'New messages in a chat preview no longer scroll the control panel page',
+              '聊天室預覽出現新訊息時，控制台頁面不會再跟著捲動',
+            ),
+          ],
+        },
+      ],
+    },
+    {
       version: 'v0.2.0',
       date: '2026-11-06',
-      download: true,
       sections: [
         {
           kind: 'new',

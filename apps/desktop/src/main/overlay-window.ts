@@ -1,4 +1,5 @@
 import { BrowserWindow, screen } from 'electron';
+import { DEFAULT_OVERLAY_LOOK, overlayLookScript, type OverlayLook } from '../shared/overlayLook';
 import type { Rect } from './settings';
 
 /**
@@ -9,6 +10,7 @@ import type { Rect } from './settings';
 export class OverlayWindow {
   #window: BrowserWindow | null = null;
   #editing = false;
+  #look: OverlayLook = DEFAULT_OVERLAY_LOOK;
 
   constructor(
     private readonly url: string,
@@ -72,8 +74,22 @@ export class OverlayWindow {
       this.#editing = false;
     });
 
+    // Applied on every load, so the look survives the page reloading.
+    window.webContents.on('did-finish-load', () => this.#applyLook());
     void window.loadURL(this.url);
     this.#window = window;
+  }
+
+  /** Sets the backdrop and chat opacity; an open window updates at once. */
+  setLook(look: OverlayLook): void {
+    this.#look = look;
+    this.#applyLook();
+  }
+
+  #applyLook(): void {
+    const window = this.#window;
+    if (!window || window.isDestroyed()) return;
+    void window.webContents.executeJavaScript(overlayLookScript(this.#look)).catch(() => undefined);
   }
 
   close(): void {

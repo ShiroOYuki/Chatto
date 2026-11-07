@@ -5,6 +5,7 @@ import {
   checkPublish,
   createShareCode,
   dataUrlBytes,
+  hasDailyPublishLimit,
   isAssetFile,
   isShareCategory,
   normalizeTag,
@@ -50,6 +51,7 @@ interface ThemeRow {
   auto_tags: string;
   author_id: string | null;
   author_name: string | null;
+  author_official: number;
   remix_of: string | null;
   remix_name: string | null;
   remix_author_name: string | null;
@@ -81,6 +83,7 @@ const HIDDEN = hiddenSql('t', 'a');
 const SELECT = `SELECT t.*, a.display_name AS author_name, r.name AS remix_name, ra.display_name AS remix_author_name,
   ${HIDDEN} AS hidden,
   IFNULL(a.banned, 0) AS author_banned,
+  IFNULL(a.official, 0) AS author_official,
   ${hiddenSql('r', 'ra')} AS remix_hidden,
   EXISTS (SELECT 1 FROM likes l WHERE l.theme_id = t.id AND l.account_id = ?1) AS liked
   FROM themes t
@@ -98,7 +101,10 @@ function summary(context: Context, row: ThemeRow): ShareThemeSummary {
     category: row.category,
     tags: JSON.parse(row.tags) as string[],
     autoTags: JSON.parse(row.auto_tags) as string[],
-    author: row.author_id && row.author_name !== null ? { id: row.author_id, name: row.author_name } : null,
+    author:
+      row.author_id && row.author_name !== null
+        ? { id: row.author_id, name: row.author_name, ...(row.author_official ? { official: true } : {}) }
+        : null,
     likes: row.likes,
     downloads: row.downloads,
     version: row.version,
@@ -435,8 +441,9 @@ async function preparePublish(context: Context, account: AccountRow, updatingId?
   };
 }
 
-/** Takes one of today's publishes; `rate-limited` when none are left. */
+/** Takes one of today's publishes; `rate-limited` when none are left. Moderators have no daily limit. */
 async function usePublish(context: Context, account: AccountRow): Promise<void> {
+  if (!hasDailyPublishLimit(account.role)) return;
   const today = dayOf(context.now);
   const used = await context.env.DB.prepare(
     `UPDATE accounts SET publish_count = CASE WHEN publish_day = ?1 THEN publish_count + 1 ELSE 1 END, publish_day = ?1

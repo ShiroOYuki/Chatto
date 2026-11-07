@@ -38,15 +38,20 @@ export function formatColor({ hex, alpha }: Rgba): string {
   return `rgba(${r}, ${g}, ${b}, ${Math.round(alpha * 100) / 100})`;
 }
 
-/** Swatch + opacity slider + free text, so any CSS colour stays editable. */
+/**
+ * Swatch + opacity slider + free text, so any CSS colour stays editable.
+ * With `alpha={false}` it only picks opaque `#RRGGBB` colours (opacity is set elsewhere).
+ */
 export function ColorField({
   label,
   value,
   onChange,
+  alpha = true,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  alpha?: boolean;
 }) {
   const m = useMessages().editorFields.color;
   const parsed = parseColor(value);
@@ -70,11 +75,11 @@ export function ColorField({
           <ColorPicker
             className="gap-3"
             value={parsed ? value : '#000000'}
-            onChange={([r, g, b, alpha]) =>
+            onChange={([r, g, b, a]) =>
               onChange(
                 formatColor({
                   hex: `#${[r, g, b].map((n) => Math.round(n).toString(16).padStart(2, '0')).join('')}`,
-                  alpha,
+                  alpha: alpha ? a : 1,
                 }),
               )
             }
@@ -84,7 +89,7 @@ export function ColorField({
               <ColorPickerEyeDropper />
               <div className="grid w-full gap-2">
                 <ColorPickerHue />
-                <ColorPickerAlpha />
+                {alpha ? <ColorPickerAlpha /> : null}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -95,26 +100,31 @@ export function ColorField({
         </PopoverContent>
       </Popover>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-xs font-medium text-ink-soft">{label}</span>
-          <input
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            onBlur={() => (parseColor(text) ? onChange(text.trim()) : setText(value))}
-            className="w-24 min-w-0 shrink bg-transparent text-right font-mono text-[11px] text-ink-faint outline-none focus:text-ink"
-          />
-        </div>
+        {/* The row beside it already names the field, so the value gets the whole line. */}
         <input
-          type="range"
-          min={0}
-          max={100}
-          value={Math.round((parsed?.alpha ?? 1) * 100)}
-          onChange={(event) =>
-            onChange(formatColor({ hex: parsed?.hex ?? '#000000', alpha: Number(event.target.value) / 100 }))
-          }
-          className="mt-1 h-1 w-full cursor-pointer accent-[var(--c-matcha)]"
-          aria-label={m.opacity(label)}
+          value={text}
+          aria-label={label}
+          onChange={(event) => setText(event.target.value)}
+          onBlur={() => {
+            const next = parseColor(text);
+            if (!next) setText(value);
+            else onChange(alpha ? text.trim() : next.hex.toUpperCase());
+          }}
+          className="w-full min-w-0 bg-transparent font-mono text-xs text-ink-soft outline-none focus:text-ink"
         />
+        {alpha ? (
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round((parsed?.alpha ?? 1) * 100)}
+            onChange={(event) =>
+              onChange(formatColor({ hex: parsed?.hex ?? '#000000', alpha: Number(event.target.value) / 100 }))
+            }
+            className="mt-1 h-1 w-full cursor-pointer accent-[var(--c-matcha)]"
+            aria-label={m.opacity(label)}
+          />
+        ) : null}
       </div>
     </div>
   );

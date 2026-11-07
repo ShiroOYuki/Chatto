@@ -1,10 +1,11 @@
 import { ChatView, startMockStream, useChatFeed } from '@chatto/chat-ui';
-import type { ChatTheme, ViewerTarget } from '@chatto/core';
+import { VIEWER_TARGETS, type ChatTheme, type ViewerTarget } from '@chatto/core';
 import { useEffect } from 'react';
 import type { AppState } from '../../../../shared/ipc';
 import { Button, Tile } from '../../components/kit';
 import { useChatLocale, useMessages, useOutputTheme, useThemeName } from '../../i18n';
 import { themes, useThemeAssetUrl } from '../../services/themes';
+import { useMoreBelow } from '../../components/useMoreBelow';
 import { describeTheme, themeSwatch } from '../themeLabels';
 
 export function ThemeTile({
@@ -20,26 +21,35 @@ export function ThemeTile({
 }) {
   const m = useMessages().compact;
   const selected = state.selectedThemes[target];
+  const list = useMoreBelow<HTMLDivElement>([state.themes]);
   return (
     <Tile
       title={m.chatTheme}
       className="col-span-2 row-span-2 min-h-0"
       action={
         <div className="flex rounded-xl bg-tile-muted p-1 text-xs">
-          {(['overlay', 'embed'] as const).map((item) => (
+          {VIEWER_TARGETS.map((item) => (
             <button
               key={item}
               type="button"
+              aria-pressed={target === item}
               onClick={() => onTargetChange(item)}
-              className={`rounded-lg px-3 py-1 transition-colors ${target === item ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft'}`}
+              className={`rounded-lg px-3 py-1 transition-colors max-[1180px]:px-2 ${target === item ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft'}`}
             >
-              {item === 'overlay' ? m.desktopOverlay : 'OBS'}
+              {m.themeTargets[item]}
             </button>
           ))}
         </div>
       }
     >
-      <div className="-m-1 grid min-h-0 flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-1 xl:grid-cols-3">
+      <div
+        ref={list.ref}
+        onScroll={list.onScroll}
+        data-testid="compact-theme-list"
+        className={`-m-1 grid min-h-0 flex-1 grid-cols-2 content-start gap-2 overflow-y-auto p-1 xl:grid-cols-3 ${
+          list.moreBelow ? 'mask-b-from-[calc(100%-2rem)]' : ''
+        }`}
+      >
         {state.themes.map((theme) => (
           <ThemeChip
             key={theme.id}
@@ -49,7 +59,7 @@ export function ThemeTile({
           />
         ))}
       </div>
-      <div className="flex gap-2 pt-4">
+      <div className="flex gap-2 pt-4 max-[1180px]:pt-3">
         <Button className="flex-1" onClick={onOpenThemes}>
           {m.manageThemes}
         </Button>
@@ -67,17 +77,18 @@ function ThemeChip({ theme, active, onSelect }: { theme: ChatTheme; active: bool
       type="button"
       onClick={onSelect}
       aria-pressed={active}
-      className={`flex items-center gap-2 rounded-xl border p-2 text-left text-sm transition-colors ${
+      className={`flex items-center gap-2 rounded-xl border p-2 text-left text-sm transition-colors max-[1180px]:py-1.5 ${
         active ? 'border-matcha bg-matcha-soft/40' : 'border-line hover:bg-tile-muted'
       }`}
     >
       <span
-        className="h-8 w-8 shrink-0 rounded-xl border border-line"
+        className="size-8 shrink-0 rounded-xl border border-line max-[1180px]:size-6 max-[1180px]:rounded-lg"
         style={{ background: themeSwatch(theme, assetUrl) }}
       />
       <span className="min-w-0">
         <span className="block truncate font-medium">{themeName(theme)}</span>
-        <span className="block text-xs text-ink-faint">{describeTheme(theme, labels)}</span>
+        {/* Narrow windows fit more themes on one screen by keeping each to a single line. */}
+        <span className="block text-xs text-ink-faint max-[1180px]:hidden">{describeTheme(theme, labels)}</span>
       </span>
     </button>
   );

@@ -21,6 +21,7 @@
   - 安裝位置是 OBS 的共用外掛資料夾 `C:\ProgramData\obs-studio\plugins\obs-chatto`。控制台「輸出」頁（main `obs-plugin.ts` 的 `ObsPlugin`）與安裝檔（`apps/desktop/build/installer.nsh`）都能安裝；已安裝的檔案和這版 Chatto 附帶的不同時，就是「有新版本」。OBS 執行時會鎖住 DLL，要先關閉 OBS。
 - **Overlay 視窗** 是透明、無框、置頂、滑鼠穿透的 `BrowserWindow`，載入 `/overlay`。編輯模式下暫時接受滑鼠，讓使用者拖曳與縮放，位置會存進設定。
 - **事件 Overlay 視窗** 和 Overlay 視窗同一個類別（`OverlayWindow`），預設放在右上角，載入 `/alerts`，一次顯示一張事件卡片。
+- **視窗外觀**（`shared/overlayLook.ts`）：兩個桌面視窗各有背景顏色、背景不透明度、聊天室不透明度（`settings.overlay.look`、`settings.alertsOverlay.look`，舊設定由 `normalizeOverlayLook` 補成透明背景、不透明度 100%）。這是視窗設定，不是主題參數，也不經過 WebSocket：`OverlayWindow` 在每次載入完成與設定改變時，用 `executeJavaScript` 在 `<html>` 設 `--chatto-backdrop`、`--chatto-chat-opacity`，`viewer.css` 套到 `body` 背景與 `#root` 的 `opacity`。OBS 的頁面沒有這兩個變數，維持透明；編輯模式的背景會蓋過自訂背景。
 - **輸出路由**：`AppController.route(target, event)` 決定每個輸出收到什麼，由 LocalServer 在推送與 backlog 時套用。
   - `embed`（OBS）：原樣收到所有事件；提醒頁關掉「顯示在 OBS」時略過忠誠點數兌換。
   - 所有輸出都略過 `meta.shownAsMessage` 的通知（同一次兌換已經以聊天訊息出現）。

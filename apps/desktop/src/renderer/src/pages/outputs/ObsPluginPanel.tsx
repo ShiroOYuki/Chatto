@@ -52,14 +52,20 @@ export function ObsPluginPanel() {
 
   return (
     // Title, status and actions share one row; below it one line explains, then at most one note.
-    <section className="rounded-xl border border-line p-4" aria-label={m.obsPlugin}>
+    <section className="rounded-xl bg-tile-muted p-4" aria-label={m.obsPlugin}>
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-medium">{m.obsPlugin}</h3>
         <Badge tone={BADGE_TONE[state]}>{m.obsPluginState[state]}</Badge>
         {state !== 'unavailable' ? (
           <div className="ml-auto flex shrink-0 gap-1">
             {installed ? (
-              <Button size="sm" variant="ghost" disabled={busy} onClick={() => void run(obsPlugin.uninstall, null)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="hover:bg-tile"
+                disabled={busy}
+                onClick={() => void run(obsPlugin.uninstall, null)}
+              >
                 {m.uninstallPlugin}
               </Button>
             ) : null}

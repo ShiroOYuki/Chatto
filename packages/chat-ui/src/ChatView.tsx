@@ -24,7 +24,10 @@ export interface ChatViewProps {
    * local server can leave it out; the control panel points it at the server.
    */
   assetUrl?: (file: string) => string;
-  /** Language of event texts (the chat language); defaults to Traditional Chinese. */
+  /**
+   * The chat language: event texts are written in it, and the root carries it as `lang`
+   * so custom CSS can switch its own words with `:lang()`. Defaults to English.
+   */
   locale?: Locale;
 }
 
@@ -45,6 +48,7 @@ export function ChatView({ theme, items, className, leaving, assetUrl, locale = 
   return (
     <div
       className={['chatto-root', className].filter(Boolean).join(' ')}
+      lang={locale}
       data-chatto-id={id}
       data-theme-id={theme.id}
       data-base={theme.base}

@@ -16,6 +16,20 @@ const ASSET_DIR = 'assets/';
 const MAX_ENTRIES = 64;
 const MAX_THEME_BYTES = 1024 * 1024;
 
+/**
+ * The suggested file name for a theme's package: its name with the characters Windows
+ * does not allow in file names removed, or its id when nothing is left.
+ */
+export function packageFileName(theme: Pick<ChatTheme, 'id' | 'name'>): string {
+  const name = theme.name
+    // eslint-disable-next-line no-control-regex
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '')
+    .trim()
+    .slice(0, 80)
+    .replace(/[. ]+$/, '');
+  return `${name || `chatto-theme-${theme.id}`}.${THEME_PACKAGE_EXTENSION}`;
+}
+
 /** Stored asset files a theme points at. */
 export function themeAssetFiles(theme: ChatTheme): string[] {
   return themeImageSources(theme).flatMap((src) => {

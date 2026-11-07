@@ -1,22 +1,19 @@
 import { createTheme, DEFAULT_BOX_IMAGE } from '@chatto/chat-ui';
 import { describe, expect, it, vi } from 'vitest';
 import themeMessages from '../i18n/messages/themes';
-import { needsPackage, parseThemeFile } from './themeIO';
+import { exportTheme, parseThemeFile } from './themeIO';
 
-vi.mock('../api', () => ({ api: {}, isMockApi: false }));
+const exportThemePackage = vi.hoisted(() => vi.fn(async () => true));
+vi.mock('../api', () => ({ api: { exportThemePackage }, isMockApi: false }));
 
 const ASSET = `asset:${'a'.repeat(64)}.png`;
 const DATA = 'data:image/png;base64,AAAA';
 
 describe('theme files', () => {
-  it('only themes with stored images need a package', () => {
-    expect(needsPackage(createTheme('t', 't'))).toBe(false);
-    expect(needsPackage(createTheme('t', 't', { body: { box: { image: { ...DEFAULT_BOX_IMAGE, src: DATA } } } }))).toBe(
-      false,
-    );
-    expect(
-      needsPackage(createTheme('t', 't', { roles: { vip: { frame: { ...DEFAULT_BOX_IMAGE, src: ASSET } } } })),
-    ).toBe(true);
+  it('exports every theme as a package, with or without images', async () => {
+    const plain = createTheme('t', 't');
+    await exportTheme(plain);
+    expect(exportThemePackage).toHaveBeenCalledWith(plain);
   });
 
   it('imports JSON with a fresh id, keeping data URL frames and dropping ones whose image it cannot carry', () => {

@@ -1,4 +1,5 @@
 import {
+  hasDailyPublishLimit,
   SHARE_LIMITS,
   SHARE_PROVIDERS,
   type ShareAccount,
@@ -14,6 +15,7 @@ export interface AccountRow {
   display_name: string;
   role: 'member' | 'moderator';
   banned: number;
+  official: number;
   publish_day: number;
   publish_count: number;
 }
@@ -82,7 +84,8 @@ export async function publicAccount(context: Context, account: AccountRow): Prom
   )
     .bind(account.id)
     .all<ShareIdentity>();
-  const used = account.publish_day === dayOf(context.now) ? account.publish_count : 0;
+  const counted = hasDailyPublishLimit(account.role) && account.publish_day === dayOf(context.now);
+  const used = counted ? account.publish_count : 0;
   return {
     id: account.id,
     displayName: account.display_name,

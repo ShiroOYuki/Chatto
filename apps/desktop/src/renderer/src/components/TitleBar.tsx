@@ -105,7 +105,7 @@ function UpdateBadge({ update }: { update: AppState['update'] }) {
       <button
         type="button"
         onClick={() => (ready ? updater.install() : updater.download())}
-        className={`${pill} transition-colors hover:bg-matcha hover:text-white`}
+        className={`${pill} transition-colors hover:bg-matcha-strong hover:text-on-matcha`}
       >
         {ready ? <RotateCw /> : <Download />}
         {ready ? m.updateReady : m.updateAvailable(update.version ?? '')}
@@ -162,7 +162,7 @@ function ObsPluginBadge({ dismissed }: { dismissed: boolean }) {
           type="button"
           disabled={busy}
           onClick={() => void install()}
-          className={`${PILL} bg-matcha-soft text-matcha-strong transition-colors hover:bg-matcha hover:text-white disabled:opacity-60`}
+          className={`${PILL} bg-matcha-soft text-matcha-strong transition-colors hover:bg-matcha-strong hover:text-on-matcha disabled:opacity-60`}
         >
           <Puzzle /> {outdated ? m.updateObsPlugin : m.installObsPlugin}
         </button>
@@ -188,7 +188,9 @@ function ObsPluginBadge({ dismissed }: { dismissed: boolean }) {
  * layout switch and integrated minimize / maximize / close buttons.
  */
 export function TitleBar({ state, title }: { state: AppState; title?: string }) {
-  const m = useMessages().shell.titleBar;
+  const messages = useMessages();
+  const m = messages.shell.titleBar;
+  const { channelState } = messages.connections;
   const compact = state.prefs.uiMode === 'compact';
   const connected = state.channel.state === 'connected';
 
@@ -207,7 +209,12 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
 
       <div data-channel-status className="ml-4 flex items-center gap-2 text-xs text-ink-soft">
         <StatusDot tone={channelTone(state.channel.state, connected)} />
-        {connected ? (state.channel.login ?? m.connected) : m.notConnected}
+        {/* Says what is happening while it is not connected (connecting, reconnecting, failed), not just "not connected". */}
+        {connected
+          ? (state.channel.login ?? m.connected)
+          : state.channel.state === 'idle'
+            ? m.notConnected
+            : channelState[state.channel.state]}
       </div>
 
       <div className="ml-auto flex h-full items-center">

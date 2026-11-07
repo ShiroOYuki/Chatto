@@ -2,6 +2,7 @@ import { PRESET_THEMES } from '@chatto/chat-ui';
 import { defaultAlertSettings, type ChatEvent, type ChatTheme, type SoundSetting } from '@chatto/core';
 import { vi } from 'vitest';
 import type { AppState, ChattoApi, CssFileChange } from '../apps/desktop/src/shared/ipc';
+import { DEFAULT_OVERLAY_LOOK } from '../apps/desktop/src/shared/overlayLook';
 
 export function sampleState(patch: Partial<AppState> = {}): AppState {
   return {
@@ -21,8 +22,8 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
     clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true },
     channel: { login: 'shiraine_ciel', state: 'connected' },
-    overlay: { enabled: false, editing: false },
-    alertsOverlay: { enabled: false, editing: false },
+    overlay: { enabled: false, editing: false, look: DEFAULT_OVERLAY_LOOK },
+    alertsOverlay: { enabled: false, editing: false, look: DEFAULT_OVERLAY_LOOK },
     alerts: defaultAlertSettings(),
     server: { port: 4820, embedUrl: 'http://127.0.0.1:4820/embed', overlayUrl: 'http://127.0.0.1:4820/overlay' },
     themes: PRESET_THEMES,
@@ -86,6 +87,7 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     setAlertsOverlayEnabled: resolved(),
     setAlertsOverlayEditing: resolved(),
     resetAlertsOverlayBounds: resolved(),
+    setOverlayLook: resolved(),
     importSound: vi.fn(async () => null),
     selectTheme: resolved(),
     saveTheme: resolved(),

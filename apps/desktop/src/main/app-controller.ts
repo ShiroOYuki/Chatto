@@ -22,7 +22,16 @@ import { app, nativeTheme } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { copyFileSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
-import type { AppPrefs, AppState, CssFileChange, CssFileOpenResult, DeviceCodeInfo, UpdateState } from '../shared/ipc';
+import type {
+  AppPrefs,
+  AppState,
+  CssFileChange,
+  CssFileOpenResult,
+  DeviceCodeInfo,
+  OverlayWindowId,
+  UpdateState,
+} from '../shared/ipc';
+import { normalizeOverlayLook, type OverlayLook } from '../shared/overlayLook';
 import type { ShareClient } from '../shared/share/client';
 import { isRedemption } from '@chatto/chat-ui/events';
 import { alertCue, markAfterSilence, SilenceTracker } from './alerts';
@@ -97,6 +106,8 @@ export class AppController {
     const identity = await this.#provider?.auth.currentIdentity();
     if (identity) this.#auth = signedIn(identity);
     const { channelLogin, overlay, alertsOverlay } = this.settings.get();
+    this.overlay.setLook(overlay.look);
+    this.alertsOverlay.setLook(alertsOverlay.look);
     if (overlay.enabled) this.overlay.open(overlay.bounds);
     if (alertsOverlay.enabled) this.alertsOverlay.open(alertsOverlay.bounds);
     if (identity && channelLogin) void this.connect(channelLogin).catch(() => undefined);
@@ -160,8 +171,12 @@ export class AppController {
       },
       auth: this.#auth,
       channel: { ...this.#channel, login: settings.channelLogin || undefined },
-      overlay: { enabled: this.overlay.isOpen, editing: this.overlay.editing },
-      alertsOverlay: { enabled: this.alertsOverlay.isOpen, editing: this.alertsOverlay.editing },
+      overlay: { enabled: this.overlay.isOpen, editing: this.overlay.editing, look: settings.overlay.look },
+      alertsOverlay: {
+        enabled: this.alertsOverlay.isOpen,
+        editing: this.alertsOverlay.editing,
+        look: settings.alertsOverlay.look,
+      },
       alerts: settings.alerts,
       server: { port: this.server.port, embedUrl: this.server.url('embed'), overlayUrl: this.server.url('overlay') },
       themes: this.themes(),
@@ -474,6 +489,16 @@ export class AppController {
       delete draft.alertsOverlay.bounds;
     });
     this.alertsOverlay.resetBounds();
+    this.#emit();
+  }
+
+  /** A desktop window's backdrop and chat opacity. OBS never gets it: only the window is styled. */
+  setOverlayLook(window: OverlayWindowId, look: OverlayLook): void {
+    const next = normalizeOverlayLook(look);
+    this.settings.update((draft) => {
+      draft[window === 'overlay' ? 'overlay' : 'alertsOverlay'].look = next;
+    });
+    (window === 'overlay' ? this.overlay : this.alertsOverlay).setLook(next);
     this.#emit();
   }
 

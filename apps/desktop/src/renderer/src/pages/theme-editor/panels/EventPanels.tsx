@@ -64,9 +64,10 @@ export function EventPanel({
     <>
       <PanelIntro>{m.intro(event.description[locale], event.category === 'message')}</PanelIntro>
       <EventTextField event={event} value={draft.eventText[key] ?? ''} onChange={setText} />
-      <div className="mb-3 flex items-center gap-2 rounded-xl bg-tile-muted px-3 py-2">
+      {/* Wraps instead of cutting the hint off when the panel is narrow. */}
+      <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl bg-tile-muted px-3 py-2">
         <Badge tone={linked ? 'matcha' : 'sakura'}>{linked ? m.linked : m.own}</Badge>
-        <span className="min-w-0 flex-1 truncate text-xs text-ink-faint">{linked ? m.linkedHint : m.ownHint}</span>
+        <span className="min-w-0 flex-1 basis-40 text-xs text-ink-faint">{linked ? m.linkedHint : m.ownHint}</span>
         <Button size="sm" disabled={linked} onClick={() => setDraft((current) => linkEvent(current, key))}>
           <Link2 /> {m.relink}
         </Button>
@@ -125,7 +126,7 @@ function EventTextField({
                 // Keep the caret in the field: a mousedown on the chip would blur it first.
                 onMouseDown={(click) => click.preventDefault()}
                 onClick={() => insert(name)}
-                className="rounded-md bg-tile-muted px-1.5 py-0.5 font-mono text-[11px] text-ink-soft transition-colors hover:bg-matcha-soft/60 hover:text-matcha-strong focus-visible:outline-2 focus-visible:outline-matcha"
+                className="min-h-6 rounded-md bg-tile-muted px-1.5 py-0.5 font-mono text-[11px] text-ink-soft transition-colors hover:bg-matcha-soft/60 hover:text-matcha-strong focus-visible:outline-2 focus-visible:outline-matcha"
               >
                 {`{${name}}`}
               </button>

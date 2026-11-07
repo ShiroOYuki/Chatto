@@ -6,11 +6,10 @@
  */
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import { Monitor, Moon, Sun } from 'lucide-react';
-import { motion } from 'motion/react';
 import { useCallback, useId } from 'react';
 import { cn } from '@/lib/utils';
 import { useMessages } from '../../../i18n';
-import { spring } from '../../motion';
+import { SlidingHighlight } from '../../motion';
 
 const themes = [
   { key: 'system', icon: Monitor },
@@ -58,10 +57,9 @@ export const ThemeSwitcher = ({ value, onChange, defaultValue = 'system', classN
             type="button"
           >
             {isActive && (
-              <motion.div
-                className="absolute inset-0 rounded-full bg-tile shadow-sm"
+              <SlidingHighlight
                 layoutId={`theme-switcher-${layoutId}`}
-                transition={spring}
+                className="absolute inset-0 rounded-full bg-tile shadow-sm"
               />
             )}
             <Icon className={cn('relative z-10 m-auto h-4 w-4', isActive ? 'text-ink' : 'text-ink-soft')} />

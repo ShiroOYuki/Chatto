@@ -40,7 +40,7 @@ export const SHARE_LIMITS = {
   themeJsonBytes: 512 * 1024,
   customCssBytes: 128 * 1024,
   imageBytes: 2 * 1024 * 1024,
-  /** New themes and updates together, per account per day. */
+  /** New themes and updates together, per account per day; moderators are exempt. */
   dailyPublishes: 10,
   nameLength: 60,
   descriptionLength: 1000,
@@ -48,6 +48,9 @@ export const SHARE_LIMITS = {
   tags: 12,
   tagLength: 32,
 } as const;
+
+/** Whether `SHARE_LIMITS.dailyPublishes` applies to an account; moderators have no daily limit. */
+export const hasDailyPublishLimit = (role: ShareAccount['role']): boolean => role !== 'moderator';
 
 /** Bumped whenever the terms or privacy notice change; signing in asks again after a bump. */
 export const SHARE_TERMS_VERSION = 1;
@@ -66,6 +69,8 @@ export interface ShareQuery {
 export interface ShareAuthor {
   id: string;
   name: string;
+  /** Chatto's own account; its themes show an "official" badge. */
+  official?: boolean;
 }
 
 /** A published theme as lists show it. */
@@ -119,7 +124,7 @@ export interface ShareAccount {
   displayName: string;
   identities: ShareIdentity[];
   role: 'member' | 'moderator';
-  /** Publishes left today. */
+  /** Publishes left today; accounts without a daily limit (`hasDailyPublishLimit`) always get the full count. */
   publishesLeft: number;
 }
 

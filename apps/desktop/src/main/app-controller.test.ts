@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DeviceCodeInfo } from '../shared/ipc';
+import { DEFAULT_OVERLAY_LOOK } from '../shared/overlayLook';
 import type { Settings, SettingsStore } from './settings';
 import type { LocalServer } from './server';
 import type { OverlayWindow } from './overlay-window';
@@ -76,8 +77,8 @@ function fakeSettings(initial: Partial<Settings> = {}) {
     twitchClientId: 'client-id',
     channelLogin: '',
     serverPort: 4820,
-    overlay: { enabled: false },
-    alertsOverlay: { enabled: false },
+    overlay: { enabled: false, look: DEFAULT_OVERLAY_LOOK },
+    alertsOverlay: { enabled: false, look: DEFAULT_OVERLAY_LOOK },
     alerts: defaultAlertSettings(),
     selectedThemes: { overlay: 'matcha-glass', embed: 'matcha-glass', alerts: 'matcha-glass' },
     customThemes: [],
@@ -125,6 +126,7 @@ function setup(initial?: Partial<Settings>, builtInClientId = '') {
       open: vi.fn(() => void (open = true)),
       close: vi.fn(() => void (open = false)),
       setEditing: vi.fn(),
+      setLook: vi.fn(),
       resetBounds: vi.fn(),
     };
   };
@@ -374,7 +376,7 @@ describe('AppController overlay', () => {
 
   it('forgets saved bounds on reset', () => {
     const { controller, settings, overlay } = setup({
-      overlay: { enabled: true, bounds: { x: 1, y: 2, width: 3, height: 4 } },
+      overlay: { enabled: true, bounds: { x: 1, y: 2, width: 3, height: 4 }, look: DEFAULT_OVERLAY_LOOK },
     });
     controller.resetOverlayBounds();
     expect(settings.get().overlay.bounds).toBeUndefined();
@@ -382,9 +384,31 @@ describe('AppController overlay', () => {
   });
 
   it('reopens the overlay on launch when it was enabled', async () => {
-    const { controller, overlay } = setup({ overlay: { enabled: true } });
+    const { controller, overlay } = setup({ overlay: { enabled: true, look: DEFAULT_OVERLAY_LOOK } });
     await controller.init();
     expect(overlay.open).toHaveBeenCalled();
+  });
+
+  it('gives each window its saved look on launch', async () => {
+    const look = { color: '#1b2230', backgroundOpacity: 0.5, chatOpacity: 0.8 };
+    const { controller, overlay, alertsOverlay } = setup({ overlay: { enabled: false, look } });
+    await controller.init();
+    expect(overlay.setLook).toHaveBeenCalledWith(look);
+    expect(alertsOverlay.setLook).toHaveBeenCalledWith(DEFAULT_OVERLAY_LOOK);
+  });
+
+  it('saves and applies a look to the window it is for only', () => {
+    const { controller, settings, overlay, alertsOverlay, server, onChange } = setup();
+    controller.setOverlayLook('alerts', { color: '#FFFFFF', backgroundOpacity: 0.3, chatOpacity: 2 });
+    const saved = { color: '#ffffff', backgroundOpacity: 0.3, chatOpacity: 1 };
+    expect(settings.get().alertsOverlay.look).toEqual(saved);
+    expect(settings.get().overlay.look).toEqual(DEFAULT_OVERLAY_LOOK);
+    expect(alertsOverlay.setLook).toHaveBeenCalledWith(saved);
+    expect(overlay.setLook).not.toHaveBeenCalled();
+    expect(controller.state().alertsOverlay.look).toEqual(saved);
+    // A window setting: nothing goes to the viewers, so OBS never sees it.
+    expect(server.refreshThemes).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalled();
   });
 });
 
