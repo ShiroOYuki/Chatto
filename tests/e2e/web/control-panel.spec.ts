@@ -205,6 +205,20 @@ test('the outputs page sets each desktop window’s backdrop and chat opacity', 
   await expect(preview.locator('> div > div')).toHaveCSS('opacity', '0.9');
 });
 
+test('new messages in a chat preview never scroll the page', async ({ panel, page }) => {
+  await page.setViewportSize({ width: 960, height: 640 });
+  await panel.open('page=outputs');
+  const main = page.locator('main');
+  // The preview's top is scrolled out of view while the preview itself still shows: a chat line
+  // would be the browser's scroll anchor, and each new message would drag the page up with it.
+  await main.evaluate((el) => (el.scrollTop = 300));
+  const preview = page.getByTestId('live-theme-preview').first();
+  const lines = preview.locator('.chatto-list > *');
+  const before = await lines.count();
+  await expect.poll(() => lines.count(), { timeout: 10_000 }).toBeGreaterThan(before + 1);
+  expect(await main.evaluate((el) => el.scrollTop)).toBe(300);
+});
+
 test("a theme's own event text shows in the editor preview", async ({ panel, page }) => {
   await panel.open('page=themes');
   await page.getByRole('button', { name: '複製並編輯' }).first().click();

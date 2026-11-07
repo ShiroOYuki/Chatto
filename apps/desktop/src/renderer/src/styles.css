@@ -130,6 +130,16 @@
   }
 }
 
+/*
+ * A chat line in a preview must never become the page's scroll anchor: new messages push the
+ * lines up, and the browser would scroll the whole page along with them. Unlayered, so the
+ * `all: revert` above cannot undo it.
+ */
+.chatto-root,
+.chatto-root * {
+  overflow-anchor: none;
+}
+
 /* shadcn/ui base: borders and focus rings use the palette instead of currentColor. */
 @layer base {
   *,
