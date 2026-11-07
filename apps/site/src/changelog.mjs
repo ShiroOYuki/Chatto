@@ -16,7 +16,9 @@ const t = (en, zh) => ({ en, 'zh-TW': zh });
 export const CHANGELOG = {
   app: [
     {
-      upcoming: true,
+      version: 'v0.3.0',
+      date: '2026-11-07',
+      download: true,
       sections: [
         {
           kind: 'new',
@@ -92,6 +94,10 @@ export const CHANGELOG = {
             t('The delete confirmation button is readable in dark mode', '暗色模式下，刪除確認按鈕的文字看得清楚'),
             t('Uploaded frame images now show in the control panel’s previews', '控制台的預覽現在會顯示上傳的外框圖片'),
             t('Installing a shared theme updates its download count right away', '安裝分享主題後，下載次數會立即更新'),
+            t(
+              'New messages in a chat preview no longer scroll the control panel page',
+              '聊天室預覽出現新訊息時，控制台頁面不會再跟著捲動',
+            ),
           ],
         },
       ],
@@ -99,7 +105,6 @@ export const CHANGELOG = {
     {
       version: 'v0.2.0',
       date: '2026-11-06',
-      download: true,
       sections: [
         {
           kind: 'new',
