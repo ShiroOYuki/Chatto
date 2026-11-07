@@ -13,6 +13,18 @@ body,
   box-sizing: border-box;
 }
 
+/*
+ * Desktop overlay windows: the app sets these on <html> from the window's look
+ * (backdrop colour, chat opacity). OBS pages never get them and stay transparent.
+ */
+body {
+  background: var(--chatto-backdrop, transparent);
+}
+
+#root {
+  opacity: var(--chatto-chat-opacity, 1);
+}
+
 /* Overlay edit mode (toggled by the desktop app): show bounds and allow dragging. */
 body[data-edit] {
   outline: 2px dashed rgba(192, 221, 151, 0.9);

@@ -17,6 +17,8 @@ export default defineMessages({
     deleteTheme: '刪除主題',
     deleteTitle: (name: string) => `刪除「${name}」？`,
     deleteDescription: '刪除後無法復原。正在使用這個主題的 Overlay 或 OBS 會改回預設主題。',
+    targets: { overlay: 'Overlay', embed: 'OBS', alerts: '事件' },
+    useFor: { overlay: '用在桌面 Overlay', embed: '用在 OBS', alerts: '用在事件 Overlay' },
     labels: {
       inline: '單行',
       stacked: '上下',
@@ -48,6 +50,8 @@ export default defineMessages({
     deleteTitle: (name: string) => `Delete "${name}"?`,
     deleteDescription:
       'This can’t be undone. An overlay or OBS source using this theme switches back to the default theme.',
+    targets: { overlay: 'Overlay', embed: 'OBS', alerts: 'Events' },
+    useFor: { overlay: 'Use on the desktop overlay', embed: 'Use in OBS', alerts: 'Use on the alert overlay' },
     labels: {
       inline: 'Inline',
       stacked: 'Stacked',

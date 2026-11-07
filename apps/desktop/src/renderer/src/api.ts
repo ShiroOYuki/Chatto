@@ -1,6 +1,7 @@
 import { createMockMessage, createMockNotice, PRESET_THEMES } from '@chatto/chat-ui';
 import { defaultAlertSettings, type ChatEvent, type ChatTheme, type SoundSetting } from '@chatto/core';
 import type { AppState, ChattoApi, CssFileChange, ObsPluginStatus } from '../../shared/ipc';
+import { DEFAULT_OVERLAY_LOOK, normalizeOverlayLook } from '../../shared/overlayLook';
 import { ShareClient } from '../../shared/share/client';
 import { createMemoryAssets } from '../../shared/share/memoryAssets';
 import { createFakeShareBackend } from '@chatto/share/fake';
@@ -48,8 +49,8 @@ function createMockApi(): ChattoApi {
     clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true },
     channel: { login: 'shiraine_ciel', state: 'connected' },
-    overlay: { enabled: true, editing: false },
-    alertsOverlay: { enabled: false, editing: false },
+    overlay: { enabled: true, editing: false, look: DEFAULT_OVERLAY_LOOK },
+    alertsOverlay: { enabled: false, editing: false, look: DEFAULT_OVERLAY_LOOK },
     alerts: defaultAlertSettings(),
     server: { port: 4820, embedUrl: 'http://127.0.0.1:4820/embed', overlayUrl: 'http://127.0.0.1:4820/overlay' },
     themes: PRESET_THEMES,
@@ -167,6 +168,10 @@ function createMockApi(): ChattoApi {
     setAlertsOverlayEnabled: async (enabled) => set({ alertsOverlay: { ...state.alertsOverlay, enabled } }),
     setAlertsOverlayEditing: async (editing) => set({ alertsOverlay: { ...state.alertsOverlay, editing } }),
     resetAlertsOverlayBounds: async () => undefined,
+    setOverlayLook: async (window, look) => {
+      const key = window === 'overlay' ? 'overlay' : 'alertsOverlay';
+      set({ [key]: { ...state[key], look: normalizeOverlayLook(look) } });
+    },
     // The browser preview cannot copy files; pretend the user cancelled.
     importSound: async () => null,
     selectTheme: async (target, themeId) => set({ selectedThemes: { ...state.selectedThemes, [target]: themeId } }),

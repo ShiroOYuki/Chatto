@@ -1,6 +1,6 @@
 import { duplicateTheme } from '@chatto/chat-ui';
-import type { ChatTheme, ViewerTarget } from '@chatto/core';
-import { Copy, Download, Ellipsis, MonitorUp, Pencil, Plus, Send, Trash2, Upload } from 'lucide-react';
+import { VIEWER_TARGETS, type ChatTheme } from '@chatto/core';
+import { Copy, Download, Ellipsis, Pencil, Plus, Send, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import type { PageId } from '../components/Sidebar';
@@ -56,8 +56,7 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
     return <ThemeEditor initial={editing} onClose={() => setEditing(null)} onSaved={(theme) => setEditing(theme)} />;
   }
 
-  const usedBy = (theme: ChatTheme) =>
-    (['overlay', 'embed'] as const).filter((target) => state.selectedThemes[target] === theme.id);
+  const usedBy = (theme: ChatTheme) => VIEWER_TARGETS.filter((target) => state.selectedThemes[target] === theme.id);
 
   const duplicate = async (theme: ChatTheme) => {
     setError(null);
@@ -128,7 +127,7 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
                           ) : null}
                           {targets.map((target) => (
                             <Badge key={target} tone="matcha">
-                              {target === 'overlay' ? 'Overlay' : 'OBS'}
+                              {m.targets[target]}
                             </Badge>
                           ))}
                         </p>
@@ -189,19 +188,21 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
                         </DropdownMenu>
                       </div>
                     </div>
-                    <div className="mt-auto grid grid-cols-2 gap-2">
-                      {(['overlay', 'embed'] as ViewerTarget[]).map((target) => {
+                    <div className="mt-auto grid grid-cols-3 gap-2">
+                      {VIEWER_TARGETS.map((target) => {
                         const active = state.selectedThemes[target] === theme.id;
                         return (
-                          <Button
-                            key={target}
-                            size="sm"
-                            variant={active ? 'primary' : 'secondary'}
-                            onClick={() => themes.select(target, theme.id)}
-                          >
-                            <MonitorUp />
-                            {target === 'overlay' ? 'Overlay' : 'OBS'}
-                          </Button>
+                          <Hint key={target} label={m.useFor[target]}>
+                            <Button
+                              size="sm"
+                              variant={active ? 'primary' : 'secondary'}
+                              aria-pressed={active}
+                              className="min-w-0 px-2"
+                              onClick={() => themes.select(target, theme.id)}
+                            >
+                              <span className="truncate">{m.targets[target]}</span>
+                            </Button>
+                          </Hint>
                         );
                       })}
                     </div>

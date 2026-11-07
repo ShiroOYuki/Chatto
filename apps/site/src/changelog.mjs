@@ -33,6 +33,14 @@ export const CHANGELOG = {
               'The quiet-spell label can have its own text for each chat language',
               '沉寂後新留言的標籤可以為每種聊天室語言各設一段文字',
             ),
+            t(
+              'Give the desktop overlay and the alert overlay a background color and opacity, and fade the chat, on the Outputs page',
+              '輸出頁可以替桌面 Overlay 和事件 Overlay 加上背景顏色與不透明度，也能調淡聊天室',
+            ),
+            t(
+              'Apply a theme to the alert overlay straight from its card on the Themes page, or from compact mode',
+              '主題頁的卡片和精簡模式可以直接把主題套用到事件 Overlay',
+            ),
           ],
         },
         {

@@ -12,6 +12,29 @@ test('the mock overlay streams chat', async ({ page }) => {
     .toBeGreaterThan(count);
 });
 
+test('a desktop window look tints the window and fades only the chat; edit mode still shows its frame', async ({
+  page,
+}) => {
+  await page.goto(`${VIEWER_URL}/overlay?specimen`);
+  const body = page.locator('body');
+  const root = page.locator('#root');
+  // Without a look (OBS) the page stays transparent.
+  await expect(body).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(root).toHaveCSS('opacity', '1');
+
+  // What the desktop app runs in the overlay window (overlayLookScript).
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--chatto-backdrop', 'rgba(27, 34, 48, 0.5)');
+    document.documentElement.style.setProperty('--chatto-chat-opacity', '0.6');
+  });
+  await expect(body).toHaveCSS('background-color', 'rgba(27, 34, 48, 0.5)');
+  await expect(root).toHaveCSS('opacity', '0.6');
+  await expect(root).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+
+  await page.evaluate(() => document.body.toggleAttribute('data-edit', true));
+  await expect(body).toHaveCSS('background-color', 'rgba(23, 52, 4, 0.25)');
+});
+
 for (const theme of PRESET_THEMES) {
   test(`embed renders the ${theme.id} preset`, async ({ page }) => {
     const errors: string[] = [];

@@ -164,6 +164,47 @@ test('a theme without images is exported as a package too', async ({ panel, page
     .toEqual(['matcha-glass']);
 });
 
+test('a theme card applies its theme to the alert overlay too', async ({ panel, page }) => {
+  await panel.open('page=themes');
+  const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: '和紙', level: 2 }) });
+  const events = card.getByRole('button', { name: '事件', exact: true });
+  await expect(events).toHaveAttribute('aria-pressed', 'false');
+  await events.click();
+  await expect(events).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => page.evaluate(() => window.__chattoMock!.getState().selectedThemes.alerts)).toBe('washi');
+  // Washi was already the OBS theme, so the card now names both outputs.
+  await expect(card.getByText('OBS', { exact: true }).first()).toBeVisible();
+  await expect(card.locator('[data-slot="badge"]', { hasText: '事件' })).toBeVisible();
+});
+
+test('compact mode picks the alert overlay theme as well', async ({ panel, page }) => {
+  await panel.open('compact');
+  await page.getByRole('button', { name: '事件', exact: true }).click();
+  const list = page.getByTestId('compact-theme-list');
+  await expect(list.getByRole('button', { pressed: true })).toContainText('泡泡');
+  await list.getByRole('button', { name: /和紙/ }).click();
+  await expect.poll(() => page.evaluate(() => window.__chattoMock!.getState().selectedThemes.alerts)).toBe('washi');
+  expect(await page.evaluate(() => window.__chattoMock!.getState().selectedThemes.overlay)).toBe('matcha-glass');
+});
+
+test('the outputs page sets each desktop window’s backdrop and chat opacity', async ({ panel, page }) => {
+  await panel.open('page=outputs');
+  const chatLook = page.getByRole('region', { name: '視窗外觀' }).first();
+  const backdrop = chatLook.getByRole('slider', { name: '背景不透明度' });
+  await backdrop.focus();
+  await page.keyboard.press('PageUp'); // +10
+  await chatLook.getByRole('slider', { name: '聊天室不透明度' }).focus();
+  await page.keyboard.press('PageDown'); // -10
+  await expect
+    .poll(() => page.evaluate(() => window.__chattoMock!.getState().overlay.look))
+    .toEqual({ color: '#000000', backgroundOpacity: 0.1, chatOpacity: 0.9 });
+  expect(await page.evaluate(() => window.__chattoMock!.getState().alertsOverlay.look.backgroundOpacity)).toBe(0);
+  // The overlay preview shows it.
+  const preview = page.getByTestId('live-theme-preview').first();
+  await expect(preview.locator('> div')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0.1)');
+  await expect(preview.locator('> div > div')).toHaveCSS('opacity', '0.9');
+});
+
 test("a theme's own event text shows in the editor preview", async ({ panel, page }) => {
   await panel.open('page=themes');
   await page.getByRole('button', { name: '複製並編輯' }).first().click();

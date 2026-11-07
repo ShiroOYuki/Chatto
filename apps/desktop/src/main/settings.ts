@@ -9,6 +9,7 @@ import {
 } from '@chatto/core';
 import { DEFAULT_THEME_ID } from '@chatto/chat-ui/themes';
 import type { AppPrefs } from '../shared/ipc';
+import { DEFAULT_OVERLAY_LOOK, normalizeOverlayLook, type OverlayLook } from '../shared/overlayLook';
 import { app } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
@@ -21,6 +22,22 @@ export interface Rect {
   height: number;
 }
 
+/** A desktop overlay window: whether it is open, where it sits and how it looks. */
+export interface OverlayWindowSettings {
+  enabled: boolean;
+  bounds?: Rect;
+  look: OverlayLook;
+}
+
+/** Overlay window settings from older versions or hand edits. */
+export function normalizeOverlayWindow(raw: Partial<OverlayWindowSettings> | undefined): OverlayWindowSettings {
+  return {
+    ...raw,
+    enabled: raw?.enabled === true,
+    look: normalizeOverlayLook(raw?.look),
+  };
+}
+
 /** The Twitch Client ID baked in at build time (`MAIN_VITE_TWITCH_CLIENT_ID`), or empty. */
 export const BUILT_IN_CLIENT_ID = (import.meta.env.MAIN_VITE_TWITCH_CLIENT_ID ?? '').trim();
 
@@ -29,9 +46,9 @@ export interface Settings {
   twitchClientId: string;
   channelLogin: string;
   serverPort: number;
-  overlay: { enabled: boolean; bounds?: Rect };
+  overlay: OverlayWindowSettings;
   /** The event alert overlay window. */
-  alertsOverlay: { enabled: boolean; bounds?: Rect };
+  alertsOverlay: OverlayWindowSettings;
   alerts: AlertSettings;
   selectedThemes: Record<ViewerTarget, string>;
   customThemes: ChatTheme[];
@@ -46,8 +63,8 @@ const defaults = (): Settings => ({
   twitchClientId: '',
   channelLogin: '',
   serverPort: 4820,
-  overlay: { enabled: false },
-  alertsOverlay: { enabled: false },
+  overlay: { enabled: false, look: DEFAULT_OVERLAY_LOOK },
+  alertsOverlay: { enabled: false, look: DEFAULT_OVERLAY_LOOK },
   alerts: defaultAlertSettings(),
   selectedThemes: { overlay: DEFAULT_THEME_ID, embed: DEFAULT_THEME_ID, alerts: DEFAULT_THEME_ID },
   customThemes: [],
@@ -118,8 +135,8 @@ export class SettingsStore {
         ...base,
         ...raw,
         twitchClientId: customClientId(raw.twitchClientId),
-        overlay: { ...base.overlay, ...raw.overlay },
-        alertsOverlay: { ...base.alertsOverlay, ...raw.alertsOverlay },
+        overlay: normalizeOverlayWindow(raw.overlay),
+        alertsOverlay: normalizeOverlayWindow(raw.alertsOverlay),
         alerts: normalizeAlertSettings(raw.alerts),
         selectedThemes: { ...base.selectedThemes, ...raw.selectedThemes },
         prefs: normalizePrefs(raw.prefs, base.prefs),

@@ -1,5 +1,5 @@
 import { ChatView, startMockStream, useChatFeed } from '@chatto/chat-ui';
-import type { ChatTheme, ViewerTarget } from '@chatto/core';
+import { VIEWER_TARGETS, type ChatTheme, type ViewerTarget } from '@chatto/core';
 import { useEffect } from 'react';
 import type { AppState } from '../../../../shared/ipc';
 import { Button, Tile } from '../../components/kit';
@@ -28,14 +28,15 @@ export function ThemeTile({
       className="col-span-2 row-span-2 min-h-0"
       action={
         <div className="flex rounded-xl bg-tile-muted p-1 text-xs">
-          {(['overlay', 'embed'] as const).map((item) => (
+          {VIEWER_TARGETS.map((item) => (
             <button
               key={item}
               type="button"
+              aria-pressed={target === item}
               onClick={() => onTargetChange(item)}
-              className={`rounded-lg px-3 py-1 transition-colors ${target === item ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft'}`}
+              className={`rounded-lg px-3 py-1 transition-colors max-[1180px]:px-2 ${target === item ? 'bg-tile font-medium text-ink shadow-sm' : 'text-ink-soft'}`}
             >
-              {item === 'overlay' ? m.desktopOverlay : 'OBS'}
+              {m.themeTargets[item]}
             </button>
           ))}
         </div>
