@@ -17,6 +17,7 @@ import type { ShareState } from '@chatto/share';
 import type { OverlayLook } from './overlayLook';
 import type { ControlLogSnapshot, LoggedChatEvent } from './controlLog';
 import type { UpdateNote } from './updateNotes';
+import type { ShortcutAction, ShortcutBindings, ShortcutResult } from './shortcuts';
 
 /** The two desktop windows: the chat overlay and the event alert overlay. */
 export type OverlayWindowId = 'overlay' | 'alerts';
@@ -92,6 +93,12 @@ export interface AppPrefs {
   obsPluginPromptDismissed: boolean;
   /** The update dialog stays closed for this version (`0.4.0`); empty for none. Later versions show it again (#39). */
   skippedUpdateVersion: string;
+  /** The overview's getting-started list was closed, or never needed (#54). */
+  onboardingDismissed: boolean;
+  /** Opened the themes page, which ticks "choose a theme" on the getting-started list. */
+  visitedThemes: boolean;
+  /** Opened the alerts page (the list's optional step). */
+  visitedAlerts: boolean;
 }
 
 /** How a theme's CSS file was opened: the configured editor, the system default app, or not at all. */
@@ -176,6 +183,10 @@ export interface AppState {
   share: ShareState;
   /** `.chattotheme` files opened from Windows, waiting for the user to import or cancel them, oldest first (#40). */
   openedThemeFiles: OpenedThemeFile[];
+  /** New messages are held back from the overlays and OBS until resumed (#53); the control panel still gets them. */
+  chatPaused: boolean;
+  /** Global shortcuts and the saved ones another app holds right now (#53). */
+  shortcuts: { bindings: ShortcutBindings; failed: ShortcutAction[] };
 }
 
 /**
@@ -270,6 +281,13 @@ export interface ChattoApi {
   /** Done with a theme file opened from Windows (imported or cancelled); the next one shows. */
   dismissOpenedThemeFile(id: string): Promise<void>;
 
+  /** Holds new messages back from the overlays and OBS, or sends what was held (#53). */
+  setChatPaused(paused: boolean): Promise<void>;
+  /** Empties the chat on the overlays and OBS; the control panel's log keeps it. */
+  clearChatOnScreen(): Promise<void>;
+  /** Binds a global shortcut (an Electron accelerator; empty removes it). */
+  setShortcut(action: ShortcutAction, accelerator: string): Promise<ShortcutResult>;
+
   /** Theme sharing (GitHub #4); the account shows in `state.share`. */
   share<K extends ShareMethod>(method: K, ...args: Parameters<ShareApi[K]>): Promise<Awaited<ReturnType<ShareApi[K]>>>;
   /** Asks where to save a diagnostics zip and writes it; false when cancelled. */
@@ -343,6 +361,9 @@ export const IPC = {
   installUpdate: 'update:install',
   dismissUpdatePrompt: 'update:dismiss-prompt',
   dismissOpenedThemeFile: 'theme:dismiss-opened-file',
+  setChatPaused: 'outputs:set-paused',
+  clearChatOnScreen: 'outputs:clear',
+  setShortcut: 'shortcuts:set',
   share: 'share:call',
   captureThumbnail: 'share:capture-thumbnail',
   exportDiagnostics: 'diagnostics:export',

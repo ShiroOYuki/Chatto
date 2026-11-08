@@ -27,9 +27,12 @@
   - 所有輸出都略過 `meta.shownAsMessage` 的通知（同一次兌換已經以聊天訊息出現）。
   - `overlay`：沉寂後的第一則留言加上 `after-silence` highlight；開啟「桌面聊天室不重複顯示」且事件 Overlay 開著時，略過會跳卡片的事件。
   - `alerts`：只收到通過提醒規則（開關、最低數量）的事件，並附上 `alert`（停留時間、音效）；刪除與清除事件照常送達，卡片會立刻移除。新連上的 alerts viewer 沒有 backlog，舊事件不會重播。
+- **暫停與清空畫面**（#53）：LocalServer 讀的不是 `ChatHub`，而是 `AppController.output`（`main/output-feed.ts` 的 `OutputFeed`）。暫停時新的訊息與通知留在 `OutputFeed`（最多 500 則），恢復時依序補上；刪除、禁言、清除照常立即送出，也會從等待的訊息裡拿掉。清空畫面會清掉它的 backlog 並送 `clear` frame。控制台直接讀 `ChatHub`，不受暫停與清空影響。狀態是 `AppState.chatPaused`，標題列在暫停時顯示提示。
+- **全域快捷鍵**（#53，`main/shortcuts.ts`、`shared/shortcuts.ts`）：用 Electron `globalShortcut` 註冊，存在 `settings.shortcuts`（Electron accelerator，預設全部空白）。可設定的動作：顯示／隱藏桌面 Overlay、事件 Overlay，切換可移動／滑鼠穿透（開著的 Overlay 一起切換），暫停／恢復新訊息，清空畫面。設定時先檢查是否和其他動作重複，再向 Windows 註冊，被其他程式占用就不存；啟動時註冊失敗的列在 `AppState.shortcuts.failed`，設定頁會標出來。結束時全部取消註冊。
 - **忠誠點數兌換**：只有頻道擁有者本人登入、token 有 `channel:read:redemptions` 時，provider 才訂閱兌換事件（`AppState.auth.redemptionScope` 回報 scope；舊 token 沒有，控制台提示重新登入，不強制登出）。兌換照常送到三個輸出；控制台另有兌換紀錄（`shared/redemptionLog.ts` 的純 reducer，main 與控制台各有一份，見下方「控制台視窗與記憶體」；顯示在聊天室頁，關閉只移出清單，不改 Twitch 上的狀態，也不寫入磁碟）。設定在 `AlertSettings.redemptions`。
 - **提醒**（`main/alerts.ts`，純函式）：`SilenceTracker` 記錄最後一則一般留言的時間，頻道連上時從那一刻開始算；機器人、指令前綴與事件訊息不算留言。`alertCue()` 依規則決定事件要不要跳卡片。規則分兩種：跨平台分類（`ALERT_CATEGORIES`：贊助、訂閱、續訂、贈送訂閱、揪團、公告，鍵為 `any:<分類>`），由各平台在 `EVENT_CATALOG` 用 `alertCategory` 對應；沒有分類的平台專屬事件（例如 Twitch 的頻道點數強調訊息、觀看連勝）用自己的事件鍵當規則。新增平台時替事件填上 `alertCategory`，提醒頁就會自動歸類。
 - **提示音**：內建音效（泡泡、金幣、鈴聲、雷射）是從 soundcn 收進來的 CC0 音效（`packages/chat-ui/src/soundcn/`，每個一個 base64 模組），用 `import()` 動態載入，不會打包進 OBS 的 embed 頁面；直接解碼 base64，不需要 fetch。使用者自選的音檔複製到 userData 的 `sounds/`，由 LocalServer 在 `/sounds/<檔名>` 提供（只接受 `[\w-]+.(mp3|ogg|wav)`）。沉寂提醒的聲音由控制台播放（沒開 Overlay 也聽得到）；控制台視窗已在系統匣釋放時，改由 main 開一個隱藏的小視窗（`main/sound-player.ts`，載入只有幾 KB 的 `renderer/sound.html`）播完就關。事件卡片的聲音由事件 Overlay 在卡片出現時播放。
+- **開始使用清單**（#54，`renderer/services/onboarding.ts`、`pages/GettingStarted.tsx`）：只在完整模式的總覽頁。每一步由 `AppState` 推導（登入、已有頻道、選了非預設主題或開過主題頁、選填的開過提醒頁），只有「已收起」與「開過哪些頁」存在 `prefs`。升級的使用者若已經存過頻道，設定讀取時預設收起（`onboardingBase`）。
 - **控制台** 是 frameless 視窗，自繪標題列（含視窗按鈕）；有完整模式（側邊導覽多頁面）與精簡模式（單頁 Bento）。它只透過 `window.chatto`（preload 暴露的 `ChattoApi`）和 main 溝通，拿不到 token。
 
 ## 控制台視窗與記憶體（#57）

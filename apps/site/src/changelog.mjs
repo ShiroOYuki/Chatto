@@ -33,6 +33,18 @@ export const CHANGELOG = {
               'Double-click a .chattotheme file to open it in Chatto, preview it and import it',
               '雙擊 .chattotheme 檔就會用 Chatto 開啟，預覽後即可匯入',
             ),
+            t(
+              'Set global shortcuts in Settings to show or hide the overlays, switch them to movable, pause new messages or clear the chat on screen, even while a game has focus',
+              '設定頁可以設定全域快捷鍵：顯示或隱藏 Overlay、切換可移動、暫停新訊息、清空畫面上的聊天，玩遊戲時也能用',
+            ),
+            t(
+              'Pause new messages on the overlays and in OBS, or clear the chat on screen, from the Outputs page',
+              '輸出頁可以暫停 Overlay 和 OBS 的新訊息，或清空畫面上的聊天',
+            ),
+            t(
+              'A getting-started list on the overview walks you through signing in, connecting and picking a theme',
+              '總覽頁新增「開始使用」清單，帶你完成登入、連線和選主題',
+            ),
           ],
         },
       ],

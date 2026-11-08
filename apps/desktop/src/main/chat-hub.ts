@@ -11,6 +11,8 @@ export class ChatHub {
   #listeners = new Set<(event: ChatEvent) => void>();
   #backlog: ChatEvent[] = [];
 
+  constructor(private readonly backlogSize = BACKLOG_SIZE) {}
+
   publish(event: ChatEvent): void {
     this.#remember(event);
     for (const listener of this.#listeners) listener(event);
@@ -25,12 +27,17 @@ export class ChatHub {
     return [...this.#backlog];
   }
 
+  /** Forgets the backlog, so a viewer opened later starts empty. */
+  clear(): void {
+    this.#backlog = [];
+  }
+
   #remember(event: ChatEvent): void {
     switch (event.type) {
       case 'message':
       case 'notice':
         this.#backlog.push(event);
-        if (this.#backlog.length > BACKLOG_SIZE) this.#backlog.shift();
+        if (this.#backlog.length > this.backlogSize) this.#backlog.shift();
         break;
       case 'message-deleted':
         this.#backlog = this.#backlog.filter(

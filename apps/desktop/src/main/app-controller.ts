@@ -33,6 +33,15 @@ import type {
   UpdateState,
 } from '../shared/ipc';
 import { normalizeOverlayLook, type OverlayLook } from '../shared/overlayLook';
+import {
+  duplicateOf,
+  emptyShortcuts,
+  type ShortcutAction,
+  type ShortcutBindings,
+  type ShortcutResult,
+} from '../shared/shortcuts';
+import { OutputFeed } from './output-feed';
+import type { GlobalShortcuts } from './shortcuts';
 import type { ShareClient } from '../shared/share/client';
 import { isRedemption } from '@chatto/chat-ui/events';
 import { alertCue, markAfterSilence, SilenceTracker } from './alerts';
@@ -58,6 +67,8 @@ const signedIn = (identity: TwitchIdentity): AppState['auth'] => ({
  */
 export class AppController {
   readonly hub = new ChatHub();
+  /** What the overlays and OBS get: the hub, unless paused or cleared (#53). */
+  readonly output = new OutputFeed(this.hub);
   #provider: TwitchChatProvider | null = null;
   #providerUnsubscribe: (() => void) | null = null;
   #signInAbort: AbortController | null = null;
@@ -96,6 +107,8 @@ export class AppController {
   updateState: () => UpdateState = () => ({ status: 'unsupported' });
   /** Supplied by index.ts: theme files opened from Windows, waiting to be confirmed (#40). */
   openedThemeFiles: () => OpenedThemeFile[] = () => [];
+  /** System-wide shortcuts; supplied by index.ts (Electron's globalShortcut). */
+  shortcuts?: GlobalShortcuts;
 
   /** `builtInClientId` is the Twitch Client ID baked into this build, used unless the user set their own. */
   constructor(
@@ -189,6 +202,8 @@ export class AppController {
         termsAccepted: settings.share.termsAccepted,
       },
       openedThemeFiles: this.openedThemeFiles(),
+      chatPaused: this.output.paused,
+      shortcuts: { bindings: this.#shortcutBindings(), failed: this.shortcuts?.failed ?? [] },
     };
   }
 
@@ -406,6 +421,64 @@ export class AppController {
       }
     }
     return { event };
+  }
+
+  // ---------- pause, clear and shortcuts (#53) ----------
+
+  setChatPaused(paused: boolean): void {
+    if (paused === this.output.paused) return;
+    this.output.setPaused(paused);
+    this.#emit();
+  }
+
+  /** Empties the chat on every overlay and OBS source; the control panel keeps its log. */
+  clearChatOnScreen(): void {
+    this.output.clear();
+    this.server.broadcastClear();
+  }
+
+  #shortcutBindings(): ShortcutBindings {
+    return this.settings.get().shortcuts ?? emptyShortcuts();
+  }
+
+  /** Saves a global shortcut once it is free: not used by another action, and Windows lets Chatto have it. */
+  setShortcut(action: ShortcutAction, accelerator: string): ShortcutResult {
+    const value = accelerator.trim();
+    const other = value ? duplicateOf(this.#shortcutBindings(), action, value) : null;
+    if (other) return { ok: false, reason: 'duplicate', action: other };
+    if (this.shortcuts && !this.shortcuts.set(action, value)) return { ok: false, reason: 'unavailable' };
+    this.settings.update((draft) => {
+      draft.shortcuts = { ...this.#shortcutBindings(), [action]: value };
+    });
+    this.#emit();
+    return { ok: true };
+  }
+
+  /** What a global shortcut does. */
+  runShortcut(action: ShortcutAction): void {
+    switch (action) {
+      case 'toggleOverlay':
+        return this.setOverlayEnabled(!this.overlay.isOpen);
+      case 'toggleAlertsOverlay':
+        return this.setAlertsOverlayEnabled(!this.alertsOverlay.isOpen);
+      case 'toggleClickThrough': {
+        // Both open windows move together: unlocked if either one is locked, otherwise back to click-through.
+        const open = [this.overlay, this.alertsOverlay].filter((window) => window.isOpen);
+        if (!open.length) return;
+        const editing = !open.some((window) => window.editing);
+        if (this.overlay.isOpen) this.overlay.setEditing(editing);
+        if (this.alertsOverlay.isOpen) this.alertsOverlay.setEditing(editing);
+        return this.#emit();
+      }
+      case 'togglePause':
+        return this.setChatPaused(!this.output.paused);
+      case 'clearChat':
+        return this.clearChatOnScreen();
+      default: {
+        const unhandled: never = action;
+        throw new Error(`Unknown shortcut ${String(unhandled)}`);
+      }
+    }
   }
 
   // ---------- overlay ----------

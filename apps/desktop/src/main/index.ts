@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { execFile } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -23,6 +23,8 @@ import { packageFileName, THEME_PACKAGE_EXTENSION } from './theme-package';
 import { Updater } from './updater';
 import { fetchUpdateNotes } from '../shared/updateNotes';
 import { OpenedThemeFiles, themeFilesFromArgv } from './opened-files';
+import { GlobalShortcuts } from './shortcuts';
+import { isShortcutAction } from '../shared/shortcuts';
 import { ControlLog } from '../shared/controlLog';
 import { SoundPlayer } from './sound-player';
 import { WindowRelease } from './window-release';
@@ -352,6 +354,14 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
     updater.dismissPrompt();
   });
   ipcMain.handle(IPC.dismissOpenedThemeFile, (_e, id: unknown) => openedFiles?.dismiss(String(id)));
+  ipcMain.handle(IPC.setChatPaused, (_e, paused: unknown) => controller.setChatPaused(paused === true));
+  ipcMain.handle(IPC.clearChatOnScreen, () => controller.clearChatOnScreen());
+  ipcMain.handle(IPC.setShortcut, (_e, action: unknown, accelerator: unknown) => {
+    if (!isShortcutAction(action) || typeof accelerator !== 'string' || accelerator.length > 64) {
+      throw new Error('Invalid shortcut');
+    }
+    return controller.setShortcut(action, accelerator);
+  });
   ipcMain.handle(IPC.share, (_e, method: unknown, ...args: unknown[]) => {
     if (!isShareMethod(method) || !controller.share) throw new Error('Unknown share call');
     const call = controller.share[method] as (...params: unknown[]) => unknown;
@@ -505,7 +515,8 @@ async function bootstrap(): Promise<void> {
   controller.server = new LocalServer({
     port: settings.get().serverPort,
     viewerDir,
-    hub: controller.hub,
+    // Overlays and OBS read the output feed, which the streamer can pause or clear (#53).
+    hub: controller.output,
     themeFor: (target, themeId) => controller.themeFor(target, themeId),
     themeList: () => controller.themeSummaries(),
     appVersion: app.getVersion(),
@@ -591,6 +602,10 @@ async function bootstrap(): Promise<void> {
   await controller.init();
   void controller.share?.init();
   updater.start();
+  // Global shortcuts (#53) work from now on, also while the window is in the tray.
+  controller.shortcuts = new GlobalShortcuts(globalShortcut, (action) => controller.runShortcut(action));
+  controller.shortcuts.apply(settings.get().shortcuts);
+  controller.emit();
   // Opened with a .chattotheme file (#40): the control panel asks before importing it.
   opened.add(themeFilesFromArgv(process.argv, process.cwd(), existsSync));
 
@@ -601,6 +616,7 @@ async function bootstrap(): Promise<void> {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow(settings, controller);
   });
+  app.on('will-quit', () => controller.shortcuts?.unregisterAll());
   app.on('before-quit', () => {
     quitting = true;
     updater.stop();

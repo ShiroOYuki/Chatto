@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Minus,
   PanelsTopLeft,
+  Pause,
   Puzzle,
   RotateCw,
   Square,
@@ -16,6 +17,7 @@ import { SUPPORT_LINKS } from '../../../shared/support';
 import { useLocale, useMessages } from '../i18n';
 import { appPrefs, appWindow, openExternal } from '../services/app';
 import { obsPlugin, useObsPluginStatus } from '../services/obsPlugin';
+import { overlay } from '../services/overlay';
 import { updater } from '../services/updater';
 import { SwapIcon } from './motion';
 import { Hint, channelTone, StatusDot } from './kit';
@@ -109,6 +111,23 @@ function UpdateBadge({ update }: { update: AppState['update'] }) {
       >
         {ready ? <RotateCw /> : <Download />}
         {ready ? m.updateReady : m.updateAvailable(update.version ?? '')}
+      </button>
+    </Hint>
+  );
+}
+
+/** While new messages are held back from the overlays and OBS (#53), so it is never forgotten mid-stream. */
+function PausedBadge({ paused }: { paused: boolean }) {
+  const m = useMessages().shell.titleBar;
+  if (!paused) return null;
+  return (
+    <Hint label={m.chatPausedHint}>
+      <button
+        type="button"
+        onClick={() => overlay.setChatPaused(false)}
+        className={`${PILL} mr-2 bg-sakura/40 text-ink transition-colors hover:bg-matcha-strong hover:text-on-matcha`}
+      >
+        <Pause /> {m.chatPaused}
       </button>
     </Hint>
   );
@@ -218,6 +237,7 @@ export function TitleBar({ state, title }: { state: AppState; title?: string }) 
       </div>
 
       <div className="ml-auto flex h-full items-center">
+        <PausedBadge paused={state.chatPaused} />
         <UpdateBadge update={state.update} />
         <ObsPluginBadge dismissed={state.prefs.obsPluginPromptDismissed} />
         <SupportMenu />

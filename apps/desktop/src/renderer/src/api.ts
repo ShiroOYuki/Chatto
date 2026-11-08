@@ -4,6 +4,7 @@ import type { AppState, ChattoApi, CssFileChange, ObsPluginStatus } from '../../
 import { ControlLog, type LoggedChatEvent } from '../../shared/controlLog';
 import { DEFAULT_OVERLAY_LOOK, normalizeOverlayLook } from '../../shared/overlayLook';
 import type { UpdateNote } from '../../shared/updateNotes';
+import { duplicateOf, emptyShortcuts } from '../../shared/shortcuts';
 import { ShareClient } from '../../shared/share/client';
 import { createMemoryAssets } from '../../shared/share/memoryAssets';
 import { createFakeShareBackend } from '@chatto/share/fake';
@@ -31,6 +32,7 @@ declare global {
  * `?compact` starts in compact mode, `?page=<id>` opens a page.
  * `?e2e` turns off the random chat stream and exposes `window.__chattoMock`
  * so end-to-end tests can push exact events and state.
+ * `?onboarding` shows the overview's getting-started list (signed out, nothing set up).
  * `?update` opens the update dialog as if the startup check found a version (`?update=nonotes`
  * without its notes); `?opened` opens a theme file as if Chatto was launched with one (#39, #40).
  */
@@ -76,6 +78,10 @@ function createMockApi(): ChattoApi {
       chatLocale: 'auto',
       obsPluginPromptDismissed: false,
       skippedUpdateVersion: '',
+      // The mock is a set-up account; `?onboarding` shows the getting-started list (#54).
+      onboardingDismissed: !params.has('onboarding'),
+      visitedThemes: false,
+      visitedAlerts: false,
     },
     clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true },
@@ -93,7 +99,14 @@ function createMockApi(): ChattoApi {
           { id: 'opened-2', fileName: 'broken.chattotheme', error: 'Not a valid theme package' },
         ]
       : [],
+    chatPaused: false,
+    shortcuts: { bindings: emptyShortcuts(), failed: [] },
   };
+  if (params.has('onboarding')) {
+    state.auth = { status: 'signed-out' };
+    state.channel = { state: 'idle' };
+    state.selectedThemes = { overlay: 'matcha-glass', embed: 'matcha-glass', alerts: 'matcha-glass' };
+  }
   if (params.has('update')) {
     state.update = {
       status: 'available',
@@ -281,6 +294,16 @@ function createMockApi(): ChattoApi {
     },
     dismissOpenedThemeFile: async (id) =>
       set({ openedThemeFiles: state.openedThemeFiles.filter((file) => file.id !== id) }),
+    setChatPaused: async (chatPaused) => set({ chatPaused }),
+    clearChatOnScreen: async () => undefined,
+    // The browser cannot take global keys; Ctrl+Alt+Delete stands in for keys another app holds.
+    setShortcut: async (action, accelerator) => {
+      const other = duplicateOf(state.shortcuts.bindings, action, accelerator);
+      if (other) return { ok: false, reason: 'duplicate', action: other };
+      if (accelerator === 'Ctrl+Alt+Delete') return { ok: false, reason: 'unavailable' };
+      set({ shortcuts: { ...state.shortcuts, bindings: { ...state.shortcuts.bindings, [action]: accelerator } } });
+      return { ok: true };
+    },
     share: (method, ...args) => {
       const call = share[method] as (...params: unknown[]) => unknown;
       return Promise.resolve(call.apply(share, args)) as never;

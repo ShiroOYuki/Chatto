@@ -48,6 +48,9 @@ describe('SettingsPage', () => {
           chatLocale: 'auto',
           obsPluginPromptDismissed: false,
           skippedUpdateVersion: '',
+          onboardingDismissed: false,
+          visitedThemes: false,
+          visitedAlerts: false,
         },
       }),
     );

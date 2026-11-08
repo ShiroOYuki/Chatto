@@ -37,7 +37,9 @@ export type ServerFrame =
   | { v: typeof PROTOCOL_VERSION; type: 'event'; event: ChatEvent; alert?: AlertCue }
   | { v: typeof PROTOCOL_VERSION; type: 'theme'; theme: ChatTheme }
   /** The chat language changed. */
-  | { v: typeof PROTOCOL_VERSION; type: 'locale'; locale: Locale };
+  | { v: typeof PROTOCOL_VERSION; type: 'locale'; locale: Locale }
+  /** The streamer emptied the chat on screen (a shortcut, #53); the control panel's log keeps it. */
+  | { v: typeof PROTOCOL_VERSION; type: 'clear' };
 
 export type ClientFrame = {
   v: typeof PROTOCOL_VERSION;
@@ -61,7 +63,7 @@ export function decodeServerFrame(data: string): ServerFrame | null {
   try {
     const frame = JSON.parse(data) as Partial<ServerFrame>;
     if (frame?.v !== PROTOCOL_VERSION) return null;
-    if (frame.type === 'hello' || frame.type === 'event' || frame.type === 'theme') {
+    if (frame.type === 'hello' || frame.type === 'event' || frame.type === 'theme' || frame.type === 'clear') {
       return frame as ServerFrame;
     }
     if (frame.type === 'locale')

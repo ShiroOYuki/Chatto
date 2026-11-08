@@ -506,6 +506,60 @@ test('a theme file opened from Windows is imported after confirming, then can be
   await expect(page.getByRole('heading', { name: /（匯入）$/, level: 2 })).toHaveCount(1);
 });
 
+test('global shortcuts are recorded in settings, and keys another program holds are refused', async ({
+  panel,
+  page,
+}) => {
+  await panel.open('page=settings');
+  const field = page.getByRole('button', { name: '設定「暫停／恢復新訊息」的快捷鍵' });
+  await expect(field).toHaveText('未設定');
+  await field.click();
+  await page.keyboard.press('Control+Alt+KeyP');
+  await expect(field).toHaveText('Ctrl + Alt + P');
+
+  const clear = page.getByRole('button', { name: '設定「清空畫面上的聊天」的快捷鍵' });
+  await clear.click();
+  await page.keyboard.press('Control+Alt+KeyP');
+  await expect(page.getByText('已經用在「暫停／恢復新訊息」')).toBeVisible();
+  await clear.click();
+  await page.keyboard.press('Control+Alt+Delete');
+  await expect(page.getByText('這組按鍵被其他程式使用中，換一組試試')).toBeVisible();
+  await expect(clear).toHaveText('未設定');
+});
+
+test('pausing the chat on screen shows in the title bar until resumed', async ({ panel, page }) => {
+  await panel.open('page=outputs');
+  await page.getByRole('button', { name: '暫停新訊息' }).click();
+  await expect(page.getByRole('button', { name: '恢復新訊息' })).toHaveAttribute('aria-pressed', 'true');
+  const badge = page.getByRole('button', { name: '新訊息已暫停' });
+  await expect(badge).toBeVisible();
+  await badge.click();
+  await expect(badge).toHaveCount(0);
+  await page.getByRole('button', { name: '清空畫面' }).click();
+  await expect(page.getByText('已清空畫面')).toBeVisible();
+});
+
+test('the getting-started list ticks steps as they are done and can be closed for good', async ({ panel, page }) => {
+  await panel.open('onboarding');
+  const list = page.getByRole('heading', { name: '開始使用' });
+  await expect(list).toBeVisible();
+  await expect(page.getByText('0／3')).toBeVisible();
+  await page.getByRole('button', { name: '看看主題' }).click();
+  await expect(page.getByRole('heading', { name: '主題', level: 1 })).toBeVisible();
+  await panel.nav('總覽').click();
+  await expect(page.getByRole('listitem', { name: '選一個主題，已完成' })).toBeVisible();
+  await expect(page.getByText('1／3')).toBeVisible();
+
+  await panel.setState({
+    auth: { status: 'signed-in', login: 'shiraine_ciel' },
+    channel: { state: 'connected', login: 'shiraine_ciel' },
+  });
+  await expect(page.getByRole('heading', { name: '都準備好了' })).toBeVisible();
+  await page.getByRole('button', { name: '收起' }).click();
+  await expect(page.getByRole('heading', { name: '都準備好了' })).toHaveCount(0);
+  expect(await page.evaluate(() => window.__chattoMock!.getState().prefs.onboardingDismissed)).toBe(true);
+});
+
 test('a failed update check says what went wrong in plain words', async ({ panel, page }) => {
   await panel.open('page=settings');
   await page.getByRole('button', { name: '關於', exact: true }).click();

@@ -30,6 +30,11 @@ describe('protocol', () => {
     }
   });
 
+  it('tells viewers to empty the chat on screen', () => {
+    const frame = { v: PROTOCOL_VERSION, type: 'clear' } as const;
+    expect(decodeServerFrame(encodeFrame(frame))).toEqual(frame);
+  });
+
   it('carries the chat language and rejects unknown ones', () => {
     const frame = { v: PROTOCOL_VERSION, type: 'locale', locale: 'en' } as const;
     expect(decodeServerFrame(encodeFrame(frame))).toEqual(frame);

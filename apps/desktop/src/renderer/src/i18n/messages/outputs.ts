@@ -45,6 +45,12 @@ export default defineMessages({
     alertsIntro: '訂閱、小奇點、揪團等事件在桌面右上角跳出卡片，只有你看得到',
     resetAlertsPosition: '移回右上角',
     alertsAdjustingHint: '直接拖曳事件 Overlay 移動位置、拖曳邊緣調整大小，完成後按「完成調整」',
+    pauseChat: '暫停新訊息',
+    resumeChat: '恢復新訊息',
+    pauseHint: 'Overlay 和 OBS 先不顯示新訊息，恢復時一次補上；刪除與禁言仍會立即生效',
+    clearScreen: '清空畫面',
+    clearScreenHint: '清掉 Overlay 和 OBS 目前的聊天，控制台的紀錄不受影響',
+    clearedScreen: '已清空畫面',
     alertRules: '提醒規則',
     look: {
       title: '視窗外觀',
@@ -99,6 +105,13 @@ export default defineMessages({
     resetAlertsPosition: 'Move back to top right',
     alertsAdjustingHint:
       'Drag the alert overlay to move it and drag its edges to resize. Click “Finish adjusting” when you’re done.',
+    pauseChat: 'Pause new messages',
+    resumeChat: 'Resume new messages',
+    pauseHint:
+      'The overlays and OBS hold new messages and catch up when you resume; deletions and timeouts still apply at once',
+    clearScreen: 'Clear screen',
+    clearScreenHint: 'Clears the chat on the overlay and in OBS; the log in Chatto stays',
+    clearedScreen: 'Screen cleared',
     alertRules: 'Alert rules',
     look: {
       title: 'Window look',
