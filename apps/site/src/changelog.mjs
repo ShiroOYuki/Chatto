@@ -22,7 +22,9 @@ const t = (en, zh, ja) => ({ en, 'zh-TW': zh, ja });
 export const CHANGELOG = {
   app: [
     {
-      upcoming: true,
+      version: 'v0.4.0',
+      date: '2026-11-09',
+      download: true,
       sections: [
         {
           kind: 'new',
@@ -64,7 +66,6 @@ export const CHANGELOG = {
     {
       version: 'v0.3.1',
       date: '2026-11-08',
-      download: true,
       sections: [
         {
           kind: 'new',
@@ -366,6 +367,23 @@ export const CHANGELOG = {
     },
   ],
   obs: [
+    {
+      version: 'v0.2.0',
+      date: '2026-11-09',
+      chatto: 'v0.4.0',
+      sections: [
+        {
+          kind: 'new',
+          items: [
+            t(
+              'The source’s settings and the waiting screen in Japanese',
+              '來源的設定與等待畫面支援日文',
+              'ソースの設定と待機画面が日本語に対応しました',
+            ),
+          ],
+        },
+      ],
+    },
     {
       version: 'v0.1.0',
       date: '2026-11-04',
