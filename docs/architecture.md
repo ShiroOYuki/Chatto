@@ -9,7 +9,7 @@
                                                                    │     ├─► OBS 瀏覽器來源（/embed）
                                                                    │     │     或 OBS 外掛「Chatto 聊天室」（/embed?theme=）
                                                                    │     └─► 事件 Overlay 視窗（/alerts）
-                                                                   └─► IPC ─► 控制台 renderer（統計、預覽）
+                                                                   └─► ControlLog（main）─► IPC ─► 控制台 renderer（紀錄、統計、預覽）
 ```
 
 - **Provider** 負責連線、驗證、把平台 payload 轉成 `ChatEvent`。只有 provider 知道平台細節。
@@ -27,10 +27,23 @@
   - 所有輸出都略過 `meta.shownAsMessage` 的通知（同一次兌換已經以聊天訊息出現）。
   - `overlay`：沉寂後的第一則留言加上 `after-silence` highlight；開啟「桌面聊天室不重複顯示」且事件 Overlay 開著時，略過會跳卡片的事件。
   - `alerts`：只收到通過提醒規則（開關、最低數量）的事件，並附上 `alert`（停留時間、音效）；刪除與清除事件照常送達，卡片會立刻移除。新連上的 alerts viewer 沒有 backlog，舊事件不會重播。
-- **忠誠點數兌換**：只有頻道擁有者本人登入、token 有 `channel:read:redemptions` 時，provider 才訂閱兌換事件（`AppState.auth.redemptionScope` 回報 scope；舊 token 沒有，控制台提示重新登入，不強制登出）。兌換照常送到三個輸出；控制台另有兌換紀錄（`renderer/src/redemptionLog.ts` 的純 reducer，放在 store 裡，顯示在聊天室頁，關閉只移出清單，不改 Twitch 上的狀態，也不寫入磁碟）。設定在 `AlertSettings.redemptions`。
+- **忠誠點數兌換**：只有頻道擁有者本人登入、token 有 `channel:read:redemptions` 時，provider 才訂閱兌換事件（`AppState.auth.redemptionScope` 回報 scope；舊 token 沒有，控制台提示重新登入，不強制登出）。兌換照常送到三個輸出；控制台另有兌換紀錄（`shared/redemptionLog.ts` 的純 reducer，main 與控制台各有一份，見下方「控制台視窗與記憶體」；顯示在聊天室頁，關閉只移出清單，不改 Twitch 上的狀態，也不寫入磁碟）。設定在 `AlertSettings.redemptions`。
 - **提醒**（`main/alerts.ts`，純函式）：`SilenceTracker` 記錄最後一則一般留言的時間，頻道連上時從那一刻開始算；機器人、指令前綴與事件訊息不算留言。`alertCue()` 依規則決定事件要不要跳卡片。規則分兩種：跨平台分類（`ALERT_CATEGORIES`：贊助、訂閱、續訂、贈送訂閱、揪團、公告，鍵為 `any:<分類>`），由各平台在 `EVENT_CATALOG` 用 `alertCategory` 對應；沒有分類的平台專屬事件（例如 Twitch 的頻道點數強調訊息、觀看連勝）用自己的事件鍵當規則。新增平台時替事件填上 `alertCategory`，提醒頁就會自動歸類。
-- **提示音**：內建音效（泡泡、金幣、鈴聲、雷射）是從 soundcn 收進來的 CC0 音效（`packages/chat-ui/src/soundcn/`，每個一個 base64 模組），用 `import()` 動態載入，不會打包進 OBS 的 embed 頁面；直接解碼 base64，不需要 fetch。使用者自選的音檔複製到 userData 的 `sounds/`，由 LocalServer 在 `/sounds/<檔名>` 提供（只接受 `[\w-]+.(mp3|ogg|wav)`）。沉寂提醒的聲音由控制台播放（沒開 Overlay 也聽得到），事件卡片的聲音由事件 Overlay 在卡片出現時播放。
+- **提示音**：內建音效（泡泡、金幣、鈴聲、雷射）是從 soundcn 收進來的 CC0 音效（`packages/chat-ui/src/soundcn/`，每個一個 base64 模組），用 `import()` 動態載入，不會打包進 OBS 的 embed 頁面；直接解碼 base64，不需要 fetch。使用者自選的音檔複製到 userData 的 `sounds/`，由 LocalServer 在 `/sounds/<檔名>` 提供（只接受 `[\w-]+.(mp3|ogg|wav)`）。沉寂提醒的聲音由控制台播放（沒開 Overlay 也聽得到）；控制台視窗已在系統匣釋放時，改由 main 開一個隱藏的小視窗（`main/sound-player.ts`，載入只有幾 KB 的 `renderer/sound.html`）播完就關。事件卡片的聲音由事件 Overlay 在卡片出現時播放。
 - **控制台** 是 frameless 視窗，自繪標題列（含視窗按鈕）；有完整模式（側邊導覽多頁面）與精簡模式（單頁 Bento）。它只透過 `window.chatto`（preload 暴露的 `ChattoApi`）和 main 溝通，拿不到 token。
+
+## 控制台視窗與記憶體（#57）
+
+- **縮到系統匣後釋放**：關閉到系統匣時先隱藏；隱藏滿 5 分鐘（`main/tray-release.ts` 的 `TrayRelease`，開發版可用 `CHATTO_TRAY_RELEASE_MS` 縮短）才真的關掉視窗，省下控制台 renderer 的記憶體。主題編輯器有未儲存的變更時（`setUnsavedWork`）不釋放。從系統匣或第二次啟動開啟時重建視窗。Overlay、OBS、事件 Overlay 都在 main 與 LocalServer，不受影響。
+- **聊天紀錄在 main**：聊天紀錄、統計與兌換清單的純 reducer 在 `shared/chatLog.ts`、`shared/redemptionLog.ts`；main 的 `ControlLog`（`shared/controlLog.ts`）保存整個工作階段，每個事件帶遞增的 `seq` 送給控制台（`LoggedChatEvent`）。控制台開啟時先訂閱事件、再取 `getControlLog()` 快照，`reduceControlLogView` 只套用比快照新的事件，不漏也不重複。「清除」與「移出兌換」在兩邊各做一次。
+- **延遲載入**：總覽以外的頁面、精簡模式、主題編輯器（含 CodeMirror）與投稿對話框用 `React.lazy` 拆開（`components/lazy.tsx`），第一次進入時才載入。
+- **量測**：`app.getAppMetrics()` 的 `workingSetSize` 會把各程序共用的 Electron／Chromium DLL 重複計算；工作管理員的「記憶體」欄是私人工作集。比較前後時兩種都記。
+
+## 紀錄檔與診斷資訊（#56）
+
+- **紀錄檔**（`main/logger.ts`）：userData 的 `logs/chatto.log`，超過 1 MB 輪替成 `chatto.1.log`、`chatto.2.log`。記警告、錯誤（main 的 `console.warn`／`console.error` 也會寫入）與重要事件：啟動、本機 server、狀態變化（`describeStateChanges`：登入、聊天室連線、Overlay 開關、更新、主題分享，不含名稱）、視窗或子程序意外結束、OBS 外掛安裝、系統匣釋放。**不記** token 與聊天內容。
+- **診斷資訊匯出**（`main/diagnostics.ts`，設定頁「關於 › 回報問題」）：一個 zip，內含 `info.json`（版本、作業系統、OBS 外掛狀態、連線摘要、各程序記憶體）、`settings.json`、`logs/`。設定經過 `SETTINGS_POLICY`／`PREFS_POLICY`：每個欄位都要決定保留、省略或轉換，**新增設定欄位時不寫進 policy 就無法編譯**，`diagnostics.test.ts` 也會比對實際的設定欄位。頻道與帳號名稱預設換成 `<channel>`（包含紀錄檔與錯誤文字裡出現的），使用者勾選才保留；分享用的匿名 ID、外部編輯器指令（可能含使用者名稱的路徑）不匯出；聊天訊息永遠不匯出。
+- **回報問題**：開啟 GitHub 的 `bug_report.yml` 表單（`shared/reportIssue.ts`，預填版本），提示附上診斷資訊。
 
 ## Packages
 

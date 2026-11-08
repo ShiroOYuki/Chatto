@@ -108,6 +108,21 @@
 - `columns` 排列加標籤時，和事件貼紙一樣改成不裁切，由名稱框與內容框各自補外側圓角。
 - 事件 Overlay（`/alerts`）用同一個 `ChatView`，一次只放一張卡片；時間到時在 `.chatto-root` 加上 `data-leaving`，播放 `animation.exit`，結束後才換下一張。`exitDurationMs(theme)` 回傳要等多久。
 
+## 效能：高成本參數
+
+在 OBS embed 頁、每秒 25 則訊息的量測（2026-11-08，#57，Chromium 主執行緒 CPU）：
+
+| 主題                            | CPU        |
+| ------------------------------- | ---------- |
+| 抹茶玻璃（無進場動畫）          | 約 18%     |
+| 泡泡（`pop` 進場）              | 約 22%     |
+| 泡泡，關掉進場動畫              | 約 11%     |
+| 泡泡，改成 `fade` 或 `slide-up` | 約 20～23% |
+
+- **進場動畫（`animation.enter`）是最主要的成本**，不分種類；高流量時大約讓 CPU 加倍。`will-change`、`contain` 沒有改善。聊天室很熱鬧時，`enter: 'none'` 最省。
+- 頭像、`stacked` 排列、事件貼紙的影響很小（各差不到 5%）。
+- `backdropBlur`（`backdrop-filter`）、陰影與 `zoom` 進場的 `filter: blur()` 會增加繪製成本，盡量只用在少數元素。
+
 ## 名稱顏色
 
 平台上的名稱顏色以 CSS 變數 `--chatto-user-color` 放在 `.chatto-author` 上（不是 inline `color`），所以自訂 CSS 不需要 `!important` 就能覆蓋。`author.useUserColor` 開啟時產生 `color: var(--chatto-user-color, <author.color>)`；Blank 主題可自行使用這個變數。

@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, 
 import { autoUpdater } from 'electron-updater';
 import { execFile } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
+import os from 'node:os';
 import { join } from 'node:path';
 import type { ChatTheme, Locale } from '@chatto/core';
 import { IPC, isShareMethod, type AppState, type CaptureRect, type OverlayWindowId } from '../shared/ipc';
@@ -20,6 +21,18 @@ import { BUILT_IN_CLIENT_ID, SettingsStore, type Rect } from './settings';
 import { ThemeAssets } from './theme-assets';
 import { packageFileName, THEME_PACKAGE_EXTENSION } from './theme-package';
 import { Updater } from './updater';
+import { ControlLog } from '../shared/controlLog';
+import { SoundPlayer } from './sound-player';
+import { TrayRelease } from './tray-release';
+import { Logger } from './logger';
+import {
+  buildDiagnosticsZip,
+  connectionSummary,
+  describeStateChanges,
+  diagnosticsFileName,
+  hideNames,
+  sanitizeSettings,
+} from './diagnostics';
 
 const isDev = !app.isPackaged;
 const resourcesDir = isDev ? join(__dirname, '../../resources') : join(process.resourcesPath, 'resources');
@@ -29,6 +42,36 @@ let mainWindow: BrowserWindow | null = null;
 let updater = new Updater(null);
 let tray: Tray | null = null;
 let quitting = false;
+/** The main process log (#56); created once the app is ready. */
+let logger: Logger | null = null;
+/** The last diagnostics zip the user saved, for "show in folder". */
+let lastDiagnostics: string | null = null;
+/** Builds the control panel window again after it was released to the tray; set in `bootstrap`. */
+let openMainWindow: () => BrowserWindow = () => {
+  throw new Error('Chatto is not ready yet');
+};
+
+/** How long the window stays hidden in the tray before it is closed to free memory (#57). */
+const TRAY_RELEASE_MS =
+  !app.isPackaged && process.env.CHATTO_TRAY_RELEASE_MS ? Number(process.env.CHATTO_TRAY_RELEASE_MS) : 5 * 60_000;
+const trayRelease = new TrayRelease({
+  delayMs: TRAY_RELEASE_MS,
+  release: () => {
+    if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isVisible()) return;
+    mainWindow.destroy();
+    mainWindow = null;
+    logger?.info('window', 'control panel closed in the tray to free memory');
+  },
+});
+
+/** Hides the control panel to the tray; it is released later if it stays there. */
+function hideToTray(window: BrowserWindow): void {
+  window.hide();
+  trayRelease.hidden();
+}
+
+/** The control panel window exists (it may be hidden in the tray). */
+const hasMainWindow = () => Boolean(mainWindow && !mainWindow.isDestroyed());
 
 // Lets end-to-end tests run against an isolated profile (and its own single-instance lock).
 if (!app.isPackaged && process.env.CHATTO_USER_DATA) app.setPath('userData', process.env.CHATTO_USER_DATA);
@@ -88,8 +131,11 @@ function createMainWindow(settings: SettingsStore, controller: AppController): B
   window.on('close', (event) => {
     if (!quitting && settings.get().prefs.closeToTray) {
       event.preventDefault();
-      window.hide();
+      hideToTray(window);
     }
+  });
+  window.on('closed', () => {
+    if (mainWindow === window) mainWindow = null;
   });
 
   if (isDev && process.env.ELECTRON_RENDERER_URL) void window.loadURL(process.env.ELECTRON_RENDERER_URL);
@@ -98,6 +144,12 @@ function createMainWindow(settings: SettingsStore, controller: AppController): B
 }
 
 function showMainWindow(): void {
+  trayRelease.shown();
+  // Released to the tray earlier: build it again (it shows itself once ready).
+  if (!hasMainWindow()) {
+    mainWindow = openMainWindow();
+    return;
+  }
   if (!mainWindow) return;
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
@@ -135,9 +187,13 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
     else mainWindow.maximize();
   });
   ipcMain.handle(IPC.windowClose, () => {
-    if (settings.get().prefs.closeToTray) mainWindow?.hide();
-    else app.quit();
+    if (!settings.get().prefs.closeToTray) app.quit();
+    else if (mainWindow) hideToTray(mainWindow);
   });
+  ipcMain.handle(IPC.setUnsavedWork, (_e, unsaved: boolean) => trayRelease.setUnsaved(unsaved === true));
+  ipcMain.handle(IPC.getControlLog, () => controlLog.snapshot());
+  ipcMain.handle(IPC.clearChatLog, () => controlLog.clearChat());
+  ipcMain.handle(IPC.dismissRedemption, (_e, key: string) => controlLog.dismissRedemption(String(key)));
   ipcMain.handle(IPC.setPrefs, (_e, patch) => controller.setPrefs(patch));
 
   ipcMain.handle(IPC.setClientId, (_e, clientId: string) => controller.setClientId(clientId));
@@ -197,8 +253,28 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.openCssFile, (_e, id: string) => controller.openCssFile(id));
   ipcMain.handle(IPC.openExternal, (_e, url: string) => openExternal(url));
   ipcMain.handle(IPC.getObsPluginStatus, () => obsPlugin.status());
-  ipcMain.handle(IPC.installObsPlugin, () => obsPlugin.install());
-  ipcMain.handle(IPC.uninstallObsPlugin, () => obsPlugin.uninstall());
+  ipcMain.handle(IPC.installObsPlugin, async () => logObsPlugin('install', await obsPlugin.install()));
+  ipcMain.handle(IPC.uninstallObsPlugin, async () => logObsPlugin('uninstall', await obsPlugin.uninstall()));
+  ipcMain.handle(IPC.exportDiagnostics, async (_e, raw: unknown) => {
+    const options = { includeChannel: (raw as { includeChannel?: unknown } | null)?.includeChannel === true };
+    const m = controller.messages().dialogs;
+    const dialogOptions = {
+      title: m.exportDiagnostics,
+      defaultPath: join(app.getPath('downloads'), diagnosticsFileName(new Date())),
+      filters: [{ name: m.zipFiles, extensions: ['zip'] }],
+    };
+    const result = mainWindow
+      ? await dialog.showSaveDialog(mainWindow, dialogOptions)
+      : await dialog.showSaveDialog(dialogOptions);
+    if (result.canceled || !result.filePath) return false;
+    writeFileSync(result.filePath, await buildDiagnostics(controller, settings, options));
+    lastDiagnostics = result.filePath;
+    logger?.info('diagnostics', 'exported', options);
+    return true;
+  });
+  ipcMain.handle(IPC.revealDiagnostics, () => {
+    if (lastDiagnostics) shell.showItemInFolder(lastDiagnostics);
+  });
   ipcMain.handle(IPC.checkForUpdate, () => updater.check());
   ipcMain.handle(IPC.downloadUpdate, () => updater.download());
   ipcMain.handle(IPC.installUpdate, () => updater.install());
@@ -220,6 +296,56 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
 }
 
 /** The OBS plugin as this build ships it: packaged with the app, or the local CMake install in development. */
+function obsPluginStatusForDiagnostics(): unknown {
+  try {
+    return obsPlugin.status();
+  } catch (error) {
+    return `unknown: ${String(error)}`;
+  }
+}
+
+function logObsPlugin<T extends { ok: boolean; status: { state: string } }>(action: string, result: T): T {
+  if (result.ok) logger?.info('obs-plugin', `${action}: ${result.status.state}`);
+  else logger?.warn('obs-plugin', `${action} failed`, result);
+  return result;
+}
+
+/**
+ * The diagnostics zip (#56): versions, connections, process memory, settings
+ * without private fields, and the log. Names are replaced unless the user asked for them.
+ */
+async function buildDiagnostics(
+  controller: AppController,
+  settings: SettingsStore,
+  options: { includeChannel: boolean },
+): Promise<Uint8Array> {
+  const state = controller.state();
+  const names = options.includeChannel ? [] : [settings.get().channelLogin, state.auth.login, state.channel.login];
+  const hide = (text: string) => hideNames(text, names);
+  const info = {
+    generatedAt: new Date().toISOString(),
+    app: { version: app.getVersion(), packaged: app.isPackaged, locale: state.prefs.locale },
+    runtime: { electron: process.versions.electron, chrome: process.versions.chrome, node: process.versions.node },
+    os: {
+      platform: os.platform(),
+      release: os.release(),
+      arch: os.arch(),
+      memoryMB: Math.round(os.totalmem() / 1048576),
+    },
+    obsPlugin: obsPluginStatusForDiagnostics(),
+    connections: connectionSummary(state, options),
+    processes: app.getAppMetrics().map((p) => ({ type: p.type, memoryMB: Math.round(p.memory.workingSetSize / 1024) })),
+  };
+  return buildDiagnosticsZip({
+    info: JSON.parse(hide(JSON.stringify(info))),
+    settings: sanitizeSettings(settings.get(), options),
+    logs: (logger?.read() ?? []).map((log) => ({ ...log, text: hide(log.text) })),
+  });
+}
+
+/** This session's chat log and redemptions, for the control panel (see `shared/controlLog.ts`). */
+const controlLog = new ControlLog();
+
 const obsPlugin = new ObsPlugin({
   bundledDir: isDev
     ? join(__dirname, '../../../../obs-plugin/release', OBS_PLUGIN_NAME)
@@ -250,6 +376,18 @@ async function isChattoListening(port: number): Promise<boolean> {
 
 async function bootstrap(): Promise<void> {
   await app.whenReady();
+  logger = new Logger(join(app.getPath('userData'), 'logs'));
+  logger.captureConsole();
+  logger.info('app', `Chatto ${app.getVersion()} started`, {
+    electron: process.versions.electron,
+    os: `${os.platform()} ${os.release()} ${os.arch()}`,
+    packaged: app.isPackaged,
+  });
+  process.on('unhandledRejection', (reason) => logger?.error('app', 'unhandled rejection', reason));
+  app.on('render-process-gone', (_e, contents, details) =>
+    logger?.warn('app', 'a window stopped', { page: contents.getURL().split('?')[0], ...details }),
+  );
+  app.on('child-process-gone', (_e, details) => logger?.warn('app', 'a helper process stopped', details));
   app.setAppUserModelId('dev.ciel.chatto');
   Menu.setApplicationMenu(null);
 
@@ -304,7 +442,9 @@ async function bootstrap(): Promise<void> {
   });
   try {
     await controller.server.start();
+    logger.info('server', `local server on port ${settings.get().serverPort}`);
   } catch (error) {
+    logger.error('server', 'local server did not start', error);
     if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw error;
     // The overlay and OBS need this port, so Chatto cannot run without it: say why and leave.
     const port = settings.get().serverPort;
@@ -328,16 +468,32 @@ async function bootstrap(): Promise<void> {
     OverlayWindow.alertBounds,
   );
 
-  controller.onChange = (state: AppState) => send(IPC.state, state);
+  let loggedState: AppState | null = null;
+  controller.onChange = (state: AppState) => {
+    for (const line of describeStateChanges(loggedState, state)) logger?.info('state', line);
+    loggedState = state;
+    send(IPC.state, state);
+  };
   controller.isWindowMaximized = () => Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized());
   // Development builds have no installer to update from.
   updater = new Updater(app.isPackaged ? autoUpdater : null, () => controller.emit());
   controller.updateState = () => updater.state;
-  controller.hub.subscribe((event) => send(IPC.chatEvent, event));
-  controller.onAlertSound = (sound) => send(IPC.alertSound, sound);
+  // The session log lives here, so the control panel window can be released to the tray (#57).
+  controller.hub.subscribe((event) => send(IPC.chatEvent, controlLog.receive(event)));
+  const soundPlayer = new SoundPlayer((window, query) =>
+    isDev && process.env.ELECTRON_RENDERER_URL
+      ? window.loadURL(`${process.env.ELECTRON_RENDERER_URL}/sound.html?${new URLSearchParams(query)}`)
+      : window.loadFile(join(__dirname, '../renderer/sound.html'), { query }),
+  );
+  // The control panel plays the reminder; without it, a hidden sound window does.
+  controller.onAlertSound = (sound) => {
+    if (hasMainWindow()) send(IPC.alertSound, sound);
+    else soundPlayer.play(sound, settings.get().serverPort);
+  };
 
   registerIpc(controller, settings);
-  mainWindow = createMainWindow(settings, controller);
+  openMainWindow = () => createMainWindow(settings, controller);
+  mainWindow = openMainWindow();
   let trayLocale = settings.get().prefs.locale;
   createTray(trayLocale);
   // Called after every preference change; menus built once with text are rebuilt in the new language.

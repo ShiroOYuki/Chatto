@@ -8,16 +8,20 @@ import { TitleBar } from './components/TitleBar';
 import { Confetti, type ConfettiRef } from './components/ui/confetti';
 import { useMessages } from './i18n';
 import { TooltipProvider } from './components/ui/tooltip';
-import { AccountsPage } from './pages/accounts/AccountsPage';
-import { AlertsPage } from './pages/alerts/AlertsPage';
-import { ChatPage } from './pages/Chat';
-import { ExplorePage } from './pages/explore/ExplorePage';
-import { OutputsPage } from './pages/Outputs';
+import { LazyBoundary, lazyNamed } from './components/lazy';
 import { OverviewPage } from './pages/Overview';
-import { SettingsPage } from './pages/Settings';
-import { ThemesPage } from './pages/Themes';
 import { StoreProvider, useAppState } from './store';
-import { CompactDashboard } from './pages/compact/CompactDashboard';
+
+// The overview is the start page; every other page (and the compact dashboard)
+// loads on first visit, which keeps startup and idle memory down (#57).
+const AccountsPage = lazyNamed(() => import('./pages/accounts/AccountsPage'), 'AccountsPage');
+const AlertsPage = lazyNamed(() => import('./pages/alerts/AlertsPage'), 'AlertsPage');
+const ChatPage = lazyNamed(() => import('./pages/Chat'), 'ChatPage');
+const ExplorePage = lazyNamed(() => import('./pages/explore/ExplorePage'), 'ExplorePage');
+const OutputsPage = lazyNamed(() => import('./pages/Outputs'), 'OutputsPage');
+const SettingsPage = lazyNamed(() => import('./pages/Settings'), 'SettingsPage');
+const ThemesPage = lazyNamed(() => import('./pages/Themes'), 'ThemesPage');
+const CompactDashboard = lazyNamed(() => import('./pages/compact/CompactDashboard'), 'CompactDashboard');
 
 const initialPage = (new URLSearchParams(location.search).get('page') as PageId | null) ?? 'overview';
 
@@ -115,13 +119,15 @@ function Shell() {
         <TitleBar state={state} title={compact ? m.shell.titleBar.compactMode : m.shell.pages[page]} />
         {compact ? (
           <div className="min-h-0 flex-1 overflow-y-auto">
-            <CompactDashboard
-              state={state}
-              onOpenThemes={() => {
-                setPage('themes');
-                appPrefs.set({ uiMode: 'full' });
-              }}
-            />
+            <LazyBoundary>
+              <CompactDashboard
+                state={state}
+                onOpenThemes={() => {
+                  setPage('themes');
+                  appPrefs.set({ uiMode: 'full' });
+                }}
+              />
+            </LazyBoundary>
           </div>
         ) : (
           <div className="flex min-h-0 flex-1">
@@ -131,7 +137,9 @@ function Shell() {
                 id={`${page}:${visit}`}
                 className={`mx-auto max-w-[1360px] p-6 ${fillsViewport ? 'h-full overflow-y-auto' : ''}`}
               >
-                <Page id={page} state={state} onNavigate={setPage} />
+                <LazyBoundary>
+                  <Page id={page} state={state} onNavigate={setPage} />
+                </LazyBoundary>
               </PageTransition>
             </main>
           </div>

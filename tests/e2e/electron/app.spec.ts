@@ -33,7 +33,14 @@ test.beforeEach(async () => {
     executablePath: electronPath,
     args: [appDir],
     // The built app would talk to the real sharing service; tests keep to the in-memory fake.
-    env: { ...process.env, CHATTO_USER_DATA: userData, ELECTRON_RENDERER_URL: '', CHATTO_SHARE_API: 'fake' },
+    env: {
+      ...process.env,
+      CHATTO_USER_DATA: userData,
+      ELECTRON_RENDERER_URL: '',
+      CHATTO_SHARE_API: 'fake',
+      // Tests about the tray release the hidden window quickly instead of after five minutes.
+      CHATTO_TRAY_RELEASE_MS: test.info().title.includes('[tray]') ? '1500' : '',
+    },
   });
   mainWindow = await app.firstWindow();
   await mainWindow.waitForLoadState('domcontentloaded');
@@ -66,6 +73,66 @@ test('opens the frameless control panel with the preload API', async () => {
   const state = await mainWindow.evaluate(() => window.chatto!.getState());
   expect(JSON.stringify(state)).not.toMatch(/token/i);
   expect(state.server.port).toBe(port);
+});
+
+test('[tray] closes the hidden control panel to free memory and builds it again on open', async () => {
+  await expect(mainWindow.getByRole('navigation')).toBeVisible();
+  await mainWindow.evaluate(() => window.chatto!.windowClose());
+  await expect.poll(async () => (await windows()).length, { timeout: 10_000 }).toBe(0);
+  // The local server keeps serving OBS while the window is gone.
+  expect((await fetch(`http://127.0.0.1:${port}/api/ping`)).status).toBe(200);
+
+  // What a click on the tray icon or a second launch does.
+  const reopened = app.waitForEvent('window');
+  await app.evaluate(({ app: electronApp }) => electronApp.emit('second-instance'));
+  const reopenedWindow = await reopened;
+  await expect(reopenedWindow.getByRole('navigation')).toBeVisible();
+  expect((await windows()).filter((w) => w.visible)).toHaveLength(1);
+
+  const log = readFileSync(join(userData, 'logs', 'chatto.log'), 'utf8');
+  expect(log).toContain('[window] control panel closed in the tray to free memory');
+});
+
+test('[tray] keeps a window with an unsaved theme', async () => {
+  await mainWindow.evaluate(() => window.chatto!.setUnsavedWork(true));
+  await mainWindow.evaluate(() => window.chatto!.windowClose());
+  await mainWindow.waitForTimeout(3000);
+  expect(await windows()).toHaveLength(1);
+});
+
+test('plays a reminder sound from the small sound page', async () => {
+  const player = app.waitForEvent('window');
+  const query = {
+    sound: JSON.stringify({ enabled: true, volume: 0.1, sound: { kind: 'builtin', id: 'bubble' } }),
+    port: String(port),
+  };
+  // The same window `main/sound-player.ts` opens while the control panel is released to the tray.
+  await app.evaluate(
+    ({ BrowserWindow }, { file, query }) => {
+      const window = new BrowserWindow({ show: false, webPreferences: { autoplayPolicy: 'no-user-gesture-required' } });
+      void window.loadFile(file, { query });
+    },
+    { file: join(appDir, 'out/renderer/sound.html'), query },
+  );
+  const page = await player;
+  await expect(page).toHaveTitle(/played|failed/);
+  expect(await page.title()).toBe('played');
+});
+
+test('writes a log and exports diagnostics without private settings', async () => {
+  const file = join(userData, 'diagnostics.zip');
+  await app.evaluate(({ dialog }, path) => {
+    dialog.showSaveDialog = (async () => ({ canceled: false, filePath: path })) as typeof dialog.showSaveDialog;
+  }, file);
+  expect(await mainWindow.evaluate(() => window.chatto!.exportDiagnostics({ includeChannel: false }))).toBe(true);
+  const { unzipSync, strFromU8 } = await import('fflate');
+  const zip = unzipSync(readFileSync(file));
+  expect(Object.keys(zip)).toEqual(expect.arrayContaining(['info.json', 'settings.json', 'logs/chatto.log']));
+  const info = JSON.parse(strFromU8(zip['info.json']!));
+  expect(info.app.version).toMatch(/^\d+\.\d+\.\d+/);
+  expect(strFromU8(zip['logs/chatto.log']!)).toContain(`[server] local server on port ${port}`);
+  // The anonymous sharing id stays on this computer.
+  expect(JSON.parse(strFromU8(zip['settings.json']!)).share).toEqual({ termsAccepted: 0 });
 });
 
 test('serves the viewer pages on loopback', async () => {

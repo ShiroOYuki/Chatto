@@ -19,6 +19,8 @@ export const MAIN_MESSAGES = defineMessages({
       imageFiles: '圖片',
       exportThemePackage: '匯出主題包',
       themePackageFiles: 'Chatto 主題包',
+      exportDiagnostics: '匯出診斷資訊',
+      zipFiles: 'ZIP 壓縮檔',
       cannotStart: 'Chatto 無法啟動',
       alreadyRunning: '另一個 Chatto 已經在執行（可能是安裝版或開發版）。請先從系統匣結束它，再開啟這一個。',
       portInUse: (port: number) =>
@@ -56,6 +58,8 @@ export const MAIN_MESSAGES = defineMessages({
       imageFiles: 'Images',
       exportThemePackage: 'Export theme package',
       themePackageFiles: 'Chatto theme package',
+      exportDiagnostics: 'Export diagnostics',
+      zipFiles: 'ZIP archive',
       cannotStart: 'Chatto cannot start',
       alreadyRunning:
         'Another Chatto is already running (an installed or a development copy). Quit it from the tray, then open this one.',

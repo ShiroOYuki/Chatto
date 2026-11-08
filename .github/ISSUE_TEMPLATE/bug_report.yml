@@ -1,0 +1,36 @@
+name: 回報問題 Bug report
+description: Chatto 不如預期時回報 · Something in Chatto does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        到 Chatto 的「設定 › 關於 › 回報問題」匯出診斷資訊，拖曳到下方附上，會更快找到原因。診斷資訊不含登入資訊與聊天訊息。
+        In Chatto, go to Settings › About › Report a problem and export diagnostics, then drop the ZIP file below. It has no sign-in details or chat messages.
+  - type: input
+    id: version
+    attributes:
+      label: Chatto 版本 · Version
+      placeholder: '0.3.0'
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 發生了什麼 · What happened
+      description: 和預期的有什麼不同 · And what you expected instead
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 重現步驟 · Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 診斷資訊與截圖 · Diagnostics and screenshots
+      description: 拖曳 chatto-diagnostics-*.zip 或截圖到這裡 · Drop chatto-diagnostics-*.zip or screenshots here

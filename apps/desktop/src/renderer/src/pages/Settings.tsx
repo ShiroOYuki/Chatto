@@ -17,6 +17,7 @@ import { ThemeSwitcher } from '../components/kibo-ui/theme-switcher';
 import { TeaCup } from '../components/TeaCup';
 import { ClientIdForm } from './ClientIdForm';
 import { LegalDialog } from './LegalDialog';
+import { ReportTile } from './ReportTile';
 import { Button, PageHeader, Segmented, Select, SideNavItem, TextInput, Tile, Toggle } from '../components/kit';
 import { useLocale, useMessages, type Messages } from '../i18n';
 import { updater } from '../services/updater';
@@ -323,6 +324,7 @@ export function SettingsPage({ state }: { state: AppState }) {
           {section === 'appearance' ? <AppearanceSection prefs={state.prefs} /> : null}
           {section === 'advanced' ? <AdvancedSection state={state} /> : null}
           {section === 'about' ? <AboutSection state={state} /> : null}
+          {section === 'about' ? <ReportTile version={state.appInfo.version} /> : null}
         </Stagger>
       </div>
     </div>

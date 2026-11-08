@@ -2,7 +2,7 @@ import { rewardName } from '@chatto/chat-ui';
 import { LogIn, Ticket, X } from 'lucide-react';
 import type { AppState } from '../../../shared/ipc';
 import { useLocale, useMessages } from '../i18n';
-import { redemptionDetails } from '../redemptionLog';
+import { redemptionDetails } from '../../../shared/redemptionLog';
 import { redemptionAccess, twitch } from '../services/twitch';
 import { useRedemptions, type RedemptionEntry } from '../store';
 import { formatClock } from '../components/ChatLine';

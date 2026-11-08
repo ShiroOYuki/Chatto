@@ -233,12 +233,14 @@ test('the editor preview can show only the samples of the current section', asyn
   await panel.open('page=themes');
   await page.getByRole('button', { name: '複製並編輯' }).first().click();
   const rows = page.locator('.chatto-root .chatto-list > *');
-  const all = await rows.count();
 
   // The structure section has no samples of its own.
   const focus = page.getByRole('button', { name: '這個區塊沒有專屬範例，顯示全部' });
   await expect(focus).toHaveAttribute('aria-disabled', 'true');
   await expect(focus).toHaveAttribute('aria-pressed', 'false');
+  // Counted once the editor (loaded on first open) shows its samples.
+  await expect(rows.first()).toBeVisible();
+  const all = await rows.count();
 
   await page.getByRole('button', { name: '續訂', exact: true }).click();
   const only = page.getByRole('button', { name: '只看目前區塊的範例' });

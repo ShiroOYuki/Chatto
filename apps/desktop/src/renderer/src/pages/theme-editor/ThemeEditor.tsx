@@ -1,8 +1,9 @@
 import type { ChatTheme } from '@chatto/core';
 import { ArrowLeft, Check, Download, RotateCcw, Save } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useAppState } from '../../store';
 import { useLocale, useMessages } from '../../i18n';
+import { appWindow } from '../../services/app';
 import { runAction } from '../../services/run';
 import { themes } from '../../services/themes';
 import type { CursorRequest } from '../../components/CssEditor';
@@ -38,6 +39,11 @@ export function ThemeEditor({
   const { draft, saved, setDraft, set, dirty, saving, justSaved, saveError, save, revert, acceptSavedCss } =
     useThemeDraft(initial, themes.save, onSaved);
   const [section, setSection] = useState<SectionId>('base');
+  // Keep an unsaved draft alive if the window goes to the tray.
+  useEffect(() => {
+    appWindow.setUnsavedWork(dirty);
+  }, [dirty]);
+  useEffect(() => () => appWindow.setUnsavedWork(false), []);
   const [cursorRequest, setCursorRequest] = useState<CursorRequest | null>(null);
   const blank = draft.base === 'blank';
   const resolved = resolveSection(section, blank);
