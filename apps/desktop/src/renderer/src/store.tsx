@@ -1,12 +1,14 @@
 import { createContext, useContext, useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
 import type { AppState } from '../../shared/ipc';
 import { api } from './api';
-import { emptyChatLog, messageHistory, messageRate, reduceChatLog, type LogEntry } from './chatLog';
-import { emptyRedemptionLog, reduceRedemptions, type RedemptionEntry } from './redemptionLog';
+import { messageHistory, messageRate, type LogEntry } from '../../shared/chatLog';
+import { emptyControlLogView, reduceControlLogView } from '../../shared/controlLog';
+import type { RedemptionEntry } from '../../shared/redemptionLog';
 import { previewSound } from './services/alerts';
+import { runAction } from './services/run';
 
-export type { LogEntry } from './chatLog';
-export type { RedemptionEntry } from './redemptionLog';
+export type { LogEntry } from '../../shared/chatLog';
+export type { RedemptionEntry } from '../../shared/redemptionLog';
 
 export interface ChatStats {
   /** Messages in the last 60 seconds. */
@@ -37,12 +39,14 @@ const RedemptionsContext = createContext<RedemptionsValue | null>(null);
 
 /**
  * Session-wide stores for the control panel: the app state, the chat log
- * (see `chatLog.ts`) and the redemption list (see `redemptionLog.ts`).
+ * (see `chatLog.ts`) and the redemption list (see `redemptionLog.ts`). The
+ * main process keeps the logs too (`controlLog.ts`), so a window opened again
+ * from the tray starts with the whole session.
  */
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState | null>(null);
-  const [log, dispatch] = useReducer(reduceChatLog, emptyChatLog);
-  const [redemptionLog, dispatchRedemption] = useReducer(reduceRedemptions, emptyRedemptionLog);
+  const [view, dispatch] = useReducer(reduceControlLogView, emptyControlLogView);
+  const log = view.chatLog;
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -60,15 +64,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(
-    () =>
-      api.onChatEvent((event) => {
-        const at = Date.now();
-        dispatch({ type: 'event', event, at });
-        dispatchRedemption({ type: 'event', event, at });
-      }),
-    [],
-  );
+  // Listen first, then ask for the snapshot: events in between wait in the reducer.
+  useEffect(() => {
+    const stop = api.onChatEvent((item) => dispatch({ type: 'event', item }));
+    void api.getControlLog().then((snapshot) => dispatch({ type: 'load', snapshot }));
+    return stop;
+  }, []);
 
   const stats: ChatStats = {
     rate: messageRate(log.timestamps, now),
@@ -82,12 +83,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value: ChatLogValue = {
     entries: log.entries,
     stats,
-    clear: () => dispatch({ type: 'clear' }),
+    clear: () => {
+      dispatch({ type: 'clear-chat' });
+      runAction('clearChatLog', api.clearChatLog());
+    },
   };
 
   const redemptions: RedemptionsValue = {
-    entries: redemptionLog.entries,
-    dismiss: (key) => dispatchRedemption({ type: 'dismiss', key }),
+    entries: view.redemptions.entries,
+    dismiss: (key) => {
+      dispatch({ type: 'dismiss-redemption', key });
+      runAction('dismissRedemption', api.dismissRedemption(key));
+    },
   };
 
   return (

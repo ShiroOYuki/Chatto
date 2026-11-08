@@ -4,7 +4,6 @@
  */
 import type {
   AlertSettings,
-  ChatEvent,
   ChatLocalePref,
   Locale,
   ChatTheme,
@@ -16,6 +15,7 @@ import type {
 import type { ShareClient } from './share/client';
 import type { ShareState } from '@chatto/share';
 import type { OverlayLook } from './overlayLook';
+import type { ControlLogSnapshot, LoggedChatEvent } from './controlLog';
 
 /** The two desktop windows: the chat overlay and the event alert overlay. */
 export type OverlayWindowId = 'overlay' | 'alerts';
@@ -127,6 +127,12 @@ export interface UpdateState {
  */
 export type UpdateErrorKind = 'not-found' | 'network' | 'unknown';
 
+/** What the user chose to include in a diagnostics export (#56). */
+export interface DiagnosticsOptions {
+  /** The channel and account names; left out (replaced) by default. */
+  includeChannel: boolean;
+}
+
 /** The user's own Client ID, the one built into this version, or none at all. */
 export type ClientIdSource = 'custom' | 'built-in' | 'none';
 
@@ -163,7 +169,16 @@ export interface AppState {
 export interface ChattoApi {
   getState(): Promise<AppState>;
   onState(listener: (state: AppState) => void): () => void;
-  onChatEvent(listener: (event: ChatEvent) => void): () => void;
+  /** Chat events with when they arrived and their place in the session (see `controlLog.ts`). */
+  onChatEvent(listener: (item: LoggedChatEvent) => void): () => void;
+  /** The session's chat log and redemption list as the main process keeps them. */
+  getControlLog(): Promise<ControlLogSnapshot>;
+  /** Empties the chat log (the chat page's "clear"); the session stats stay. */
+  clearChatLog(): Promise<void>;
+  /** Takes one redemption off the list. */
+  dismissRedemption(key: string): Promise<void>;
+  /** While true, closing to the tray keeps the window instead of releasing it later (an unsaved theme). */
+  setUnsavedWork(unsaved: boolean): Promise<void>;
   /** A message broke a quiet spell and its reminder sound should play. */
   onAlertSound(listener: (sound: SoundSetting) => void): () => void;
 
@@ -226,6 +241,10 @@ export interface ChattoApi {
 
   /** Theme sharing (GitHub #4); the account shows in `state.share`. */
   share<K extends ShareMethod>(method: K, ...args: Parameters<ShareApi[K]>): Promise<Awaited<ReturnType<ShareApi[K]>>>;
+  /** Asks where to save a diagnostics zip and writes it; false when cancelled. */
+  exportDiagnostics(options: DiagnosticsOptions): Promise<boolean>;
+  /** Shows the last exported diagnostics file in Explorer. */
+  revealDiagnostics(): Promise<void>;
   /** A PNG data URL of part of the main window (theme thumbnails); null where it cannot capture. */
   captureThumbnail(rect: CaptureRect): Promise<string | null>;
 }
@@ -252,6 +271,10 @@ export const IPC = {
   getState: 'app:get-state',
   state: 'app:state',
   chatEvent: 'chat:event',
+  getControlLog: 'control-log:get',
+  clearChatLog: 'control-log:clear-chat',
+  dismissRedemption: 'control-log:dismiss-redemption',
+  setUnsavedWork: 'window:set-unsaved-work',
   alertSound: 'alert:sound',
   windowMinimize: 'window:minimize',
   windowToggleMaximize: 'window:toggle-maximize',
@@ -289,4 +312,6 @@ export const IPC = {
   installUpdate: 'update:install',
   share: 'share:call',
   captureThumbnail: 'share:capture-thumbnail',
+  exportDiagnostics: 'diagnostics:export',
+  revealDiagnostics: 'diagnostics:reveal',
 } as const;

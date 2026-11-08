@@ -1,12 +1,13 @@
-import { isRedemption } from '@chatto/chat-ui';
+import { isRedemption } from '@chatto/chat-ui/events';
 import type { ChatEvent, ChatNotice } from '@chatto/core';
 
 /**
  * The control panel's redemption list: channel points redemptions of this
  * session, newest first. Closing one only takes it off this list; Chatto never
  * changes the redemption on the platform, and outputs that showed it keep it.
- * It lives in the store, so it keeps collecting while the chat page is not
- * open. Nothing is saved: a restart starts empty.
+ * The main process keeps it (see `controlLog.ts`), so it keeps collecting
+ * while the chat page or the whole control panel window is closed. Nothing is
+ * saved: a restart starts empty.
  */
 
 export interface RedemptionEntry {

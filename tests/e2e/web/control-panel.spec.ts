@@ -209,10 +209,12 @@ test('new messages in a chat preview never scroll the page', async ({ panel, pag
   await page.setViewportSize({ width: 960, height: 640 });
   await panel.open('page=outputs');
   const main = page.locator('main');
+  const preview = page.getByTestId('live-theme-preview').first();
+  // The page loads on first visit; scroll once it is there.
+  await expect(preview).toBeVisible();
   // The preview's top is scrolled out of view while the preview itself still shows: a chat line
   // would be the browser's scroll anchor, and each new message would drag the page up with it.
   await main.evaluate((el) => (el.scrollTop = 300));
-  const preview = page.getByTestId('live-theme-preview').first();
   const lines = preview.locator('.chatto-list > *');
   const before = await lines.count();
   await expect.poll(() => lines.count(), { timeout: 10_000 }).toBeGreaterThan(before + 1);
@@ -233,12 +235,14 @@ test('the editor preview can show only the samples of the current section', asyn
   await panel.open('page=themes');
   await page.getByRole('button', { name: '複製並編輯' }).first().click();
   const rows = page.locator('.chatto-root .chatto-list > *');
-  const all = await rows.count();
 
   // The structure section has no samples of its own.
   const focus = page.getByRole('button', { name: '這個區塊沒有專屬範例，顯示全部' });
   await expect(focus).toHaveAttribute('aria-disabled', 'true');
   await expect(focus).toHaveAttribute('aria-pressed', 'false');
+  // Counted once the editor (loaded on first open) shows its samples.
+  await expect(rows.first()).toBeVisible();
+  const all = await rows.count();
 
   await page.getByRole('button', { name: '續訂', exact: true }).click();
   const only = page.getByRole('button', { name: '只看目前區塊的範例' });

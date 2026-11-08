@@ -17,6 +17,7 @@ import { ThemeSwitcher } from '../components/kibo-ui/theme-switcher';
 import { TeaCup } from '../components/TeaCup';
 import { ClientIdForm } from './ClientIdForm';
 import { LegalDialog } from './LegalDialog';
+import { ReportTile } from './ReportTile';
 import { Button, PageHeader, Segmented, Select, SideNavItem, TextInput, Tile, Toggle } from '../components/kit';
 import { useLocale, useMessages, type Messages } from '../i18n';
 import { updater } from '../services/updater';
@@ -271,7 +272,7 @@ function AboutSection({ state }: { state: AppState }) {
       <div className="flex items-center gap-4">
         <TeaCup mood="happy" size={64} />
         <div className="flex-1">
-          <div className="font-semibold">Chatto チャット</div>
+          <div className="font-semibold">Chatto</div>
           <div className="text-xs text-ink-faint">v{state.appInfo.version} · GPL-3.0-or-later · © 2026 Ciel</div>
         </div>
         <Button size="sm" variant="ghost" onClick={() => setLegalOpen(true)}>
@@ -323,6 +324,7 @@ export function SettingsPage({ state }: { state: AppState }) {
           {section === 'appearance' ? <AppearanceSection prefs={state.prefs} /> : null}
           {section === 'advanced' ? <AdvancedSection state={state} /> : null}
           {section === 'about' ? <AboutSection state={state} /> : null}
+          {section === 'about' ? <ReportTile version={state.appInfo.version} /> : null}
         </Stagger>
       </div>
     </div>

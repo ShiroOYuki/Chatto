@@ -22,3 +22,7 @@ coverage/
 
 # Seed themes for the sharing platform (GitHub #23), kept out of git
 seed-themes/
+
+# Local AI assistant files: Codex instructions and saved outputs
+AGENTS.md
+Claude outputs/

@@ -16,9 +16,34 @@ const t = (en, zh) => ({ en, 'zh-TW': zh });
 export const CHANGELOG = {
   app: [
     {
+      version: 'v0.3.1',
+      date: '2026-11-08',
+      download: true,
+      sections: [
+        {
+          kind: 'new',
+          items: [
+            t(
+              'Export diagnostics from Settings › About to attach to a bug report; sign-in details and chat messages are never included, and the channel name only when you choose',
+              '設定「關於」可以匯出診斷資訊，回報問題時附上；不含登入資訊與聊天訊息，頻道名稱由你決定是否包含',
+            ),
+            t('Report a problem on GitHub straight from Settings › About', '設定「關於」可以直接到 GitHub 回報問題'),
+          ],
+        },
+        {
+          kind: 'improved',
+          items: [
+            t(
+              'Chatto uses much less memory when the control panel is out of sight: after five minutes in the tray or minimized, the window is replaced with a fresh one that keeps the whole session',
+              '控制台不在畫面上時記憶體用量大幅降低：縮到系統匣或最小化 5 分鐘後會換成新的視窗，聊天紀錄與兌換清單都還在',
+            ),
+          ],
+        },
+      ],
+    },
+    {
       version: 'v0.3.0',
       date: '2026-11-07',
-      download: true,
       sections: [
         {
           kind: 'new',

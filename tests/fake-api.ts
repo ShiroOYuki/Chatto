@@ -2,6 +2,7 @@ import { PRESET_THEMES } from '@chatto/chat-ui';
 import { defaultAlertSettings, type ChatEvent, type ChatTheme, type SoundSetting } from '@chatto/core';
 import { vi } from 'vitest';
 import type { AppState, ChattoApi, CssFileChange } from '../apps/desktop/src/shared/ipc';
+import { ControlLog, type LoggedChatEvent } from '../apps/desktop/src/shared/controlLog';
 import { DEFAULT_OVERLAY_LOOK } from '../apps/desktop/src/shared/overlayLook';
 
 export function sampleState(patch: Partial<AppState> = {}): AppState {
@@ -38,6 +39,8 @@ export type FakeApi = { [K in keyof ChattoApi]: ReturnType<typeof vi.fn> & Chatt
   pushState(patch: Partial<AppState>): void;
   /** Delivers a chat event, like the main process does over IPC. */
   pushChat(event: ChatEvent): void;
+  /** Starts a new session log (what `getControlLog` returns and `pushChat` adds to). */
+  resetControlLog(): void;
   /** Asks the renderer to play a reminder sound, like the main process does over IPC. */
   pushAlertSound(sound: SoundSetting): void;
   /** Reports a CSS file saved outside Chatto, like the main process does over IPC. */
@@ -51,7 +54,9 @@ export type FakeApi = { [K in keyof ChattoApi]: ReturnType<typeof vi.fn> & Chatt
  */
 export function createFakeApi(initial: AppState = sampleState()): FakeApi {
   const stateListeners = new Set<(state: AppState) => void>();
-  const chatListeners = new Set<(event: ChatEvent) => void>();
+  const chatListeners = new Set<(item: LoggedChatEvent) => void>();
+  // The session log the main process keeps; `pushChat` goes through it like the real IPC.
+  let log = new ControlLog();
   const soundListeners = new Set<(sound: SoundSetting) => void>();
   const cssFileListeners = new Set<(change: CssFileChange) => void>();
   const resolved = () => vi.fn(async () => undefined);
@@ -62,7 +67,7 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
       stateListeners.add(listener);
       return () => stateListeners.delete(listener);
     }),
-    onChatEvent: vi.fn((listener: (event: ChatEvent) => void) => {
+    onChatEvent: vi.fn((listener: (item: LoggedChatEvent) => void) => {
       chatListeners.add(listener);
       return () => chatListeners.delete(listener);
     }),
@@ -70,6 +75,10 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
       soundListeners.add(listener);
       return () => soundListeners.delete(listener);
     }),
+    getControlLog: vi.fn(async () => log.snapshot()),
+    clearChatLog: vi.fn(async () => log.clearChat()),
+    dismissRedemption: vi.fn(async (key: string) => log.dismissRedemption(key)),
+    setUnsavedWork: resolved(),
     windowMinimize: resolved(),
     windowToggleMaximize: resolved(),
     windowClose: resolved(),
@@ -117,12 +126,18 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     installUpdate: resolved(),
     share: vi.fn(async () => ({ ok: false, error: 'unknown' })),
     captureThumbnail: vi.fn(async () => null),
+    exportDiagnostics: vi.fn(async () => true),
+    revealDiagnostics: resolved(),
     pushState(patch: Partial<AppState>) {
       fake.state = { ...fake.state, ...patch };
       stateListeners.forEach((listener) => listener(fake.state));
     },
     pushChat(event: ChatEvent) {
-      chatListeners.forEach((listener) => listener(event));
+      const item = log.receive(event);
+      chatListeners.forEach((listener) => listener(item));
+    },
+    resetControlLog() {
+      log = new ControlLog();
     },
     pushAlertSound(sound: SoundSetting) {
       soundListeners.forEach((listener) => listener(sound));

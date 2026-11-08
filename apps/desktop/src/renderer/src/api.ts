@@ -1,6 +1,7 @@
 import { createMockMessage, createMockNotice, PRESET_THEMES } from '@chatto/chat-ui';
 import { defaultAlertSettings, type ChatEvent, type ChatTheme, type SoundSetting } from '@chatto/core';
 import type { AppState, ChattoApi, CssFileChange, ObsPluginStatus } from '../../shared/ipc';
+import { ControlLog, type LoggedChatEvent } from '../../shared/controlLog';
 import { DEFAULT_OVERLAY_LOOK, normalizeOverlayLook } from '../../shared/overlayLook';
 import { ShareClient } from '../../shared/share/client';
 import { createMemoryAssets } from '../../shared/share/memoryAssets';
@@ -58,7 +59,9 @@ function createMockApi(): ChattoApi {
     share: { session: { status: 'signed-out' }, termsAccepted: 0 },
   };
   const stateListeners = new Set<(state: AppState) => void>();
-  const chatListeners = new Set<(event: ChatEvent) => void>();
+  const chatListeners = new Set<(item: LoggedChatEvent) => void>();
+  // The session log the main process keeps; chat goes through it like the real IPC.
+  const log = new ControlLog();
   const soundListeners = new Set<(sound: SoundSetting) => void>();
   const cssFileListeners = new Set<(change: CssFileChange) => void>();
   const exportedPackages: ChatTheme[] = [];
@@ -66,7 +69,10 @@ function createMockApi(): ChattoApi {
     state = { ...state, ...patch };
     stateListeners.forEach((listener) => listener(state));
   };
-  const emitChat = (event: ChatEvent) => chatListeners.forEach((listener) => listener(event));
+  const emitChat = (event: ChatEvent) => {
+    const item = log.receive(event);
+    chatListeners.forEach((listener) => listener(item));
+  };
   const saveTheme = (theme: ChatTheme) => {
     const exists = state.themes.some((item) => item.id === theme.id);
     set({
@@ -134,6 +140,10 @@ function createMockApi(): ChattoApi {
     onState: (listener) => (stateListeners.add(listener), () => stateListeners.delete(listener)),
     onChatEvent: (listener) => (chatListeners.add(listener), () => chatListeners.delete(listener)),
     onAlertSound: (listener) => (soundListeners.add(listener), () => soundListeners.delete(listener)),
+    getControlLog: async () => log.snapshot(),
+    clearChatLog: async () => log.clearChat(),
+    dismissRedemption: async (key) => log.dismissRedemption(key),
+    setUnsavedWork: async () => undefined,
     windowMinimize: async () => undefined,
     windowToggleMaximize: async () => set({ window: { maximized: !state.window.maximized } }),
     windowClose: async () => undefined,
@@ -225,6 +235,9 @@ function createMockApi(): ChattoApi {
       return Promise.resolve(call.apply(share, args)) as never;
     },
     // The browser cannot capture the page; published themes get no thumbnail here.
+    // The browser preview has no log or files; e2e tests see the export as saved.
+    exportDiagnostics: async () => params.has('e2e'),
+    revealDiagnostics: async () => undefined,
     captureThumbnail: async () => null,
   };
 }

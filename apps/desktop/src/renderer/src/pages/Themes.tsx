@@ -1,14 +1,13 @@
 import { duplicateTheme } from '@chatto/chat-ui';
 import { VIEWER_TARGETS, type ChatTheme } from '@chatto/core';
 import { Copy, Download, Ellipsis, Pencil, Plus, Send, Trash2, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import type { PageId } from '../components/Sidebar';
 import { useChatLocale, useMessages, useThemeName } from '../i18n';
 import { runAction } from '../services/run';
 import { useShareUpdates } from '../services/share';
 import { themes } from '../services/themes';
-import { PublishDialog } from './explore/PublishDialog';
 import { SignInDialog } from '../components/share/SignInDialog';
 import { motion, riseIn, Stagger } from '../components/motion';
 import { StaticThemePreview } from '../components/ThemePreview';
@@ -30,15 +29,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
-import { ThemeEditor } from './theme-editor/ThemeEditor';
 import { exportTheme, pickThemeFile } from './themeIO';
 import { describeTheme } from './themeLabels';
+import { LazyBoundary, lazyNamed } from '../components/lazy';
+
+// The editor pulls in CodeMirror; the publish dialog the share forms. Both load when first opened.
+const ThemeEditor = lazyNamed(() => import('./theme-editor/ThemeEditor'), 'ThemeEditor');
+const PublishDialog = lazyNamed(() => import('./explore/PublishDialog'), 'PublishDialog');
 
 export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate: (page: PageId) => void }) {
   const [editing, setEditing] = useState<ChatTheme | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ChatTheme | null>(null);
   const [publishing, setPublishing] = useState<ChatTheme | null>(null);
+  // Mounted from the first publish on, so the dialog keeps its closing animation.
+  const [publishMounted, setPublishMounted] = useState(false);
+  if (publishing !== null && !publishMounted) setPublishMounted(true);
   const [signingIn, setSigningIn] = useState(false);
   const messages = useMessages();
   const m = messages.themes;
@@ -53,7 +59,11 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
   };
 
   if (editing) {
-    return <ThemeEditor initial={editing} onClose={() => setEditing(null)} onSaved={(theme) => setEditing(theme)} />;
+    return (
+      <LazyBoundary>
+        <ThemeEditor initial={editing} onClose={() => setEditing(null)} onSaved={(theme) => setEditing(theme)} />
+      </LazyBoundary>
+    );
   }
 
   const usedBy = (theme: ChatTheme) => VIEWER_TARGETS.filter((target) => state.selectedThemes[target] === theme.id);
@@ -232,11 +242,15 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <PublishDialog
-        open={publishing !== null}
-        onOpenChange={(open) => !open && setPublishing(null)}
-        themeId={publishing?.id}
-      />
+      {publishMounted && (
+        <Suspense fallback={null}>
+          <PublishDialog
+            open={publishing !== null}
+            onOpenChange={(open) => !open && setPublishing(null)}
+            themeId={publishing?.id}
+          />
+        </Suspense>
+      )}
       <SignInDialog open={signingIn} onOpenChange={setSigningIn} />
     </div>
   );

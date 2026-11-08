@@ -1,8 +1,9 @@
-import { groupNotice, type NoticeGroupAccess } from '@chatto/chat-ui';
+import { groupNotice, type NoticeGroupAccess } from '@chatto/chat-ui/noticeGroups';
 import { noticeGroup, type ChatEvent, type ChatMessage, type ChatNotice } from '@chatto/core';
 
 /**
  * The control panel's chat log: every message and notice of this session,
+ * kept by the main process too (see `controlLog.ts`) so a reopened window has it,
  * plus the counters behind the overview stats. Deleted messages stay in the
  * log (marked) so moderators can see what was removed; the overlay and OBS
  * views drop them immediately.

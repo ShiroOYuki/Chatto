@@ -32,7 +32,22 @@ class NoopObserver {
   }
 }
 globalThis.ResizeObserver ??= NoopObserver as unknown as typeof ResizeObserver;
-globalThis.IntersectionObserver ??= NoopObserver as unknown as typeof IntersectionObserver;
+/** jsdom has no layout: every observed element counts as on screen, so lazily drawn previews render. */
+class VisibleObserver {
+  constructor(private readonly callback: IntersectionObserverCallback) {}
+  observe(target: Element): void {
+    this.callback(
+      [{ isIntersecting: true, target } as IntersectionObserverEntry],
+      this as unknown as IntersectionObserver,
+    );
+  }
+  unobserve(): void {}
+  disconnect(): void {}
+  takeRecords(): [] {
+    return [];
+  }
+}
+globalThis.IntersectionObserver ??= VisibleObserver as unknown as typeof IntersectionObserver;
 
 Element.prototype.scrollIntoView ??= () => undefined;
 Element.prototype.hasPointerCapture ??= () => false;

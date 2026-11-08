@@ -18,7 +18,13 @@ export default defineConfig({
     resolve: { alias: { '@': resolve(__dirname, 'src/renderer/src') } },
     plugins: [react(), tailwindcss()],
     build: {
-      rollupOptions: { input: resolve(__dirname, 'src/renderer/index.html') },
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'src/renderer/index.html'),
+          // Plays the quiet-spell reminder while the control panel window is released to the tray.
+          sound: resolve(__dirname, 'src/renderer/sound.html'),
+        },
+      },
     },
   },
 });
