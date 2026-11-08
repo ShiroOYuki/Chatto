@@ -297,6 +297,8 @@ test('a theme package brings its frame image, which the server and previews use'
   expect(Buffer.from(await served.arrayBuffer()).equals(image)).toBe(true);
 
   await mainWindow.getByRole('button', { name: /^主題/ }).click();
+  // Card previews are drawn once they near the viewport; the new theme comes after the built-in ones.
+  await mainWindow.getByRole('heading', { name: '有圖片外框', level: 2 }).scrollIntoViewIfNeeded();
   const card = mainWindow.locator('.chatto-root[data-theme-id="framed"] .chatto-message').first();
   await expect(card).toHaveCSS('border-image-source', `url("http://localhost:${port}/theme-assets/${file}")`);
   // The control panel's CSP must let the image load, not just name it.
