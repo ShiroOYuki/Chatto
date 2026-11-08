@@ -30,8 +30,8 @@ win:
     - nsis
   icon: resources/icon.png
 # Double-clicking a theme package opens it in Chatto, which asks before importing it (#40).
-# The installer registers the type and the uninstaller removes it. The icon (build/, made from
-# resources/icon.png at 16–256 px) can later be replaced with one drawn for theme files.
+# The installer registers the type and the uninstaller removes it. The icon (build/) is built
+# from assets/chattotheme-icon*.svg by scripts/build-file-icon.mjs.
 fileAssociations:
   - ext: chattotheme
     name: Chatto.Theme
