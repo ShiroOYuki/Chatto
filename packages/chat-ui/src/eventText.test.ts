@@ -47,6 +47,13 @@ describe('event text templates', () => {
     expect(noticeText(hidden, 'en')).toBe("Mochi_Fan resubscribed at Prime. They've subscribed for 1 month!");
   });
 
+  it('uses Twitch Japan’s words in Japanese: ティア for tiers, サブスク更新 for resubs', () => {
+    const resub = notice('resub', { tier: '1', months: 99, streakMonths: 99 });
+    expect(noticeText(resub, 'ja')).toContain('ティア1');
+    expect(noticeText(resub, 'ja')).toContain('サブスクを更新しました');
+    expect(noticeText(resub, 'zh-TW')).toContain('Tier 1');
+  });
+
   it('fills the watch streak from its stream count', () => {
     const streak = notice('watch-streak', { watchStreak: 100, channelPoints: 350 });
     expect(noticeText(streak, 'zh-TW')).toBe('Mochi_Fan 已連續觀看 100 場直播');

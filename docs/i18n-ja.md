@@ -15,6 +15,18 @@ Chatto 是 Windows 上給實況主／VTuber 用的 Twitch 聊天室工具：桌�
 - 括號用全形「（）」；引號用「」；列舉用「、」。英數字與日文之間不加空格（例外：保持既有的半形英文詞，如「OBS ブラウザソース」中間的半形空格可保留）。
 - 法律文字（條款、隱私）要忠實、正式（である調也可，但同一份文件內統一），不要省略條件。
 
+## 平台用語以官方日文版為準
+
+Twitch 與 OBS 的專有名詞一律照官方日文介面與說明的寫法，不自己翻；查不到官方寫法的才自己翻，並在下方「未查到官方寫法」列出。
+
+- **Twitch**：說明中心日文版（`https://help.twitch.tv/s/article/<文章>?language=ja`，要執行 JavaScript 才有內容）、官方部落格日文版（`blog.twitch.tv/ja-jp`）、Creator Camp 日文版。
+  - スタンプ（emote）、サブスク／サブスクライブ／サブスクライバー、サブスクギフト（gift sub）、サブスク更新（resub；「サブスク更新の共有」）、ティア1（sub tier）、ビッツ、Cheer、Cheeringチャットバッジ（bits badge）、Raid（英字）、ハイプトレイン、チャンネルポイント、報酬、引き換え、デフォルト報酬／カスタム報酬、連続視聴記録（watch streak）、サブスクライバー限定モード、モデレーター、VIP、発言禁止（timeout）、追放（ban）、チャリティー、寄付、慈善団体（charity）、Prime。
+  - チャンネルポイントのデフォルト報酬：メッセージを強調表示する、サブスクライバースタンプをランダムでアンロック、アンロックするスタンプを選択、スタンプ1個を改造する、サブスクライバー限定モードでメッセージを送信。
+  - パワーアップ：スタンプを巨大化、メッセージエフェクト、全画面セレブレーション。
+- **OBS**：OBS 原始碼的日文語系檔（`obsproject/obs-studio` 的 `frontend/data/locale/ja-JP.ini`、`plugins/win-capture/data/locale/ja-JP.ini`，`obsproject/obs-browser` 的 `data/locale/ja-JP.ini`）。
+  - ソース、シーン、プロパティ、「ブラウザ」（ブラウザソースの種類名）、シーンがアクティブになったときにブラウザの表示を更新する、画面キャプチャ、ウィンドウキャプチャ、ゲームキャプチャ。
+- **未查到官方寫法**（自己翻，有官方寫法時再改）：コミュニティギフト（一次送多份）、ギフトの恩送り（pay it forward）、サブスクギフトを継続（gift upgrade）、Primeからアップグレード、アナウンス、ファウンダー、初めてのメッセージ（first-time chatter）。
+
 ## 用語表（一致使用）
 
 | 繁中                                 | English                           | 日本語                                                             |
@@ -43,19 +55,19 @@ Chatto 是 Windows 上給實況主／VTuber 用的 Twitch 聊天室工具：桌�
 | 開台                                 | go live                           | 配信を始める                                                       |
 | 頻道                                 | channel                           | チャンネル                                                         |
 | 訂閱                                 | sub / subscribe                   | サブスク                                                           |
-| 續訂                                 | resub                             | サブスク継続                                                       |
-| 贈送訂閱／贈訂                       | gift sub                          | ギフトサブ                                                         |
-| 小奇點                               | Bits / cheer                      | ビッツ（cheer 的動作：応援）                                       |
-| 揪團                                 | raid                              | レイド                                                             |
+| 續訂                                 | resub                             | サブスク更新                                                       |
+| 贈送訂閱／贈訂                       | gift sub                          | サブスクギフト                                                     |
+| 小奇點                               | Bits / cheer                      | ビッツ（贈る動作は Cheer）                                         |
+| 揪團                                 | raid                              | Raid（英字のまま）                                                 |
 | 公告                                 | announcement                      | アナウンス                                                         |
 | 忠誠點數                             | Channel Points                    | チャンネルポイント                                                 |
 | 兌換                                 | redemption / redeem               | 引き換え                                                           |
 | 獎勵                                 | reward                            | 報酬                                                               |
-| 表情符號                             | emote                             | エモート                                                           |
+| 表情符號                             | emote                             | スタンプ                                                           |
 | 徽章                                 | badge                             | バッジ                                                             |
 | 管理員                               | moderator                         | モデレーター                                                       |
 | 實況主身分                           | broadcaster                       | 配信者                                                             |
-| 禁言／封鎖                           | timeout / ban                     | タイムアウト／BAN                                                  |
+| 禁言／封鎖                           | timeout / ban                     | 発言禁止／追放                                                     |
 | 刪除訊息                             | delete message                    | メッセージを削除                                                   |
 | 連線                                 | connect                           | 接続                                                               |
 | 中斷連線                             | disconnect                        | 切断                                                               |

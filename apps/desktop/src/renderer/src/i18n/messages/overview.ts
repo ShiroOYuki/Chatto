@@ -173,6 +173,6 @@ export default defineMessages({
       collapse: '閉じる',
       goOutputs: '出力へ',
     },
-    noActivityHint: 'サブスク、レイド、アナウンスがここに表示されます',
+    noActivityHint: 'サブスク、Raid、アナウンスがここに表示されます',
   },
 });

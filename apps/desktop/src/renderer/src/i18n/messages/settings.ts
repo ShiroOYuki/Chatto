@@ -217,7 +217,7 @@ export default defineMessages({
     interfaceLanguageHint: 'コントロールパネル、タスクトレイのメニュー、ダイアログ',
     chatLanguage: 'チャットの言語',
     chatLanguageHint:
-      'デスクトップオーバーレイ、OBS、アラートオーバーレイに出るイベントの文言（サブスク、サブスク継続、レイドなど）',
+      'デスクトップオーバーレイ、OBS、アラートオーバーレイに出るイベントの文言（サブスク、サブスク更新、Raidなど）',
     followInterface: (name: string) => `表示言語に合わせる（${name}）`,
     appearance: '外観',
     colorScheme: 'カラースキーム',

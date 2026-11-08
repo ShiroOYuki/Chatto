@@ -499,7 +499,7 @@ export default defineMessages({
       subscriber: 'サブスクライバー',
       founder: 'ファウンダー',
       'first-message': '初めてのメッセージ',
-      highlighted: 'ハイライトメッセージ',
+      highlighted: '強調表示されたメッセージ',
     },
     structure: {
       base: 'ベース',
@@ -597,7 +597,7 @@ export default defineMessages({
       time: '時刻',
       color: '色',
       textSize: 'サイズ',
-      emotes: 'エモート',
+      emotes: 'スタンプ',
       mentions: 'メンションとリンク',
       background: '背景色',
       weight: '太さ',
@@ -662,7 +662,7 @@ export default defineMessages({
     },
     notice: {
       intro:
-        'すべてのプラットフォームのイベント（サブスク、レイド、ビッツ…）に共通のスタイルです。各イベントは初期状態でここに従い、個別に調整すると独自のスタイルになります。',
+        'すべてのプラットフォームのイベント（サブスク、Raid、ビッツ…）に共通のスタイルです。各イベントは初期状態でここに従い、個別に調整すると独自のスタイルになります。',
     },
     event: {
       intro: (description: string, message: boolean) =>
@@ -682,7 +682,7 @@ export default defineMessages({
       iconHint: 'タイトルの前に表示され、絵文字も使えます',
       iconPlaceholder: '例：✨',
       titlePlacement: 'チャットメッセージ型イベントのタイトル',
-      titlePlacementHint: 'ビッツ、ハイライトメッセージ。通知のタイトルは常に1行目に表示されます。',
+      titlePlacementHint: 'ビッツ、強調表示されたメッセージ。通知のタイトルは常に1行目に表示されます。',
       line: '上に1行',
       sticker: '角のステッカー',
       stickerBackground: 'ステッカーの背景色',
@@ -693,7 +693,7 @@ export default defineMessages({
       accentColor: 'カラーバーの色',
       frame: 'イベントのフレーム',
       messageFrame: 'チャットメッセージ型イベント',
-      messageFrameHint: 'ビッツ、ハイライトメッセージ。メッセージの枠に適用すると色だけが変わり、枠は増えません。',
+      messageFrameHint: 'ビッツ、強調表示されたメッセージ。メッセージの枠に適用すると色だけが変わり、枠は増えません。',
       wrap: 'メッセージ全体を囲む',
       surface: 'メッセージの枠に適用',
     },

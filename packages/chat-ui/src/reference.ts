@@ -106,8 +106,8 @@ export const CLASS_REFERENCE: SelectorReference[] = [
   entry('.chatto-body', L('內容', 'Body', '本文'), L('訊息本文', 'The message text', 'メッセージの本文')),
   entry(
     '.chatto-emote',
-    L('表情符號', 'Emote', 'エモート'),
-    L('訊息裡的表情圖片', 'An emote image in a message', 'メッセージ内のエモート画像'),
+    L('表情符號', 'Emote', 'スタンプ'),
+    L('訊息裡的表情圖片', 'An emote image in a message', 'メッセージ内のスタンプ画像'),
   ),
   entry('.chatto-mention', L('提及', 'Mention', 'メンション'), L('@某人', '@someone', '@ユーザー')),
   entry('.chatto-link', L('連結', 'Link', 'リンク'), L('訊息裡的網址', 'A URL in a message', 'メッセージ内のURL')),
@@ -123,7 +123,7 @@ export const CLASS_REFERENCE: SelectorReference[] = [
     L(
       '訂閱、揪團、公告等系統通知（<li>）',
       'System notices such as subs, raids and announcements (<li>)',
-      'サブスク、レイド、アナウンスなどのシステム通知（<li>）',
+      'サブスク、Raid、アナウンスなどのシステム通知（<li>）',
     ),
   ),
   entry(

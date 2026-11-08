@@ -112,23 +112,23 @@ export const ALERT_CATEGORIES = [
   },
   {
     key: 'any:resub',
-    label: L('續訂', 'Resubscriptions', 'サブスク継続'),
-    description: L('續訂並分享', 'Shared resubscriptions', '共有されたサブスク継続'),
+    label: L('續訂', 'Resubscriptions', 'サブスク更新'),
+    description: L('續訂並分享', 'Shared resubscriptions', 'サブスク更新の共有'),
     amountLabel: L('累計月數', 'Total months', '累計月数'),
   },
   {
     key: 'any:gift',
-    label: L('贈送訂閱', 'Gift subs', 'ギフトサブ'),
+    label: L('贈送訂閱', 'Gift subs', 'サブスクギフト'),
     description: L(
       '送訂閱給觀眾，含一次送多份',
       'Subs gifted to viewers, one or many at once',
-      '視聴者へのギフトサブ（まとめて贈る場合も含む）',
+      '視聴者へのサブスクギフト（まとめて贈る場合も含む）',
     ),
-    amountLabel: L('贈訂份數', 'Gifted subs', 'ギフトサブ数'),
+    amountLabel: L('贈訂份數', 'Gifted subs', 'サブスクギフト数'),
   },
   {
     key: 'any:raid',
-    label: L('揪團', 'Raids', 'レイド'),
+    label: L('揪團', 'Raids', 'Raid'),
     description: L('其他實況主帶觀眾過來', 'Another streamer brings their viewers', 'ほかの配信者が視聴者を連れてくる'),
     amountLabel: L('觀眾人數', 'Viewers', '視聴者数'),
   },
@@ -186,14 +186,14 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
       ),
       twitch(
         'highlighted',
-        L('頻道點數強調訊息', 'Highlighted message', 'ハイライトメッセージ'),
+        L('頻道點數強調訊息', 'Highlighted message', '強調表示されたメッセージ'),
         L(
           '用頻道點數兌換「強調我的訊息」',
           'Redeemed "Highlight My Message" with channel points',
-          'チャンネルポイントで「メッセージをハイライト」と引き換え',
+          'チャンネルポイントで「メッセージを強調表示する」と引き換え',
         ),
         'message',
-        { text: L('頻道點數強調訊息', 'Highlighted message', 'ハイライトメッセージ'), variables: ['user'] },
+        { text: L('頻道點數強調訊息', 'Highlighted message', '強調表示されたメッセージ'), variables: ['user'] },
       ),
       twitch('sub', L('訂閱', 'Sub', 'サブスク'), L('新訂閱', 'A new subscription', '新規サブスク'), 'notice', {
         text: L(
@@ -206,14 +206,14 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
       }),
       twitch(
         'resub',
-        L('續訂', 'Resub', 'サブスク継続'),
-        L('續訂並附上訊息', 'A resubscription with a message', 'メッセージつきのサブスク継続'),
+        L('續訂', 'Resub', 'サブスク更新'),
+        L('續訂並附上訊息', 'A resubscription with a message', 'メッセージつきのサブスク更新'),
         'notice',
         {
           text: L(
             '{user} 以 {tier} 續訂，累計 {months} 個月[，連續 {streak} 個月]',
             "{user} resubscribed at {tier}. They've subscribed for {months} {months|month|months}[, currently on a {streak} month streak]!",
-            '{user}が{tier}でサブスクを継続しました（累計{months}か月[、{streak}か月連続]）',
+            '{user}が{tier}でサブスクを更新しました（累計{months}か月[、{streak}か月連続]）',
           ),
           variables: [...SUB_VARIABLES, 'months', 'streak', 'gifter'],
           amount: { label: L('累計月數', 'Total months', '累計月数'), read: metaNumber('months') },
@@ -222,39 +222,39 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
       ),
       twitch(
         'sub-gift',
-        L('贈送訂閱', 'Gift sub', 'ギフトサブ'),
-        L('送一份訂閱給特定觀眾', 'A sub gifted to one viewer', 'ひとりの視聴者へのギフトサブ'),
+        L('贈送訂閱', 'Gift sub', 'サブスクギフト'),
+        L('送一份訂閱給特定觀眾', 'A sub gifted to one viewer', 'ひとりの視聴者へのサブスクギフト'),
         'notice',
         {
           text: L(
             '{user} 送了一份 {tier} 訂閱給 {recipient}[（{duration} 個月）]',
             '{user} gifted a {tier} sub to {recipient}[ for {duration} months]!',
-            '{user}が{recipient}に{tier}のギフトサブを贈りました[（{duration}か月分）]',
+            '{user}が{recipient}に{tier}のサブスクギフトを贈りました[（{duration}か月分）]',
           ),
           variables: [...SUB_VARIABLES, 'recipient', 'totalGifts'],
-          amount: { label: L('贈訂份數', 'Gifted subs', 'ギフトサブ数'), read: () => 1 },
+          amount: { label: L('贈訂份數', 'Gifted subs', 'サブスクギフト数'), read: () => 1 },
           alertCategory: 'any:gift',
         },
       ),
       twitch(
         'community-gift',
         L('大量贈訂', 'Community gift', 'コミュニティギフト'),
-        L('一次送多份訂閱給聊天室', 'Many subs gifted to the chat at once', 'チャットにまとめて贈るギフトサブ'),
+        L('一次送多份訂閱給聊天室', 'Many subs gifted to the chat at once', 'チャットにまとめて贈るサブスクギフト'),
         'notice',
         {
           text: L(
             '{user} 送出 {count} 份 {tier} 訂閱給聊天室[，累計已送 {totalGifts} 份]',
             "{user} is gifting {count} {tier} {count|sub|subs} to the community[. They've gifted {totalGifts} in the channel]!",
-            '{user}がコミュニティに{tier}のギフトサブを{count}個贈りました[（チャンネルで累計{totalGifts}個）]',
+            '{user}がコミュニティに{tier}のサブスクギフトを{count}個贈りました[（チャンネルで累計{totalGifts}個）]',
           ),
           variables: ['user', 'tier', 'count', 'totalGifts'],
-          amount: { label: L('贈訂份數', 'Gifted subs', 'ギフトサブ数'), read: metaNumber('count') },
+          amount: { label: L('贈訂份數', 'Gifted subs', 'サブスクギフト数'), read: metaNumber('count') },
           alertCategory: 'any:gift',
         },
       ),
       twitch(
         'gift-paid-upgrade',
-        L('贈訂轉付費', 'Gift sub continued', 'ギフトサブを継続'),
+        L('贈訂轉付費', 'Gift sub continued', 'サブスクギフトを継続'),
         L(
           '收到贈訂的觀眾自己續訂',
           'A viewer keeps the sub they were gifted',
@@ -265,7 +265,7 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
           text: L(
             '{user} 繼續使用 {gifter} 送的訂閱',
             '{user} is continuing the gift sub they got from {gifter}!',
-            '{user}が{gifter}から贈られたギフトサブを継続しました',
+            '{user}が{gifter}から贈られたサブスクギフトを継続しました',
           ),
           variables: ['user', 'gifter'],
           alertCategory: 'any:sub',
@@ -306,20 +306,20 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
             '{user}が{gifter}から受け取ったギフトを恩送りしました',
           ),
           variables: ['user', 'gifter'],
-          amount: { label: L('贈訂份數', 'Gifted subs', 'ギフトサブ数'), read: () => 1 },
+          amount: { label: L('贈訂份數', 'Gifted subs', 'サブスクギフト数'), read: () => 1 },
           alertCategory: 'any:gift',
         },
       ),
       twitch(
         'raid',
-        L('揪團（Raid）', 'Raid', 'レイド'),
+        L('揪團（Raid）', 'Raid', 'Raid'),
         L('其他實況主帶觀眾過來', 'Another streamer brings their viewers', 'ほかの配信者が視聴者を連れてくる'),
         'notice',
         {
           text: L(
             '{raider} 帶著 {viewers} 位觀眾揪團過來了',
             '{raider} is raiding with {viewers} {viewers|viewer|viewers}!',
-            '{raider}が{viewers}人の視聴者とレイドに来ました',
+            '{raider}が{viewers}人の視聴者とRaidに来ました',
           ),
           variables: ['raider', 'viewers'],
           amount: { label: L('觀眾人數', 'Viewers', '視聴者数'), read: metaNumber('viewers') },
@@ -328,11 +328,11 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
       ),
       twitch(
         'unraid',
-        L('取消揪團', 'Raid canceled', 'レイドの取り消し'),
-        L('實況主取消了揪團', 'The streamer canceled a raid', '配信者によるレイドの取り消し'),
+        L('取消揪團', 'Raid canceled', 'Raidの取り消し'),
+        L('實況主取消了揪團', 'The streamer canceled a raid', '配信者によるRaidの取り消し'),
         'notice',
         {
-          text: L('揪團已取消', 'The raid was canceled', 'レイドが取り消されました'),
+          text: L('揪團已取消', 'The raid was canceled', 'Raidが取り消されました'),
         },
       ),
       twitch(
@@ -348,14 +348,14 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
       ),
       twitch(
         'bits-badge-tier',
-        L('小奇點徽章', 'Bits badge', 'ビッツバッジ'),
-        L('觀眾解鎖新的小奇點徽章', 'A viewer unlocked a new bits badge', '視聴者が新しいビッツバッジを獲得'),
+        L('小奇點徽章', 'Bits badge', 'Cheeringチャットバッジ'),
+        L('觀眾解鎖新的小奇點徽章', 'A viewer unlocked a new bits badge', '視聴者が新しいCheeringチャットバッジを獲得'),
         'notice',
         {
           text: L(
             '{user} 解鎖了 {bitsTier} 小奇點徽章',
             '{user} just earned a new {bitsTier} bits badge!',
-            '{user}が{bitsTier}ビッツバッジを獲得しました',
+            '{user}が{bitsTier}ビッツのCheeringチャットバッジを獲得しました',
           ),
           variables: ['user', 'bitsTier'],
         },
@@ -376,8 +376,8 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
       ),
       twitch(
         'watch-streak',
-        L('觀看連勝', 'Watch streak', '連続視聴'),
-        L('觀眾分享連續觀看紀錄', 'A viewer shares their watch streak', '視聴者が連続視聴の記録を共有'),
+        L('觀看連勝', 'Watch streak', '連続視聴記録'),
+        L('觀眾分享連續觀看紀錄', 'A viewer shares their watch streak', '視聴者が連続視聴記録を共有'),
         'notice',
         {
           text: L(
@@ -394,7 +394,7 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
         L(
           '你建立的獎勵與 Twitch 內建獎勵',
           "Your own rewards and Twitch's built-in ones",
-          '自分で作成した報酬とTwitch標準の報酬',
+          '自分で作成した報酬とデフォルト報酬',
         ),
         'notice',
         {
@@ -406,11 +406,11 @@ export const EVENT_CATALOG: PlatformEventGroup[] = [
       ),
       twitch(
         'auto-redemption',
-        L('自動獎勵兌換', 'Twitch reward', 'Twitch報酬の引き換え'),
+        L('自動獎勵兌換', 'Twitch reward', 'デフォルト報酬の引き換え'),
         L(
           '觀眾兌換 Twitch 內建的獎勵，例如解鎖表情符號',
           "A viewer redeems one of Twitch's own rewards, like an emote unlock",
-          '視聴者がTwitch標準の報酬（エモートのアンロックなど）を引き換え',
+          '視聴者がデフォルト報酬（スタンプのアンロックなど）を引き換え',
         ),
         'notice',
         {

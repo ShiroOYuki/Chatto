@@ -143,7 +143,7 @@ export default defineMessages({
     obsSteps: [
       'OBS のソースに「ブラウザ」を追加',
       '上の URL を貼り付けます。幅 420、高さ 600 がおすすめです',
-      '「シーンがアクティブになったときにブラウザの表示を更新」をオンにすると安定します',
+      '「シーンがアクティブになったときにブラウザの表示を更新する」をオンにすると安定します',
     ],
     obsPlugin: 'OBS プラグイン',
     obsPluginIntro: 'OBS に「Chatto チャット」ソースを追加できます。URL を貼る必要はなく、ソースごとにテーマを選べます',
@@ -163,15 +163,14 @@ export default defineMessages({
     pluginUnavailable: 'このビルドには OBS プラグインが同梱されていません',
     manualSource: 'またはブラウザソースを手動で追加',
     alertsOverlay: 'アラートオーバーレイ',
-    alertsIntro:
-      'サブスク、ビッツ、レイドなどのイベントがデスクトップ右上にカードで表示されます。見えるのは自分だけです',
+    alertsIntro: 'サブスク、ビッツ、Raidなどのイベントがデスクトップ右上にカードで表示されます。見えるのは自分だけです',
     resetAlertsPosition: '右上に戻す',
     alertsAdjustingHint:
       'アラートオーバーレイをドラッグして移動し、端をドラッグしてサイズを変えます。終わったら「調整を終える」を押してください。',
     pauseChat: '新着メッセージを一時停止',
     resumeChat: '新着メッセージを再開',
     pauseHint:
-      'オーバーレイと OBS に新しいメッセージをしばらく出さず、再開時にまとめて表示します。削除とタイムアウトはすぐに反映されます',
+      'オーバーレイと OBS に新しいメッセージをしばらく出さず、再開時にまとめて表示します。削除と発言禁止はすぐに反映されます',
     clearScreen: '画面をクリア',
     clearScreenHint: 'オーバーレイと OBS のチャットを消します。Chatto の履歴はそのまま残ります',
     clearedScreen: '画面をクリアしました',
