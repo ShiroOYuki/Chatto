@@ -88,6 +88,10 @@ const ICONS = {
   mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
   moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  globe:
+    '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  chevron: '<path d="m6 9 6 6 6-6"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
 };
 const icon = (name, size) => svg(ICONS[name], size);
 /** The Windows logo, filled, for the download buttons. */
@@ -200,12 +204,13 @@ function header(locale, page) {
   <a class="brand" href="${href(locale, 'home')}"><img class="logo logo-light" src="/chatto-logo.svg" alt="Chatto" width="818" height="243"><img class="logo logo-dark" src="/chatto-logo-dark.svg" alt="Chatto" width="818" height="243"></a>
   <nav aria-label="${escape(t.nav.label)}">${items}</nav>
   <button class="theme-toggle" type="button" aria-pressed="false" aria-label="${escape(t.darkMode)}" title="${escape(t.darkMode)}">${icon('moon', 18)}${icon('sun', 18)}</button>
-  <span class="langs">${LOCALES.filter((other) => other !== locale)
-    .map(
+  <details class="lang-menu">
+    <summary aria-label="${escape(t.language)}: ${LOCALE_NAMES[locale]}">${icon('globe', 16)}<span>${LOCALE_NAMES[locale]}</span>${icon('chevron', 14)}</summary>
+    <ul>${LOCALES.map(
       (other) =>
-        `<a class="lang" href="${href(other, page ?? 'home')}" hreflang="${CONTENT[other].lang}" lang="${CONTENT[other].lang}">${LOCALE_NAMES[other]}</a>`,
-    )
-    .join('')}</span>
+        `<li><a href="${href(other, page ?? 'home')}" hreflang="${CONTENT[other].lang}" lang="${CONTENT[other].lang}"${other === locale ? ' aria-current="true"' : ''}>${LOCALE_NAMES[other]}${other === locale ? icon('check', 14) : ''}</a></li>`,
+    ).join('')}</ul>
+  </details>
 </header>`;
 }
 

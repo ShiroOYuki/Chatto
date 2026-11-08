@@ -16,7 +16,7 @@ export const CONTENT = {
     lang: 'en',
     /** Joins sentences: a space in English, nothing in Chinese or Japanese. */
     space: ' ',
-    otherLanguage: '繁體中文',
+    language: 'Language',
     darkMode: 'Dark mode',
     nav: {
       label: 'Main',
@@ -409,7 +409,7 @@ export const CONTENT = {
   'zh-TW': {
     lang: 'zh-Hant-TW',
     space: '',
-    otherLanguage: 'English',
+    language: '語言',
     darkMode: '深色模式',
     nav: {
       label: '主選單',
@@ -776,7 +776,7 @@ export const CONTENT = {
   ja: {
     lang: 'ja',
     space: '',
-    otherLanguage: 'English',
+    language: '言語',
     darkMode: 'ダークモード',
     nav: {
       label: 'メイン',
