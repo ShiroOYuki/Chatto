@@ -272,7 +272,7 @@ function AboutSection({ state }: { state: AppState }) {
       <div className="flex items-center gap-4">
         <TeaCup mood="happy" size={64} />
         <div className="flex-1">
-          <div className="font-semibold">Chatto チャット</div>
+          <div className="font-semibold">Chatto</div>
           <div className="text-xs text-ink-faint">v{state.appInfo.version} · GPL-3.0-or-later · © 2026 Ciel</div>
         </div>
         <Button size="sm" variant="ghost" onClick={() => setLegalOpen(true)}>
