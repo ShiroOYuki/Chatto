@@ -5,6 +5,8 @@ import { appPrefs } from './services/app';
 import { PageTransition } from './components/motion';
 import { TeaCup } from './components/TeaCup';
 import { TitleBar } from './components/TitleBar';
+import { OpenedThemeDialog } from './components/OpenedThemeDialog';
+import { UpdateDialog } from './components/UpdateDialog';
 import { Confetti, type ConfettiRef } from './components/ui/confetti';
 import { useMessages } from './i18n';
 import { TooltipProvider } from './components/ui/tooltip';
@@ -148,6 +150,8 @@ function Shell() {
             </main>
           </div>
         )}
+        <UpdateDialog state={state} />
+        <OpenedThemeDialog state={state} />
         <Confetti
           ref={confettiRef}
           manualstart

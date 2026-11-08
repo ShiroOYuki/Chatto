@@ -1,7 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { execFile } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import { join } from 'node:path';
 import type { ChatTheme, Locale } from '@chatto/core';
@@ -21,6 +21,8 @@ import { BUILT_IN_CLIENT_ID, SettingsStore, type Rect } from './settings';
 import { ThemeAssets } from './theme-assets';
 import { packageFileName, THEME_PACKAGE_EXTENSION } from './theme-package';
 import { Updater } from './updater';
+import { fetchUpdateNotes } from '../shared/updateNotes';
+import { OpenedThemeFiles, themeFilesFromArgv } from './opened-files';
 import { ControlLog } from '../shared/controlLog';
 import { SoundPlayer } from './sound-player';
 import { WindowRelease } from './window-release';
@@ -40,6 +42,8 @@ const viewerDir = isDev ? join(__dirname, '../../../viewer/dist') : join(process
 
 let mainWindow: BrowserWindow | null = null;
 let updater = new Updater(null);
+/** Theme files opened from Windows (#40); created once the app is ready. */
+let openedFiles: OpenedThemeFiles | null = null;
 let tray: Tray | null = null;
 let quitting = false;
 /** The main process log (#56); created once the app is ready. */
@@ -342,6 +346,12 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.checkForUpdate, () => updater.check());
   ipcMain.handle(IPC.downloadUpdate, () => updater.download());
   ipcMain.handle(IPC.installUpdate, () => updater.install());
+  ipcMain.handle(IPC.dismissUpdatePrompt, (_e, skip: unknown) => {
+    const { version } = updater.state;
+    if (skip === true && version) controller.setPrefs({ skippedUpdateVersion: version });
+    updater.dismissPrompt();
+  });
+  ipcMain.handle(IPC.dismissOpenedThemeFile, (_e, id: unknown) => openedFiles?.dismiss(String(id)));
   ipcMain.handle(IPC.share, (_e, method: unknown, ...args: unknown[]) => {
     if (!isShareMethod(method) || !controller.share) throw new Error('Unknown share call');
     const call = controller.share[method] as (...params: unknown[]) => unknown;
@@ -540,8 +550,20 @@ async function bootstrap(): Promise<void> {
   };
   controller.isWindowMaximized = () => Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized());
   // Development builds have no installer to update from.
-  updater = new Updater(app.isPackaged ? autoUpdater : null, () => controller.emit());
+  updater = new Updater(app.isPackaged ? autoUpdater : null, () => controller.emit(), {
+    isSkipped: (version) => settings.get().prefs.skippedUpdateVersion === version,
+    fetchNotes: (version) => fetchUpdateNotes(app.getVersion(), version),
+  });
   controller.updateState = () => updater.state;
+  const opened = new OpenedThemeFiles({
+    read: (path) => readFileSync(path),
+    unpack: (bytes) => controller.importThemePackage(bytes),
+    unreadable: () => controller.messages().errors.cannotReadThemeFile,
+    tooLarge: () => controller.messages().errors.invalidThemePackage,
+    onChange: () => controller.emit(),
+  });
+  openedFiles = opened;
+  controller.openedThemeFiles = () => opened.list;
   // The session log lives here, so the control panel window can be released to the tray (#57).
   controller.hub.subscribe((event) => send(IPC.chatEvent, controlLog.receive(event)));
   const soundPlayer = new SoundPlayer((window, query) =>
@@ -569,8 +591,13 @@ async function bootstrap(): Promise<void> {
   await controller.init();
   void controller.share?.init();
   updater.start();
+  // Opened with a .chattotheme file (#40): the control panel asks before importing it.
+  opened.add(themeFilesFromArgv(process.argv, process.cwd(), existsSync));
 
-  app.on('second-instance', showMainWindow);
+  app.on('second-instance', (_e, argv, workingDirectory) => {
+    showMainWindow();
+    opened.add(themeFilesFromArgv(argv, workingDirectory, existsSync));
+  });
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow(settings, controller);
   });

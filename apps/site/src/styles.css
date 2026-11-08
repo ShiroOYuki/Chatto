@@ -1877,6 +1877,14 @@ dd {
   margin-top: 4px;
 }
 
+.ticket code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--line);
+}
+
 .ticket.upcoming {
   background: color-mix(in srgb, var(--sheet) 70%, transparent);
   box-shadow: inset 0 0 0 2px var(--line);

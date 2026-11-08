@@ -37,6 +37,9 @@ const escape = (text) =>
 /** Escapes text and keeps its line breaks. */
 const lines = (text) => escape(text).replace(/\n/g, '<br>');
 
+/** A changelog sentence: escaped, with `backticks` as code (the only formatting it has; the app does the same). */
+const noteText = (text) => escape(text).replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
 /** `標籤：內容` / `Label: text` → the label in bold. */
 function labelled(item) {
   const match = /^(.{1,40}?)(：|: )(.*)$/s.exec(item);
@@ -306,11 +309,11 @@ function ticket(locale, entry, product, index) {
         }`;
   const sections = entry.sections
     .map((section) => {
-      const items = section.items.map((item) => `<li>${escape(item[locale])}</li>`).join('');
+      const items = section.items.map((item) => `<li>${noteText(item[locale])}</li>`).join('');
       return `<div class="kind"><h3>${escape(t.kinds[section.kind])}</h3><ul>${items}</ul></div>`;
     })
     .join('');
-  const summary = entry.summary ? `<p class="summary">${escape(entry.summary[locale])}</p>` : '';
+  const summary = entry.summary ? `<p class="summary">${noteText(entry.summary[locale])}</p>` : '';
   const download =
     entry.download && status === 'released'
       ? `<a class="button small" href="${GITHUB_URL}/releases/tag/${entry.version}">${windows(16)}${escape(t.downloadVersion(entry.version))}</a>`

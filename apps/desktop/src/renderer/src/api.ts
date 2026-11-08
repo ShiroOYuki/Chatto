@@ -3,6 +3,7 @@ import { defaultAlertSettings, type ChatEvent, type ChatTheme, type SoundSetting
 import type { AppState, ChattoApi, CssFileChange, ObsPluginStatus } from '../../shared/ipc';
 import { ControlLog, type LoggedChatEvent } from '../../shared/controlLog';
 import { DEFAULT_OVERLAY_LOOK, normalizeOverlayLook } from '../../shared/overlayLook';
+import type { UpdateNote } from '../../shared/updateNotes';
 import { ShareClient } from '../../shared/share/client';
 import { createMemoryAssets } from '../../shared/share/memoryAssets';
 import { createFakeShareBackend } from '@chatto/share/fake';
@@ -30,7 +31,35 @@ declare global {
  * `?compact` starts in compact mode, `?page=<id>` opens a page.
  * `?e2e` turns off the random chat stream and exposes `window.__chattoMock`
  * so end-to-end tests can push exact events and state.
+ * `?update` opens the update dialog as if the startup check found a version (`?update=nonotes`
+ * without its notes); `?opened` opens a theme file as if Chatto was launched with one (#39, #40).
  */
+/** What the update dialog shows in the browser preview (`?update`). */
+const PREVIEW_UPDATE_NOTES: UpdateNote[] = [
+  {
+    version: 'v0.4.0',
+    date: '2026-11-20',
+    sections: [
+      {
+        kind: 'new',
+        items: [
+          { en: 'A dialog shows what is new when an update is out', 'zh-TW': '有新版本時用對話框顯示更新內容' },
+          {
+            en: 'Double-click a `.chattotheme` file to import it',
+            'zh-TW': '雙擊 `.chattotheme` 檔就能匯入主題',
+          },
+        ],
+      },
+      { kind: 'fixed', items: [{ en: 'Previews match OBS again', 'zh-TW': '預覽和 OBS 再次一致' }] },
+    ],
+  },
+  {
+    version: 'v0.3.2',
+    date: '2026-11-12',
+    sections: [{ kind: 'improved', items: [{ en: 'Faster startup', 'zh-TW': '啟動更快' }] }],
+  },
+];
+
 function createMockApi(): ChattoApi {
   const params = new URLSearchParams(location.search);
   let state: AppState = {
@@ -46,6 +75,7 @@ function createMockApi(): ChattoApi {
       locale: params.get('lang') === 'en' ? 'en' : 'zh-TW',
       chatLocale: 'auto',
       obsPluginPromptDismissed: false,
+      skippedUpdateVersion: '',
     },
     clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true },
@@ -57,7 +87,21 @@ function createMockApi(): ChattoApi {
     themes: PRESET_THEMES,
     selectedThemes: { overlay: 'matcha-glass', embed: 'washi', alerts: 'bubble' },
     share: { session: { status: 'signed-out' }, termsAccepted: 0 },
+    openedThemeFiles: params.has('opened')
+      ? [
+          { id: 'opened-1', fileName: 'Bubble.chattotheme', theme: { ...PRESET_THEMES[2]!, id: 'shared-bubble' } },
+          { id: 'opened-2', fileName: 'broken.chattotheme', error: 'Not a valid theme package' },
+        ]
+      : [],
   };
+  if (params.has('update')) {
+    state.update = {
+      status: 'available',
+      version: '0.4.0',
+      prompt: true,
+      notes: params.get('update') === 'nonotes' ? null : PREVIEW_UPDATE_NOTES,
+    };
+  }
   const stateListeners = new Set<(state: AppState) => void>();
   const chatListeners = new Set<(item: LoggedChatEvent) => void>();
   // The session log the main process keeps; chat goes through it like the real IPC.
@@ -230,6 +274,13 @@ function createMockApi(): ChattoApi {
       step(0);
     },
     installUpdate: async () => undefined,
+    dismissUpdatePrompt: async (skip) => {
+      const { version } = state.update;
+      if (skip && version) set({ prefs: { ...state.prefs, skippedUpdateVersion: version } });
+      set({ update: { ...state.update, prompt: false } });
+    },
+    dismissOpenedThemeFile: async (id) =>
+      set({ openedThemeFiles: state.openedThemeFiles.filter((file) => file.id !== id) }),
     share: (method, ...args) => {
       const call = share[method] as (...params: unknown[]) => unknown;
       return Promise.resolve(call.apply(share, args)) as never;

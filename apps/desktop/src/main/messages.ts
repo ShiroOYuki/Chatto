@@ -32,6 +32,7 @@ export const MAIN_MESSAGES = defineMessages({
       invalidThemePackage: '不是有效的主題包',
       missingThemeJson: '主題包裡沒有 theme.json',
       invalidThemeJson: '主題包裡的 theme.json 不是有效的 JSON',
+      cannotReadThemeFile: '讀不到這個檔案，可能已經被移動或刪除',
     },
     reference: {
       header: [
@@ -72,6 +73,7 @@ export const MAIN_MESSAGES = defineMessages({
       invalidThemePackage: 'Not a valid theme package',
       missingThemeJson: 'The theme package has no theme.json',
       invalidThemeJson: 'The theme.json in the theme package is not valid JSON',
+      cannotReadThemeFile: 'Can’t read this file; it may have been moved or deleted',
     },
     reference: {
       header: [

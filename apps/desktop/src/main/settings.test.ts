@@ -31,6 +31,7 @@ describe('SettingsStore', () => {
       locale: 'zh-TW',
       chatLocale: 'auto',
       obsPluginPromptDismissed: false,
+      skippedUpdateVersion: '',
     });
   });
 

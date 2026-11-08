@@ -78,6 +78,7 @@ const defaults = (): Settings => ({
     locale: localeFromTag(app.getLocale()),
     chatLocale: 'auto',
     obsPluginPromptDismissed: false,
+    skippedUpdateVersion: '',
   },
   share: { clientId: randomUUID(), termsAccepted: 0 },
 });
@@ -94,6 +95,7 @@ export function normalizePrefs(raw: Partial<AppPrefs> | undefined, base: AppPref
   const prefs = { ...base, ...raw };
   if (!isLocale(prefs.locale)) prefs.locale = base.locale;
   if (prefs.chatLocale !== 'auto' && !isLocale(prefs.chatLocale)) prefs.chatLocale = 'auto';
+  if (typeof prefs.skippedUpdateVersion !== 'string') prefs.skippedUpdateVersion = '';
   return prefs;
 }
 

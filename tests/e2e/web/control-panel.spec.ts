@@ -463,6 +463,49 @@ test('an update is found, downloaded on request and offered as a restart', async
   await expect(page.getByRole('button', { name: '重新啟動以更新' })).toBeVisible();
 });
 
+test('a new version found at startup opens a dialog with its notes, and skipping keeps the badge', async ({
+  panel,
+  page,
+}) => {
+  await panel.open('update');
+  const dialog = page.getByRole('dialog', { name: '有新版本 0.4.0' });
+  await expect(dialog.getByRole('region', { name: 'v0.4.0' }).getByText('.chattotheme')).toBeVisible();
+  await expect(dialog.getByRole('region', { name: 'v0.3.2' })).toContainText('啟動更快');
+  await dialog.getByRole('button', { name: '略過此版本' }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(await page.evaluate(() => window.__chattoMock!.getState().prefs.skippedUpdateVersion)).toBe('0.4.0');
+  // Skipping only stops the dialog; the title bar still offers the update.
+  await page.getByRole('button', { name: '有新版本 0.4.0' }).click();
+  await expect(page.getByRole('button', { name: '重新啟動以更新' })).toBeVisible();
+});
+
+test('the update dialog starts the download, or links to the changelog without notes', async ({ panel, page }) => {
+  await panel.open('update=nonotes');
+  const dialog = page.getByRole('dialog', { name: '有新版本 0.4.0' });
+  await expect(dialog.getByText('讀不到這一版的更新內容')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: '查看更新內容' })).toBeVisible();
+  await dialog.getByRole('button', { name: '更新', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '重新啟動以更新' })).toBeVisible();
+});
+
+test('a theme file opened from Windows is imported after confirming, then can be applied', async ({ panel, page }) => {
+  await panel.open('opened&page=themes');
+  const dialog = page.getByRole('dialog', { name: '匯入主題' });
+  await expect(dialog.getByText('來自 Bubble.chattotheme')).toBeVisible();
+  await expect(dialog.getByTestId('opened-theme-preview').locator('.chatto-root')).toBeVisible();
+  await dialog.getByRole('button', { name: '匯入' }).click();
+  await expect(dialog.getByText(/^已匯入/)).toBeVisible();
+  await dialog.getByRole('button', { name: '事件' }).click();
+  await expect(dialog.getByRole('button', { name: '事件' })).toHaveAttribute('aria-pressed', 'true');
+  await dialog.getByRole('button', { name: '完成' }).click();
+  // The second file is broken: it says so and imports nothing.
+  await expect(dialog.getByRole('alert')).toContainText('Not a valid theme package');
+  await dialog.getByRole('button', { name: '關閉' }).last().click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: /（匯入）$/, level: 2 })).toHaveCount(1);
+});
+
 test('a failed update check says what went wrong in plain words', async ({ panel, page }) => {
   await panel.open('page=settings');
   await page.getByRole('button', { name: '關於', exact: true }).click();

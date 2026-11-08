@@ -1,5 +1,6 @@
 import type { AppUpdater } from 'electron-updater';
 import type { UpdateErrorKind, UpdateState } from '../shared/ipc';
+import type { UpdateNote } from '../shared/updateNotes';
 
 /** Checks again this often while Chatto keeps running (streamers often leave it open for days). */
 export const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -25,6 +26,14 @@ export type UpdaterBackend = Pick<AppUpdater, 'checkForUpdates' | 'downloadUpdat
   autoInstallOnAppQuit: boolean;
 };
 
+/** How the startup check decides on the update dialog (#39). */
+export interface UpdatePromptOptions {
+  /** The user chose "skip this version" for this one. */
+  isSkipped?: (version: string) => boolean;
+  /** What changed up to `version`; null when it cannot be read. */
+  fetchNotes?: (version: string) => Promise<UpdateNote[] | null>;
+}
+
 /**
  * Finds new versions on GitHub Releases. It only asks: downloading waits for the
  * user, and installing waits for a restart they choose or for quitting Chatto,
@@ -38,6 +47,7 @@ export class Updater {
   constructor(
     private readonly backend: UpdaterBackend | null,
     private readonly onChange: (state: UpdateState) => void = () => undefined,
+    private readonly prompt: UpdatePromptOptions = {},
   ) {
     this.#state = backend ? { status: 'idle' } : { status: 'unsupported' };
     if (!backend) return;
@@ -57,11 +67,34 @@ export class Updater {
     return this.#state;
   }
 
-  /** Checks now and then every `UPDATE_CHECK_INTERVAL_MS`. */
+  /**
+   * Checks now and then every `UPDATE_CHECK_INTERVAL_MS`. Only this first check opens the update
+   * dialog; later ones (Chatto may run through a stream) just update the title bar badge.
+   */
   start(): void {
     if (!this.backend || this.#timer) return;
-    void this.check();
+    void this.#checkAtStartup();
     this.#timer = setInterval(() => void this.check(), UPDATE_CHECK_INTERVAL_MS);
+  }
+
+  async #checkAtStartup(): Promise<void> {
+    await this.check();
+    const { status, version } = this.#state;
+    if (status !== 'available' || !version || this.prompt.isSkipped?.(version)) return;
+    let notes: UpdateNote[] | null = null;
+    try {
+      notes = (await this.prompt.fetchNotes?.(version)) ?? null;
+    } catch {
+      notes = null;
+    }
+    // The user may have started the download while the notes loaded.
+    if (this.#state.status !== 'available' || this.#state.version !== version) return;
+    this.#set({ ...this.#state, prompt: true, notes });
+  }
+
+  /** The update dialog was answered without updating. */
+  dismissPrompt(): void {
+    if (this.#state.prompt) this.#set({ ...this.#state, prompt: false });
   }
 
   stop(): void {

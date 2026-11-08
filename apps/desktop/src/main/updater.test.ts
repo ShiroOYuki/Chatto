@@ -99,6 +99,77 @@ describe('Updater', () => {
     expect(updater.state.status).toBe('downloaded');
   });
 
+  describe('the update dialog (#39)', () => {
+    const NOTES = [{ version: 'v0.2.0', sections: [] }];
+
+    function withPrompt(options: { skipped?: string; notes?: () => Promise<typeof NOTES | null> } = {}) {
+      const { backend, emit } = fakeBackend();
+      // The real check announces the new version before it resolves.
+      backend.checkForUpdates.mockImplementation(async () => {
+        emit('update-available', { version: '0.2.0' });
+        return null;
+      });
+      const fetchNotes = vi.fn(options.notes ?? (async () => NOTES));
+      const updater = new Updater(backend as unknown as UpdaterBackend, () => undefined, {
+        isSkipped: (version) => version === options.skipped,
+        fetchNotes,
+      });
+      return { updater, backend, emit, fetchNotes };
+    }
+
+    it('opens after the startup check finds a version, with its notes', async () => {
+      const { updater, fetchNotes } = withPrompt();
+      updater.start();
+      await vi.waitFor(() => expect(updater.state.prompt).toBe(true));
+      expect(fetchNotes).toHaveBeenCalledWith('0.2.0');
+      expect(updater.state).toEqual({ status: 'available', version: '0.2.0', prompt: true, notes: NOTES });
+      updater.stop();
+    });
+
+    it('still opens, without notes, when they cannot be read', async () => {
+      const { updater } = withPrompt({
+        notes: async () => {
+          throw new Error('offline');
+        },
+      });
+      updater.start();
+      await vi.waitFor(() => expect(updater.state.prompt).toBe(true));
+      expect(updater.state.notes).toBeNull();
+      updater.stop();
+    });
+
+    it('stays closed for a skipped version and after later checks', async () => {
+      const skipped = withPrompt({ skipped: '0.2.0' });
+      skipped.updater.start();
+      await vi.waitFor(() => expect(skipped.updater.state.status).toBe('available'));
+      await Promise.resolve();
+      expect(skipped.updater.state.prompt).toBeUndefined();
+      expect(skipped.fetchNotes).not.toHaveBeenCalled();
+      skipped.updater.stop();
+
+      const later = withPrompt();
+      await later.updater.check();
+      expect(later.updater.state).toEqual({ status: 'available', version: '0.2.0' });
+    });
+
+    it('closes when answered and when the download starts', async () => {
+      const { updater } = withPrompt();
+      updater.start();
+      await vi.waitFor(() => expect(updater.state.prompt).toBe(true));
+      updater.dismissPrompt();
+      expect(updater.state.prompt).toBe(false);
+      expect(updater.state.status).toBe('available');
+      updater.stop();
+
+      const downloading = withPrompt();
+      downloading.updater.start();
+      await vi.waitFor(() => expect(downloading.updater.state.prompt).toBe(true));
+      await downloading.updater.download();
+      expect(downloading.updater.state.prompt).toBeUndefined();
+      downloading.updater.stop();
+    });
+  });
+
   it('reports this version as the latest and surfaces errors', async () => {
     const { updater, backend, emit, changes } = setup();
     emit('update-not-available', { version: '0.1.0' });

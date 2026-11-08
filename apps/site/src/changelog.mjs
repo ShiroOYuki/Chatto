@@ -3,7 +3,11 @@
  * `develop` that has not been released; it is shown without a version or date. Every text is
  * written in both languages. An OBS plugin or Chatto Themes entry names the Chatto release it comes
  * with (`chatto`): the site shows it once that release is published. The release notes include the
- * OBS plugin's entry.
+ * OBS plugin's entry. Released app entries are also attached to each GitHub Release as
+ * `changelog.json` (`changelogJson.mjs`) for the app's update dialog.
+ *
+ * Write each item as one plain sentence. The only formatting is `backticks` for code (the site
+ * and the app show it in a monospace font); no other Markdown.
  */
 
 /** @typedef {{ en: string, 'zh-TW': string }} Text */
@@ -15,6 +19,24 @@ const t = (en, zh) => ({ en, 'zh-TW': zh });
 /** @type {Record<'app' | 'themes' | 'obs', Entry[]>} */
 export const CHANGELOG = {
   app: [
+    {
+      upcoming: true,
+      sections: [
+        {
+          kind: 'new',
+          items: [
+            t(
+              'When a new version is out, Chatto shows what changed in a dialog at startup; update, close it until next time, or skip that version',
+              '有新版本時，Chatto 啟動後會用對話框列出更新內容，可以直接更新、這次先關閉，或略過這個版本',
+            ),
+            t(
+              'Double-click a .chattotheme file to open it in Chatto, preview it and import it',
+              '雙擊 .chattotheme 檔就會用 Chatto 開啟，預覽後即可匯入',
+            ),
+          ],
+        },
+      ],
+    },
     {
       version: 'v0.3.1',
       date: '2026-11-08',

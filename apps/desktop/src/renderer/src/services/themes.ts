@@ -15,6 +15,8 @@ export const themes = {
   exportPackage: (theme: ChatTheme): Promise<boolean> => api.exportThemePackage(theme),
   /** Stores a package's images and resolves to its (unsaved) theme. */
   importPackage: (bytes: Uint8Array): Promise<ChatTheme> => api.importThemePackage(bytes),
+  /** Done with a theme file opened from Windows (#40), imported or not. */
+  dismissOpenedFile: (id: string) => runAction('dismissOpenedThemeFile', api.dismissOpenedThemeFile(id)),
 };
 
 /** URL of a theme frame image on the desktop app's local server. */

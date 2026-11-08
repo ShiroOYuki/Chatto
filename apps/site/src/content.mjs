@@ -342,7 +342,7 @@ export const CONTENT = {
             { q: 'Can the overlay and OBS use different themes?', a: 'Yes. Choose one for each on the Outputs page.' },
             {
               q: 'How do I share a theme?',
-              a: 'Export it on the Themes page as a .chattotheme file, which includes its images. The other person imports the file. Themes on the Explore page can be downloaded as the same file from their details.',
+              a: 'Export it on the Themes page as a .chattotheme file, which includes its images. The other person double-clicks the file to import it, or imports it on the Themes page. Themes on the Explore page can be downloaded as the same file from their details.',
             },
             {
               q: 'Can I write my own CSS?',
@@ -710,7 +710,7 @@ export const CONTENT = {
             { q: 'Overlay 和 OBS 可以用不同主題嗎？', a: '可以，在「輸出」頁各選一個。' },
             {
               q: '怎麼把主題分享給別人？',
-              a: '在「主題」頁匯出成 .chattotheme 檔（圖片會一起打包），對方匯入就能用。分享到探索頁的主題，也可以在詳細頁下載成同樣的檔案。',
+              a: '在「主題」頁匯出成 .chattotheme 檔（圖片會一起打包），對方雙擊檔案就能匯入（也可以在「主題」頁匯入）。分享到探索頁的主題，也可以在詳細頁下載成同樣的檔案。',
             },
             {
               q: '可以自己寫 CSS 嗎？',

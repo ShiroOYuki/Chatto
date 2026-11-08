@@ -29,6 +29,14 @@ win:
   target:
     - nsis
   icon: resources/icon.png
+# Double-clicking a theme package opens it in Chatto, which asks before importing it (#40).
+# The installer registers the type and the uninstaller removes it. The icon (build/, made from
+# resources/icon.png at 16–256 px) can later be replaced with one drawn for theme files.
+fileAssociations:
+  - ext: chattotheme
+    name: Chatto.Theme
+    description: Chatto theme
+    icon: chattotheme.ico
 nsis:
   oneClick: false
   # The installer shows the GPL before installing (settings → About shows it again in the app).

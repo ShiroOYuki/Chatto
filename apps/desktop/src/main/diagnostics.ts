@@ -33,6 +33,7 @@ export const PREFS_POLICY: FieldPolicy<AppPrefs> = {
   locale: 'keep',
   chatLocale: 'keep',
   obsPluginPromptDismissed: 'keep',
+  skippedUpdateVersion: 'keep',
 };
 
 export const SETTINGS_POLICY: FieldPolicy<Settings> = {

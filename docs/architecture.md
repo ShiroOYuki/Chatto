@@ -77,6 +77,8 @@ workspace package 直接提供 TypeScript 原始碼，由 Vite／electron-vite �
 - OBS 外掛的 embed 頁不需要控制 OBS，內部 browser 來源的 `webpage_control_level` 設為 0。
 - 自訂 CSS 檔案的路徑由主題 id 產生，id 只接受 `[\w-]+`；外部編輯器指令只來自使用者自己的設定。
 - 自動更新（main `updater.ts`，`electron-updater`）只讀 `ShiroOYuki/Chatto` 已發佈的 GitHub Release，下載後以 `latest.yml` 的 SHA-512 驗證才安裝。只會提示，下載與安裝都等使用者決定，不會在直播中自動重開。開發版不檢查。
+- 更新對話框（#39）：只有啟動時的那次檢查會設 `update.prompt`（之後每 6 小時的檢查只更新標題列徽章），使用者略過的版本（`prefs.skippedUpdateVersion`）不跳。更新內容來自 Release 附檔 `changelog.json`（`release.yml` 由 `apps/site/src/changelogJson.mjs` 產生），main 下載後用 `shared/updateNotes.ts` 檢查格式、篩出跨過的版本，控制台只把文字當純文字畫（反引號是唯一格式）。讀不到時只顯示版本號與網站更新紀錄的連結。
+- 雙擊 `.chattotheme`（#40）：安裝檔登記副檔名（`electron-builder.yml` 的 `fileAssociations`）。main 從 `process.argv` 或 `second-instance` 的參數找檔案（`main/opened-files.ts`，忽略 Electron 參數與不存在的檔案），用 `importThemePackage` 讀取（圖片先存，供預覽；沒用到的圖片下次啟動清掉），放進 `AppState.openedThemeFiles` 排隊。主題要等使用者在控制台按「匯入」才存成新的自訂主題。
 
 ## 主題分享（開發中，GitHub #4）
 

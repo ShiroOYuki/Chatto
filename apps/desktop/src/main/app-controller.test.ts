@@ -91,6 +91,7 @@ function fakeSettings(initial: Partial<Settings> = {}) {
       locale: 'zh-TW',
       chatLocale: 'auto',
       obsPluginPromptDismissed: false,
+      skippedUpdateVersion: '',
     },
     share: { clientId: 'client', termsAccepted: 0 },
     ...initial,
@@ -324,6 +325,7 @@ describe('AppController CSS files', () => {
         locale: 'zh-TW',
         chatLocale: 'auto',
         obsPluginPromptDismissed: false,
+        skippedUpdateVersion: '',
       },
     });
     await controller.openCssFile('my-theme');

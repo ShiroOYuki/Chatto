@@ -47,6 +47,7 @@ describe('SettingsPage', () => {
           locale: 'zh-TW',
           chatLocale: 'auto',
           obsPluginPromptDismissed: false,
+          skippedUpdateVersion: '',
         },
       }),
     );

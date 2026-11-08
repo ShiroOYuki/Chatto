@@ -28,6 +28,7 @@ import type {
   CssFileChange,
   CssFileOpenResult,
   DeviceCodeInfo,
+  OpenedThemeFile,
   OverlayWindowId,
   UpdateState,
 } from '../shared/ipc';
@@ -93,6 +94,8 @@ export class AppController {
   isWindowMaximized: () => boolean = () => false;
   /** Supplied by index.ts, which owns the app updater. */
   updateState: () => UpdateState = () => ({ status: 'unsupported' });
+  /** Supplied by index.ts: theme files opened from Windows, waiting to be confirmed (#40). */
+  openedThemeFiles: () => OpenedThemeFile[] = () => [];
 
   /** `builtInClientId` is the Twitch Client ID baked into this build, used unless the user set their own. */
   constructor(
@@ -185,6 +188,7 @@ export class AppController {
         session: { status: 'signed-out' },
         termsAccepted: settings.share.termsAccepted,
       },
+      openedThemeFiles: this.openedThemeFiles(),
     };
   }
 

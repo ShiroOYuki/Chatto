@@ -19,6 +19,7 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
       locale: 'zh-TW',
       chatLocale: 'auto',
       obsPluginPromptDismissed: false,
+      skippedUpdateVersion: '',
     },
     clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true },
@@ -30,6 +31,7 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
     themes: PRESET_THEMES,
     selectedThemes: { overlay: 'matcha-glass', embed: 'washi', alerts: 'bubble' },
     share: { session: { status: 'signed-out' }, termsAccepted: 0 },
+    openedThemeFiles: [],
     ...patch,
   };
 }
@@ -124,6 +126,8 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     checkForUpdate: resolved(),
     downloadUpdate: resolved(),
     installUpdate: resolved(),
+    dismissUpdatePrompt: resolved(),
+    dismissOpenedThemeFile: resolved(),
     share: vi.fn(async () => ({ ok: false, error: 'unknown' })),
     captureThumbnail: vi.fn(async () => null),
     exportDiagnostics: vi.fn(async () => true),

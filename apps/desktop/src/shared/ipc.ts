@@ -16,6 +16,7 @@ import type { ShareClient } from './share/client';
 import type { ShareState } from '@chatto/share';
 import type { OverlayLook } from './overlayLook';
 import type { ControlLogSnapshot, LoggedChatEvent } from './controlLog';
+import type { UpdateNote } from './updateNotes';
 
 /** The two desktop windows: the chat overlay and the event alert overlay. */
 export type OverlayWindowId = 'overlay' | 'alerts';
@@ -89,6 +90,8 @@ export interface AppPrefs {
   chatLocale: ChatLocalePref;
   /** The user said no to the title bar's "install the OBS plugin" prompt (updates still show). */
   obsPluginPromptDismissed: boolean;
+  /** The update dialog stays closed for this version (`0.4.0`); empty for none. Later versions show it again (#39). */
+  skippedUpdateVersion: string;
 }
 
 /** How a theme's CSS file was opened: the configured editor, the system default app, or not at all. */
@@ -119,6 +122,13 @@ export interface UpdateState {
   /** Download progress, 0–100. */
   percent?: number;
   error?: UpdateErrorKind;
+  /**
+   * The check at startup found this version and the user has not skipped it: the control panel
+   * shows the update dialog until it is answered (#39). Later checks never set it.
+   */
+  prompt?: boolean;
+  /** What changed in each version up to the new one, newest first; null when it could not be read. */
+  notes?: UpdateNote[] | null;
 }
 
 /**
@@ -164,6 +174,22 @@ export interface AppState {
   selectedThemes: Record<ViewerTarget, string>;
   /** Theme sharing account; the session token stays in the main process. */
   share: ShareState;
+  /** `.chattotheme` files opened from Windows, waiting for the user to import or cancel them, oldest first (#40). */
+  openedThemeFiles: OpenedThemeFile[];
+}
+
+/**
+ * A `.chattotheme` file Chatto was opened with. Its images are already stored (so the preview
+ * can show them); the theme is saved only when the user confirms.
+ */
+export interface OpenedThemeFile {
+  id: string;
+  /** The file's name, without its folder. */
+  fileName: string;
+  /** The package's theme as written (normalized, not saved, its own id and name); absent when it could not be read. */
+  theme?: ChatTheme;
+  /** Why it could not be read, in the interface language. */
+  error?: string;
 }
 
 export interface ChattoApi {
@@ -238,6 +264,11 @@ export interface ChattoApi {
   downloadUpdate(): Promise<void>;
   /** Quits, installs the downloaded update and starts the new version. */
   installUpdate(): Promise<void>;
+  /** Answers the update dialog without updating; `skip` stops it from showing for this version again. */
+  dismissUpdatePrompt(skip: boolean): Promise<void>;
+
+  /** Done with a theme file opened from Windows (imported or cancelled); the next one shows. */
+  dismissOpenedThemeFile(id: string): Promise<void>;
 
   /** Theme sharing (GitHub #4); the account shows in `state.share`. */
   share<K extends ShareMethod>(method: K, ...args: Parameters<ShareApi[K]>): Promise<Awaited<ReturnType<ShareApi[K]>>>;
@@ -310,6 +341,8 @@ export const IPC = {
   checkForUpdate: 'update:check',
   downloadUpdate: 'update:download',
   installUpdate: 'update:install',
+  dismissUpdatePrompt: 'update:dismiss-prompt',
+  dismissOpenedThemeFile: 'theme:dismiss-opened-file',
   share: 'share:call',
   captureThumbnail: 'share:capture-thumbnail',
   exportDiagnostics: 'diagnostics:export',
