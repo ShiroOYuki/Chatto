@@ -609,9 +609,11 @@ async function bootstrap(): Promise<void> {
   // Opened with a .chattotheme file (#40): the control panel asks before importing it.
   opened.add(themeFilesFromArgv(process.argv, process.cwd(), existsSync));
 
-  app.on('second-instance', (_e, argv, workingDirectory) => {
+  // Electron always passes the command line, but the event can also be emitted without one
+  // (the Electron tests reopen the window this way), so a missing one means no files.
+  app.on('second-instance', (_e, argv?: string[], workingDirectory?: string) => {
     showMainWindow();
-    opened.add(themeFilesFromArgv(argv, workingDirectory, existsSync));
+    opened.add(themeFilesFromArgv(argv ?? [], workingDirectory ?? process.cwd(), existsSync));
   });
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow(settings, controller);
