@@ -1,6 +1,6 @@
 /**
  * Turns the changelog into the notes of a GitHub Release: English first, then Traditional
- * Chinese. Release workflow: `node apps/site/src/releaseNotes.mjs v0.2.0 > notes.md`. It exits
+ * Chinese and Japanese. Release workflow: `node apps/site/src/releaseNotes.mjs v0.2.0 > notes.md`. It exits
  * with an error when the changelog has no entry for that version, so a release cannot go out
  * without one.
  */
@@ -10,6 +10,7 @@ import { CHANGELOG } from './changelog.mjs';
 const HEADINGS = {
   en: { new: 'New', improved: 'Improved', fixed: 'Fixed', obs: 'OBS plugin' },
   'zh-TW': { new: '新功能', improved: '改進', fixed: '修正', obs: 'OBS 外掛' },
+  ja: { new: '新機能', improved: '改善', fixed: '修正', obs: 'OBS プラグイン' },
 };
 
 /** The entry of the app's changelog for `tag` (for example `v0.2.0`), if there is one. */
@@ -42,7 +43,7 @@ export function releaseNotes(tag) {
       `apps/site/src/changelog.mjs has no entry for ${tag}. Turn the upcoming entry into ${tag} with its date before releasing.`,
     );
   const plugin = CHANGELOG.obs.find((item) => item.chatto === tag);
-  return `${notesIn('en', entry, plugin)}\n\n## 繁體中文\n\n${notesIn('zh-TW', entry, plugin)}\n`;
+  return `${notesIn('en', entry, plugin)}\n\n## 繁體中文\n\n${notesIn('zh-TW', entry, plugin)}\n\n## 日本語\n\n${notesIn('ja', entry, plugin)}\n`;
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

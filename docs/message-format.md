@@ -122,7 +122,8 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
   - `hello`：`theme`、`backlog`（最近事件；`alerts` 一律是空的）與 `locale`（聊天室語言，舊版 server 沒有這個欄位）
   - `event`：一個 `ChatEvent`；送給 `alerts` 時另有 `alert: { durationMs, sound? }`（`AlertCue`），告訴事件 Overlay 卡片停留多久、播什麼聲音
   - `theme`：主題變更（內建主題的文字已經換成聊天室語言）
-  - `locale`：聊天室語言變更（`zh-TW`、`en`）
+  - `locale`：聊天室語言變更（`zh-TW`、`en`、`ja`）
+  - `clear`：實況主清空畫面上的聊天（快捷鍵或輸出頁，#53）；聊天室 viewer 清掉目前的訊息，事件 Overlay 不受影響
 - 每個 target 收到的事件可能不同，見 `docs/architecture.md` 的「輸出路由」。
 - HTTP `/sounds/<檔名>`：使用者自選的提示音；`/theme-assets/<檔名>`：主題的外框圖片。
 - HTTP `GET /api/ping` → `{ app: 'chatto', version }`；`GET /api/themes` → `[{ id, name }]`（名稱用介面語言）。給 OBS 外掛用，其他方法回 405。
@@ -149,6 +150,8 @@ provider 把事件的結構化資料整理成平台無關的 `meta` 鍵，事件
 同一批贈訂：`community_sub_gift.id` → `meta.groupId`＋`meta.groupLead`；`sub_gift.community_gift_id` → `meta.groupId`；`sub_gift.recipient_user_name` → `meta.recipient`。
 
 ## 變更紀錄
+
+- **v1.8**（2026-11-09）：新增 `clear` frame（非破壞性）。
 
 - **v1.7**（2026-11-06）：新增 Twitch 事件 `redemption`、`auto-redemption` 與兌換的 `meta` 欄位（`reward`、`rewardType`、`cost`、`input`、`shownAsMessage` 等）（非破壞性）。
 

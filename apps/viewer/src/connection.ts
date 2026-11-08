@@ -16,6 +16,8 @@ export interface ViewerConnectionHandlers {
   onTheme(theme: ChatTheme): void;
   /** The chat language changed in the desktop app. */
   onLocale(locale: Locale): void;
+  /** The streamer emptied the chat on screen. */
+  onClear?(): void;
   onStatus(connected: boolean): void;
 }
 
@@ -48,6 +50,7 @@ export function connectToApp(
       if (frame.type === 'hello') handlers.onHello(frame.theme, frame.backlog, frame.locale);
       else if (frame.type === 'event') handlers.onEvent(frame.event, frame.alert);
       else if (frame.type === 'theme') handlers.onTheme(frame.theme);
+      else if (frame.type === 'clear') handlers.onClear?.();
       else handlers.onLocale(frame.locale);
     });
     socket.addEventListener('close', () => {

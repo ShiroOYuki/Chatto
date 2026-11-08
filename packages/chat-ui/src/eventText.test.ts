@@ -1,4 +1,4 @@
-import type { ChatNotice } from '@chatto/core';
+import { LOCALES, type ChatNotice } from '@chatto/core';
 import { describe, expect, it } from 'vitest';
 import {
   eventTitle,
@@ -45,6 +45,13 @@ describe('event text templates', () => {
     // A viewer who hides their streak.
     const hidden = notice('resub', { tier: 'prime', months: 1 });
     expect(noticeText(hidden, 'en')).toBe("Mochi_Fan resubscribed at Prime. They've subscribed for 1 month!");
+  });
+
+  it('uses Twitch Japan’s words in Japanese: ティア for tiers, サブスク更新 for resubs', () => {
+    const resub = notice('resub', { tier: '1', months: 99, streakMonths: 99 });
+    expect(noticeText(resub, 'ja')).toContain('ティア1');
+    expect(noticeText(resub, 'ja')).toContain('サブスクを更新しました');
+    expect(noticeText(resub, 'zh-TW')).toContain('Tier 1');
   });
 
   it('fills the watch streak from its stream count', () => {
@@ -102,7 +109,7 @@ describe('event text templates', () => {
     for (const event of EVENT_CATALOG.flatMap((group) => group.events)) {
       if (!event.text) continue;
       const sample = sampleEvent(event.key);
-      for (const locale of ['zh-TW', 'en'] as const) {
+      for (const locale of LOCALES) {
         const vars =
           sample.type === 'notice'
             ? noticeVariables(sample.notice, locale)

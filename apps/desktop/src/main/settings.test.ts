@@ -31,7 +31,24 @@ describe('SettingsStore', () => {
       locale: 'zh-TW',
       chatLocale: 'auto',
       obsPluginPromptDismissed: false,
+      skippedUpdateVersion: '',
+      onboardingDismissed: false,
+      visitedThemes: false,
+      visitedAlerts: false,
     });
+  });
+
+  it('starts the getting-started list closed for someone upgrading who already picked a channel', () => {
+    writeFileSync(join(userData.dir, 'settings.json'), JSON.stringify({ channelLogin: 'ciel', prefs: {} }));
+    expect(new SettingsStore().get().prefs.onboardingDismissed).toBe(true);
+    writeFileSync(join(userData.dir, 'settings.json'), JSON.stringify({ channelLogin: '', prefs: {} }));
+    expect(new SettingsStore().get().prefs.onboardingDismissed).toBe(false);
+    // Once saved, the user's choice stays.
+    writeFileSync(
+      join(userData.dir, 'settings.json'),
+      JSON.stringify({ channelLogin: 'ciel', prefs: { onboardingDismissed: false } }),
+    );
+    expect(new SettingsStore().get().prefs.onboardingDismissed).toBe(false);
   });
 
   it('starts in the system language and keeps a saved one', () => {

@@ -2,6 +2,7 @@ import { decodeServerFrame, encodeFrame, PROTOCOL_VERSION, type ServerFrame } fr
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
 import { PRESET_THEMES } from '@chatto/chat-ui/themes';
 import { strToU8, zipSync } from 'fflate';
+import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -21,6 +22,21 @@ let mainWindow: Page;
 let userData: string;
 let port: number;
 
+/** A `.chattotheme` package with one theme, as Chatto exports it. */
+function themePackage(path: string, name: string): string {
+  const theme = { ...PRESET_THEMES[1]!, id: `file-${name}`, name, builtIn: false };
+  writeFileSync(path, zipSync({ 'theme.json': strToU8(JSON.stringify(theme)) }));
+  return path;
+}
+
+/** The environment every launch of the app under test gets. */
+const appEnv = () => ({
+  ...process.env,
+  CHATTO_USER_DATA: userData,
+  ELECTRON_RENDERER_URL: '',
+  CHATTO_SHARE_API: 'fake',
+});
+
 test.beforeEach(async () => {
   userData = mkdtempSync(join(tmpdir(), 'chatto-e2e-'));
   port = 41000 + Math.floor(Math.random() * 10000);
@@ -29,15 +45,16 @@ test.beforeEach(async () => {
     join(userData, 'settings.json'),
     JSON.stringify({ serverPort: port, twitchClientId: '', prefs: { locale: 'zh-TW' } }),
   );
+  // `[open-file]` tests start the app the way Windows does for a double-clicked theme file (#40).
+  const opened = test.info().title.includes('[open-file]')
+    ? [themePackage(join(userData, '雙擊的主題.chattotheme'), '雙擊的主題')]
+    : [];
   app = await electron.launch({
     executablePath: electronPath,
-    args: [appDir],
+    args: [appDir, ...opened],
     // The built app would talk to the real sharing service; tests keep to the in-memory fake.
     env: {
-      ...process.env,
-      CHATTO_USER_DATA: userData,
-      ELECTRON_RENDERER_URL: '',
-      CHATTO_SHARE_API: 'fake',
+      ...appEnv(),
       // Tests about the tray release the hidden window quickly instead of after five minutes.
       CHATTO_TRAY_RELEASE_MS: test.info().title.includes('[tray]') ? '1500' : '',
       CHATTO_MINIMIZE_RELEASE_MS: test.info().title.includes('[minimize]') ? '1500' : '',
@@ -259,6 +276,28 @@ test('saving a theme CSS file outside Chatto saves the theme', async () => {
     await api.saveTheme({ ...theme, customCss: '.chatto-body { color: blue; }' });
   }, themeId);
   expect(readFileSync(opened.path, 'utf8')).toBe('.chatto-body { color: blue; }');
+});
+
+test('[open-file] a theme file Chatto is opened with is imported after confirming, also when already running', async () => {
+  const dialog = mainWindow.getByRole('dialog', { name: '匯入主題' });
+  await expect(dialog.getByText('來自 雙擊的主題.chattotheme')).toBeVisible();
+  await expect(dialog.getByTestId('opened-theme-preview').locator('.chatto-message').first()).toBeVisible();
+  await dialog.getByRole('button', { name: '匯入', exact: true }).click();
+  await expect(dialog.getByText('已匯入「雙擊的主題（匯入）」')).toBeVisible();
+  await dialog.getByRole('button', { name: '完成' }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(settings().customThemes.map((theme: { name: string }) => theme.name)).toEqual(['雙擊的主題（匯入）']);
+
+  // Opening another file starts a second Chatto, which hands it to this one and quits.
+  const second = themePackage(join(userData, 'second.chattotheme'), '第二個');
+  const exited = new Promise<number | null>((done) =>
+    spawn(electronPath, [appDir, second], { env: appEnv(), stdio: 'ignore' }).on('exit', done),
+  );
+  await expect(dialog.getByText('來自 second.chattotheme')).toBeVisible({ timeout: 15_000 });
+  await exited;
+  await dialog.getByRole('button', { name: '取消' }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(settings().customThemes).toHaveLength(1);
 });
 
 test('a theme package brings its frame image, which the server and previews use', async () => {

@@ -30,4 +30,16 @@ export default defineMessages({
     licenseNote: 'The legally binding English original',
     thirdPartyNote: 'The fonts, sounds, OBS plugin base and libraries Chatto uses, and their licenses',
   },
+  ja: {
+    title: '免責事項とライセンス',
+    description: 'ChattoはGPL-3.0-or-laterで公開されています',
+    tabs: {
+      disclaimer: '免責事項',
+      license: 'GPL-3.0',
+      thirdParty: 'サードパーティライセンス',
+    },
+    disclaimer: APP_DISCLAIMER.ja,
+    licenseNote: '以下は法的効力を持つ英語の原文です',
+    thirdPartyNote: 'Chattoが使用しているフォント、効果音、OBSプラグインのベース、ライブラリと、それぞれのライセンス',
+  },
 });

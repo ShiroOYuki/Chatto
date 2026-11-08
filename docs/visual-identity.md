@@ -139,6 +139,14 @@ repo 的 Social preview（分享連結時的預覽圖），1280×640。上傳位
 - 小尺寸（工作列、系統匣）也要認得出杯子和臉，所以五官不再加細節。
 - 檔案：`assets/chatto-icon.svg`（原稿，網站的 favicon 也用它）、`assets/chatto-icon.png`（256 px，給 README 等只吃點陣圖的地方）；App 打包用的是 `apps/desktop/resources/icon.png`，內容相同。
 
+## 主題檔圖示（.chattotheme）
+
+- 檔案總管裡的主題包：奶白的紙張、右上角折角，紙上三列「頭像＋訊息」代表聊天室主題，右下角疊一個 App 圖示當徽章，看得出是 Chatto 的檔案。
+- 紙張用奶白、邊與折角用淡抹茶（小尺寸邊改成抹茶，才看得到）；三列訊息是深抹茶、嫩抹茶、深抹茶，中間那列的頭像是唯一的櫻色。訊息長短不一，最後一列最短，讓出徽章的位置。
+- 徽章外圍墊一圈奶白，和紙張分開；徽章就是 App 圖示，不另外畫。
+- 小尺寸各自在像素格上重畫：32 px 的徽章拿掉蒸氣和臉，只留杯子；24、16 px 不放徽章，只有紙張與訊息列（16 px 只剩兩列）。
+- 檔案：`assets/chattotheme-icon.svg`（48～256 px 共用）、`chattotheme-icon-32.svg`、`-24.svg`、`-16.svg`。改完執行 `node scripts/build-file-icon.mjs` 產生 `apps/desktop/build/chattotheme.ico`（安裝檔登記副檔名時用）。
+
 ## 插圖與裝飾
 
 整體風格和茶杯一致：**扁平、兩三個顏色、圓角、簡單幾何**，看起來像同一個人畫的。

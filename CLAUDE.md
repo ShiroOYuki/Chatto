@@ -26,7 +26,7 @@ apps/
   viewer/           @chatto/viewer — /overlay 與 /embed 頁面，由桌面 App 的本機 server 提供；瀏覽器可用 ?mock=1 獨立預覽
   desktop/          @chatto/desktop — Electron（electron-vite）：main / preload / renderer（控制台）
   share-worker/     @chatto/share-worker — 主題分享服務（Cloudflare Worker＋D1＋R2），不打包進 App
-  site/             @chatto/site — chattolive.com 靜態網站（首頁、主題、教學、常見問題、更新紀錄、隱私說明、使用條款，繁中＋英文，亮暗色），Cloudflare Workers 靜態資源
+  site/             @chatto/site — chattolive.com 靜態網站（首頁、主題、教學、常見問題、更新紀錄、隱私說明、使用條款，英文＋繁中＋日文，亮暗色），Cloudflare Workers 靜態資源
 obs-plugin/         obs-chatto — OBS 外掛「Chatto 聊天室」來源（C++，CMake，Windows；不在 npm workspaces 裡）
 docs/               architecture.md、message-format.md、theming.md、testing.md、design.md、visual-identity.md、share-service.md
 ```
@@ -36,7 +36,8 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - 三個輸出 target：`overlay`（桌面聊天室）、`embed`（OBS）、`alerts`（桌面事件 Overlay）。每個 target 收到什麼由 `AppController.route()` 決定（見 `docs/architecture.md`「輸出路由」）；只給實況主看的東西（沉寂提醒標記、事件卡片）不得送到 `embed`。
 - 事件提醒規則分「通用」（跨平台分類 `ALERT_CATEGORIES`）與各平台專屬事件；新增平台事件時，能對應到通用分類就在 `EVENT_CATALOG` 填 `alertCategory`。
 - OBS 外掛只是包住 embed 頁的私有 obs-browser 來源，不自己畫聊天室；它讀 `/api/ping`、`/api/themes`，用 `/embed?theme=<id>` 選主題（見 `docs/architecture.md`）。這兩個 API 和 `?theme=` 是外掛的公開介面，改動要相容。模組名 `obs-chatto`、來源類型 id `chatto_chat` 會存進使用者的場景，不能改名。
-- App 更新：`electron-updater`（`apps/desktop/src/main/updater.ts`）讀最新**已發佈**的 GitHub Release，只提示，使用者同意才下載；開發版不檢查。
+- App 更新：`electron-updater`（`apps/desktop/src/main/updater.ts`）讀最新**已發佈**的 GitHub Release，只提示，使用者同意才下載；開發版不檢查。啟動時發現新版會跳更新對話框（可略過該版），內容來自 Release 附檔 `changelog.json`（由 `changelog.mjs` 產生，條目只用反引號這一種格式）。
+- 雙擊 `.chattotheme` 會開 Chatto（已開時交給執行中的那個），控制台先確認才匯入（`main/opened-files.ts`、`AppState.openedThemeFiles`）。
 - 帳號頁（`pages/accounts/`）是所有帳號的統一入口：上半 Chatto 帳號（分享用）、下半直播平台（登入與頻道連線）；左側欄底部的帳號卡也開這一頁。兩者只在介面合併，底層仍分開。探索頁不放帳號管理。
 - 主題分享（「探索」頁，GitHub #4）：資料型別、檢查規則、`ShareBackend` 與 HTTP 協定在 `packages/share`，App 端流程是 `apps/desktop/src/shared/share/client.ts`（`ShareClient`），服務是 `apps/share-worker`。App 裡 `ShareClient` 在 main process，session token 不離開 main；控制台經 IPC `share:call`（`SHARE_METHODS`）呼叫。服務部署在 `api.chattolive.com`：打包版連正式服務，開發版預設用記憶體內的假服務（`@chatto/share/fake`），`MAIN_VITE_SHARE_API_URL`（建置時）或 `CHATTO_SHARE_API`（執行時）可設成網址或 `fake`。分享帳號和聊天室連線分開，不得使用聊天平台的 token。API 只能向後相容地擴充（舊版 App 要能用）。見 `docs/architecture.md`「主題分享」與 `docs/share-service.md`。
 - 分享條款、隱私說明與 App 免責聲明的文字只有一份：`packages/share/src/legalText.ts`，App（`shareTerms`、`legal` 訊息）與網站（`apps/site`）都從這裡讀。改分享條款或隱私說明要遞增 `SHARE_TERMS_VERSION` 與 `LEGAL_UPDATED`，網站會在推到 `main` 時由 `site.yml` 自動部署（也可手動 `npm run deploy -w @chatto/site`）。
@@ -77,7 +78,7 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - 版面採 **Bento 格狀**，整體**簡潔直觀**。
 - **可愛元素只在適當處點綴**：茶杯吉祥物、空狀態插圖、連線成功的小動畫、親切的提示文字。不能干擾操作，也不能降低資訊密度的可讀性。
 - 主色系為抹茶綠，需支援亮色與暗色。
-- 文案簡短、動詞開頭，不使用驚嘆號堆疊；繁體中文與英文都遵守。
+- 文案簡短、動詞開頭，不使用驚嘆號堆疊；繁體中文、英文、日文都遵守。
 
 ### 控制台 renderer 分層
 
@@ -91,8 +92,8 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 
 ## 多語系
 
-- 支援繁體中文（`zh-TW`）與英文（`en`，預設），首次啟動依系統語言：中文系統用繁中，其他用英文，清單在 `@chatto/core` 的 `LOCALES`。兩個設定：`prefs.locale`（介面：控制台、系統匣、對話框、main 丟給畫面的錯誤）與 `prefs.chatLocale`（`auto` 跟隨介面，或指定語言：桌面 Overlay、OBS、事件 Overlay 的事件文字）。聊天室語言由 WebSocket 的 `hello.locale` 與 `locale` frame 傳給 viewer。
-- **不得在元件裡寫死介面文字。** 控制台文字放在 `apps/desktop/src/renderer/src/i18n/messages/<namespace>.ts`，用 `defineMessages()` 同時寫繁中與英文（英文的結構由型別檢查必須和繁中一致），元件用 `useMessages().<namespace>`；main process 的文字在 `apps/desktop/src/main/messages.ts`。新增 namespace 要在 `i18n/index.ts` 註冊。
+- 支援繁體中文（`zh-TW`）、英文（`en`，預設）與日文（`ja`，#55），首次啟動依系統語言：中文系統用繁中、日文系統用日文，其他用英文，清單在 `@chatto/core` 的 `LOCALES`。日文翻譯的原則與用語表在 `docs/i18n-ja.md`。兩個設定：`prefs.locale`（介面：控制台、系統匣、對話框、main 丟給畫面的錯誤）與 `prefs.chatLocale`（`auto` 跟隨介面，或指定語言：桌面 Overlay、OBS、事件 Overlay 的事件文字）。聊天室語言由 WebSocket 的 `hello.locale` 與 `locale` frame 傳給 viewer。
+- **不得在元件裡寫死介面文字。** 控制台文字放在 `apps/desktop/src/renderer/src/i18n/messages/<namespace>.ts`，用 `defineMessages()` 同時寫繁中、英文與日文（其他語言的結構由型別檢查必須和繁中一致），元件用 `useMessages().<namespace>`；main process 的文字在 `apps/desktop/src/main/messages.ts`。新增 namespace 要在 `i18n/index.ts` 註冊。
 - 主題名稱用 `useThemeName()`；控制台裡的聊天預覽要傳 `locale={useChatLocale()}`，主題經過 `useOutputTheme()`，才會和 OBS 看到的一樣。
 - 事件文字不翻譯平台原文，而是用 `ChatNotice.meta` 的結構化欄位套模板（`@chatto/chat-ui` 的 `eventText.ts`、`EVENT_CATALOG` 的 `text`／`variables`）；組不出來時顯示 `systemText`。新增平台事件時要寫兩種語言的模板，provider 要把需要的欄位放進 `meta`，並更新 `docs/message-format.md`「事件欄位」。主題的 `eventText` 可覆寫模板。
 - `@chatto/chat-ui` 裡給介面用的說明（`EVENT_CATALOG` 的名稱與說明、`ALERT_CATEGORIES`、`reference.ts`）是 `Localized` 物件，用 `x[locale]` 取。

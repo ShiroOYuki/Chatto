@@ -1,5 +1,5 @@
 /**
- * Builds chattolive.com into dist/, in English (/) and Traditional Chinese (/zh-tw/):
+ * Builds chattolive.com into dist/, in English (/), Traditional Chinese (/zh-tw/) and Japanese (/ja/):
  * home, themes, guide, FAQ, the changelog of each product, privacy notice, terms and a 404 page.
  * The legal texts come from `@chatto/share` (`legalText.ts`, loaded as TypeScript by Node), so
  * the site and the app say the same thing. The site is light unless the visitor switches it to
@@ -26,7 +26,11 @@ const repo = join(root, '..', '..');
 const dist = join(root, 'dist');
 const SITE = 'https://chattolive.com';
 const GITHUB_API = 'https://api.github.com/repos/ShiroOYuki/Chatto';
-const LOCALES = ['en', 'zh-TW'];
+const LOCALES = ['en', 'zh-TW', 'ja'];
+/** Where each language lives, and its name in itself for the language links. */
+const LOCALE_DIRS = { en: '', 'zh-TW': 'zh-tw', ja: 'ja' };
+const LOCALE_NAMES = { en: 'English', 'zh-TW': '繁體中文', ja: '日本語' };
+const HREFLANG = { en: 'en', 'zh-TW': 'zh-Hant-TW', ja: 'ja' };
 const PRODUCTS = ['app', 'themes', 'obs'];
 
 const escape = (text) =>
@@ -36,6 +40,9 @@ const escape = (text) =>
   );
 /** Escapes text and keeps its line breaks. */
 const lines = (text) => escape(text).replace(/\n/g, '<br>');
+
+/** A changelog sentence: escaped, with `backticks` as code (the only formatting it has; the app does the same). */
+const noteText = (text) => escape(text).replace(/`([^`\n]+)`/g, '<code>$1</code>');
 
 /** `標籤：內容` / `Label: text` → the label in bold. */
 function labelled(item) {
@@ -58,12 +65,13 @@ const PAGES = {
 };
 const href = (locale, page, hash = '') => {
   const path = PAGES[page];
-  const full = locale === 'en' ? path : `/zh-tw${path === '/' ? '/' : path}`;
+  const dir = LOCALE_DIRS[locale];
+  const full = dir ? `/${dir}${path === '/' ? '/' : path}` : path;
   return `${full}${hash}`;
 };
 /** The file a page is written to, relative to dist/. */
 const fileOf = (locale, page) => {
-  const dir = locale === 'en' ? '' : 'zh-tw/';
+  const dir = LOCALE_DIRS[locale] ? `${LOCALE_DIRS[locale]}/` : '';
   return page === 'home' ? `${dir}index.html` : `${dir}${PAGES[page].slice(1)}.html`;
 };
 
@@ -80,6 +88,10 @@ const ICONS = {
   mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
   moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  globe:
+    '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  chevron: '<path d="m6 9 6 6 6-6"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
 };
 const icon = (name, size) => svg(ICONS[name], size);
 /** The Windows logo, filled, for the download buttons. */
@@ -175,7 +187,6 @@ const mark = '<i class="tab-mark" aria-hidden="true"></i>';
 
 function header(locale, page) {
   const t = CONTENT[locale];
-  const other = locale === 'en' ? 'zh-TW' : 'en';
   const current = (key) => page === key || (key === 'changelog-app' && page?.startsWith('changelog'));
   const items = [
     ['home', 'home'],
@@ -193,7 +204,13 @@ function header(locale, page) {
   <a class="brand" href="${href(locale, 'home')}"><img class="logo logo-light" src="/chatto-logo.svg" alt="Chatto" width="818" height="243"><img class="logo logo-dark" src="/chatto-logo-dark.svg" alt="Chatto" width="818" height="243"></a>
   <nav aria-label="${escape(t.nav.label)}">${items}</nav>
   <button class="theme-toggle" type="button" aria-pressed="false" aria-label="${escape(t.darkMode)}" title="${escape(t.darkMode)}">${icon('moon', 18)}${icon('sun', 18)}</button>
-  <a class="lang" href="${href(other, page ?? 'home')}" hreflang="${CONTENT[other].lang}" lang="${CONTENT[other].lang}">${escape(t.otherLanguage)}</a>
+  <details class="lang-menu">
+    <summary aria-label="${escape(t.language)}: ${LOCALE_NAMES[locale]}">${icon('globe', 16)}<span>${LOCALE_NAMES[locale]}</span>${icon('chevron', 14)}</summary>
+    <ul>${LOCALES.map(
+      (other) =>
+        `<li><a href="${href(other, page ?? 'home')}" hreflang="${CONTENT[other].lang}" lang="${CONTENT[other].lang}"${other === locale ? ' aria-current="true"' : ''}>${LOCALE_NAMES[other]}${other === locale ? icon('check', 14) : ''}</a></li>`,
+    ).join('')}</ul>
+  </details>
 </header>`;
 }
 
@@ -232,8 +249,7 @@ function footer(locale, closing) {
 function layout(locale, page, { title, description, hero, body, closing = false }) {
   const t = CONTENT[locale];
   const alternates = page
-    ? `<link rel="alternate" hreflang="en" href="${SITE}${href('en', page)}">
-<link rel="alternate" hreflang="zh-Hant-TW" href="${SITE}${href('zh-TW', page)}">
+    ? `${LOCALES.map((other) => `<link rel="alternate" hreflang="${HREFLANG[other]}" href="${SITE}${href(other, page)}">`).join('\n')}
 <link rel="alternate" hreflang="x-default" href="${SITE}${href('en', page)}">
 <link rel="canonical" href="${SITE}${href(locale, page)}">`
     : '<meta name="robots" content="noindex">';
@@ -306,11 +322,11 @@ function ticket(locale, entry, product, index) {
         }`;
   const sections = entry.sections
     .map((section) => {
-      const items = section.items.map((item) => `<li>${escape(item[locale])}</li>`).join('');
+      const items = section.items.map((item) => `<li>${noteText(item[locale])}</li>`).join('');
       return `<div class="kind"><h3>${escape(t.kinds[section.kind])}</h3><ul>${items}</ul></div>`;
     })
     .join('');
-  const summary = entry.summary ? `<p class="summary">${escape(entry.summary[locale])}</p>` : '';
+  const summary = entry.summary ? `<p class="summary">${noteText(entry.summary[locale])}</p>` : '';
   const download =
     entry.download && status === 'released'
       ? `<a class="button small" href="${GITHUB_URL}/releases/tag/${entry.version}">${windows(16)}${escape(t.downloadVersion(entry.version))}</a>`
@@ -627,6 +643,7 @@ ${paragraphs(app)}
 function notFound() {
   const en = CONTENT.en.notFound;
   const zh = CONTENT['zh-TW'].notFound;
+  const ja = CONTENT.ja.notFound;
   return layout('en', null, {
     title: `${en.title} — Chatto`,
     description: en.body,
@@ -635,6 +652,7 @@ function notFound() {
 <img src="/teacup-sleepy.svg" alt="" width="96" height="96">
 <p>${escape(en.body)} <a href="/">${escape(en.back)}</a></p>
 <p lang="zh-Hant-TW">${escape(zh.body)} <a href="/zh-tw/">${escape(zh.back)}</a></p>
+<p lang="ja">${escape(ja.body)} <a href="/ja/">${escape(ja.back)}</a></p>
 </article>`,
   });
 }

@@ -5,6 +5,9 @@
  * Loaded in <head> so the saved choice applies before the page is drawn (the CSP allows no
  * inline scripts). Storage can be unavailable, in which case the choice lasts for this page only.
  * Where the browser has view transitions, the new colors spread out from the button.
+ *
+ * Language menu: a <details> in the header, so it opens without this script; with it, a click
+ * outside or Escape closes the menu.
  */
 (() => {
   const KEY = 'chatto-theme';
@@ -24,6 +27,18 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     apply(root.dataset.theme === 'dark');
+
+    const menu = document.querySelector('.lang-menu');
+    if (menu) {
+      document.addEventListener('click', (event) => {
+        if (menu.open && !menu.contains(event.target)) menu.open = false;
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !menu.open) return;
+        menu.open = false;
+        menu.querySelector('summary')?.focus();
+      });
+    }
 
     const button = document.querySelector('.theme-toggle');
     button?.addEventListener('click', () => {

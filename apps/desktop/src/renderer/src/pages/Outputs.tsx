@@ -1,5 +1,6 @@
 import type { ViewerTarget } from '@chatto/core';
-import { AppWindow, ArrowRight, Info, Move, PartyPopper, RotateCcw, Tv } from 'lucide-react';
+import { AppWindow, ArrowRight, Eraser, Info, Move, Pause, PartyPopper, Play, RotateCcw, Tv } from 'lucide-react';
+import { useState } from 'react';
 import type { AppState } from '../../../shared/ipc';
 import { useMessages, useThemeName } from '../i18n';
 import { alerts } from '../services/alerts';
@@ -10,7 +11,7 @@ import { Stagger } from '../components/motion';
 import { LiveThemePreview } from '../components/ThemePreview';
 import { ObsPluginPanel } from './outputs/ObsPluginPanel';
 import { OverlayLookFields } from './outputs/OverlayLookFields';
-import { Badge, Button, CopyField, Field, Hint, PageHeader, Select, Tile, Toggle } from '../components/kit';
+import { ActionNote, Badge, Button, CopyField, Field, Hint, PageHeader, Select, Tile, Toggle } from '../components/kit';
 
 function ThemeSelect({ state, target }: { state: AppState; target: ViewerTarget }) {
   const m = useMessages().outputs;
@@ -66,14 +67,53 @@ function PositionControls({
   );
 }
 
+/** Pause or clear what the overlays and OBS show (#53); global shortcuts do the same. */
+function ChatOnScreenControls({ paused, onCleared }: { paused: boolean; onCleared: () => void }) {
+  const m = useMessages().outputs;
+  return (
+    <div className="flex shrink-0 gap-2">
+      <Hint label={m.pauseHint}>
+        <Button
+          variant={paused ? 'primary' : 'secondary'}
+          aria-pressed={paused}
+          onClick={() => overlay.setChatPaused(!paused)}
+        >
+          {paused ? <Play /> : <Pause />}
+          {paused ? m.resumeChat : m.pauseChat}
+        </Button>
+      </Hint>
+      <Hint label={m.clearScreenHint}>
+        <Button
+          onClick={() => {
+            overlay.clearChatOnScreen();
+            onCleared();
+          }}
+        >
+          <Eraser /> {m.clearScreen}
+        </Button>
+      </Hint>
+    </div>
+  );
+}
+
 export function OutputsPage({ state, onNavigate }: { state: AppState; onNavigate: (page: PageId) => void }) {
   const m = useMessages().outputs;
   const { enabled, editing } = state.overlay;
   const alertsOverlay = state.alertsOverlay;
+  const [cleared, setCleared] = useState(0);
 
   return (
     <div>
-      <PageHeader title={m.title} description={m.description} />
+      <PageHeader
+        title={m.title}
+        description={m.description}
+        action={<ChatOnScreenControls paused={state.chatPaused} onCleared={() => setCleared((count) => count + 1)} />}
+      />
+      {cleared ? (
+        <ActionNote key={cleared} tone="ok" className="mb-3">
+          {m.clearedScreen}
+        </ActionNote>
+      ) : null}
 
       <Stagger className="grid grid-cols-2 gap-3">
         {/* The two desktop windows share a column; OBS has the other. */}

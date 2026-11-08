@@ -10,6 +10,7 @@ import {
 import { DEFAULT_THEME_ID } from '@chatto/chat-ui/themes';
 import type { AppPrefs } from '../shared/ipc';
 import { DEFAULT_OVERLAY_LOOK, normalizeOverlayLook, type OverlayLook } from '../shared/overlayLook';
+import { emptyShortcuts, normalizeShortcuts, type ShortcutBindings } from '../shared/shortcuts';
 import { app } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
@@ -57,6 +58,8 @@ export interface Settings {
   windowBounds?: Rect;
   /** Theme sharing: the anonymous id that counts downloads, and the terms version agreed to (0 for none). */
   share: { clientId: string; termsAccepted: number };
+  /** Global shortcuts (#53); none bound by default. */
+  shortcuts: ShortcutBindings;
 }
 
 const defaults = (): Settings => ({
@@ -78,8 +81,13 @@ const defaults = (): Settings => ({
     locale: localeFromTag(app.getLocale()),
     chatLocale: 'auto',
     obsPluginPromptDismissed: false,
+    skippedUpdateVersion: '',
+    onboardingDismissed: false,
+    visitedThemes: false,
+    visitedAlerts: false,
   },
   share: { clientId: randomUUID(), termsAccepted: 0 },
+  shortcuts: emptyShortcuts(),
 });
 
 /** Sharing settings from older versions or hand edits: a missing client id gets a new one. */
@@ -89,11 +97,24 @@ export function normalizeShareSettings(raw: Partial<Settings['share']> | undefin
   return { clientId, termsAccepted };
 }
 
+/**
+ * Someone upgrading who already picked a channel has set Chatto up: the getting-started
+ * list (#54) starts closed for them. A fresh install shows it.
+ */
+export function onboardingBase(raw: Partial<Settings>, base: AppPrefs): AppPrefs {
+  const upgrading = raw.prefs !== undefined && raw.prefs.onboardingDismissed === undefined;
+  return upgrading && raw.channelLogin ? { ...base, onboardingDismissed: true } : base;
+}
+
 /** Fills preferences saved by older versions and drops unknown languages. */
 export function normalizePrefs(raw: Partial<AppPrefs> | undefined, base: AppPrefs): AppPrefs {
   const prefs = { ...base, ...raw };
   if (!isLocale(prefs.locale)) prefs.locale = base.locale;
   if (prefs.chatLocale !== 'auto' && !isLocale(prefs.chatLocale)) prefs.chatLocale = 'auto';
+  if (typeof prefs.skippedUpdateVersion !== 'string') prefs.skippedUpdateVersion = '';
+  for (const key of ['onboardingDismissed', 'visitedThemes', 'visitedAlerts'] as const) {
+    if (typeof prefs[key] !== 'boolean') prefs[key] = base[key];
+  }
   return prefs;
 }
 
@@ -139,8 +160,9 @@ export class SettingsStore {
         alertsOverlay: normalizeOverlayWindow(raw.alertsOverlay),
         alerts: normalizeAlertSettings(raw.alerts),
         selectedThemes: { ...base.selectedThemes, ...raw.selectedThemes },
-        prefs: normalizePrefs(raw.prefs, base.prefs),
+        prefs: normalizePrefs(raw.prefs, onboardingBase(raw, base.prefs)),
         share: normalizeShareSettings(raw.share),
+        shortcuts: normalizeShortcuts(raw.shortcuts),
       };
     } catch {
       return defaults();

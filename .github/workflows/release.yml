@@ -2,7 +2,8 @@ name: Release
 
 # Runs after CI passes on main (called from ci.yml). If the app version has no tag yet, it builds
 # the installer, tags the commit v<version> and drafts a GitHub Release whose notes come from
-# apps/site/src/changelog.mjs (with GitHub's list of changes after them); publishing stays manual
+# apps/site/src/changelog.mjs (with GitHub's list of changes after them, and the whole changelog
+# attached as changelog.json for the app's update dialog); publishing stays manual
 # and deploys the site (site.yml).
 # It can also be run by hand on main to retry a failed release.
 on:
@@ -56,7 +57,10 @@ jobs:
         if: steps.version.outputs.skip == 'false'
         env:
           TAG: ${{ steps.version.outputs.tag }}
-        run: node apps/site/src/releaseNotes.mjs "$TAG" > "$RUNNER_TEMP/notes.md"
+        run: |
+          node apps/site/src/releaseNotes.mjs "$TAG" > "$RUNNER_TEMP/notes.md"
+          mkdir -p "$RUNNER_TEMP/changelog"
+          node apps/site/src/changelogJson.mjs > "$RUNNER_TEMP/changelog/changelog.json"
       - run: npm ci
         if: steps.version.outputs.skip == 'false'
       # OBS sources and obs-deps for the plugin, shared with the OBS plugin workflow.
@@ -91,10 +95,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
-        # latest.yml and the blockmap are what installed copies read to find and download the update.
+        # latest.yml and the blockmap are what installed copies read to find and download the update;
+        # changelog.json is what their update dialog shows (#39).
         run: |
           version="${TAG#v}"
           dir="apps/desktop/release/$version"
           gh release create "$TAG" --verify-tag --draft --title "Chatto $TAG" \
             --notes-file "$RUNNER_TEMP/notes.md" --generate-notes \
-            "$dir/Chatto-Setup-$version.exe" "$dir/Chatto-Setup-$version.exe.blockmap" "$dir/latest.yml"
+            "$dir/Chatto-Setup-$version.exe" "$dir/Chatto-Setup-$version.exe.blockmap" "$dir/latest.yml" \
+            "$RUNNER_TEMP/changelog/changelog.json"

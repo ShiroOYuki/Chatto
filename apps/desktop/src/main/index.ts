@@ -1,7 +1,7 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeImage, screen, shell, Tray } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { execFile } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import { join } from 'node:path';
 import type { ChatTheme, Locale } from '@chatto/core';
@@ -21,6 +21,10 @@ import { BUILT_IN_CLIENT_ID, SettingsStore, type Rect } from './settings';
 import { ThemeAssets } from './theme-assets';
 import { packageFileName, THEME_PACKAGE_EXTENSION } from './theme-package';
 import { Updater } from './updater';
+import { fetchUpdateNotes } from '../shared/updateNotes';
+import { OpenedThemeFiles, themeFilesFromArgv } from './opened-files';
+import { GlobalShortcuts } from './shortcuts';
+import { isShortcutAction } from '../shared/shortcuts';
 import { ControlLog } from '../shared/controlLog';
 import { SoundPlayer } from './sound-player';
 import { WindowRelease } from './window-release';
@@ -40,6 +44,8 @@ const viewerDir = isDev ? join(__dirname, '../../../viewer/dist') : join(process
 
 let mainWindow: BrowserWindow | null = null;
 let updater = new Updater(null);
+/** Theme files opened from Windows (#40); created once the app is ready. */
+let openedFiles: OpenedThemeFiles | null = null;
 let tray: Tray | null = null;
 let quitting = false;
 /** The main process log (#56); created once the app is ready. */
@@ -342,6 +348,20 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.checkForUpdate, () => updater.check());
   ipcMain.handle(IPC.downloadUpdate, () => updater.download());
   ipcMain.handle(IPC.installUpdate, () => updater.install());
+  ipcMain.handle(IPC.dismissUpdatePrompt, (_e, skip: unknown) => {
+    const { version } = updater.state;
+    if (skip === true && version) controller.setPrefs({ skippedUpdateVersion: version });
+    updater.dismissPrompt();
+  });
+  ipcMain.handle(IPC.dismissOpenedThemeFile, (_e, id: unknown) => openedFiles?.dismiss(String(id)));
+  ipcMain.handle(IPC.setChatPaused, (_e, paused: unknown) => controller.setChatPaused(paused === true));
+  ipcMain.handle(IPC.clearChatOnScreen, () => controller.clearChatOnScreen());
+  ipcMain.handle(IPC.setShortcut, (_e, action: unknown, accelerator: unknown) => {
+    if (!isShortcutAction(action) || typeof accelerator !== 'string' || accelerator.length > 64) {
+      throw new Error('Invalid shortcut');
+    }
+    return controller.setShortcut(action, accelerator);
+  });
   ipcMain.handle(IPC.share, (_e, method: unknown, ...args: unknown[]) => {
     if (!isShareMethod(method) || !controller.share) throw new Error('Unknown share call');
     const call = controller.share[method] as (...params: unknown[]) => unknown;
@@ -495,7 +515,8 @@ async function bootstrap(): Promise<void> {
   controller.server = new LocalServer({
     port: settings.get().serverPort,
     viewerDir,
-    hub: controller.hub,
+    // Overlays and OBS read the output feed, which the streamer can pause or clear (#53).
+    hub: controller.output,
     themeFor: (target, themeId) => controller.themeFor(target, themeId),
     themeList: () => controller.themeSummaries(),
     appVersion: app.getVersion(),
@@ -540,8 +561,20 @@ async function bootstrap(): Promise<void> {
   };
   controller.isWindowMaximized = () => Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized());
   // Development builds have no installer to update from.
-  updater = new Updater(app.isPackaged ? autoUpdater : null, () => controller.emit());
+  updater = new Updater(app.isPackaged ? autoUpdater : null, () => controller.emit(), {
+    isSkipped: (version) => settings.get().prefs.skippedUpdateVersion === version,
+    fetchNotes: (version) => fetchUpdateNotes(app.getVersion(), version),
+  });
   controller.updateState = () => updater.state;
+  const opened = new OpenedThemeFiles({
+    read: (path) => readFileSync(path),
+    unpack: (bytes) => controller.importThemePackage(bytes),
+    unreadable: () => controller.messages().errors.cannotReadThemeFile,
+    tooLarge: () => controller.messages().errors.invalidThemePackage,
+    onChange: () => controller.emit(),
+  });
+  openedFiles = opened;
+  controller.openedThemeFiles = () => opened.list;
   // The session log lives here, so the control panel window can be released to the tray (#57).
   controller.hub.subscribe((event) => send(IPC.chatEvent, controlLog.receive(event)));
   const soundPlayer = new SoundPlayer((window, query) =>
@@ -569,11 +602,23 @@ async function bootstrap(): Promise<void> {
   await controller.init();
   void controller.share?.init();
   updater.start();
+  // Global shortcuts (#53) work from now on, also while the window is in the tray.
+  controller.shortcuts = new GlobalShortcuts(globalShortcut, (action) => controller.runShortcut(action));
+  controller.shortcuts.apply(settings.get().shortcuts);
+  controller.emit();
+  // Opened with a .chattotheme file (#40): the control panel asks before importing it.
+  opened.add(themeFilesFromArgv(process.argv, process.cwd(), existsSync));
 
-  app.on('second-instance', showMainWindow);
+  // Electron always passes the command line, but the event can also be emitted without one
+  // (the Electron tests reopen the window this way), so a missing one means no files.
+  app.on('second-instance', (_e, argv?: string[], workingDirectory?: string) => {
+    showMainWindow();
+    opened.add(themeFilesFromArgv(argv ?? [], workingDirectory ?? process.cwd(), existsSync));
+  });
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow(settings, controller);
   });
+  app.on('will-quit', () => controller.shortcuts?.unregisterAll());
   app.on('before-quit', () => {
     quitting = true;
     updater.stop();

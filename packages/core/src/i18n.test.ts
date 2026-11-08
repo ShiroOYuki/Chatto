@@ -6,7 +6,9 @@ describe('locales', () => {
     expect(localeFromTag('zh-TW')).toBe('zh-TW');
     expect(localeFromTag('zh-Hant-HK')).toBe('zh-TW');
     expect(localeFromTag('en-US')).toBe('en');
-    expect(localeFromTag('ja')).toBe('en');
+    expect(localeFromTag('ja')).toBe('ja');
+    expect(localeFromTag('ja-JP')).toBe('ja');
+    expect(localeFromTag('ko-KR')).toBe('en');
     expect(localeFromTag(undefined)).toBe('en');
   });
 

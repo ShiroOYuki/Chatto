@@ -33,6 +33,10 @@ export const PREFS_POLICY: FieldPolicy<AppPrefs> = {
   locale: 'keep',
   chatLocale: 'keep',
   obsPluginPromptDismissed: 'keep',
+  skippedUpdateVersion: 'keep',
+  onboardingDismissed: 'keep',
+  visitedThemes: 'keep',
+  visitedAlerts: 'keep',
 };
 
 export const SETTINGS_POLICY: FieldPolicy<Settings> = {
@@ -57,6 +61,7 @@ export const SETTINGS_POLICY: FieldPolicy<Settings> = {
   windowBounds: 'keep',
   // The anonymous download-counting id stays on this computer.
   share: (share) => ({ termsAccepted: share.termsAccepted }),
+  shortcuts: 'keep',
 };
 
 export function applyPolicy<T extends object>(

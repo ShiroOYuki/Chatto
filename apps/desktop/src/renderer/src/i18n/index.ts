@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { useAppState } from '../store';
 import accounts from './messages/accounts';
 import alerts from './messages/alerts';
+import appDialogs from './messages/appDialogs';
 import chat from './messages/chat';
 import chatLog from './messages/chatLog';
 import common from './messages/common';
@@ -30,6 +31,7 @@ import themes from './messages/themes';
 const NAMESPACES = {
   accounts,
   alerts,
+  appDialogs,
   chat,
   chatLog,
   common,

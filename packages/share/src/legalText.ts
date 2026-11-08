@@ -4,7 +4,8 @@
  * Changing the sharing terms or privacy notice means bumping `SHARE_TERMS_VERSION`.
  */
 
-export type LegalLocale = 'zh-TW' | 'en';
+/** The same list as `Locale` in `@chatto/core`, written out so this file needs no imports. */
+export type LegalLocale = 'zh-TW' | 'en' | 'ja';
 
 /** A titled list; each item starts with a short label before `：` or `: `. */
 export interface LegalList {
@@ -18,7 +19,7 @@ export interface LegalParagraph {
 }
 
 /** When the texts below last changed, as shown on the website. */
-export const LEGAL_UPDATED = '2026-11-06';
+export const LEGAL_UPDATED = '2026-11-09';
 
 export const SHARE_TERMS_TEXT: Record<LegalLocale, { terms: LegalList; privacy: LegalList }> = {
   'zh-TW': {
@@ -75,6 +76,33 @@ export const SHARE_TERMS_TEXT: Record<LegalLocale, { terms: LegalList; privacy: 
       ],
     },
   },
+  ja: {
+    terms: {
+      title: 'Chattoテーマ共有 利用規約',
+      items: [
+        '適用範囲：本規約は、Chattoアプリ内のテーマ共有機能（閲覧、インストール、投稿、いいね、通報）に適用されます。閲覧とインストールはログインしなくても利用できます。ログインした時点で、本規約とプライバシーポリシーに同意したものとみなします。',
+        'アカウント：ログインにはTwitch、Google、Discordのいずれかを使用します。Chattoはパスワードを保存しません。アカウントで行われた行為については、利用者が責任を負います。',
+        '投稿コンテンツ：利用者は、投稿するコンテンツ（画像とカスタム CSSを含みます）について権利を有しているか、権利者から許諾を得ていることを保証するものとします。投稿することにより、利用者はそのテーマをCC BY 4.0でライセンスすることに同意したものとし、原作者の表示を条件として、誰でもそのテーマを使用、改変、再共有できます。作者の表示はChattoが自動で行います。違法、権利侵害、性的、差別的・憎悪的、嫌がらせ、または悪意のあるコンテンツを投稿してはならず、テーマをインストールした人を追跡したり害したりしようとしてはなりません。',
+        '公開と削除：テーマは自動チェックを通過した時点で公開され、人による審査は行いません。Chattoは、事前の通知なくテーマを非表示にし、もしくは削除し、またはアカウントを停止することがあります。利用者は自分のテーマをいつでも非公開にできます。ただし、すでにほかの人がインストールしたコピーには影響しません。',
+        'アカウントの削除：アカウントを削除しても、投稿したテーマはプラットフォームに残り、作者は匿名として表示されます。テーマもあわせて削除したい場合は、アカウントを削除する前に非公開にしてください。',
+        '通報と申し立て：一般的な問題はアプリ内の通報機能をご利用ください。著作権に関する申し立てやアカウントに関する問題は、support@chattolive.comまでメールでご連絡ください。',
+        '無保証：テーマ共有は現状のまま提供され、中断、変更または終了することがあります。インストールされるテーマは投稿者が提供するものであり、Chattoはその内容を保証しません。',
+        '規約の変更：本規約を変更した場合、次回のログイン時に改めて同意をお願いします。',
+      ],
+    },
+    privacy: {
+      title: 'Chattoテーマ共有 プライバシーポリシー',
+      items: [
+        'ログイン時に取得する情報：ログインに使用したプラットフォームから、ユーザーIDと表示名を受け取ります。メールアドレス、パスワード、チャットの内容は受け取りません。また、ログインに使用したプラットフォームの認証情報は保存しません。',
+        'アカウント情報：表示名、連携しているログイン方法、投稿したテーマ、いいねと通報の記録。',
+        '匿名データ：ダウンロード数を数えるため、アプリはランダムなIDを生成します（1つのテーマにつき1日1回のみ数えます）。この記録は毎日集計して数値にしたあと削除します。',
+        '接続記録：不正利用を防ぐため、IPアドレスはハッシュ化した形でのみ一時的に保存し、数分で失効します。',
+        '公開される情報：投稿したテーマ、作者としての表示名、いいね数とダウンロード数は公開されます。',
+        'サービス提供者：データはCloudflareに保存されます。',
+        '削除：アプリ内でアカウントを削除できます。アカウントと連携しているログイン方法の情報は削除され、テーマは利用規約に従って取り扱います。',
+      ],
+    },
+  },
 };
 
 /** The app's disclaimer (settings → About → Licenses). */
@@ -113,6 +141,24 @@ export const APP_DISCLAIMER: Record<LegalLocale, LegalParagraph[]> = {
     {
       title: 'Chat content',
       body: 'Chat shown on stream comes from viewers. Streamers are responsible for moderating their chat and following platform rules; Chatto removes deleted and banned messages right away but is not responsible for what chatters write.',
+    },
+  ],
+  ja: [
+    {
+      title: '無保証',
+      body: 'Chattoは「現状のまま」提供され、商品性および特定目的への適合性を含め、明示または黙示を問わずいかなる保証もありません。法律で認められる範囲において、作者は、Chattoの使用または使用できないことにより生じたいかなる損害（配信の中断、データの消失、画面表示の不具合など）についても責任を負いません。完全な条件はGPL-3.0の第15条および第16条をご覧ください。',
+    },
+    {
+      title: '非公式ソフトウェア',
+      body: 'Chattoは個人が開発するオープンソースプロジェクトであり、各配信プラットフォーム（Twitch Interactive, Inc.など）およびOBS Projectとは関係がなく、それらによる承認や後援も受けていません。各プラットフォームおよびOBSの名称と商標は、それぞれの所有者に帰属します。',
+    },
+    {
+      title: 'データの取り扱い',
+      body: 'Chattoが配信プラットフォームに要求するのは、チャットの読み取りに必要な権限（Twitchではチャットとチャンネルポイントの引き換え）のみです。配信プラットフォームのログイン認証情報（トークン）はWindowsの暗号化機能で暗号化してお使いのパソコンに保存し、ほかの誰にも送信しません。Chattoは利用状況のデータを収集しません。接続先は、ログインした配信プラットフォーム（ログインとチャットの読み取り）、GitHub（アップデートの確認とダウンロード）、およびテーマ共有を使う場合の共有サービス（api.chattolive.com、Cloudflare上で運用）のみです。共有サービスがアカウント情報を保存するのは、Chattoアカウントにログインした場合に限られます。詳しくはアカウントページ、またはchattolive.com/ja/privacyのプライバシーポリシーをご覧ください。ローカルサーバーはオーバーレイとOBS用の画面を127.0.0.1でのみ提供するため、同じネットワーク内のほかの端末からは読み取れません。',
+    },
+    {
+      title: 'チャットの内容',
+      body: '配信画面に表示されるチャットの内容は視聴者によるものです。配信者は自らチャットを管理し、各プラットフォームの規約を守る必要があります。Chattoは削除されたメッセージや追放されたユーザーのメッセージをすぐに画面から消しますが、チャットの内容については責任を負いません。',
     },
   ],
 };
