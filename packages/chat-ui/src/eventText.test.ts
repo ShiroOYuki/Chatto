@@ -1,4 +1,4 @@
-import type { ChatNotice } from '@chatto/core';
+import { LOCALES, type ChatNotice } from '@chatto/core';
 import { describe, expect, it } from 'vitest';
 import {
   eventTitle,
@@ -102,7 +102,7 @@ describe('event text templates', () => {
     for (const event of EVENT_CATALOG.flatMap((group) => group.events)) {
       if (!event.text) continue;
       const sample = sampleEvent(event.key);
-      for (const locale of ['zh-TW', 'en'] as const) {
+      for (const locale of LOCALES) {
         const vars =
           sample.type === 'notice'
             ? noticeVariables(sample.notice, locale)

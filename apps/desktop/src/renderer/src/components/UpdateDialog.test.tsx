@@ -13,7 +13,7 @@ vi.mock('../api', async () => {
 });
 const api = mockedApi as unknown as FakeApi;
 
-const text = (zh: string) => ({ en: zh, 'zh-TW': zh });
+const text = (zh: string) => ({ en: zh, 'zh-TW': zh, ja: zh });
 const NOTES = [
   {
     version: 'v0.4.0',

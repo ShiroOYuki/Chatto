@@ -26,4 +26,16 @@ export default defineMessages({
     showInObs: 'Show in OBS',
     showInObsHint: 'When off, they show only on the desktop overlay and in Chatto',
   },
+  ja: {
+    title: '引き換え履歴',
+    empty: 'まだ報酬の引き換えはありません',
+    points: (points: number) => `${points.toLocaleString('ja')}ポイント`,
+    dismiss: (reward: string) => `「${reward}」を閉じる`,
+    reauth: '再ログインして引き換えアラートを有効にする',
+    reauthHint: 'チャンネルポイントの引き換えを表示するには、Twitchで一度承認してください',
+    signInAgain: '再ログイン',
+    notBroadcaster: '引き換えは配信者アカウントでログインしたときだけ届きます',
+    showInObs: 'OBSに表示',
+    showInObsHint: 'オフにすると、デスクトップオーバーレイとChattoにだけ表示されます',
+  },
 });

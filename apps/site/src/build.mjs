@@ -1,5 +1,5 @@
 /**
- * Builds chattolive.com into dist/, in English (/) and Traditional Chinese (/zh-tw/):
+ * Builds chattolive.com into dist/, in English (/), Traditional Chinese (/zh-tw/) and Japanese (/ja/):
  * home, themes, guide, FAQ, the changelog of each product, privacy notice, terms and a 404 page.
  * The legal texts come from `@chatto/share` (`legalText.ts`, loaded as TypeScript by Node), so
  * the site and the app say the same thing. The site is light unless the visitor switches it to
@@ -26,7 +26,11 @@ const repo = join(root, '..', '..');
 const dist = join(root, 'dist');
 const SITE = 'https://chattolive.com';
 const GITHUB_API = 'https://api.github.com/repos/ShiroOYuki/Chatto';
-const LOCALES = ['en', 'zh-TW'];
+const LOCALES = ['en', 'zh-TW', 'ja'];
+/** Where each language lives, and its name in itself for the language links. */
+const LOCALE_DIRS = { en: '', 'zh-TW': 'zh-tw', ja: 'ja' };
+const LOCALE_NAMES = { en: 'English', 'zh-TW': '繁體中文', ja: '日本語' };
+const HREFLANG = { en: 'en', 'zh-TW': 'zh-Hant-TW', ja: 'ja' };
 const PRODUCTS = ['app', 'themes', 'obs'];
 
 const escape = (text) =>
@@ -61,12 +65,13 @@ const PAGES = {
 };
 const href = (locale, page, hash = '') => {
   const path = PAGES[page];
-  const full = locale === 'en' ? path : `/zh-tw${path === '/' ? '/' : path}`;
+  const dir = LOCALE_DIRS[locale];
+  const full = dir ? `/${dir}${path === '/' ? '/' : path}` : path;
   return `${full}${hash}`;
 };
 /** The file a page is written to, relative to dist/. */
 const fileOf = (locale, page) => {
-  const dir = locale === 'en' ? '' : 'zh-tw/';
+  const dir = LOCALE_DIRS[locale] ? `${LOCALE_DIRS[locale]}/` : '';
   return page === 'home' ? `${dir}index.html` : `${dir}${PAGES[page].slice(1)}.html`;
 };
 
@@ -178,7 +183,6 @@ const mark = '<i class="tab-mark" aria-hidden="true"></i>';
 
 function header(locale, page) {
   const t = CONTENT[locale];
-  const other = locale === 'en' ? 'zh-TW' : 'en';
   const current = (key) => page === key || (key === 'changelog-app' && page?.startsWith('changelog'));
   const items = [
     ['home', 'home'],
@@ -196,7 +200,12 @@ function header(locale, page) {
   <a class="brand" href="${href(locale, 'home')}"><img class="logo logo-light" src="/chatto-logo.svg" alt="Chatto" width="818" height="243"><img class="logo logo-dark" src="/chatto-logo-dark.svg" alt="Chatto" width="818" height="243"></a>
   <nav aria-label="${escape(t.nav.label)}">${items}</nav>
   <button class="theme-toggle" type="button" aria-pressed="false" aria-label="${escape(t.darkMode)}" title="${escape(t.darkMode)}">${icon('moon', 18)}${icon('sun', 18)}</button>
-  <a class="lang" href="${href(other, page ?? 'home')}" hreflang="${CONTENT[other].lang}" lang="${CONTENT[other].lang}">${escape(t.otherLanguage)}</a>
+  <span class="langs">${LOCALES.filter((other) => other !== locale)
+    .map(
+      (other) =>
+        `<a class="lang" href="${href(other, page ?? 'home')}" hreflang="${CONTENT[other].lang}" lang="${CONTENT[other].lang}">${LOCALE_NAMES[other]}</a>`,
+    )
+    .join('')}</span>
 </header>`;
 }
 
@@ -235,8 +244,7 @@ function footer(locale, closing) {
 function layout(locale, page, { title, description, hero, body, closing = false }) {
   const t = CONTENT[locale];
   const alternates = page
-    ? `<link rel="alternate" hreflang="en" href="${SITE}${href('en', page)}">
-<link rel="alternate" hreflang="zh-Hant-TW" href="${SITE}${href('zh-TW', page)}">
+    ? `${LOCALES.map((other) => `<link rel="alternate" hreflang="${HREFLANG[other]}" href="${SITE}${href(other, page)}">`).join('\n')}
 <link rel="alternate" hreflang="x-default" href="${SITE}${href('en', page)}">
 <link rel="canonical" href="${SITE}${href(locale, page)}">`
     : '<meta name="robots" content="noindex">';
@@ -630,6 +638,7 @@ ${paragraphs(app)}
 function notFound() {
   const en = CONTENT.en.notFound;
   const zh = CONTENT['zh-TW'].notFound;
+  const ja = CONTENT.ja.notFound;
   return layout('en', null, {
     title: `${en.title} — Chatto`,
     description: en.body,
@@ -638,6 +647,7 @@ function notFound() {
 <img src="/teacup-sleepy.svg" alt="" width="96" height="96">
 <p>${escape(en.body)} <a href="/">${escape(en.back)}</a></p>
 <p lang="zh-Hant-TW">${escape(zh.body)} <a href="/zh-tw/">${escape(zh.back)}</a></p>
+<p lang="ja">${escape(ja.body)} <a href="/ja/">${escape(ja.back)}</a></p>
 </article>`,
   });
 }

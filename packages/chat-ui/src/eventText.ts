@@ -66,32 +66,51 @@ export const TEMPLATE_VARIABLES: Record<string, Localized> = {
   user: {
     'zh-TW': '發出事件的人（匿名時為「匿名觀眾」）',
     en: 'Who triggered the event ("An anonymous user" if hidden)',
+    ja: 'イベントを起こした人（非公開の場合は「匿名の視聴者」）',
   },
-  amount: { 'zh-TW': '小奇點數量', en: 'Number of bits' },
-  tier: { 'zh-TW': '訂閱等級，例如 Tier 1、Prime', en: 'Sub tier, such as Tier 1 or Prime' },
-  months: { 'zh-TW': '累計訂閱月數', en: 'Total months subscribed' },
-  streak: { 'zh-TW': '連續訂閱月數（觀眾選擇不公開時沒有）', en: 'Months in a row (missing if the viewer hides it)' },
+  amount: { 'zh-TW': '小奇點數量', en: 'Number of bits', ja: 'ビッツの数' },
+  tier: {
+    'zh-TW': '訂閱等級，例如 Tier 1、Prime',
+    en: 'Sub tier, such as Tier 1 or Prime',
+    ja: 'サブスクのティア（Tier 1、Primeなど）',
+  },
+  months: { 'zh-TW': '累計訂閱月數', en: 'Total months subscribed', ja: '累計サブスク月数' },
+  streak: {
+    'zh-TW': '連續訂閱月數（觀眾選擇不公開時沒有）',
+    en: 'Months in a row (missing if the viewer hides it)',
+    ja: '連続サブスク月数（視聴者が非公開にしている場合はなし）',
+  },
   duration: {
     'zh-TW': '一次買或送了幾個月（多於 1 個月時才有）',
     en: 'Months bought or gifted at once (only when more than 1)',
+    ja: '一度に購入またはギフトした月数（1か月より多い場合のみ）',
   },
-  recipient: { 'zh-TW': '收到贈訂的人', en: 'Who received the gift sub' },
-  gifter: { 'zh-TW': '當初送訂閱的人', en: 'Who gifted the sub originally' },
-  count: { 'zh-TW': '這次送出幾份訂閱', en: 'Subs gifted this time' },
+  recipient: { 'zh-TW': '收到贈訂的人', en: 'Who received the gift sub', ja: 'ギフトサブを受け取った人' },
+  gifter: { 'zh-TW': '當初送訂閱的人', en: 'Who gifted the sub originally', ja: '最初にサブスクを贈った人' },
+  count: { 'zh-TW': '這次送出幾份訂閱', en: 'Subs gifted this time', ja: '今回贈ったサブスクの数' },
   totalGifts: {
     'zh-TW': '送禮者在頻道累計送了幾份（匿名時沒有）',
     en: 'Subs the gifter has given in the channel (missing if anonymous)',
+    ja: 'ギフトした人がチャンネルで贈った累計数（匿名の場合はなし）',
   },
-  viewers: { 'zh-TW': '揪團帶來的觀眾人數', en: 'Viewers the raid brings' },
-  raider: { 'zh-TW': '揪團的實況主', en: 'The streamer raiding' },
-  bitsTier: { 'zh-TW': '解鎖的小奇點徽章等級', en: 'The bits badge tier unlocked' },
-  charity: { 'zh-TW': '慈善單位名稱', en: 'The charity' },
-  donation: { 'zh-TW': '捐款金額（含貨幣）', en: 'The amount donated, with currency' },
-  watchStreak: { 'zh-TW': '連續觀看的直播場數', en: 'Streams watched in a row' },
-  channelPoints: { 'zh-TW': '觀看連勝獲得的忠誠點數', en: 'Channel Points awarded for the watch streak' },
-  reward: { 'zh-TW': '兌換的獎勵名稱', en: 'The reward redeemed' },
-  cost: { 'zh-TW': '花費的忠誠點數', en: 'Channel Points spent' },
-  emote: { 'zh-TW': '解鎖或放大的表情符號（有的才有）', en: 'The emote unlocked or used (when there is one)' },
+  viewers: { 'zh-TW': '揪團帶來的觀眾人數', en: 'Viewers the raid brings', ja: 'レイドで来た視聴者数' },
+  raider: { 'zh-TW': '揪團的實況主', en: 'The streamer raiding', ja: 'レイドしてきた配信者' },
+  bitsTier: { 'zh-TW': '解鎖的小奇點徽章等級', en: 'The bits badge tier unlocked', ja: '獲得したビッツバッジのティア' },
+  charity: { 'zh-TW': '慈善單位名稱', en: 'The charity', ja: 'チャリティー団体の名前' },
+  donation: { 'zh-TW': '捐款金額（含貨幣）', en: 'The amount donated, with currency', ja: '寄付額（通貨つき）' },
+  watchStreak: { 'zh-TW': '連續觀看的直播場數', en: 'Streams watched in a row', ja: '連続で視聴した配信の回数' },
+  channelPoints: {
+    'zh-TW': '觀看連勝獲得的忠誠點數',
+    en: 'Channel Points awarded for the watch streak',
+    ja: '連続視聴で獲得したチャンネルポイント',
+  },
+  reward: { 'zh-TW': '兌換的獎勵名稱', en: 'The reward redeemed', ja: '引き換えた報酬の名前' },
+  cost: { 'zh-TW': '花費的忠誠點數', en: 'Channel Points spent', ja: '使ったチャンネルポイント' },
+  emote: {
+    'zh-TW': '解鎖或放大的表情符號（有的才有）',
+    en: 'The emote unlocked or used (when there is one)',
+    ja: 'アンロックまたは使用したエモート（ある場合のみ）',
+  },
 };
 
 /**
@@ -99,14 +118,26 @@ export const TEMPLATE_VARIABLES: Record<string, Localized> = {
  * redemptions carry only a type. Unknown types fall back to the platform text.
  */
 export const AUTO_REWARD_NAMES: Record<string, Localized> = {
-  single_message_bypass_sub_mode: { 'zh-TW': '在訂閱者模式傳送訊息', en: 'Send a Message in Sub-Only Mode' },
-  send_highlighted_message: { 'zh-TW': '強調我的訊息', en: 'Highlight My Message' },
-  random_sub_emote_unlock: { 'zh-TW': '隨機解鎖表情符號', en: 'Unlock a Random Sub Emote' },
-  chosen_sub_emote_unlock: { 'zh-TW': '選擇解鎖表情符號', en: 'Choose an Emote to Unlock' },
-  chosen_modified_sub_emote_unlock: { 'zh-TW': '修改表情符號', en: 'Modify a Single Emote' },
-  message_effect: { 'zh-TW': '訊息特效', en: 'Message Effects' },
-  gigantify_an_emote: { 'zh-TW': '放大表情符號', en: 'Gigantify an Emote' },
-  celebration: { 'zh-TW': '螢幕慶祝特效', en: 'On-Screen Celebration' },
+  single_message_bypass_sub_mode: {
+    'zh-TW': '在訂閱者模式傳送訊息',
+    en: 'Send a Message in Sub-Only Mode',
+    ja: 'サブスク限定モードでメッセージを送信',
+  },
+  send_highlighted_message: { 'zh-TW': '強調我的訊息', en: 'Highlight My Message', ja: 'メッセージをハイライト' },
+  random_sub_emote_unlock: {
+    'zh-TW': '隨機解鎖表情符號',
+    en: 'Unlock a Random Sub Emote',
+    ja: 'ランダムなサブスクエモートをアンロック',
+  },
+  chosen_sub_emote_unlock: {
+    'zh-TW': '選擇解鎖表情符號',
+    en: 'Choose an Emote to Unlock',
+    ja: 'アンロックするエモートを選択',
+  },
+  chosen_modified_sub_emote_unlock: { 'zh-TW': '修改表情符號', en: 'Modify a Single Emote', ja: 'エモートを1つ変更' },
+  message_effect: { 'zh-TW': '訊息特效', en: 'Message Effects', ja: 'メッセージエフェクト' },
+  gigantify_an_emote: { 'zh-TW': '放大表情符號', en: 'Gigantify an Emote', ja: 'エモートを巨大化' },
+  celebration: { 'zh-TW': '螢幕慶祝特效', en: 'On-Screen Celebration', ja: 'オンスクリーンセレブレーション' },
 };
 
 /** A redemption's reward name: its own title, or the name of a Twitch reward type. */
@@ -115,8 +146,8 @@ export function rewardName(meta: ChatNotice['meta'], locale: Locale): string | u
   return typeof meta.rewardType === 'string' ? AUTO_REWARD_NAMES[meta.rewardType]?.[locale] : undefined;
 }
 
-const ANONYMOUS: Record<Locale, string> = { 'zh-TW': '匿名觀眾', en: 'An anonymous user' };
-const ANONYMOUS_GIFTER: Record<Locale, string> = { 'zh-TW': '匿名觀眾', en: 'an anonymous gifter' };
+const ANONYMOUS: Record<Locale, string> = { 'zh-TW': '匿名觀眾', en: 'An anonymous user', ja: '匿名の視聴者' };
+const ANONYMOUS_GIFTER: Record<Locale, string> = { 'zh-TW': '匿名觀眾', en: 'an anonymous gifter', ja: '匿名の視聴者' };
 
 /** `meta.tier` (`1`, `2`, `3`, `prime`) as shown in text. */
 export function tierLabel(tier: unknown): string | undefined {

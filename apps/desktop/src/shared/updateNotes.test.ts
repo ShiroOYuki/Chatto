@@ -9,7 +9,7 @@ import {
   type UpdateNote,
 } from './updateNotes';
 
-const text = (en: string) => ({ en, 'zh-TW': `中 ${en}` });
+const text = (en: string) => ({ en, 'zh-TW': `中 ${en}`, ja: `日 ${en}` });
 const entry = (version: string, items = ['A change']) => ({
   version,
   date: '2026-11-08',

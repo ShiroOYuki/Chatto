@@ -29,7 +29,7 @@ declare global {
 /**
  * In-browser stand-in for the Electron preload API, so the control panel can
  * be developed with `npm run dev:web` and previewed without Electron.
- * `?compact` starts in compact mode, `?page=<id>` opens a page.
+ * `?lang=en` or `?lang=ja` picks the interface language (Traditional Chinese otherwise). `?compact` starts in compact mode, `?page=<id>` opens a page.
  * `?e2e` turns off the random chat stream and exposes `window.__chattoMock`
  * so end-to-end tests can push exact events and state.
  * `?onboarding` shows the overview's getting-started list (signed out, nothing set up).
@@ -45,20 +45,36 @@ const PREVIEW_UPDATE_NOTES: UpdateNote[] = [
       {
         kind: 'new',
         items: [
-          { en: 'A dialog shows what is new when an update is out', 'zh-TW': '有新版本時用對話框顯示更新內容' },
+          {
+            en: 'A dialog shows what is new when an update is out',
+            'zh-TW': '有新版本時用對話框顯示更新內容',
+            ja: '新しいバージョンが出たら、更新内容をダイアログで表示',
+          },
           {
             en: 'Double-click a `.chattotheme` file to import it',
             'zh-TW': '雙擊 `.chattotheme` 檔就能匯入主題',
+            ja: '`.chattotheme` ファイルをダブルクリックしてテーマをインポート',
           },
         ],
       },
-      { kind: 'fixed', items: [{ en: 'Previews match OBS again', 'zh-TW': '預覽和 OBS 再次一致' }] },
+      {
+        kind: 'fixed',
+        items: [
+          {
+            en: 'Previews match OBS again',
+            'zh-TW': '預覽和 OBS 再次一致',
+            ja: 'プレビューが OBS と同じ表示に戻りました',
+          },
+        ],
+      },
     ],
   },
   {
     version: 'v0.3.2',
     date: '2026-11-12',
-    sections: [{ kind: 'improved', items: [{ en: 'Faster startup', 'zh-TW': '啟動更快' }] }],
+    sections: [
+      { kind: 'improved', items: [{ en: 'Faster startup', 'zh-TW': '啟動更快', ja: '起動が速くなりました' }] },
+    ],
   },
 ];
 
@@ -74,7 +90,7 @@ function createMockApi(): ChattoApi {
       closeToTray: true,
       launchAtLogin: false,
       editorCommand: '',
-      locale: params.get('lang') === 'en' ? 'en' : 'zh-TW',
+      locale: params.get('lang') === 'en' ? 'en' : params.get('lang') === 'ja' ? 'ja' : 'zh-TW',
       chatLocale: 'auto',
       obsPluginPromptDismissed: false,
       skippedUpdateVersion: '',

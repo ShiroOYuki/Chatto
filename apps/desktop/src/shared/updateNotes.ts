@@ -31,8 +31,8 @@ export const changelogFileUrl = (version: string) =>
   `https://github.com/ShiroOYuki/Chatto/releases/download/v${version.replace(/^v/, '')}/changelog.json`;
 
 /** The site's changelog page, for when the notes cannot be read. */
-export const changelogPageUrl = (locale: Locale) =>
-  locale === 'zh-TW' ? 'https://chattolive.com/zh-tw/changelog' : 'https://chattolive.com/changelog';
+const SITE_DIRS: Record<Locale, string> = { en: '', 'zh-TW': '/zh-tw', ja: '/ja' };
+export const changelogPageUrl = (locale: Locale) => `https://chattolive.com${SITE_DIRS[locale]}/changelog`;
 
 /** `0.3.1`, `v0.3.1` → [0, 3, 1]; anything else → null. Pre-release suffixes are ignored. */
 export function versionParts(version: string): [number, number, number] | null {

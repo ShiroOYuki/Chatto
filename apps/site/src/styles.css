@@ -822,6 +822,11 @@ img {
   color: var(--faint);
 }
 
+.langs {
+  display: flex;
+  gap: 2px;
+}
+
 /* The current tab's highlight is its own element, so it can slide between tabs. */
 .tab-mark {
   position: absolute;

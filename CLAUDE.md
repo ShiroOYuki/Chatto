@@ -26,7 +26,7 @@ apps/
   viewer/           @chatto/viewer — /overlay 與 /embed 頁面，由桌面 App 的本機 server 提供；瀏覽器可用 ?mock=1 獨立預覽
   desktop/          @chatto/desktop — Electron（electron-vite）：main / preload / renderer（控制台）
   share-worker/     @chatto/share-worker — 主題分享服務（Cloudflare Worker＋D1＋R2），不打包進 App
-  site/             @chatto/site — chattolive.com 靜態網站（首頁、主題、教學、常見問題、更新紀錄、隱私說明、使用條款，繁中＋英文，亮暗色），Cloudflare Workers 靜態資源
+  site/             @chatto/site — chattolive.com 靜態網站（首頁、主題、教學、常見問題、更新紀錄、隱私說明、使用條款，英文＋繁中＋日文，亮暗色），Cloudflare Workers 靜態資源
 obs-plugin/         obs-chatto — OBS 外掛「Chatto 聊天室」來源（C++，CMake，Windows；不在 npm workspaces 裡）
 docs/               architecture.md、message-format.md、theming.md、testing.md、design.md、visual-identity.md、share-service.md
 ```
@@ -78,7 +78,7 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - 版面採 **Bento 格狀**，整體**簡潔直觀**。
 - **可愛元素只在適當處點綴**：茶杯吉祥物、空狀態插圖、連線成功的小動畫、親切的提示文字。不能干擾操作，也不能降低資訊密度的可讀性。
 - 主色系為抹茶綠，需支援亮色與暗色。
-- 文案簡短、動詞開頭，不使用驚嘆號堆疊；繁體中文與英文都遵守。
+- 文案簡短、動詞開頭，不使用驚嘆號堆疊；繁體中文、英文、日文都遵守。
 
 ### 控制台 renderer 分層
 
@@ -92,8 +92,8 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 
 ## 多語系
 
-- 支援繁體中文（`zh-TW`）與英文（`en`，預設），首次啟動依系統語言：中文系統用繁中，其他用英文，清單在 `@chatto/core` 的 `LOCALES`。兩個設定：`prefs.locale`（介面：控制台、系統匣、對話框、main 丟給畫面的錯誤）與 `prefs.chatLocale`（`auto` 跟隨介面，或指定語言：桌面 Overlay、OBS、事件 Overlay 的事件文字）。聊天室語言由 WebSocket 的 `hello.locale` 與 `locale` frame 傳給 viewer。
-- **不得在元件裡寫死介面文字。** 控制台文字放在 `apps/desktop/src/renderer/src/i18n/messages/<namespace>.ts`，用 `defineMessages()` 同時寫繁中與英文（英文的結構由型別檢查必須和繁中一致），元件用 `useMessages().<namespace>`；main process 的文字在 `apps/desktop/src/main/messages.ts`。新增 namespace 要在 `i18n/index.ts` 註冊。
+- 支援繁體中文（`zh-TW`）、英文（`en`，預設）與日文（`ja`，#55），首次啟動依系統語言：中文系統用繁中、日文系統用日文，其他用英文，清單在 `@chatto/core` 的 `LOCALES`。日文翻譯的原則與用語表在 `docs/i18n-ja.md`。兩個設定：`prefs.locale`（介面：控制台、系統匣、對話框、main 丟給畫面的錯誤）與 `prefs.chatLocale`（`auto` 跟隨介面，或指定語言：桌面 Overlay、OBS、事件 Overlay 的事件文字）。聊天室語言由 WebSocket 的 `hello.locale` 與 `locale` frame 傳給 viewer。
+- **不得在元件裡寫死介面文字。** 控制台文字放在 `apps/desktop/src/renderer/src/i18n/messages/<namespace>.ts`，用 `defineMessages()` 同時寫繁中、英文與日文（其他語言的結構由型別檢查必須和繁中一致），元件用 `useMessages().<namespace>`；main process 的文字在 `apps/desktop/src/main/messages.ts`。新增 namespace 要在 `i18n/index.ts` 註冊。
 - 主題名稱用 `useThemeName()`；控制台裡的聊天預覽要傳 `locale={useChatLocale()}`，主題經過 `useOutputTheme()`，才會和 OBS 看到的一樣。
 - 事件文字不翻譯平台原文，而是用 `ChatNotice.meta` 的結構化欄位套模板（`@chatto/chat-ui` 的 `eventText.ts`、`EVENT_CATALOG` 的 `text`／`variables`）；組不出來時顯示 `systemText`。新增平台事件時要寫兩種語言的模板，provider 要把需要的欄位放進 `meta`，並更新 `docs/message-format.md`「事件欄位」。主題的 `eventText` 可覆寫模板。
 - `@chatto/chat-ui` 裡給介面用的說明（`EVENT_CATALOG` 的名稱與說明、`ALERT_CATEGORIES`、`reference.ts`）是 `Localized` 物件，用 `x[locale]` 取。

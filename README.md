@@ -26,7 +26,7 @@
 - **Explore**: browse and install themes other streamers have shared, and publish your own.
 - **Alerts only you see**: raids, subs and channel points redemptions pop up as cards on your desktop, and you get a nudge when someone writes after chat has gone quiet. None of it shows on stream.
 - **Instant removal**: messages that moderators delete or ban disappear from the overlay and OBS right away.
-- **English and Traditional Chinese**, with updates offered inside the app.
+- **English, Traditional Chinese and Japanese**, with updates offered inside the app.
 
 ## Get started
 

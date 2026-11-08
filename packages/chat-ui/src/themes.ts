@@ -450,19 +450,19 @@ export function getPresetTheme(id: string): ChatTheme | undefined {
 
 /** Names of the built-in themes; the presets above carry the Traditional Chinese one. */
 const PRESET_NAMES: Partial<Record<string, Localized>> = {
-  'matcha-glass': { 'zh-TW': '抹茶玻璃', en: 'Matcha Glass' },
-  washi: { 'zh-TW': '和紙', en: 'Washi Paper' },
-  bubble: { 'zh-TW': '泡泡', en: 'Bubbles' },
-  outline: { 'zh-TW': '極簡描邊', en: 'Outline' },
-  noren: { 'zh-TW': '暖簾', en: 'Noren' },
-  terminal: { 'zh-TW': '終端機', en: 'Terminal' },
-  'tea-leaf': { 'zh-TW': '茶葉框', en: 'Tea Leaf Frame' },
-  blank: { 'zh-TW': 'Blank（自訂 CSS）', en: 'Blank (custom CSS)' },
-  plain: { 'zh-TW': '空白（從零開始）', en: 'Blank slate' },
+  'matcha-glass': { 'zh-TW': '抹茶玻璃', en: 'Matcha Glass', ja: '抹茶ガラス' },
+  washi: { 'zh-TW': '和紙', en: 'Washi Paper', ja: '和紙' },
+  bubble: { 'zh-TW': '泡泡', en: 'Bubbles', ja: 'バブル' },
+  outline: { 'zh-TW': '極簡描邊', en: 'Outline', ja: 'アウトライン' },
+  noren: { 'zh-TW': '暖簾', en: 'Noren', ja: 'のれん' },
+  terminal: { 'zh-TW': '終端機', en: 'Terminal', ja: 'ターミナル' },
+  'tea-leaf': { 'zh-TW': '茶葉框', en: 'Tea Leaf Frame', ja: '茶葉フレーム' },
+  blank: { 'zh-TW': 'Blank（自訂 CSS）', en: 'Blank (custom CSS)', ja: 'Blank（カスタム CSS）' },
+  plain: { 'zh-TW': '空白（從零開始）', en: 'Blank slate', ja: '白紙（ゼロから）' },
 };
 
 /** Default text of the quiet-spell reminder label (`attention.label`). */
-export const ATTENTION_LABEL: Localized = { 'zh-TW': '新留言', en: 'New' };
+export const ATTENTION_LABEL: Localized = { 'zh-TW': '新留言', en: 'New', ja: '新着' };
 
 /**
  * Built-in themes speak the given language: their name and default texts.

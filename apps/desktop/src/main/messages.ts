@@ -87,6 +87,46 @@ export const MAIN_MESSAGES = defineMessages({
       separator: ': ',
     },
   },
+  ja: {
+    tray: {
+      open: 'Chattoを開く',
+      quit: '終了',
+    },
+    dialogs: {
+      chooseSound: '通知音を選択',
+      audioFiles: 'オーディオ',
+      chooseFrameImage: 'フレーム画像を選択',
+      imageFiles: '画像',
+      exportThemePackage: 'テーマパッケージをエクスポート',
+      themePackageFiles: 'Chattoテーマパッケージ',
+      exportDiagnostics: '診断情報をエクスポート',
+      zipFiles: 'ZIPファイル',
+      cannotStart: 'Chattoを起動できません',
+      alreadyRunning:
+        '別のChatto（インストール版または開発版）がすでに実行中です。タスクトレイから終了してから、こちらを開いてください。',
+      portInUse: (port: number) =>
+        `ポート${port}がほかのプログラムに使用されています。ChattoはオーバーレイとOBSの画面を提供するためにこのポートを使います。使用中のプログラムを終了してから、Chattoをもう一度開いてください。`,
+    },
+    errors: {
+      imageTooLarge: '画像が2 MBを超えています',
+      unsupportedImage: 'PNG、WebP、GIF画像のみ対応しています',
+      invalidThemePackage: '有効なテーマパッケージではありません',
+      missingThemeJson: 'テーマパッケージにtheme.jsonがありません',
+      invalidThemeJson: 'テーマパッケージ内のtheme.jsonが有効なJSONではありません',
+      cannotReadThemeFile: 'このファイルを読み込めません（移動または削除された可能性があります）',
+    },
+    reference: {
+      header: [
+        'Chattoのカスタム CSSリファレンス。Chattoが自動生成したファイルのため、変更は保持されません。',
+        '各テーマのカスタム CSSは、このフォルダー内の「テーマid.css」です。ファイルを保存すると、Chattoがテーマを直接保存します。',
+      ],
+      variables: 'CSS変数',
+      classes: 'コンポーネント',
+      attributes: '条件（.chatto-messageまたは.chatto-noticeの後ろに付ける）',
+      events: 'プラットフォームイベント',
+      separator: '：',
+    },
+  },
 });
 
 export type MainMessages = (typeof MAIN_MESSAGES)[Locale];

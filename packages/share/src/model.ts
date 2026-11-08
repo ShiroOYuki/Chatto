@@ -53,7 +53,7 @@ export const SHARE_LIMITS = {
 export const hasDailyPublishLimit = (role: ShareAccount['role']): boolean => role !== 'moderator';
 
 /** Bumped whenever the terms or privacy notice change; signing in asks again after a bump. */
-export const SHARE_TERMS_VERSION = 1;
+export const SHARE_TERMS_VERSION = 2;
 
 export type ShareSort = 'popular' | 'newest' | 'likes';
 

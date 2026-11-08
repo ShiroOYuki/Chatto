@@ -43,7 +43,8 @@ nsis:
   license: ../../LICENSE
   allowToChangeInstallationDirectory: true
   artifactName: ${productName}-Setup-${version}.${ext}
-  # The app's languages; build/installer.nsh has strings for exactly these two.
+  # The app's languages; build/installer.nsh has strings for exactly these three.
   installerLanguages:
     - en_US
     - zh_TW
+    - ja_JP
