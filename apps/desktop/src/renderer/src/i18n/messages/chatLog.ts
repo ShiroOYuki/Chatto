@@ -14,4 +14,10 @@ export default defineMessages({
     separator: ': ',
     recipients: (count: number) => `Recipients (${count})`,
   },
+  ja: {
+    roles: { broadcaster: '配信者', moderator: 'モデレーター', vip: 'VIP', subscriber: 'サブスク' },
+    deleted: '削除済み',
+    separator: '：',
+    recipients: (count: number) => `受け取った人（${count}）`,
+  },
 });

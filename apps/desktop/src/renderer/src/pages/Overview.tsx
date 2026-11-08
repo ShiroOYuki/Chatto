@@ -10,6 +10,7 @@ import { TeaCup } from '../components/TeaCup';
 import { Button, CopyField, EmptyState, Sparkline, channelTone, StatusDot, Tile, Toggle } from '../components/kit';
 import { useMessages, useThemeName } from '../i18n';
 import { useChatLog, type LogEntry } from '../store';
+import { GettingStarted } from './GettingStarted';
 
 /** Enough to fill a 4K-tall tile; the rest is clipped. */
 const RECENT_MESSAGES = 60;
@@ -59,6 +60,8 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
     .filter((entry) => entry.kind === 'notice')
     .slice(-RECENT_NOTICES)
     .reverse();
+  // Full mode only (compact mode is for people who already know Chatto).
+  const showGettingStarted = !state.prefs.onboardingDismissed;
   const themeName = (target: 'overlay' | 'embed') => {
     const theme = state.themes.find((item) => item.id === state.selectedThemes[target]);
     return theme ? nameOf(theme) : '—';
@@ -67,7 +70,14 @@ export function OverviewPage({ state, onNavigate }: { state: AppState; onNavigat
   return (
     // Fills the viewport: the stats rows keep their content height and the chat row takes the rest.
     // Below the minimum height the page scrolls instead of squeezing the tiles.
-    <Stagger className="grid h-full min-h-[520px] grid-cols-6 grid-rows-[minmax(132px,auto)_auto_minmax(160px,1fr)] gap-3">
+    <Stagger
+      className={`grid h-full min-h-[520px] grid-cols-6 gap-3 ${
+        showGettingStarted
+          ? 'grid-rows-[auto_minmax(132px,auto)_auto_minmax(160px,1fr)]'
+          : 'grid-rows-[minmax(132px,auto)_auto_minmax(160px,1fr)]'
+      }`}
+    >
+      {showGettingStarted ? <GettingStarted state={state} onNavigate={onNavigate} /> : null}
       {/* Hero */}
       <Tile className="relative col-span-2 row-span-2 justify-between overflow-hidden border-transparent! bg-matcha-strong! text-on-matcha">
         {/* In narrow windows the tea cup gives its room to the status and channel name; the sidebar still shows it. */}

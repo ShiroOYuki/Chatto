@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DeviceCodeInfo } from '../shared/ipc';
 import { DEFAULT_OVERLAY_LOOK } from '../shared/overlayLook';
+import { emptyShortcuts } from '../shared/shortcuts';
 import type { Settings, SettingsStore } from './settings';
 import type { LocalServer } from './server';
 import type { OverlayWindow } from './overlay-window';
@@ -91,8 +92,13 @@ function fakeSettings(initial: Partial<Settings> = {}) {
       locale: 'zh-TW',
       chatLocale: 'auto',
       obsPluginPromptDismissed: false,
+      skippedUpdateVersion: '',
+      onboardingDismissed: false,
+      visitedThemes: false,
+      visitedAlerts: false,
     },
     share: { clientId: 'client', termsAccepted: 0 },
+    shortcuts: emptyShortcuts(),
     ...initial,
   };
   return {
@@ -115,6 +121,7 @@ function setup(initial?: Partial<Settings>, builtInClientId = '') {
     url: (target: string) => `http://127.0.0.1:4820/${target}`,
     refreshThemes: vi.fn(),
     broadcastLocale: vi.fn(),
+    broadcastClear: vi.fn(),
   };
   const fakeWindow = () => {
     let open = false;
@@ -324,6 +331,10 @@ describe('AppController CSS files', () => {
         locale: 'zh-TW',
         chatLocale: 'auto',
         obsPluginPromptDismissed: false,
+        skippedUpdateVersion: '',
+        onboardingDismissed: false,
+        visitedThemes: false,
+        visitedAlerts: false,
       },
     });
     await controller.openCssFile('my-theme');
@@ -746,5 +757,70 @@ describe('AppController alerts', () => {
     expect(controller.state().alertsOverlay.enabled).toBe(true);
     controller.resetAlertsOverlayBounds();
     expect(alertsOverlay.resetBounds).toHaveBeenCalled();
+  });
+});
+
+describe('AppController shortcuts, pause and clear (#53)', () => {
+  const message = (text: string): ChatEvent => ({
+    type: 'message',
+    message: mockMessage(MOCK_USERS[1]!, [{ type: 'text', text }]),
+  });
+
+  it('holds messages back from the outputs while paused, but not from the control panel', () => {
+    const { controller, onChange } = setup();
+    const outputs: ChatEvent[] = [];
+    const panel: ChatEvent[] = [];
+    controller.output.subscribe((event) => outputs.push(event));
+    controller.hub.subscribe((event) => panel.push(event));
+    controller.runShortcut('togglePause');
+    expect(controller.state().chatPaused).toBe(true);
+    expect(onChange).toHaveBeenCalled();
+    controller.hub.publish(message('hi'));
+    expect(panel).toHaveLength(1);
+    expect(outputs).toHaveLength(0);
+    controller.runShortcut('togglePause');
+    expect(outputs).toHaveLength(1);
+    expect(controller.state().chatPaused).toBe(false);
+  });
+
+  it('clears the outputs and tells every viewer', () => {
+    const { controller, server } = setup();
+    controller.hub.publish(message('hi'));
+    controller.runShortcut('clearChat');
+    expect(controller.output.backlog()).toEqual([]);
+    expect(controller.hub.backlog()).toHaveLength(1);
+    expect(server.broadcastClear).toHaveBeenCalled();
+  });
+
+  it('toggles the overlays and unlocks the open ones together', () => {
+    const { controller, overlay, alertsOverlay } = setup();
+    controller.runShortcut('toggleClickThrough');
+    expect(overlay.setEditing).not.toHaveBeenCalled();
+    controller.runShortcut('toggleOverlay');
+    expect(overlay.open).toHaveBeenCalled();
+    controller.runShortcut('toggleClickThrough');
+    expect(overlay.setEditing).toHaveBeenCalledWith(true);
+    expect(alertsOverlay.setEditing).not.toHaveBeenCalled();
+    controller.runShortcut('toggleAlertsOverlay');
+    expect(alertsOverlay.open).toHaveBeenCalled();
+    controller.runShortcut('toggleOverlay');
+    expect(overlay.close).toHaveBeenCalled();
+  });
+
+  it('saves a shortcut only when no other action has it and Windows lets Chatto take it', () => {
+    const { controller, settings } = setup();
+    const set = vi.fn((_action: string, accelerator: string) => accelerator !== 'Ctrl+Alt+Delete');
+    controller.shortcuts = { set, failed: [] } as unknown as typeof controller.shortcuts;
+    expect(controller.setShortcut('togglePause', 'Ctrl+Alt+P')).toEqual({ ok: true });
+    expect(settings.get().shortcuts.togglePause).toBe('Ctrl+Alt+P');
+    expect(controller.setShortcut('clearChat', 'ctrl+alt+p')).toEqual({
+      ok: false,
+      reason: 'duplicate',
+      action: 'togglePause',
+    });
+    expect(controller.setShortcut('clearChat', 'Ctrl+Alt+Delete')).toEqual({ ok: false, reason: 'unavailable' });
+    expect(settings.get().shortcuts.clearChat).toBe('');
+    expect(controller.setShortcut('togglePause', '')).toEqual({ ok: true });
+    expect(controller.state().shortcuts.bindings.togglePause).toBe('');
   });
 });

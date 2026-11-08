@@ -18,6 +18,7 @@ import { TeaCup } from '../components/TeaCup';
 import { ClientIdForm } from './ClientIdForm';
 import { LegalDialog } from './LegalDialog';
 import { ReportTile } from './ReportTile';
+import { ShortcutsTile } from './ShortcutsTile';
 import { Button, PageHeader, Segmented, Select, SideNavItem, TextInput, Tile, Toggle } from '../components/kit';
 import { useLocale, useMessages, type Messages } from '../i18n';
 import { updater } from '../services/updater';
@@ -321,6 +322,7 @@ export function SettingsPage({ state }: { state: AppState }) {
         {/* Keyed so each section plays its entrance on its own. */}
         <Stagger key={section} className="flex min-w-0 flex-col gap-3">
           {section === 'general' ? <GeneralSection prefs={state.prefs} /> : null}
+          {section === 'general' ? <ShortcutsTile state={state} /> : null}
           {section === 'appearance' ? <AppearanceSection prefs={state.prefs} /> : null}
           {section === 'advanced' ? <AdvancedSection state={state} /> : null}
           {section === 'about' ? <AboutSection state={state} /> : null}

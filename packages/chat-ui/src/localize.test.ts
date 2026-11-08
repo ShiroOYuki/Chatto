@@ -21,7 +21,7 @@ describe('theme languages', () => {
     expect(copy.builtIn).toBe(false);
     expect(localizeTheme(copy, 'zh-TW').attention.label).toBe('New');
     // The default label comes along in every language.
-    expect(copy.attention.labels).toEqual({ 'zh-TW': '新留言', en: 'New' });
+    expect(copy.attention.labels).toEqual({ 'zh-TW': '新留言', en: 'New', ja: '新着' });
     // A custom theme is copied as written.
     expect(
       duplicateTheme({ ...copy, attention: { ...copy.attention, labels: undefined } }, 'again').attention.labels,

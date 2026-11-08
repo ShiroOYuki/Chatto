@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import type { AppState, ChattoApi, CssFileChange } from '../apps/desktop/src/shared/ipc';
 import { ControlLog, type LoggedChatEvent } from '../apps/desktop/src/shared/controlLog';
 import { DEFAULT_OVERLAY_LOOK } from '../apps/desktop/src/shared/overlayLook';
+import { emptyShortcuts } from '../apps/desktop/src/shared/shortcuts';
 
 export function sampleState(patch: Partial<AppState> = {}): AppState {
   return {
@@ -19,6 +20,11 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
       locale: 'zh-TW',
       chatLocale: 'auto',
       obsPluginPromptDismissed: false,
+      skippedUpdateVersion: '',
+      // A set-up account; tests of the getting-started list turn it back on.
+      onboardingDismissed: true,
+      visitedThemes: false,
+      visitedAlerts: false,
     },
     clientId: { source: 'built-in', hasBuiltIn: true },
     auth: { status: 'signed-in', login: 'shiraine_ciel', redemptionScope: true },
@@ -30,6 +36,9 @@ export function sampleState(patch: Partial<AppState> = {}): AppState {
     themes: PRESET_THEMES,
     selectedThemes: { overlay: 'matcha-glass', embed: 'washi', alerts: 'bubble' },
     share: { session: { status: 'signed-out' }, termsAccepted: 0 },
+    openedThemeFiles: [],
+    chatPaused: false,
+    shortcuts: { bindings: emptyShortcuts(), failed: [] },
     ...patch,
   };
 }
@@ -124,6 +133,11 @@ export function createFakeApi(initial: AppState = sampleState()): FakeApi {
     checkForUpdate: resolved(),
     downloadUpdate: resolved(),
     installUpdate: resolved(),
+    dismissUpdatePrompt: resolved(),
+    dismissOpenedThemeFile: resolved(),
+    setChatPaused: resolved(),
+    clearChatOnScreen: resolved(),
+    setShortcut: vi.fn(async () => ({ ok: true as const })),
     share: vi.fn(async () => ({ ok: false, error: 'unknown' })),
     captureThumbnail: vi.fn(async () => null),
     exportDiagnostics: vi.fn(async () => true),

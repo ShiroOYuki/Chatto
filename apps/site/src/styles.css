@@ -759,6 +759,8 @@ img {
 }
 
 .top {
+  position: relative;
+  z-index: 10; /* the language menu opens over the page below */
   display: flex;
   align-items: center;
   gap: 24px;
@@ -791,8 +793,7 @@ img {
   gap: 8px;
 }
 
-.top nav a,
-.lang {
+.top nav a {
   padding: 4px 12px;
   border-radius: 8px;
   color: var(--text);
@@ -818,8 +819,94 @@ img {
   box-shadow: none;
 }
 
-.lang {
+/* The language button shows the current language; its menu lists every language. */
+.lang-menu {
+  position: relative;
+}
+
+.lang-menu summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 10px 0 12px;
+  border-radius: 10px;
+  background: var(--tab);
+  box-shadow: 0 0 0 1px var(--line);
+  color: var(--text);
+  font-size: 15px;
+  white-space: nowrap;
+  cursor: pointer;
+  list-style: none;
+}
+
+.lang-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.lang-menu summary:hover,
+.lang-menu[open] summary {
+  box-shadow: 0 0 0 1px var(--mark);
+}
+
+.lang-menu summary:focus-visible {
+  outline: 3px solid var(--mark);
+  outline-offset: 3px;
+}
+
+.lang-menu summary svg:last-child {
   color: var(--faint);
+  transition: transform 0.15s ease;
+}
+
+.lang-menu[open] summary svg:last-child {
+  transform: rotate(180deg);
+}
+
+.lang-menu ul {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  min-width: 160px;
+  margin: 0;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--sheet);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow);
+  list-style: none;
+}
+
+.lang-menu li a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lang-menu li a:hover {
+  background: var(--tab);
+}
+
+.lang-menu li a:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: -2px;
+}
+
+.lang-menu li a[aria-current='true'] {
+  font-weight: 600;
+}
+
+.lang-menu li a svg {
+  color: var(--mark);
 }
 
 /* The current tab's highlight is its own element, so it can slide between tabs. */
@@ -1875,6 +1962,14 @@ dd {
 
 .kind li + li {
   margin-top: 4px;
+}
+
+.ticket code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--line);
 }
 
 .ticket.upcoming {

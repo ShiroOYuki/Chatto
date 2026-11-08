@@ -62,7 +62,8 @@ export interface LocalServerOptions {
   port: number;
   /** Folder with the built viewer (apps/viewer/dist). */
   viewerDir: string;
-  hub: ChatHub;
+  /** The events viewers get: the chat hub, or the output feed that can pause and clear it. */
+  hub: Pick<ChatHub, 'subscribe' | 'backlog'>;
   /**
    * The theme a viewer renders: `themeId` when the viewer asked for one that
    * exists, otherwise the target's selected theme.
@@ -170,6 +171,12 @@ export class LocalServer {
       // Bound to loopback only: nothing on the LAN can read the chat feed.
       this.#http!.listen(this.options.port, '127.0.0.1', () => resolve());
     });
+  }
+
+  /** Empties the chat on every overlay and OBS source (#53). */
+  broadcastClear(): void {
+    const payload = encodeFrame({ v: PROTOCOL_VERSION, type: 'clear' });
+    for (const socket of this.#clients.keys()) socket.send(payload);
   }
 
   /** Tells every viewer the chat language changed. */

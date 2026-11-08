@@ -61,6 +61,7 @@ function ChatApp() {
         onEvent: push,
         onTheme: setTheme,
         onLocale: setLocale,
+        onClear: () => reset([]),
         onStatus: () => undefined,
       },
       themeFromQuery ?? undefined,

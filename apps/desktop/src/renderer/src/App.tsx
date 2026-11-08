@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../../shared/ipc';
 import { Sidebar, type PageId } from './components/Sidebar';
 import { appPrefs } from './services/app';
+import { onboarding } from './services/onboarding';
 import { PageTransition } from './components/motion';
 import { TeaCup } from './components/TeaCup';
 import { TitleBar } from './components/TitleBar';
+import { OpenedThemeDialog } from './components/OpenedThemeDialog';
+import { UpdateDialog } from './components/UpdateDialog';
 import { Confetti, type ConfettiRef } from './components/ui/confetti';
 import { useMessages } from './i18n';
 import { TooltipProvider } from './components/ui/tooltip';
@@ -60,6 +63,14 @@ function Shell() {
     params.set('page', next);
     history.replaceState(null, '', `${location.pathname}?${params}`);
   };
+
+  // Opening the themes or alerts page ticks its step on the getting-started list (#54).
+  const loaded = Boolean(state);
+  useEffect(() => {
+    if (state) onboarding.visited(state, page);
+    // Only when the page changes (or once the state arrives); later state changes do not count as visits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, loaded]);
 
   // Resolve "system" to a concrete theme so `dark:` variants and Magic UI follow it too.
   useEffect(() => {
@@ -148,6 +159,8 @@ function Shell() {
             </main>
           </div>
         )}
+        <UpdateDialog state={state} />
+        <OpenedThemeDialog state={state} />
         <Confetti
           ref={confettiRef}
           manualstart

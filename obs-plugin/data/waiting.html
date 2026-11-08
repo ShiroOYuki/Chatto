@@ -201,9 +201,13 @@
     </div>
     <script>
       // OBS gives the page its interface language.
-      if ((navigator.language || '').toLowerCase().startsWith('zh')) {
+      const language = (navigator.language || '').toLowerCase();
+      if (language.startsWith('zh')) {
         document.getElementById('text').textContent = '連線至 Chatto 中';
         document.documentElement.lang = 'zh-Hant';
+      } else if (language.startsWith('ja')) {
+        document.getElementById('text').textContent = 'Chatto に接続中';
+        document.documentElement.lang = 'ja';
       }
     </script>
   </body>

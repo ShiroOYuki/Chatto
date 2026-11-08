@@ -66,4 +66,37 @@ export default defineMessages({
       invalidJson: 'The file is not valid JSON',
     },
   },
+  ja: {
+    title: 'テーマ',
+    description:
+      'レイアウトと配色は自由に組み合わせられます。内蔵テーマは複製して編集でき、ファイルにエクスポートして共有することもできます。',
+    newTheme: '新しいテーマ',
+    copyOf: (name: string) => `${name}のコピー`,
+    builtIn: '内蔵',
+    custom: 'カスタム',
+    duplicateAndEdit: '複製して編集',
+    moreActions: 'その他の操作',
+    exportPackage: 'テーマパッケージをエクスポート',
+    duplicate: '複製',
+    publish: '「見つける」に投稿',
+    deleteTheme: 'テーマを削除',
+    deleteTitle: (name: string) => `「${name}」を削除しますか？`,
+    deleteDescription:
+      '削除すると元に戻せません。このテーマを使用中のオーバーレイやOBSは、デフォルトのテーマに戻ります。',
+    targets: { overlay: 'オーバーレイ', embed: 'OBS', alerts: 'イベント' },
+    useFor: { overlay: 'デスクトップオーバーレイで使う', embed: 'OBSで使う', alerts: 'アラートオーバーレイで使う' },
+    labels: {
+      inline: '1行',
+      stacked: '上下',
+      columns: '段組み',
+      blank: '空白 · カスタム CSS',
+    },
+    io: {
+      importedName: (name: string) => `${name}（インポート）`,
+      untitledImport: 'インポートしたテーマ',
+      unsupported: '対応していないテーマファイルまたはバージョンです',
+      noFile: 'ファイルが選択されていません',
+      invalidJson: '有効なJSONファイルではありません',
+    },
+  },
 });

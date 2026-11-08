@@ -36,4 +36,21 @@ export default defineMessages({
       signingIn: 'Signing in',
     },
   },
+  ja: {
+    title: 'アカウント',
+    description: 'Chattoアカウントと配信プラットフォームの接続を管理します',
+    chatto: {
+      title: 'Chattoアカウント',
+      hint: 'テーマの投稿、いいね、通報に使うアカウントで、チャットの接続とは別です',
+    },
+    platforms: {
+      title: '配信プラットフォーム',
+      hint: 'チャットの読み取りに使い、Chattoアカウントとは別です',
+    },
+    sidebar: {
+      open: 'アカウントページを開く',
+      signedOut: 'Chatto未ログイン',
+      signingIn: 'ログイン待ち',
+    },
+  },
 });
