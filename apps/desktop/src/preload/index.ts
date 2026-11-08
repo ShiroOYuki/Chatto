@@ -12,6 +12,10 @@ const api: ChattoApi = {
   onState: (listener) => listen(IPC.state, listener),
   onChatEvent: (listener) => listen(IPC.chatEvent, listener),
   onAlertSound: (listener) => listen(IPC.alertSound, listener),
+  getControlLog: () => ipcRenderer.invoke(IPC.getControlLog),
+  clearChatLog: () => ipcRenderer.invoke(IPC.clearChatLog),
+  dismissRedemption: (key) => ipcRenderer.invoke(IPC.dismissRedemption, key),
+  setUnsavedWork: (unsaved) => ipcRenderer.invoke(IPC.setUnsavedWork, unsaved),
   windowMinimize: () => ipcRenderer.invoke(IPC.windowMinimize),
   windowToggleMaximize: () => ipcRenderer.invoke(IPC.windowToggleMaximize),
   windowClose: () => ipcRenderer.invoke(IPC.windowClose),
@@ -48,6 +52,8 @@ const api: ChattoApi = {
   installUpdate: () => ipcRenderer.invoke(IPC.installUpdate),
   share: (method, ...args) => ipcRenderer.invoke(IPC.share, method, ...args),
   captureThumbnail: (rect) => ipcRenderer.invoke(IPC.captureThumbnail, rect),
+  exportDiagnostics: (options) => ipcRenderer.invoke(IPC.exportDiagnostics, options),
+  revealDiagnostics: () => ipcRenderer.invoke(IPC.revealDiagnostics),
 };
 
 contextBridge.exposeInMainWorld('chatto', api);
