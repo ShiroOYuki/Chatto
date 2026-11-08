@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TrayRelease } from './tray-release';
+import { WindowRelease } from './window-release';
 
-describe('TrayRelease', () => {
+describe('WindowRelease', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
   const create = () => {
     const release = vi.fn();
-    return { release, tray: new TrayRelease({ delayMs: 1000, release }) };
+    return { release, tray: new WindowRelease({ delayMs: 1000, release }) };
   };
 
   it('releases the window after it stays hidden', () => {

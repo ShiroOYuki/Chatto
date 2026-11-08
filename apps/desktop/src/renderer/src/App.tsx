@@ -55,6 +55,10 @@ function Shell() {
   const setPage = (next: PageId) => {
     setPageState(next);
     setVisit((count) => count + 1);
+    // Kept in the URL so a window rebuilt to free memory (#57) opens on the same page.
+    const params = new URLSearchParams(location.search);
+    params.set('page', next);
+    history.replaceState(null, '', `${location.pathname}?${params}`);
   };
 
   // Resolve "system" to a concrete theme so `dark:` variants and Magic UI follow it too.

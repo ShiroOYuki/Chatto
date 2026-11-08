@@ -8,10 +8,11 @@ import {
   useChatFeed,
 } from '@chatto/chat-ui';
 import type { ChatEvent, ChatTheme } from '@chatto/core';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useChatLocale, useOutputTheme } from '../i18n';
 import { useThemeAssetUrl } from '../services/themes';
 import { backdropColor, type OverlayLook } from '../../../shared/overlayLook';
+import { useInView } from './useInView';
 
 export type Backdrop = 'game' | 'dark' | 'light' | 'checker';
 
@@ -31,8 +32,10 @@ const SAMPLE_EVENTS: ChatEvent[] = [
   createMockMessage(),
 ];
 
-/** Static preview used on theme cards. */
+/** Static preview used on theme cards; the chat is drawn once the card scrolls near the viewport. */
 export function StaticThemePreview({ theme, backdrop = 'game' }: { theme: ChatTheme; backdrop?: Backdrop }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const visible = useInView(ref);
   const items = useMemo(() => {
     const options = { ...theme.options, hiddenPrefixes: [], hiddenUsers: [], maxMessages: 5 };
     return SAMPLE_EVENTS.reduce((state, event) => reduceFeed(state, event, options, 0), emptyFeed).items;
@@ -45,8 +48,12 @@ export function StaticThemePreview({ theme, backdrop = 'game' }: { theme: ChatTh
   const assetUrl = useThemeAssetUrl();
   const locale = useChatLocale();
   return (
-    <div className="pointer-events-none h-full overflow-hidden p-3" style={{ background: BACKDROPS[backdrop] }}>
-      <ChatView theme={quiet} items={items} assetUrl={assetUrl} locale={locale} />
+    <div
+      ref={ref}
+      className="pointer-events-none h-full overflow-hidden p-3"
+      style={{ background: BACKDROPS[backdrop] }}
+    >
+      {visible ? <ChatView theme={quiet} items={items} assetUrl={assetUrl} locale={locale} /> : null}
     </div>
   );
 }

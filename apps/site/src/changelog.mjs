@@ -32,8 +32,8 @@ export const CHANGELOG = {
           kind: 'improved',
           items: [
             t(
-              'Chatto uses much less memory while it waits in the tray: the control panel closes after five minutes there and opens again with the whole session',
-              '縮到系統匣時記憶體用量大幅降低：控制台在系統匣待滿 5 分鐘後關閉，再開啟時聊天紀錄與兌換清單都還在',
+              'Chatto uses much less memory when the control panel is out of sight: after five minutes in the tray or minimized, the window is replaced with a fresh one that keeps the whole session',
+              '控制台不在畫面上時記憶體用量大幅降低：縮到系統匣或最小化 5 分鐘後會換成新的視窗，聊天紀錄與兌換清單都還在',
             ),
             t(
               'The control panel starts faster; pages load the first time you open them',

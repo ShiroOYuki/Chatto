@@ -1,20 +1,22 @@
 /**
- * Decides when the control panel window, hidden in the tray, is closed for
- * real to free its memory (#57). The overlay, OBS and alerts keep running in
- * the main process; opening Chatto from the tray builds a new window.
+ * Decides when the control panel window, out of sight, is replaced to free
+ * its memory (#57): hidden in the tray it is closed (opening Chatto builds a
+ * new one); minimized it is rebuilt minimized with a fresh renderer, because
+ * Chromium keeps the memory heavy pages once used. The overlay, OBS and
+ * alerts keep running in the main process.
  *
- * The window is released only after it has stayed hidden for `delayMs`, so a
- * quick trip to the tray costs nothing, and never while it holds unsaved
+ * The release happens only after the window stayed out of sight for
+ * `delayMs`, so a quick trip costs nothing, and never while it holds unsaved
  * work (an edited theme).
  */
-export class TrayRelease {
+export class WindowRelease {
   #timer: ReturnType<typeof setTimeout> | null = null;
   #hidden = false;
   #unsaved = false;
 
   constructor(private readonly options: { delayMs: number; release: () => void }) {}
 
-  /** The window went to the tray. */
+  /** The window went out of sight (to the tray, or minimized). */
   hidden(): void {
     this.#hidden = true;
     this.#schedule();

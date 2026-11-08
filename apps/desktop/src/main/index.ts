@@ -23,7 +23,7 @@ import { packageFileName, THEME_PACKAGE_EXTENSION } from './theme-package';
 import { Updater } from './updater';
 import { ControlLog } from '../shared/controlLog';
 import { SoundPlayer } from './sound-player';
-import { TrayRelease } from './tray-release';
+import { WindowRelease } from './window-release';
 import { Logger } from './logger';
 import {
   buildDiagnosticsZip,
@@ -47,14 +47,27 @@ let logger: Logger | null = null;
 /** The last diagnostics zip the user saved, for "show in folder". */
 let lastDiagnostics: string | null = null;
 /** Builds the control panel window again after it was released to the tray; set in `bootstrap`. */
-let openMainWindow: () => BrowserWindow = () => {
+let openMainWindow: (options?: MainWindowOptions) => BrowserWindow = () => {
   throw new Error('Chatto is not ready yet');
 };
 
+/** Development builds can shorten the delays below (tests). */
+const releaseDelay = (variable: string) =>
+  !app.isPackaged && process.env[variable] ? Number(process.env[variable]) : 5 * 60_000;
+
 /** How long the window stays hidden in the tray before it is closed to free memory (#57). */
-const TRAY_RELEASE_MS =
-  !app.isPackaged && process.env.CHATTO_TRAY_RELEASE_MS ? Number(process.env.CHATTO_TRAY_RELEASE_MS) : 5 * 60_000;
-const trayRelease = new TrayRelease({
+const TRAY_RELEASE_MS = releaseDelay('CHATTO_TRAY_RELEASE_MS');
+/** How long the window stays minimized before it is rebuilt with a fresh renderer (#57). */
+const MINIMIZE_RELEASE_MS = releaseDelay('CHATTO_MINIMIZE_RELEASE_MS');
+
+interface MainWindowOptions {
+  /** The page to open on (`?page=`). */
+  page?: string;
+  /** Start minimized in the taskbar instead of showing. */
+  minimized?: boolean;
+}
+
+const trayRelease = new WindowRelease({
   delayMs: TRAY_RELEASE_MS,
   release: () => {
     if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isVisible()) return;
@@ -64,9 +77,42 @@ const trayRelease = new TrayRelease({
   },
 });
 
+/**
+ * Replaces a window that stayed minimized: the new one starts minimized on the
+ * same page, so the taskbar button stays and restoring looks the same, but the
+ * memory heavy pages left behind in the old renderer is gone.
+ */
+const minimizeRelease = new WindowRelease({
+  delayMs: MINIMIZE_RELEASE_MS,
+  release: () => {
+    const old = mainWindow;
+    if (!old || old.isDestroyed() || !old.isMinimized()) return;
+    let page: string | undefined;
+    try {
+      page = new URL(old.webContents.getURL()).searchParams.get('page') ?? undefined;
+    } catch {
+      page = undefined;
+    }
+    const rebuilt = openMainWindow({ page, minimized: true });
+    mainWindow = rebuilt;
+    // Restored while the new one was still loading: keep the window in use.
+    const keepOld = () => {
+      mainWindow = old;
+      if (!rebuilt.isDestroyed()) rebuilt.destroy();
+    };
+    old.once('restore', keepOld);
+    rebuilt.once('ready-to-show', () => {
+      old.removeListener('restore', keepOld);
+      if (!old.isDestroyed()) old.destroy();
+    });
+    logger?.info('window', 'minimized control panel rebuilt to free memory');
+  },
+});
+
 /** Hides the control panel to the tray; it is released later if it stays there. */
 function hideToTray(window: BrowserWindow): void {
   window.hide();
+  minimizeRelease.shown();
   trayRelease.hidden();
 }
 
@@ -91,7 +137,11 @@ function restorableBounds(bounds?: Rect): Partial<Rect> {
   return visible ? bounds : { width: bounds.width, height: bounds.height };
 }
 
-function createMainWindow(settings: SettingsStore, controller: AppController): BrowserWindow {
+function createMainWindow(
+  settings: SettingsStore,
+  controller: AppController,
+  options: MainWindowOptions = {},
+): BrowserWindow {
   const window = new BrowserWindow({
     ...restorableBounds(settings.get().windowBounds),
     minWidth: 960,
@@ -108,7 +158,16 @@ function createMainWindow(settings: SettingsStore, controller: AppController): B
       contextIsolation: true,
     },
   });
-  window.once('ready-to-show', () => window.show());
+  window.once('ready-to-show', () => (options.minimized ? window.minimize() : window.show()));
+  // A window rebuilt while minimized is already fresh; it is rebuilt again only after it was used.
+  let fresh = options.minimized === true;
+  window.on('minimize', () => {
+    if (!fresh) minimizeRelease.hidden();
+  });
+  window.on('restore', () => {
+    fresh = false;
+    minimizeRelease.shown();
+  });
   window.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url);
     return { action: 'deny' };
@@ -138,8 +197,10 @@ function createMainWindow(settings: SettingsStore, controller: AppController): B
     if (mainWindow === window) mainWindow = null;
   });
 
-  if (isDev && process.env.ELECTRON_RENDERER_URL) void window.loadURL(process.env.ELECTRON_RENDERER_URL);
-  else void window.loadFile(join(__dirname, '../renderer/index.html'));
+  const query: Record<string, string> = options.page ? { page: options.page } : {};
+  if (isDev && process.env.ELECTRON_RENDERER_URL)
+    void window.loadURL(`${process.env.ELECTRON_RENDERER_URL}?${new URLSearchParams(query)}`);
+  else void window.loadFile(join(__dirname, '../renderer/index.html'), { query });
   return window;
 }
 
@@ -190,7 +251,10 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
     if (!settings.get().prefs.closeToTray) app.quit();
     else if (mainWindow) hideToTray(mainWindow);
   });
-  ipcMain.handle(IPC.setUnsavedWork, (_e, unsaved: boolean) => trayRelease.setUnsaved(unsaved === true));
+  ipcMain.handle(IPC.setUnsavedWork, (_e, unsaved: boolean) => {
+    trayRelease.setUnsaved(unsaved === true);
+    minimizeRelease.setUnsaved(unsaved === true);
+  });
   ipcMain.handle(IPC.getControlLog, () => controlLog.snapshot());
   ipcMain.handle(IPC.clearChatLog, () => controlLog.clearChat());
   ipcMain.handle(IPC.dismissRedemption, (_e, key: string) => controlLog.dismissRedemption(String(key)));
@@ -492,7 +556,7 @@ async function bootstrap(): Promise<void> {
   };
 
   registerIpc(controller, settings);
-  openMainWindow = () => createMainWindow(settings, controller);
+  openMainWindow = (options) => createMainWindow(settings, controller, options);
   mainWindow = openMainWindow();
   let trayLocale = settings.get().prefs.locale;
   createTray(trayLocale);

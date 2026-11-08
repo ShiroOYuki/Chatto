@@ -34,9 +34,13 @@
 
 ## 控制台視窗與記憶體（#57）
 
-- **縮到系統匣後釋放**：關閉到系統匣時先隱藏；隱藏滿 5 分鐘（`main/tray-release.ts` 的 `TrayRelease`，開發版可用 `CHATTO_TRAY_RELEASE_MS` 縮短）才真的關掉視窗，省下控制台 renderer 的記憶體。主題編輯器有未儲存的變更時（`setUnsavedWork`）不釋放。從系統匣或第二次啟動開啟時重建視窗。Overlay、OBS、事件 Overlay 都在 main 與 LocalServer，不受影響。
+- **為什麼要換掉視窗**：控制台的 JS 只有約 10 MB，記憶體大多是 Chromium 的樣式、字型、繪圖。進過主題頁、編輯器、探索頁後 renderer 會從約 48 MB 漲到約 100 MB，而且已釋放的部分不會還給系統（模擬記憶體壓力也收不回來）。所以真正降得下來的方法是換一個新的 renderer。
+- **縮到系統匣後釋放**：關閉到系統匣時先隱藏；隱藏滿 5 分鐘（`main/window-release.ts` 的 `WindowRelease`，開發版可用 `CHATTO_TRAY_RELEASE_MS` 縮短）才真的關掉視窗。從系統匣或第二次啟動開啟時重建視窗。
+- **最小化太久就重建**：最小化滿 5 分鐘（`CHATTO_MINIMIZE_RELEASE_MS`）時，建一個新的視窗，一樣最小化、停在同一頁（控制台把目前頁面寫在網址的 `?page=`），準備好後關掉舊的，所以工作列按鈕一直都在。新視窗還沒被還原過就不會再重建；重建途中使用者還原了舊視窗，就保留舊的。
+- 兩種釋放在主題編輯器有未儲存的變更時（`setUnsavedWork`）都不做。Overlay、OBS、事件 Overlay 都在 main 與 LocalServer，不受影響。
 - **聊天紀錄在 main**：聊天紀錄、統計與兌換清單的純 reducer 在 `shared/chatLog.ts`、`shared/redemptionLog.ts`；main 的 `ControlLog`（`shared/controlLog.ts`）保存整個工作階段，每個事件帶遞增的 `seq` 送給控制台（`LoggedChatEvent`）。控制台開啟時先訂閱事件、再取 `getControlLog()` 快照，`reduceControlLogView` 只套用比快照新的事件，不漏也不重複。「清除」與「移出兌換」在兩邊各做一次。
-- **延遲載入**：總覽以外的頁面、精簡模式、主題編輯器（含 CodeMirror）與投稿對話框用 `React.lazy` 拆開（`components/lazy.tsx`），第一次進入時才載入。
+- **延遲載入**：總覽以外的頁面、精簡模式、主題編輯器（含 CodeMirror）與投稿對話框用 `React.lazy` 拆開（`components/lazy.tsx`），第一次進入時才載入。這主要讓啟動變快，閒置記憶體幾乎不變。
+- **主題預覽只畫看得到的**：`StaticThemePreview` 在卡片接近畫面（`useInView`）時才畫聊天室。主題卡片的預覽約佔主題頁 20 MB，其中字型約 15 MB；預設視窗大小下內建主題幾乎都在畫面內，所以差別出現在主題很多或探索頁的時候。
 - **量測**：`app.getAppMetrics()` 的 `workingSetSize` 會把各程序共用的 Electron／Chromium DLL 重複計算；工作管理員的「記憶體」欄是私人工作集。比較前後時兩種都記。
 
 ## 紀錄檔與診斷資訊（#56）

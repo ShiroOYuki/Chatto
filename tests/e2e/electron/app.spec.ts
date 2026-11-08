@@ -40,6 +40,7 @@ test.beforeEach(async () => {
       CHATTO_SHARE_API: 'fake',
       // Tests about the tray release the hidden window quickly instead of after five minutes.
       CHATTO_TRAY_RELEASE_MS: test.info().title.includes('[tray]') ? '1500' : '',
+      CHATTO_MINIMIZE_RELEASE_MS: test.info().title.includes('[minimize]') ? '1500' : '',
     },
   });
   mainWindow = await app.firstWindow();
@@ -91,6 +92,25 @@ test('[tray] closes the hidden control panel to free memory and builds it again 
 
   const log = readFileSync(join(userData, 'logs', 'chatto.log'), 'utf8');
   expect(log).toContain('[window] control panel closed in the tray to free memory');
+});
+
+test('[minimize] rebuilds a window left minimized, still minimized and on the same page', async () => {
+  await mainWindow.getByRole('navigation').getByRole('button', { name: /^主題/ }).click();
+  await expect(mainWindow).toHaveURL(/page=themes/);
+  const rebuilt = app.waitForEvent('window');
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.minimize());
+  const rebuiltWindow = await rebuilt;
+  await expect.poll(async () => (await windows()).length, { timeout: 10_000 }).toBe(1);
+  expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMinimized())).toBe(true);
+  expect((await windows())[0]!.url).toContain('page=themes');
+
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.restore());
+  await expect(rebuiltWindow.getByRole('navigation').getByRole('button', { name: /^主題/ })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  // Not rebuilt again while it was never used since.
+  expect(readFileSync(join(userData, 'logs', 'chatto.log'), 'utf8').match(/rebuilt to free memory/g)).toHaveLength(1);
 });
 
 test('[tray] keeps a window with an unsaved theme', async () => {
