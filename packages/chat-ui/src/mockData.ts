@@ -44,12 +44,13 @@ const BADGES = {
   subscriber: badge('subscriber', '訂閱者', '#7F77DD', '訂'),
 };
 
+// Twitch's preset name colors, like most real viewers: previews must look like live chat (#60).
 export const MOCK_USERS: ChatUser[] = [
   {
     id: '1',
     login: 'shiraine_ciel',
     displayName: 'shiraine_ciel',
-    color: '#9FE1CB',
+    color: '#1E90FF',
     badges: [BADGES.broadcaster, BADGES.subscriber],
     roles: ['broadcaster', 'subscriber'],
   },
@@ -57,7 +58,7 @@ export const MOCK_USERS: ChatUser[] = [
     id: '2',
     login: 'mochi_fan',
     displayName: 'Mochi_Fan',
-    color: '#FAC775',
+    color: '#FF7F50',
     badges: [BADGES.subscriber],
     roles: ['subscriber'],
   },
@@ -65,16 +66,16 @@ export const MOCK_USERS: ChatUser[] = [
     id: '3',
     login: 'kuma_mod',
     displayName: '熊熊管理員',
-    color: '#F4C0D1',
+    color: '#2E8B57',
     badges: [BADGES.moderator],
     roles: ['moderator'],
   },
-  { id: '4', login: 'okome_rice', displayName: 'okome_rice', color: '#B5D4F4', badges: [], roles: [] },
+  { id: '4', login: 'okome_rice', displayName: 'okome_rice', color: '#DAA520', badges: [], roles: [] },
   {
     id: '5',
     login: 'matcha_latte',
     displayName: 'MatchaLatte',
-    color: '#C0DD97',
+    color: '#FF69B4',
     badges: [BADGES.vip],
     roles: ['vip'],
   },
