@@ -1,4 +1,4 @@
-<p align="center"><a href="README.md">English</a> · 繁體中文</p>
+<p align="center"><a href="README.md">English</a> · 繁體中文 · <a href="README.ja.md">日本語</a></p>
 
 <p align="center">
   <img src="assets/chatto-cover-chat.png" alt="Chatto 直播聊天室 Overlay：標誌與套用主題的聊天室" />
