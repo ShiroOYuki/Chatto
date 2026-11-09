@@ -2,7 +2,7 @@
  * Chatto's animation layer, built on Motion (MIT). Shared springs and small
  * animated building blocks so every page moves the same way.
  */
-import { AnimatePresence, motion, useReducedMotion, type Transition, type Variants } from 'motion/react';
+import { AnimatePresence, motion, MotionConfig, useReducedMotion, type Transition, type Variants } from 'motion/react';
 import { memo, type ReactNode } from 'react';
 
 export const spring: Transition = { type: 'spring', stiffness: 420, damping: 32, mass: 0.8 };
@@ -134,4 +134,4 @@ export function SwapIcon({ swapped, from, to }: { swapped: boolean; from: ReactN
   );
 }
 
-export { AnimatePresence, motion };
+export { AnimatePresence, motion, MotionConfig };

@@ -23,7 +23,7 @@ const ChatPage = lazyNamed(() => import('./pages/Chat'), 'ChatPage');
 const ExplorePage = lazyNamed(() => import('./pages/explore/ExplorePage'), 'ExplorePage');
 const OutputsPage = lazyNamed(() => import('./pages/Outputs'), 'OutputsPage');
 const SettingsPage = lazyNamed(() => import('./pages/Settings'), 'SettingsPage');
-const ThemesPage = lazyNamed(() => import('./pages/Themes'), 'ThemesPage');
+const ThemesPage = lazyNamed(() => import('./pages/themes/ThemesPage'), 'ThemesPage');
 const CompactDashboard = lazyNamed(() => import('./pages/compact/CompactDashboard'), 'CompactDashboard');
 
 const initialPage = (new URLSearchParams(location.search).get('page') as PageId | null) ?? 'overview';

@@ -296,6 +296,10 @@ function registerIpc(controller: AppController, settings: SettingsStore): void {
   ipcMain.handle(IPC.selectTheme, (_e, target, id: string) => controller.selectTheme(target, id));
   ipcMain.handle(IPC.saveTheme, (_e, theme) => controller.saveTheme(theme));
   ipcMain.handle(IPC.deleteTheme, (_e, id: string) => controller.deleteTheme(id));
+  ipcMain.handle(IPC.updateThemeLibrary, (_e, op) => controller.updateThemeLibrary(op));
+  ipcMain.handle(IPC.restoreTheme, (_e, id: string) => controller.restoreTheme(id));
+  ipcMain.handle(IPC.purgeTrashedTheme, (_e, id: string) => controller.purgeTrashedTheme(id));
+  ipcMain.handle(IPC.emptyThemeTrash, () => controller.emptyThemeTrash());
   ipcMain.handle(IPC.importThemeAsset, async () => {
     const m = controller.messages().dialogs;
     const options = {
@@ -483,6 +487,8 @@ async function bootstrap(): Promise<void> {
   controller.soundsDir = join(app.getPath('userData'), 'sounds');
   controller.assets = new ThemeAssets(join(app.getPath('userData'), 'theme-assets'), () => controller.messages());
   // Safe here: no theme editor is open yet, so no unsaved theme can be using an image.
+  // Trash entries past 30 days go first, so their images are freed too (#41).
+  controller.expireThemeTrash();
   controller.collectThemeAssets();
   controller.cssFiles = new CssFiles({
     dir: join(app.getPath('userData'), 'custom-css'),

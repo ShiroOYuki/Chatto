@@ -57,6 +57,13 @@ export const SETTINGS_POLICY: FieldPolicy<Settings> = {
       fromSharing: Boolean(theme.origin),
       customCssLength: theme.customCss.length,
     })),
+  // Folder names are the user's own words; only the shape helps.
+  themeLibrary: (library) => ({
+    folders: library.folders.length,
+    filedThemes: Object.keys(library.folderOf).length,
+    collapsed: library.collapsed.length,
+  }),
+  themeTrash: (trash) => trash.map((entry) => ({ reason: entry.reason, deletedAt: entry.deletedAt })),
   prefs: (prefs, options) => applyPolicy(prefs, PREFS_POLICY, options),
   windowBounds: 'keep',
   // The anonymous download-counting id stays on this computer.

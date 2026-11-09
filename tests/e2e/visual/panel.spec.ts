@@ -27,6 +27,24 @@ for (const scheme of ['light', 'dark'] as const) {
       });
     }
 
+    // Folders, the unfiled section and the trash (#41, #42), scrolled to the custom themes.
+    test('themes page with folders', async ({ panel, page }) => {
+      await panel.open('page=themes&library');
+      await page.getByRole('region', { name: 'Games', exact: true }).scrollIntoViewIfNeeded();
+      await page.evaluate(() => document.fonts.ready);
+      await expect(page).toHaveScreenshot(`themes-folders-${scheme}.png`, { mask: livePreviews(page) });
+    });
+
+    test('theme trash', async ({ panel, page }) => {
+      await panel.open('page=themes&library');
+      await page.getByRole('button', { name: '垃圾桶' }).click();
+      await expect(page.getByRole('dialog', { name: '垃圾桶' }).getByRole('listitem')).toHaveCount(2);
+      await page.evaluate(() => document.fonts.ready);
+      // Deletion dates and days left follow the real clock.
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toHaveScreenshot(`theme-trash-${scheme}.png`, { mask: [dialog.locator('li p.text-xs')] });
+    });
+
     test('compact dashboard', async ({ panel, page }) => {
       await panel.open('compact');
       await page.evaluate(() => document.fonts.ready);

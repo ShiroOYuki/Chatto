@@ -51,6 +51,15 @@ import type { LocalServer, Routed, ThemeSummary } from './server';
 import type { OverlayWindow } from './overlay-window';
 import { mainMessages, type MainMessages } from './messages';
 import { normalizePrefs, type SettingsStore } from './settings';
+import {
+  applyLibraryOp,
+  purgeTrashed,
+  restoreTheme as restoreFromTrash,
+  trashEntries,
+  trashTheme,
+  unexpiredTrash,
+  type LibraryOp,
+} from '../shared/themeLibrary';
 import { MAX_ASSET_BYTES, type ThemeAssets } from './theme-assets';
 import { packTheme, themeAssetFiles, unpackTheme } from './theme-package';
 import { SafeTokenStore } from './token-store';
@@ -90,6 +99,8 @@ export class AppController {
   cssFiles?: CssFiles;
   /** Tells an open theme editor that a CSS file save already updated the theme. */
   onCssFileChanged: (change: CssFileChange) => void = () => undefined;
+  /** The clock for trash dates; tests replace it. */
+  now: () => number = () => Date.now();
   /** Folder for user alert sounds, served by the local server. */
   soundsDir = '';
   /** Frame images used by themes, served by the local server. */
@@ -197,6 +208,8 @@ export class AppController {
       server: { port: this.server.port, embedUrl: this.server.url('embed'), overlayUrl: this.server.url('overlay') },
       themes: this.themes(),
       selectedThemes: settings.selectedThemes,
+      themeLibrary: settings.themeLibrary,
+      themeTrash: trashEntries(settings.themeTrash),
       share: this.share?.state() ?? {
         session: { status: 'signed-out' },
         termsAccepted: settings.share.termsAccepted,
@@ -661,20 +674,91 @@ export class AppController {
     });
   }
 
-  /** Deletes images no saved theme uses. Run at startup, never while an editor may hold unsaved ones. */
+  /**
+   * Deletes images no saved theme uses, counting themes in the trash (they may come back).
+   * Run at startup, never while an editor may hold unsaved ones.
+   */
   collectThemeAssets(): string[] {
-    return this.assets.collect(new Set(this.themes().flatMap(themeAssetFiles)));
+    const trashed = this.settings.get().themeTrash.map((entry) => entry.theme);
+    return this.assets.collect(new Set([...this.themes(), ...trashed].flatMap(themeAssetFiles)));
   }
 
+  /** Moves a custom theme to the trash (#41); outputs using it switch back to the default theme. */
   deleteTheme(themeId: string): void {
+    if (!this.#customTheme(themeId)) throw new Error(`Unknown custom theme ${themeId}`);
     this.cssFiles?.remove(themeId);
     this.settings.update((draft) => {
-      draft.customThemes = draft.customThemes.filter((theme) => theme.id !== themeId);
+      const next = trashTheme(
+        { themes: draft.customThemes, library: draft.themeLibrary, trash: draft.themeTrash },
+        themeId,
+        { id: randomUUID(), now: this.now() },
+      );
+      draft.customThemes = next.themes;
+      draft.themeLibrary = next.library;
+      draft.themeTrash = next.trash;
       for (const target of VIEWER_TARGETS) {
         if (draft.selectedThemes[target] === themeId) draft.selectedThemes[target] = PRESET_THEMES[0]!.id;
       }
     });
     this.server.refreshThemes();
     this.#emit();
+  }
+
+  /** Folders, order and collapsed sections of the themes page (#42). */
+  updateThemeLibrary(op: LibraryOp): void {
+    this.settings.update((draft) => {
+      const next = applyLibraryOp({ themes: draft.customThemes, library: draft.themeLibrary }, op);
+      draft.customThemes = next.themes;
+      draft.themeLibrary = next.library;
+    });
+    // The OBS plugin lists themes in this order.
+    if (op.type === 'move-theme') this.server.refreshThemes();
+    this.#emit();
+  }
+
+  /** Brings a theme back from the trash, as a custom theme; returns its id. Outputs keep their themes. */
+  restoreTheme(trashId: string): string {
+    let restored = '';
+    this.settings.update((draft) => {
+      const { state, themeId } = restoreFromTrash(
+        { themes: draft.customThemes, library: draft.themeLibrary, trash: draft.themeTrash },
+        trashId,
+        { isTaken: (id) => Boolean(getPresetTheme(id)), freshId: () => `custom-${randomUUID()}` },
+      );
+      draft.customThemes = state.themes;
+      draft.themeLibrary = state.library;
+      draft.themeTrash = state.trash;
+      restored = themeId;
+    });
+    const theme = this.#customTheme(restored);
+    if (theme) this.cssFiles?.write(theme.id, theme.customCss);
+    this.server.refreshThemes();
+    this.#emit();
+    return restored;
+  }
+
+  /** Deletes a trash entry for good; its images are freed at the next startup. */
+  purgeTrashedTheme(trashId: string): void {
+    this.settings.update((draft) => {
+      draft.themeTrash = purgeTrashed(draft.themeTrash, trashId);
+    });
+    this.#emit();
+  }
+
+  emptyThemeTrash(): void {
+    this.settings.update((draft) => {
+      draft.themeTrash = [];
+    });
+    this.#emit();
+  }
+
+  /** Clears trash entries older than 30 days. Run at startup, before the images are collected. */
+  expireThemeTrash(): void {
+    const { themeTrash } = this.settings.get();
+    const kept = unexpiredTrash(themeTrash, this.now());
+    if (kept.length === themeTrash.length) return;
+    this.settings.update((draft) => {
+      draft.themeTrash = kept;
+    });
   }
 }

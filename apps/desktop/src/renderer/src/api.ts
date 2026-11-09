@@ -7,6 +7,61 @@ import type { UpdateNote } from '../../shared/updateNotes';
 import { duplicateOf, emptyShortcuts } from '../../shared/shortcuts';
 import { ShareClient } from '../../shared/share/client';
 import { createMemoryAssets } from '../../shared/share/memoryAssets';
+import {
+  applyLibraryOp,
+  emptyLibrary,
+  restoreTheme,
+  trashEntries,
+  trashTheme,
+  type LibraryState,
+  type ThemeLibrary,
+  type TrashedTheme,
+} from '../../shared/themeLibrary';
+
+const DAY = 86_400_000;
+const previewTheme = (base: number, id: string, name: string, extra: Partial<ChatTheme> = {}): ChatTheme => ({
+  ...PRESET_THEMES[base]!,
+  id,
+  name,
+  builtIn: false,
+  ...extra,
+});
+
+/** `?library`: custom themes in two folders and a trash, for previewing the themes page (#41, #42). */
+function previewLibrary(): { themes: ChatTheme[]; library: ThemeLibrary; trash: TrashedTheme[] } {
+  const now = Date.now();
+  return {
+    themes: [
+      previewTheme(0, 'custom-game', 'Game night'),
+      previewTheme(3, 'custom-talk', 'Just chatting', { customCss: '.chatto-author { letter-spacing: 0.05em; }' }),
+      previewTheme(5, 'custom-retro', 'Retro terminal'),
+      previewTheme(1, 'custom-loose', 'Loose idea'),
+    ],
+    library: {
+      folders: [
+        { id: 'folder-games', name: 'Games' },
+        { id: 'folder-talks', name: 'Talks' },
+      ],
+      folderOf: { 'custom-game': 'folder-games', 'custom-retro': 'folder-games', 'custom-talk': 'folder-talks' },
+      collapsed: [],
+    },
+    trash: [
+      {
+        id: 'trash-1',
+        theme: previewTheme(2, 'custom-old', 'Old bubbles'),
+        deletedAt: now - 3 * DAY,
+        reason: 'deleted',
+      },
+      {
+        id: 'trash-2',
+        theme: previewTheme(4, 'custom-game', 'Game night'),
+        deletedAt: now - 27 * DAY,
+        reason: 'overwritten',
+        folderId: 'folder-games',
+      },
+    ],
+  };
+}
 import { createFakeShareBackend } from '@chatto/share/fake';
 
 declare global {
@@ -33,6 +88,7 @@ declare global {
  * `?e2e` turns off the random chat stream and exposes `window.__chattoMock`
  * so end-to-end tests can push exact events and state.
  * `?onboarding` shows the overview's getting-started list (signed out, nothing set up).
+ * `?library` adds custom themes in folders and a trash (#41, #42).
  * `?update` opens the update dialog as if the startup check found a version (`?update=nonotes`
  * without its notes); `?opened` opens a theme file as if Chatto was launched with one (#39, #40).
  */
@@ -108,6 +164,8 @@ function createMockApi(): ChattoApi {
     server: { port: 4820, embedUrl: 'http://127.0.0.1:4820/embed', overlayUrl: 'http://127.0.0.1:4820/overlay' },
     themes: PRESET_THEMES,
     selectedThemes: { overlay: 'matcha-glass', embed: 'washi', alerts: 'bubble' },
+    themeLibrary: emptyLibrary(),
+    themeTrash: [],
     share: { session: { status: 'signed-out' }, termsAccepted: 0 },
     openedThemeFiles: params.has('opened')
       ? [
@@ -122,6 +180,16 @@ function createMockApi(): ChattoApi {
     state.auth = { status: 'signed-out' };
     state.channel = { state: 'idle' };
     state.selectedThemes = { overlay: 'matcha-glass', embed: 'matcha-glass', alerts: 'matcha-glass' };
+  }
+  // The trash keeps whole themes; the state only lists them, like the main process.
+  let trash: TrashedTheme[] = [];
+  if (params.has('library')) {
+    const seed = previewLibrary();
+    trash = seed.trash;
+    state.themes = [...PRESET_THEMES, ...seed.themes];
+    state.themeLibrary = seed.library;
+    state.themeTrash = trashEntries(trash);
+    state.selectedThemes = { ...state.selectedThemes, embed: 'custom-talk' };
   }
   if (params.has('update')) {
     state.update = {
@@ -145,6 +213,20 @@ function createMockApi(): ChattoApi {
   const emitChat = (event: ChatEvent) => {
     const item = log.receive(event);
     chatListeners.forEach((listener) => listener(item));
+  };
+  const library = (): LibraryState & { trash: TrashedTheme[] } => ({
+    themes: state.themes.filter((theme) => !theme.builtIn),
+    library: state.themeLibrary,
+    trash,
+  });
+  const commitLibrary = (next: LibraryState & { trash?: TrashedTheme[] }, patch: Partial<AppState> = {}) => {
+    if (next.trash) trash = next.trash;
+    set({
+      themes: [...state.themes.filter((theme) => theme.builtIn), ...next.themes],
+      themeLibrary: next.library,
+      themeTrash: trashEntries(trash),
+      ...patch,
+    });
   };
   const saveTheme = (theme: ChatTheme) => {
     const exists = state.themes.some((item) => item.id === theme.id);
@@ -259,7 +341,27 @@ function createMockApi(): ChattoApi {
     importSound: async () => null,
     selectTheme: async (target, themeId) => set({ selectedThemes: { ...state.selectedThemes, [target]: themeId } }),
     saveTheme: async (theme) => saveTheme(theme),
-    deleteTheme: async (themeId) => set({ themes: state.themes.filter((item) => item.id !== themeId) }),
+    deleteTheme: async (themeId) => {
+      const selectedThemes = { ...state.selectedThemes };
+      for (const target of Object.keys(selectedThemes) as (keyof typeof selectedThemes)[]) {
+        if (selectedThemes[target] === themeId) selectedThemes[target] = PRESET_THEMES[0]!.id;
+      }
+      commitLibrary(trashTheme(library(), themeId, { id: `trash-${Date.now().toString(36)}`, now: Date.now() }), {
+        selectedThemes,
+      });
+    },
+    updateThemeLibrary: async (op) => commitLibrary(applyLibraryOp(library(), op)),
+    restoreTheme: async (trashId) => {
+      const { state: next, themeId } = restoreTheme(library(), trashId, {
+        isTaken: (id) => PRESET_THEMES.some((theme) => theme.id === id),
+        freshId: () => `custom-${Date.now().toString(36)}`,
+      });
+      commitLibrary(next);
+      return themeId;
+    },
+    purgeTrashedTheme: async (trashId) =>
+      commitLibrary({ ...library(), trash: trash.filter((item) => item.id !== trashId) }),
+    emptyThemeTrash: async () => commitLibrary({ ...library(), trash: [] }),
     // The browser preview has no asset folder: frames keep the picked image as a data URL.
     importThemeAsset: () => pickImageAsDataUrl(),
     // The browser preview cannot build packages; e2e tests read what would have been saved.

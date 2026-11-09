@@ -11,6 +11,13 @@ import { DEFAULT_THEME_ID } from '@chatto/chat-ui/themes';
 import type { AppPrefs } from '../shared/ipc';
 import { DEFAULT_OVERLAY_LOOK, normalizeOverlayLook, type OverlayLook } from '../shared/overlayLook';
 import { emptyShortcuts, normalizeShortcuts, type ShortcutBindings } from '../shared/shortcuts';
+import {
+  emptyLibrary,
+  normalizeLibrary,
+  normalizeTrash,
+  type ThemeLibrary,
+  type TrashedTheme,
+} from '../shared/themeLibrary';
 import { app } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
@@ -52,7 +59,12 @@ export interface Settings {
   alertsOverlay: OverlayWindowSettings;
   alerts: AlertSettings;
   selectedThemes: Record<ViewerTarget, string>;
+  /** Custom themes, in the order the themes page shows them. */
   customThemes: ChatTheme[];
+  /** Folders and collapsed sections of the themes page (#42); never stored in themes. */
+  themeLibrary: ThemeLibrary;
+  /** Deleted themes, kept for 30 days (#41). */
+  themeTrash: TrashedTheme[];
   prefs: AppPrefs;
   /** Main window bounds, restored on launch. */
   windowBounds?: Rect;
@@ -71,6 +83,8 @@ const defaults = (): Settings => ({
   alerts: defaultAlertSettings(),
   selectedThemes: { overlay: DEFAULT_THEME_ID, embed: DEFAULT_THEME_ID, alerts: DEFAULT_THEME_ID },
   customThemes: [],
+  themeLibrary: emptyLibrary(),
+  themeTrash: [],
   prefs: {
     uiMode: 'full',
     appearance: 'system',
@@ -163,6 +177,12 @@ export class SettingsStore {
         prefs: normalizePrefs(raw.prefs, onboardingBase(raw, base.prefs)),
         share: normalizeShareSettings(raw.share),
         shortcuts: normalizeShortcuts(raw.shortcuts),
+        customThemes: Array.isArray(raw.customThemes) ? raw.customThemes : [],
+        themeLibrary: normalizeLibrary(
+          raw.themeLibrary,
+          (Array.isArray(raw.customThemes) ? raw.customThemes : []).map((theme) => theme?.id),
+        ),
+        themeTrash: normalizeTrash(raw.themeTrash),
       };
     } catch {
       return defaults();

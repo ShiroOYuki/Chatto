@@ -41,6 +41,7 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - 帳號頁（`pages/accounts/`）是所有帳號的統一入口：上半 Chatto 帳號（分享用）、下半直播平台（登入與頻道連線）；左側欄底部的帳號卡也開這一頁。兩者只在介面合併，底層仍分開。探索頁不放帳號管理。
 - 主題分享（「探索」頁，GitHub #4）：資料型別、檢查規則、`ShareBackend` 與 HTTP 協定在 `packages/share`，App 端流程是 `apps/desktop/src/shared/share/client.ts`（`ShareClient`），服務是 `apps/share-worker`。App 裡 `ShareClient` 在 main process，session token 不離開 main；控制台經 IPC `share:call`（`SHARE_METHODS`）呼叫。服務部署在 `api.chattolive.com`：打包版連正式服務，開發版預設用記憶體內的假服務（`@chatto/share/fake`），`MAIN_VITE_SHARE_API_URL`（建置時）或 `CHATTO_SHARE_API`（執行時）可設成網址或 `fake`。分享帳號和聊天室連線分開，不得使用聊天平台的 token。API 只能向後相容地擴充（舊版 App 要能用）。見 `docs/architecture.md`「主題分享」與 `docs/share-service.md`。
 - 分享條款、隱私說明與 App 免責聲明的文字只有一份：`packages/share/src/legalText.ts`，App（`shareTerms`、`legal` 訊息）與網站（`apps/site`）都從這裡讀。改分享條款或隱私說明要遞增 `SHARE_TERMS_VERSION` 與 `LEGAL_UPDATED`，網站會在推到 `main` 時由 `site.yml` 自動部署（也可手動 `npm run deploy -w @chatto/site`）。
+- 主題頁的分區、排序與垃圾桶（#41、#42）：純函式在 `apps/desktop/src/shared/themeLibrary.ts`（main 與網頁 mock 共用），存在設定的 `themeLibrary`（分區、主題 → 分區、收合）與 `themeTrash`，主題順序就是 `customThemes` 的順序；這些**不寫進主題**（從探索安裝的主題才不會變成「已修改」，匯出也不會帶出去）。刪除主題一律先進垃圾桶，保留 30 天（啟動時 `expireThemeTrash()` 清除），清理 `theme-assets` 時把垃圾桶裡的主題算進去。介面在 `pages/themes/`（`library.ts` 是分組、搜尋、上下移的純函式）；網頁 mock 用 `?library` 預先放分區與垃圾桶。
 - 控制台縮到系統匣或最小化 5 分鐘後會換掉視窗省記憶體（`main/window-release.ts`）：系統匣是關掉、重開時重建，最小化是重建一個最小化的新視窗並停在同一頁（`?page=`）。因此控制台需要的工作階段資料（聊天紀錄、統計、兌換清單）放在 main 的 `ControlLog`（`shared/controlLog.ts`），不要只存在 renderer；有未儲存的東西時呼叫 `appWindow.setUnsavedWork(true)`。見 `docs/architecture.md`「控制台視窗與記憶體」。
 - main 的紀錄檔（`main/logger.ts`）與診斷資訊匯出（`main/diagnostics.ts`）不得記錄 token 或聊天內容。**新增設定欄位時要在 `SETTINGS_POLICY`／`PREFS_POLICY` 決定能不能匯出**（不寫會編譯失敗）。
 - 提醒邏輯（沉寂偵測、事件規則）是 `apps/desktop/src/main/alerts.ts` 的純函式；內建提示音是從 soundcn 收進來的 CC0 音效（`packages/chat-ui/src/soundcn/`，由 `sounds.ts` 動態載入）；只能收 CC0 音效，並記到 `THIRD_PARTY_NOTICES.md`，不得使用 soundcn 的 Blizzard 音效。
@@ -87,8 +88,8 @@ docs/               architecture.md、message-format.md、theming.md、testing.m
 - 大頁面拆成資料夾，例如 `pages/theme-editor/`：狀態 hook（`useThemeDraft`、`usePreviewHighlight`）、純函式（`draft.ts`，有單元測試）、各區塊面板（`panels/`）、參數欄位（`fields/`）。只給單一頁面用的元件放在該頁資料夾，多處共用的才放 `components/`。
 - 主題草稿用型別化的 `set('author', 'box')(value)`（`PathSetter`）更新，路徑或值的型別錯了會直接編譯失敗。
 
-- 贊助連結（Ko-fi、綠界）集中在 `apps/desktop/src/shared/support.ts`，改動時同步 `README.md`、`README.zh-TW.md` 與 `.github/FUNDING.yml`。
-- 說明文件分兩種、各有英文與繁中：`README.md`／`README.zh-TW.md` 給一般使用者（功能、下載、開始使用，詳細教學連到網站），`CONTRIBUTING.md`／`CONTRIBUTING.zh-TW.md` 給開發者（環境、指令、結構、分支與 CI、發佈）。改動時兩種語言一起改。
+- 贊助連結（Ko-fi、綠界）集中在 `apps/desktop/src/shared/support.ts`，改動時同步 `README.md`、`README.zh-TW.md`、`README.ja.md` 與 `.github/FUNDING.yml`。
+- 說明文件分兩種：`README.md`／`README.zh-TW.md`／`README.ja.md`（英文、繁中、日文）給一般使用者（功能、下載、開始使用，詳細教學連到網站），`CONTRIBUTING.md`／`CONTRIBUTING.zh-TW.md`（英文、繁中）給開發者（環境、指令、結構、分支與 CI、發佈）。改動時各語言一起改。
 
 ## 多語系
 

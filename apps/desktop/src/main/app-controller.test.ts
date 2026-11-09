@@ -99,6 +99,8 @@ function fakeSettings(initial: Partial<Settings> = {}) {
     },
     share: { clientId: 'client', termsAccepted: 0 },
     shortcuts: emptyShortcuts(),
+    themeLibrary: { folders: [], folderOf: {}, collapsed: [] },
+    themeTrash: [],
     ...initial,
   };
   return {
@@ -235,6 +237,63 @@ describe('AppController themes', () => {
       alerts: PRESET_THEMES[0]!.id,
     });
   });
+
+  it('moves deleted themes to the trash and restores them into their folder (#41)', () => {
+    const { controller, settings, onChange } = setup({
+      customThemes: [customTheme('a'), customTheme('b')],
+      themeLibrary: { folders: [{ id: 'f1', name: 'Games' }], folderOf: { a: 'f1' }, collapsed: [] },
+      selectedThemes: { overlay: 'a', embed: 'washi', alerts: 'washi' },
+    });
+    controller.now = () => 1000;
+    controller.deleteTheme('a');
+    const [entry] = onChange.mock.lastCall![0].themeTrash;
+    expect(entry).toMatchObject({ themeId: 'a', name: '我的主題', deletedAt: 1000, reason: 'deleted' });
+    expect(settings.get().themeLibrary.folderOf).toEqual({});
+
+    expect(controller.restoreTheme(entry.id)).toBe('a');
+    expect(settings.get().customThemes.map((theme) => theme.id)).toEqual(['b', 'a']);
+    expect(settings.get().themeLibrary.folderOf).toEqual({ a: 'f1' });
+    expect(settings.get().themeTrash).toEqual([]);
+    // Outputs that switched to the default theme stay there.
+    expect(settings.get().selectedThemes.overlay).toBe(PRESET_THEMES[0]!.id);
+  });
+
+  it('refuses to delete built-in or unknown themes', () => {
+    const { controller } = setup();
+    expect(() => controller.deleteTheme(PRESET_THEMES[0]!.id)).toThrow(/Unknown custom theme/);
+    expect(() => controller.deleteTheme('gone')).toThrow(/Unknown custom theme/);
+  });
+
+  it('purges, empties and expires the trash after 30 days', () => {
+    const day = 86_400_000;
+    const { controller, settings } = setup({ customThemes: [customTheme('a'), customTheme('b'), customTheme('c')] });
+    controller.now = () => 0;
+    controller.deleteTheme('a');
+    controller.now = () => 20 * day;
+    controller.deleteTheme('b');
+    controller.deleteTheme('c');
+    controller.purgeTrashedTheme(settings.get().themeTrash.find((entry) => entry.theme.id === 'c')!.id);
+    controller.now = () => 31 * day;
+    controller.expireThemeTrash();
+    expect(settings.get().themeTrash.map((entry) => entry.theme.id)).toEqual(['b']);
+    controller.emptyThemeTrash();
+    expect(settings.get().themeTrash).toEqual([]);
+  });
+
+  it('files and orders themes in folders (#42)', () => {
+    const { controller, settings, server } = setup({ customThemes: [customTheme('a'), customTheme('b')] });
+    controller.updateThemeLibrary({ type: 'create-folder', id: 'f1', name: 'Games' });
+    controller.updateThemeLibrary({ type: 'move-theme', themeId: 'a', folderId: 'f1', before: null });
+    expect(settings.get().themeLibrary).toEqual({
+      folders: [{ id: 'f1', name: 'Games' }],
+      folderOf: { a: 'f1' },
+      collapsed: [],
+    });
+    expect(settings.get().customThemes.map((theme) => theme.id)).toEqual(['b', 'a']);
+    expect(server.refreshThemes).toHaveBeenCalledOnce();
+    // Themes themselves never change, so installed ones stay unmodified.
+    expect(settings.get().customThemes[1]).toEqual(customTheme('a'));
+  });
 });
 
 describe('AppController theme frame images', () => {
@@ -301,6 +360,16 @@ describe('AppController theme frame images', () => {
     context.controller.saveTheme(framed(assetSrc(used)));
     expect(context.controller.collectThemeAssets()).toEqual([unused]);
     expect(context.controller.assets.has(used)).toBe(true);
+  });
+
+  it('keeps images of themes in the trash until they are purged (#41)', () => {
+    const context = withAssets();
+    const used = context.controller.assets.add(PNG);
+    context.controller.saveTheme(framed(assetSrc(used)));
+    context.controller.deleteTheme(framed(assetSrc(used)).id);
+    expect(context.controller.collectThemeAssets()).toEqual([]);
+    context.controller.emptyThemeTrash();
+    expect(context.controller.collectThemeAssets()).toEqual([used]);
   });
 });
 

@@ -206,7 +206,7 @@
 
 主題編輯器的「自訂 CSS」區塊有「在 VSCode 開啟」按鈕（main：`css-files.ts` 的 `CssFiles`；renderer：`useExternalCss`）：
 
-- 檔案在 userData 的 `custom-css/<主題 id>.css`，路徑固定，主題改名不影響；刪除主題時一起刪除。
+- 檔案在 userData 的 `custom-css/<主題 id>.css`，路徑固定，主題改名不影響；刪除主題時一起刪除，從垃圾桶還原時重新寫出。
 - **檔案永遠等於已儲存的主題**：
   - 在外部編輯器存檔：Chatto 直接儲存主題，Overlay／OBS 立即更新（`AppController.applyExternalCss`）。資料夾在 Chatto 執行期間都在監看，不需要開著主題編輯器。
   - 主題編輯器開著時，存檔的 CSS 同時進入草稿和已儲存版本（`acceptSavedCss`），其他未儲存的修改保留。
@@ -222,7 +222,7 @@
 - **切線** `slice` 以圖片像素計算 `[上, 右, 下, 左]`。外框畫在一圈透明框線裡，寬度是 `slice × scale`，所以內容會像有真的框線一樣往內縮；`outset` 讓外框超出方框。
 - **高解析度圖片**：用兩倍大的圖並把 `scale` 設成 0.5，在高 DPI 螢幕與 OBS 縮放時比較銳利。
 - **和其他參數的關係**：有圖片時 `border` 不作用；`border-image` 不吃圓角，`radius` 只影響背景與模糊，建議背景用 `transparent`、交給 `fill`；`shadow` 改成 `filter: drop-shadow()`，會沿著圖片（連文字一起）投影；`backdropBlur` 仍是矩形範圍。內距建議不小於外框寬度。
-- **素材**：在編輯器選圖時，圖片複製到 userData `theme-assets/<sha256>.<副檔名>`，主題裡存 `asset:<檔名>`，本機 server 在 `/theme-assets/<檔名>` 提供（Viewer 自己的建置檔在 `/assets/`）。同一張圖只存一份；啟動時刪除沒有任何已儲存主題使用的圖。只接受 PNG（含 APNG）、WebP、GIF，單檔 2 MB 以內，依檔案內容判斷格式；不接受 SVG。`src` 也可以是 `data:image/(png|webp|gif);base64,…`，內建主題用這種方式內嵌圖片。其他來源在 `normalizeTheme()` 時會被移除。
+- **素材**：在編輯器選圖時，圖片複製到 userData `theme-assets/<sha256>.<副檔名>`，主題裡存 `asset:<檔名>`，本機 server 在 `/theme-assets/<檔名>` 提供（Viewer 自己的建置檔在 `/assets/`）。同一張圖只存一份；啟動時刪除沒有任何已儲存主題（含垃圾桶裡的主題）使用的圖。只接受 PNG（含 APNG）、WebP、GIF，單檔 2 MB 以內，依檔案內容判斷格式；不接受 SVG。`src` 也可以是 `data:image/(png|webp|gif);base64,…`，內建主題用這種方式內嵌圖片。其他來源在 `normalizeTheme()` 時會被移除。
 - **編輯器**：切線編輯器顯示原圖與四條虛線，可拖曳，或聚焦後用方向鍵（Shift 一次 10 px）；選新圖時先切成三等分。
 - **在自訂 CSS 覆寫**：產生的 CSS 用 `border-image-source`、`border-image-slice`、`border-image-width`、`border-image-outset`、`border-image-repeat`，自訂 CSS 可以直接覆寫這些屬性。
 

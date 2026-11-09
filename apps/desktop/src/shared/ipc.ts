@@ -18,6 +18,7 @@ import type { OverlayLook } from './overlayLook';
 import type { ControlLogSnapshot, LoggedChatEvent } from './controlLog';
 import type { UpdateNote } from './updateNotes';
 import type { ShortcutAction, ShortcutBindings, ShortcutResult } from './shortcuts';
+import type { LibraryOp, ThemeLibrary, TrashEntry } from './themeLibrary';
 
 /** The two desktop windows: the chat overlay and the event alert overlay. */
 export type OverlayWindowId = 'overlay' | 'alerts';
@@ -179,6 +180,10 @@ export interface AppState {
   server: { port: number; embedUrl: string; overlayUrl: string };
   themes: ChatTheme[];
   selectedThemes: Record<ViewerTarget, string>;
+  /** Folders, order and collapsed sections of the themes page (#42). */
+  themeLibrary: ThemeLibrary;
+  /** Deleted themes kept for 30 days, newest first (#41). */
+  themeTrash: TrashEntry[];
   /** Theme sharing account; the session token stays in the main process. */
   share: ShareState;
   /** `.chattotheme` files opened from Windows, waiting for the user to import or cancel them, oldest first (#40). */
@@ -249,7 +254,15 @@ export interface ChattoApi {
 
   selectTheme(target: ViewerTarget, themeId: string): Promise<void>;
   saveTheme(theme: ChatTheme): Promise<void>;
+  /** Moves a custom theme to the trash (#41). */
   deleteTheme(themeId: string): Promise<void>;
+  /** Changes folders, order or collapsed sections of the themes page (#42). */
+  updateThemeLibrary(op: LibraryOp): Promise<void>;
+  /** Brings a theme back from the trash; resolves to its id (a new one when the old id is taken). */
+  restoreTheme(trashId: string): Promise<string>;
+  /** Deletes a trash entry for good. */
+  purgeTrashedTheme(trashId: string): Promise<void>;
+  emptyThemeTrash(): Promise<void>;
 
   /** Lets the user pick an image for a frame; resolves to its `asset:` source, or null when cancelled. */
   importThemeAsset(): Promise<string | null>;
@@ -347,6 +360,10 @@ export const IPC = {
   selectTheme: 'theme:select',
   saveTheme: 'theme:save',
   deleteTheme: 'theme:delete',
+  updateThemeLibrary: 'theme:update-library',
+  restoreTheme: 'theme:restore',
+  purgeTrashedTheme: 'theme:purge',
+  emptyThemeTrash: 'theme:empty-trash',
   importThemeAsset: 'theme:import-asset',
   exportThemePackage: 'theme:export-package',
   importThemePackage: 'theme:import-package',

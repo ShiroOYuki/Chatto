@@ -168,7 +168,7 @@
 
 ### 對話框
 
-- 不可復原的動作（刪除主題）用 shadcn 的 `AlertDialog` 確認：標題說明要做什麼、描述說明後果、確認按鈕用 `destructive`，圓角 `rounded-xl`。
+- 不可復原或影響範圍大的動作（刪除主題、刪除分區、永久刪除、清空垃圾桶）用 shadcn 的 `AlertDialog` 確認：標題說明要做什麼、描述說明後果、確認按鈕用 `destructive`，圓角 `rounded-xl`。
 - 需要閱讀的內容用 kit `Modal`。
 - 其他情況不要跳對話框，能在原地說明的就在原地說明。
 
