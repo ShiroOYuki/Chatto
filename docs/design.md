@@ -229,6 +229,9 @@
   - 有 `layout`／`layoutId` 的元素每次重繪都會量整頁版面，一律用 memo 過的元件包起來（`SlidingHighlight`），不要直接寫在會隨聊天更新的元件裡。
   - 聊天紀錄的每一行（`ChatLine`、`NoticeLine`）是 memo 元件，紀錄項目要保持同一個物件，只有新增或改變的那行才重繪。
   - 常駐動畫只動 HTML 元素的 `transform`／`opacity`，讓合成器處理；不要動 SVG 內部的 path（會整張重畫）。茶煙每縷是獨立的 `<svg>`。
+  - 讀 `useAppState()` 的元件在每次狀態更新都會重繪，memo 擋不住。只需要介面語言、聊天室語言或本機 port 時用 `useDisplaySettings()`（`useMessages`、`useThemeName`、`useOutputTheme`、`useThemeAssetUrl` 都走它）。
+  - 主題卡片（`ThemeCard`，比對用 `sameCard`）與卡片預覽（`StaticThemePreview`）是 memo 元件。store 收到狀態時用 `keepUnchanged` 沿用內容沒變的主題物件，卡片的動作是頁面上一個固定的 `CardActions` 物件。
+  - 主題頁分區收合用 CSS 的 `grid-template-rows` 過渡（0.24 秒），卡片不卸載；動畫結束後內容設成 `hidden`，還沒看過的預覽就不會畫。不要改回收合時卸載（重開會重畫所有預覽、重播進場動畫，下方分區也會跳動）。
 - 已經拿掉、不要加回來的：border beam、spotlight 光暈、hover 上浮、空狀態漂浮、吉祥物搖晃、大面積彩紙。
 - 例外：左側主導覽的圖示在 hover 時小晃動（`Sidebar.tsx` 的 `NavItem`），是刻意保留的唯一 hover 動態，不要套到其他元件。
 

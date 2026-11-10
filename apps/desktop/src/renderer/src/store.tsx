@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
 import type { AppState } from '../../shared/ipc';
 import { api } from './api';
 import { messageHistory, messageRate, type LogEntry } from '../../shared/chatLog';
@@ -6,6 +6,7 @@ import { emptyControlLogView, reduceControlLogView } from '../../shared/controlL
 import type { RedemptionEntry } from '../../shared/redemptionLog';
 import { previewSound } from './services/alerts';
 import { runAction } from './services/run';
+import { keepUnchanged } from './lib/keepUnchanged';
 
 export type { LogEntry } from '../../shared/chatLog';
 export type { RedemptionEntry } from '../../shared/redemptionLog';
@@ -33,7 +34,19 @@ interface RedemptionsValue {
   dismiss(key: string): void;
 }
 
+/**
+ * The few settings that previews and interface text depend on. A context of their own, because
+ * everything reading `useAppState()` re-renders on every state update, which memoized theme cards
+ * and previews must not.
+ */
+export interface DisplaySettings {
+  locale?: AppState['prefs']['locale'];
+  chatLocale?: AppState['prefs']['chatLocale'];
+  serverPort?: number;
+}
+
 const AppStateContext = createContext<AppState | null>(null);
+const DisplayContext = createContext<DisplaySettings>({});
 const ChatLogContext = createContext<ChatLogValue | null>(null);
 const RedemptionsContext = createContext<RedemptionsValue | null>(null);
 
@@ -50,8 +63,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    void api.getState().then(setState);
-    return api.onState(setState);
+    // Theme cards and previews are memoized on the theme objects; keep the ones that did not change.
+    const apply = (next: AppState) =>
+      setState((previous) => (previous ? { ...next, themes: keepUnchanged(previous.themes, next.themes) } : next));
+    void api.getState().then(apply);
+    return api.onState(apply);
   }, []);
 
   // The quiet-spell reminder plays here, so it sounds even when no overlay window is open.
@@ -97,17 +113,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
   };
 
+  const locale = state?.prefs.locale;
+  const chatLocale = state?.prefs.chatLocale;
+  const serverPort = state?.server.port;
+  const display = useMemo(() => ({ locale, chatLocale, serverPort }), [locale, chatLocale, serverPort]);
+
   return (
     <AppStateContext.Provider value={state}>
-      <ChatLogContext.Provider value={value}>
-        <RedemptionsContext.Provider value={redemptions}>{children}</RedemptionsContext.Provider>
-      </ChatLogContext.Provider>
+      <DisplayContext.Provider value={display}>
+        <ChatLogContext.Provider value={value}>
+          <RedemptionsContext.Provider value={redemptions}>{children}</RedemptionsContext.Provider>
+        </ChatLogContext.Provider>
+      </DisplayContext.Provider>
     </AppStateContext.Provider>
   );
 }
 
 export function useAppState(): AppState | null {
   return useContext(AppStateContext);
+}
+
+/** Languages and the local server port; changes only when one of them does. */
+export function useDisplaySettings(): DisplaySettings {
+  return useContext(DisplayContext);
 }
 
 /** This session's channel points redemptions, collected even while the chat page is closed. */

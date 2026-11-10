@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, ChevronRight, Ellipsis, Pencil, Trash2 } from 'lucide-react';
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { useMessages } from '../../i18n';
 import { themes } from '../../services/themes';
 import { Stagger } from '../../components/motion';
@@ -13,6 +13,8 @@ import {
 } from '../../components/ui/dropdown-menu';
 import type { LibraryOp } from '../../../../shared/themeLibrary';
 import { DRAG_FOLDER, DRAG_THEME, sectionFolder, type ThemeSection } from './library';
+
+const SLIDE_MS = 240;
 
 /**
  * One section of the themes page: a header that collapses it and takes dropped themes (and,
@@ -45,6 +47,15 @@ export function ThemeSectionView({
   const folderId = sectionFolder(section);
   const isFolder = section.kind === 'folder';
   const open = !collapsed || !canCollapse;
+  // Once the slide has finished, a closed section drops out of layout, so its card previews,
+  // drawn only when they come into view, stay undrawn until it opens again.
+  const [shut, setShut] = useState(!open);
+  if (open && shut) setShut(false);
+  useEffect(() => {
+    if (open) return;
+    const timer = setTimeout(() => setShut(true), SLIDE_MS + 40);
+    return () => clearTimeout(timer);
+  }, [open]);
 
   const accepts = (event: React.DragEvent) =>
     (folderId !== undefined && event.dataTransfer.types.includes(DRAG_THEME)) ||
@@ -130,8 +141,18 @@ export function ThemeSectionView({
           </DropdownMenu>
         ) : null}
       </header>
-      {open ? (
-        <div id={gridId}>
+      {/* Collapsing only slides the row shut: the cards stay mounted, so opening the section again
+          neither redraws their previews nor replays the stagger, and the sections below glide
+          instead of jumping. `visibility` flips at the end, taking the cards out of reach. */}
+      <div
+        id={gridId}
+        inert={!open}
+        style={{ transitionDuration: `${SLIDE_MS}ms` }}
+        className={`grid transition-[grid-template-rows,opacity,visibility] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none ${
+          open ? 'visible grid-rows-[1fr] opacity-100' : 'invisible grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div hidden={shut} className="min-h-0 overflow-clip [overflow-clip-margin:12px]">
           {section.themes.length > 0 ? (
             <Stagger className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">{children}</Stagger>
           ) : (
@@ -140,7 +161,7 @@ export function ThemeSectionView({
             </p>
           )}
         </div>
-      ) : null}
+      </div>
     </section>
   );
 }

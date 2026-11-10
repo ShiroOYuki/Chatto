@@ -1,7 +1,7 @@
 import { localizeTheme } from '@chatto/chat-ui';
 import { chatLocaleOf, DEFAULT_LOCALE, type ChatTheme, type Locale } from '@chatto/core';
 import { useCallback } from 'react';
-import { useAppState } from '../store';
+import { useDisplaySettings } from '../store';
 import accounts from './messages/accounts';
 import alerts from './messages/alerts';
 import appDialogs from './messages/appDialogs';
@@ -69,13 +69,13 @@ export function messagesFor(locale: Locale): Messages {
 
 /** The interface language (`prefs.locale`). */
 export function useLocale(): Locale {
-  return useAppState()?.prefs.locale ?? DEFAULT_LOCALE;
+  return useDisplaySettings().locale ?? DEFAULT_LOCALE;
 }
 
 /** The chat language: event texts in previews follow what the overlays and OBS show. */
 export function useChatLocale(): Locale {
-  const prefs = useAppState()?.prefs;
-  return prefs ? chatLocaleOf(prefs.chatLocale, prefs.locale) : DEFAULT_LOCALE;
+  const { locale, chatLocale } = useDisplaySettings();
+  return locale && chatLocale ? chatLocaleOf(chatLocale, locale) : DEFAULT_LOCALE;
 }
 
 /** Interface text in the current language. */

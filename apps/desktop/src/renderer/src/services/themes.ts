@@ -1,7 +1,7 @@
 import type { ChatTheme, ViewerTarget } from '@chatto/core';
 import { useCallback } from 'react';
 import { api } from '../api';
-import { useAppState } from '../store';
+import { useDisplaySettings } from '../store';
 import { runAction } from './run';
 import type { LibraryOp } from '../../../shared/themeLibrary';
 
@@ -33,6 +33,6 @@ export const themeAssetUrl = (port: number) => (file: string) =>
 
 /** Resolves frame images for chat previews in the control panel; stable while the port is. */
 export function useThemeAssetUrl(): (file: string) => string {
-  const port = useAppState()?.server.port ?? 0;
+  const port = useDisplaySettings().serverPort ?? 0;
   return useCallback((file: string) => themeAssetUrl(port)(file), [port]);
 }

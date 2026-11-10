@@ -1,6 +1,6 @@
 import { VIEWER_TARGETS, type ChatTheme, type ViewerTarget } from '@chatto/core';
 import { ArrowDown, ArrowUp, Check, Copy, Download, Ellipsis, FolderInput, Pencil, Send, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { useMessages, useThemeName } from '../../i18n';
 import { runAction } from '../../services/run';
 import { themes } from '../../services/themes';
@@ -22,6 +22,7 @@ import { exportTheme } from '../themeIO';
 import { describeTheme } from '../themeLabels';
 import { DRAG_THEME } from './library';
 
+/** Plain data, so a card can tell cheaply whether anything about its place changed. */
 export interface CardMoves {
   /** Where the theme can go: unfiled (null) and every folder. */
   folders: ThemeFolder[];
@@ -29,34 +30,45 @@ export interface CardMoves {
   /** Keyboard alternative to dragging; null at an end or while searching. */
   up: LibraryOp | null;
   down: LibraryOp | null;
-  /** A dragged theme dropped on this card goes before it, in this card's folder. */
-  dropBefore: (draggedId: string) => void;
 }
 
-export function ThemeCard({
-  theme,
-  targets,
-  selected,
-  updateAvailable,
-  moves,
-  onEdit,
-  onDuplicate,
-  onPublish,
-  onDelete,
-  onOpenExplore,
-}: {
+/** What the page does for a card. One stable object, so the cards can stay memoized. */
+export interface CardActions {
+  edit: (theme: ChatTheme) => void;
+  /** The copy goes in the given folder (null: unfiled). */
+  duplicate: (theme: ChatTheme, folderId: string | null) => void;
+  publish: (theme: ChatTheme) => void;
+  remove: (theme: ChatTheme) => void;
+  openExplore: () => void;
+}
+
+export interface ThemeCardProps {
   theme: ChatTheme;
-  targets: ViewerTarget[];
   selected: Record<ViewerTarget, string>;
   updateAvailable: boolean;
   /** Absent for built-in themes, which never move. */
   moves?: CardMoves;
-  onEdit: () => void;
-  onDuplicate: () => void;
-  onPublish: () => void;
-  onDelete: () => void;
-  onOpenExplore: () => void;
-}) {
+  actions: CardActions;
+}
+
+/**
+ * Re-render only when something the card shows changed. The page re-renders on every app state
+ * update, and a card is costly: a theme preview, menus and a layout animation that measures
+ * the page.
+ */
+export function sameCard(a: ThemeCardProps, b: ThemeCardProps): boolean {
+  return (
+    a.theme === b.theme &&
+    a.updateAvailable === b.updateAvailable &&
+    a.actions === b.actions &&
+    VIEWER_TARGETS.every((target) => (a.selected[target] === a.theme.id) === (b.selected[target] === b.theme.id)) &&
+    JSON.stringify(a.moves) === JSON.stringify(b.moves)
+  );
+}
+
+export const ThemeCard = memo(function ThemeCard({ theme, selected, updateAvailable, moves, actions }: ThemeCardProps) {
+  const targets = VIEWER_TARGETS.filter((target) => selected[target] === theme.id);
+  const onDuplicate = () => actions.duplicate(theme, moves?.current ?? null);
   const messages = useMessages();
   const m = messages.themes;
   const themeName = useThemeName();
@@ -93,7 +105,8 @@ export function ThemeCard({
           event.preventDefault();
           event.stopPropagation();
           const dragged = event.dataTransfer.getData(DRAG_THEME);
-          if (dragged && dragged !== theme.id) moves!.dropBefore(dragged);
+          if (dragged && dragged !== theme.id)
+            themes.library({ type: 'move-theme', themeId: dragged, folderId: moves!.current, before: theme.id });
         }}
       >
         <div className="relative h-44 overflow-hidden rounded-t-tile">
@@ -106,7 +119,7 @@ export function ThemeCard({
               <p className="flex flex-wrap items-center gap-1.5 text-xs text-ink-faint">
                 {describeTheme(theme, m.labels)} · {theme.builtIn ? m.builtIn : m.custom}
                 {updateAvailable ? (
-                  <button type="button" onClick={onOpenExplore}>
+                  <button type="button" onClick={actions.openExplore}>
                     <Badge tone="sakura">{messages.share.updateAvailable}</Badge>
                   </button>
                 ) : null}
@@ -126,7 +139,12 @@ export function ThemeCard({
                 </Hint>
               ) : (
                 <Hint label={messages.common.edit}>
-                  <Button size="sm" variant="ghost" aria-label={messages.common.edit} onClick={onEdit}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={messages.common.edit}
+                    onClick={() => actions.edit(theme)}
+                  >
                     <Pencil />
                   </Button>
                 </Hint>
@@ -147,7 +165,7 @@ export function ThemeCard({
                     </DropdownMenuItem>
                   ) : null}
                   {!theme.builtIn ? (
-                    <DropdownMenuItem onSelect={onPublish}>
+                    <DropdownMenuItem onSelect={() => actions.publish(theme)}>
                       <Send /> {m.publish}
                     </DropdownMenuItem>
                   ) : null}
@@ -155,7 +173,7 @@ export function ThemeCard({
                   {!theme.builtIn ? (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+                      <DropdownMenuItem variant="destructive" onSelect={() => actions.remove(theme)}>
                         <Trash2 /> {m.deleteTheme}
                       </DropdownMenuItem>
                     </>
@@ -186,7 +204,7 @@ export function ThemeCard({
       </div>
     </motion.article>
   );
-}
+}, sameCard);
 
 /** "Move to" and up/down: the keyboard way to file and order a theme. */
 function MoveItems({ themeId, moves }: { themeId: string; moves: CardMoves }) {

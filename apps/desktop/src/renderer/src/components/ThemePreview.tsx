@@ -8,7 +8,7 @@ import {
   useChatFeed,
 } from '@chatto/chat-ui';
 import type { ChatEvent, ChatTheme } from '@chatto/core';
-import { useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import { useChatLocale, useOutputTheme } from '../i18n';
 import { useThemeAssetUrl } from '../services/themes';
 import { backdropColor, type OverlayLook } from '../../../shared/overlayLook';
@@ -33,7 +33,13 @@ const SAMPLE_EVENTS: ChatEvent[] = [
 ];
 
 /** Static preview used on theme cards; the chat is drawn once the card scrolls near the viewport. */
-export function StaticThemePreview({ theme, backdrop = 'game' }: { theme: ChatTheme; backdrop?: Backdrop }) {
+export const StaticThemePreview = memo(function StaticThemePreview({
+  theme,
+  backdrop = 'game',
+}: {
+  theme: ChatTheme;
+  backdrop?: Backdrop;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const visible = useInView(ref);
   const items = useMemo(() => {
@@ -56,7 +62,7 @@ export function StaticThemePreview({ theme, backdrop = 'game' }: { theme: ChatTh
       {visible ? <ChatView theme={quiet} items={items} assetUrl={assetUrl} locale={locale} /> : null}
     </div>
   );
-}
+});
 
 /**
  * Streaming preview used by the theme editor and outputs page. `look` shows a desktop

@@ -1,14 +1,14 @@
 import { duplicateTheme, localizeTheme } from '@chatto/chat-ui';
 import { LOCALES, VIEWER_TARGETS, type ChatTheme } from '@chatto/core';
 import { Plus, Trash2, Upload } from 'lucide-react';
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AppState } from '../../../../shared/ipc';
 import type { PageId } from '../../components/Sidebar';
 import { useChatLocale, useMessages, useThemeName } from '../../i18n';
 import { useShareUpdates } from '../../services/share';
 import { themes } from '../../services/themes';
 import { SignInDialog } from '../../components/share/SignInDialog';
-import { MotionConfig } from '../../components/motion';
+import { LayoutGroup, MotionConfig } from '../../components/motion';
 import { Badge, Button, EmptyState, Hint, PageHeader } from '../../components/kit';
 import { LazyBoundary, lazyNamed } from '../../components/lazy';
 import { pickThemeFile } from '../themeIO';
@@ -25,7 +25,7 @@ import {
   type ThemeFilter,
   type ThemeSection,
 } from './library';
-import { ThemeCard } from './ThemeCard';
+import { ThemeCard, type CardActions } from './ThemeCard';
 import { ThemeSectionView } from './ThemeSectionView';
 import { ThemeToolbar } from './ThemeToolbar';
 import { TrashDialog } from './TrashDialog';
@@ -75,15 +75,19 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
     else setSigningIn(true);
   };
 
-  if (editing) {
-    return (
-      <LazyBoundary>
-        <ThemeEditor initial={editing} onClose={() => setEditing(null)} onSaved={(theme) => setEditing(theme)} />
-      </LazyBoundary>
-    );
-  }
-
-  const usedBy = (theme: ChatTheme) => VIEWER_TARGETS.filter((target) => selectedThemes[target] === theme.id);
+  // The cards are memoized; they get one actions object for the page's life, which always
+  // calls the latest handlers below.
+  const latest = useRef<CardActions | null>(null);
+  const actions = useMemo<CardActions>(
+    () => ({
+      edit: (theme) => latest.current!.edit(theme),
+      duplicate: (theme, folderId) => latest.current!.duplicate(theme, folderId),
+      publish: (theme) => latest.current!.publish(theme),
+      remove: (theme) => latest.current!.remove(theme),
+      openExplore: () => latest.current!.openExplore(),
+    }),
+    [],
+  );
 
   /** A copy lands in the folder of the theme it came from (built-in and unfiled ones: unfiled). */
   const duplicate = async (theme: ChatTheme, folderId: string | null = null) => {
@@ -108,6 +112,24 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
     }
   };
 
+  useLayoutEffect(() => {
+    latest.current = {
+      edit: setEditing,
+      duplicate: (theme, folderId) => void duplicate(theme, folderId),
+      publish,
+      remove: setPendingDelete,
+      openExplore: () => onNavigate('explore'),
+    };
+  });
+
+  if (editing) {
+    return (
+      <LazyBoundary>
+        <ThemeEditor initial={editing} onClose={() => setEditing(null)} onSaved={(theme) => setEditing(theme)} />
+      </LazyBoundary>
+    );
+  }
+
   const sectionName = (section: ThemeSection) =>
     section.kind === 'folder'
       ? section.folder.name
@@ -121,7 +143,6 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
       <ThemeCard
         key={theme.id}
         theme={theme}
-        targets={usedBy(theme)}
         selected={selectedThemes}
         updateAvailable={updates.has(theme.id)}
         moves={
@@ -132,15 +153,9 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
                 current: folderId,
                 up: filtering ? null : stepTheme(section, theme.id, -1),
                 down: filtering ? null : stepTheme(section, theme.id, 1),
-                dropBefore: (dragged) =>
-                  themes.library({ type: 'move-theme', themeId: dragged, folderId, before: theme.id }),
               }
         }
-        onEdit={() => setEditing(theme)}
-        onDuplicate={() => void duplicate(theme, folderId ?? null)}
-        onPublish={() => publish(theme)}
-        onDelete={() => setPendingDelete(theme)}
-        onOpenExplore={() => onNavigate('explore')}
+        actions={actions}
       />
     );
   };
@@ -174,36 +189,39 @@ export function ThemesPage({ state, onNavigate }: { state: AppState; onNavigate:
       <ThemeToolbar filter={filter} onChange={setFilter} onNewFolder={() => setFolderDialog({ kind: 'create' })} />
 
       <MotionConfig reducedMotion="user">
-        {sections.length === 0 ? (
-          <EmptyState title={m.library.noResults} hint={m.library.noResultsHint} />
-        ) : (
-          sections.map((section) => (
-            <ThemeSectionView
-              key={section.id}
-              section={section}
-              name={sectionName(section)}
-              collapsed={library.collapsed.includes(section.id)}
-              canCollapse={!filtering}
-              folderMoves={
-                section.kind === 'folder'
-                  ? { up: stepFolder(library, section.id, -1), down: stepFolder(library, section.id, 1) }
-                  : undefined
-              }
-              onRename={
-                section.kind === 'folder'
-                  ? () => setFolderDialog({ kind: 'rename', id: section.id, name: section.folder.name })
-                  : undefined
-              }
-              onDelete={
-                section.kind === 'folder'
-                  ? () => setPendingFolderDelete({ id: section.id, name: section.folder.name })
-                  : undefined
-              }
-            >
-              {section.themes.map((theme) => card(section, theme))}
-            </ThemeSectionView>
-          ))
-        )}
+        {/* Cards that do not re-render still slide when a move elsewhere shifts them. */}
+        <LayoutGroup>
+          {sections.length === 0 ? (
+            <EmptyState title={m.library.noResults} hint={m.library.noResultsHint} />
+          ) : (
+            sections.map((section) => (
+              <ThemeSectionView
+                key={section.id}
+                section={section}
+                name={sectionName(section)}
+                collapsed={library.collapsed.includes(section.id)}
+                canCollapse={!filtering}
+                folderMoves={
+                  section.kind === 'folder'
+                    ? { up: stepFolder(library, section.id, -1), down: stepFolder(library, section.id, 1) }
+                    : undefined
+                }
+                onRename={
+                  section.kind === 'folder'
+                    ? () => setFolderDialog({ kind: 'rename', id: section.id, name: section.folder.name })
+                    : undefined
+                }
+                onDelete={
+                  section.kind === 'folder'
+                    ? () => setPendingFolderDelete({ id: section.id, name: section.folder.name })
+                    : undefined
+                }
+              >
+                {section.themes.map((theme) => card(section, theme))}
+              </ThemeSectionView>
+            ))
+          )}
+        </LayoutGroup>
       </MotionConfig>
 
       <ConfirmDialog
